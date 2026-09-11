@@ -21,6 +21,7 @@
     ]
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.170.35",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -28,6 +29,8 @@
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
+    "@tanstack/router-devtools": "^1.167.1",
+    "@tanstack/router-plugin": "^1.168.37",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
