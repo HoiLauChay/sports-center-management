@@ -1,0 +1,59 @@
+/* Global design tokens (--sc-*) shared by the whole app. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --sc-primary: #0f4d34;
+  --sc-primary-dark: #0b3b28;
+  --sc-primary-soft: #e3efe8;
+  --sc-accent: #c94a1e;
+  --sc-lime: #d6f24b;
+  --sc-ink: #14130f;
+  --sc-ink-2: #3d3b35;
+  --sc-paper: #f2efe8;
+  --sc-paper-2: #e9e5dc;
+  --sc-muted: #7a776f;
+  --sc-line: #d8d3c7;
+  --sc-border: #e2ddd2;
+  --sc-border-soft: #ece8df;
+
+  --sc-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --sc-font-body: 'Barlow', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --sc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--sc-paper);
+  color: var(--sc-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--sc-font-body);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfcabd;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

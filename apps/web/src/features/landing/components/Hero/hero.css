@@ -1,0 +1,222 @@
+.lp-pin {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+}
+.lp-after {
+  position: relative;
+  z-index: 1;
+  background: var(--paper);
+  box-shadow: 0 -30px 80px rgba(20, 19, 15, 0.35);
+}
+
+.lp-hero {
+  position: relative;
+  height: 100svh;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: var(--ink);
+  color: #fff;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.lp-hero-dim {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  pointer-events: none;
+  z-index: 3;
+}
+.lp-hero-img {
+  position: absolute;
+  top: -8%;
+  right: 0;
+  width: 62%;
+  height: 112%;
+  object-fit: cover;
+  object-position: 50% 10%;
+  will-change: transform;
+}
+.lp-hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      var(--ink) 0%,
+      var(--ink) 34%,
+      rgba(20, 19, 15, 0.7) 46%,
+      rgba(20, 19, 15, 0.08) 60%,
+      rgba(20, 19, 15, 0) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(20, 19, 15, 0.55) 0%,
+      rgba(20, 19, 15, 0) 28%,
+      rgba(20, 19, 15, 0.35) 70%,
+      rgba(20, 19, 15, 0.95) 100%
+    );
+}
+.lp-hero-content {
+  position: relative;
+  padding-top: 128px;
+  padding-bottom: 44px;
+}
+
+.lp-kicker {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin: 0 0 22px;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.lp-kicker i {
+  width: 40px;
+  height: 2px;
+  background: var(--lime);
+}
+.lp-hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lp-hero-facts {
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.lp-hero-facts .lp-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.lp-fact {
+  padding: 22px 24px 22px 0;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.75);
+}
+.lp-fact + .lp-fact {
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  padding-left: 24px;
+}
+.lp-fact b {
+  display: block;
+  margin-bottom: 2px;
+  color: #fff;
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.lp-ticker {
+  background: var(--lime);
+  color: var(--ink);
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.lp-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  padding-right: 22px;
+  font-family: var(--display);
+  font-size: clamp(18px, 1.8vw, 26px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.lp-marquee-item i {
+  width: 8px;
+  height: 8px;
+  background: var(--ink);
+  border-radius: 50%;
+}
+
+@media (max-height: 860px) and (min-width: 768px) {
+  .lp-hero-content {
+    padding-top: 104px;
+    padding-bottom: 28px;
+  }
+  .lp-h1 {
+    font-size: clamp(40px, 5.4vw, 72px);
+    margin-bottom: 16px;
+  }
+  .lp-kicker {
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+  .lp-lead {
+    font-size: 16px;
+    margin-bottom: 20px;
+    max-width: 46ch;
+  }
+  .lp-btn.lg {
+    height: 50px;
+    padding: 0 22px;
+  }
+  .lp .lp-btn-primary.lg {
+    font-size: 19px;
+  }
+  .lp-fact {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    font-size: 13.5px;
+  }
+  .lp-fact b {
+    font-size: 19px;
+  }
+}
+@media (max-height: 700px) and (min-width: 768px) {
+  .lp-hero {
+    height: auto;
+    min-height: 100svh;
+  }
+}
+
+@media (max-width: 767px) {
+  .lp-hero {
+    height: auto;
+    min-height: 100svh;
+  }
+  .lp-hero-content {
+    padding-top: 130px;
+    padding-bottom: 36px;
+  }
+  .lp-hero-img {
+    width: 100%;
+    height: 70%;
+    top: 0;
+    object-position: 50% 10%;
+  }
+  .lp-hero-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(20, 19, 15, 0.45) 0%,
+      rgba(20, 19, 15, 0.15) 25%,
+      rgba(20, 19, 15, 0.85) 55%,
+      var(--ink) 72%
+    );
+  }
+  .lp-hero-facts .lp-container {
+    grid-template-columns: 1fr;
+  }
+  .lp-fact {
+    padding: 14px 0;
+  }
+  .lp-fact + .lp-fact {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+  }
+}
