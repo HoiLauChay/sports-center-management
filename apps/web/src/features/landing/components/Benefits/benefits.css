@@ -1,0 +1,170 @@
+.lp-roles {
+  position: relative;
+  height: 360vh;
+  background: var(--green2);
+  color: #fff;
+}
+.lp-roles-sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 36px;
+  height: 100vh;
+  overflow: hidden;
+}
+.lp-roles-bg {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--display);
+  font-size: 34vw;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.07);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.lp-roles-head {
+  position: relative;
+  z-index: 1;
+}
+.lp-roles-progress {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  width: 220px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+.lp-roles-progress i {
+  display: block;
+  height: 100%;
+  background: var(--lime);
+}
+.lp-roles-track {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding-left: max(24px, (100vw - 1240px) / 2);
+  padding-right: 80px;
+  will-change: transform;
+}
+
+.lp-role {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 440px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition:
+    background 0.3s,
+    transform 0.6s var(--ease);
+}
+.lp-role:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-6px);
+}
+.lp-role-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+.lp-role-tag {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lime);
+}
+.lp-role-idx {
+  font-family: var(--display);
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.18);
+}
+.lp-role h3 {
+  margin: 0 0 12px;
+  font-family: var(--display);
+  font-size: 40px;
+  text-transform: uppercase;
+  line-height: 1.08;
+}
+.lp-role p {
+  margin: 0 0 22px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+  font-size: 15.5px;
+}
+.lp-role ul {
+  display: grid;
+  gap: 0;
+  margin: 0 0 26px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.lp-role li {
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 14.5px;
+}
+.lp-role li:last-child {
+  border-bottom: 0;
+}
+
+.lp-role-end {
+  flex-basis: 460px;
+  justify-content: center;
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--ink);
+}
+.lp-role-end:hover {
+  background: var(--lime);
+}
+.lp-role-end h3 {
+  font-size: 44px;
+}
+.lp-role-end p {
+  color: var(--ink2);
+}
+.lp-role-end .lp-btn {
+  align-self: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .lp-roles {
+    height: auto;
+  }
+  .lp-roles-sticky {
+    position: static;
+    height: auto;
+    padding: 100px 0;
+    overflow: visible;
+  }
+  .lp-roles-bg,
+  .lp-roles-progress {
+    display: none;
+  }
+  .lp-roles-track {
+    flex-direction: column;
+    transform: none !important;
+    padding: 0 24px;
+  }
+  .lp-role {
+    flex-basis: auto;
+  }
+}

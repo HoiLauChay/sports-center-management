@@ -1,13 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { LandingPage } from '~/features/landing';
 
 export const Route = createFileRoute('/')({
-  component: HomePage,
+  component: LandingPage,
 });
-
-function HomePage() {
-  return (
-    <div>
-      <h1>Sports Center Management</h1>
-    </div>
-  );
-}
