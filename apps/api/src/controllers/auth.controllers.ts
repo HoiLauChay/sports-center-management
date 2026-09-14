@@ -29,6 +29,20 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng nhập thành công!', result: user }));
   };
 
+  refresh = async (req: Request, res: Response) => {
+    try {
+      const { accessToken, refreshToken } = await authService.refresh(
+        req.cookies?.[COOKIE.REFRESH_TOKEN],
+        sessionMeta(req),
+      );
+      setAuthCookies(res, accessToken, refreshToken);
+      res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Làm mới phiên đăng nhập thành công!' }));
+    } catch (err) {
+      clearAuthCookies(res);
+      throw err;
+    }
+  };
+
   logout = async (req: Request, res: Response) => {
     await authService.logout(req.cookies?.[COOKIE.REFRESH_TOKEN]);
     clearAuthCookies(res);

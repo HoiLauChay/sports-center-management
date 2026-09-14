@@ -11,6 +11,7 @@ const authRouter = Router();
 authRouter.post('/send-otp', otpLimiter, validate(sendOtpSchema), authController.sendOtp);
 authRouter.post('/register', authLimiter, validate(registerSchema), authController.register);
 authRouter.post('/login', loginLimiter, validate(loginSchema), authController.login);
+authRouter.post('/refresh', authLimiter, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);

@@ -102,6 +102,37 @@ class AuthService {
     return { user: toPublicUser(user), ...tokens };
   };
 
+  refresh = async (rawToken: unknown, meta: SessionMeta) => {
+    if (typeof rawToken !== 'string' || !rawToken) {
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.UNAUTHORIZED, 'Refresh token không được cung cấp!');
+    }
+
+    const tokenHash = hashToken(rawToken);
+    const record = await refreshTokenRepository.findByHash(tokenHash);
+
+    if (!record) {
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ!');
+    }
+    if (record.revokedAt) {
+      await refreshTokenRepository.revokeAllByUserId(record.userId);
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ!');
+    }
+    if (record.expiresAt < new Date()) {
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_EXPIRED, 'Refresh token đã hết hạn!');
+    }
+    if (record.user.status !== 'ACTIVE') {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa!');
+    }
+
+    const refreshToken = generateOpaqueToken();
+    await prisma.$transaction(async (tx) => {
+      await refreshTokenRepository.revokeByHash(tokenHash, tx);
+      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, record.userId, meta), tx);
+    });
+
+    return { accessToken: signAccessToken(record.userId, record.user.role), refreshToken };
+  };
+
   logout = async (rawToken: unknown) => {
     if (typeof rawToken === 'string' && rawToken) {
       await refreshTokenRepository.revokeByHash(hashToken(rawToken));
