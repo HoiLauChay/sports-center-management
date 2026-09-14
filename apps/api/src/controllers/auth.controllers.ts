@@ -59,6 +59,21 @@ class AuthController {
     const user = await authService.getMe(req.user!.id);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công!', result: user }));
   };
+
+  changePassword = async (req: Request, res: Response) => {
+    await authService.changePassword(req.user!.id, req.body);
+    clearAuthCookies(res);
+    res
+      .status(HTTP_STATUS.OK)
+      .json(new ResponseClient({ message: 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.' }));
+  };
+
+  resetPassword = async (req: Request, res: Response) => {
+    await authService.resetPassword(req.body);
+    res
+      .status(HTTP_STATUS.OK)
+      .json(new ResponseClient({ message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.' }));
+  };
 }
 
 export default new AuthController();

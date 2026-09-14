@@ -9,7 +9,13 @@ import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import userRepository, { type PublicUser } from '~/repositories/user.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import type { LoginBody, RegisterBody, SendOtpBody } from '~/schemas/auth.schema';
+import type {
+  ChangePasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResetPasswordBody,
+  SendOtpBody,
+} from '~/schemas/auth.schema';
 import mailService from '~/services/mail.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { signAccessToken } from '~/utils/jwt';
@@ -145,6 +151,33 @@ class AuthService {
     const user = await userRepository.findById(userId);
     if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Người dùng không tồn tại!');
     return user;
+  };
+
+  changePassword = async (userId: string, { currentPassword, password }: ChangePasswordBody) => {
+    const user = await userRepository.findFullById(userId);
+    if (!user?.passwordHash || !(await verifyPassword(currentPassword, user.passwordHash))) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng!');
+    }
+
+    const passwordHash = await hashPassword(password);
+    await prisma.$transaction(async (tx) => {
+      await userRepository.updatePassword(userId, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByUserId(userId, tx);
+    });
+  };
+
+  resetPassword = async ({ email, otp, password }: ResetPasswordBody) => {
+    const record = await this.verifyOtp(email, 'PASSWORD_RESET', otp);
+
+    const user = await userRepository.findByEmail(email);
+    if (!user) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng!');
+
+    const passwordHash = await hashPassword(password);
+    await prisma.$transaction(async (tx) => {
+      await otpRepository.consume(record.id, tx);
+      await userRepository.updatePassword(user.id, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByUserId(user.id, tx);
+    });
   };
 
   private verifyOtp = async (email: string, purpose: OtpPurpose, code: string) => {
