@@ -1,17 +1,19 @@
+import bcrypt from 'bcryptjs';
+
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
 import { ERROR_CODE, type ErrorCode } from '~/constants/errorCode';
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import type { OtpPurpose } from '~/generated/prisma/client';
+import type { OtpPurpose, Role, User } from '~/generated/prisma/client';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
-import userRepository from '~/repositories/user.repository';
+import userRepository, { type PublicUser } from '~/repositories/user.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import type { RegisterBody, SendOtpBody } from '~/schemas/auth.schema';
+import type { LoginBody, RegisterBody, SendOtpBody } from '~/schemas/auth.schema';
 import mailService from '~/services/mail.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { signAccessToken } from '~/utils/jwt';
-import { hashPassword } from '~/utils/password';
+import { hashPassword, verifyPassword } from '~/utils/password';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
 
 export interface SessionMeta {
@@ -19,7 +21,19 @@ export interface SessionMeta {
   ip?: string;
 }
 
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('dummy-password', AUTH.BCRYPT_ROUNDS);
+
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
+
+const toPublicUser = (user: User): PublicUser => ({
+  id: user.id,
+  email: user.email,
+  role: user.role,
+  status: user.status,
+  emailVerifiedAt: user.emailVerifiedAt,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
 
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
@@ -73,6 +87,35 @@ class AuthService {
     return { user, accessToken: signAccessToken(user.id, user.role), refreshToken };
   };
 
+  login = async ({ email, password }: LoginBody, meta: SessionMeta) => {
+    const user = await userRepository.findByEmail(email);
+    const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+
+    if (!user || !user.passwordHash || !valid) {
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng!');
+    }
+    if (user.status !== 'ACTIVE') {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa!');
+    }
+
+    const tokens = await this.issueTokens(user.id, user.role, meta);
+    return { user: toPublicUser(user), ...tokens };
+  };
+
+  logout = async (rawToken: unknown) => {
+    if (typeof rawToken === 'string' && rawToken) {
+      await refreshTokenRepository.revokeByHash(hashToken(rawToken));
+    }
+  };
+
+  logoutAll = (userId: string) => refreshTokenRepository.revokeAllByUserId(userId);
+
+  getMe = async (userId: string) => {
+    const user = await userRepository.findById(userId);
+    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Người dùng không tồn tại!');
+    return user;
+  };
+
   private verifyOtp = async (email: string, purpose: OtpPurpose, code: string) => {
     const record = await otpRepository.findLatestActive(email, purpose);
 
@@ -93,6 +136,12 @@ class AuthService {
     }
 
     return record;
+  };
+
+  private issueTokens = async (userId: string, role: Role, meta: SessionMeta) => {
+    const refreshToken = generateOpaqueToken();
+    await refreshTokenRepository.create(this.refreshTokenData(refreshToken, userId, meta));
+    return { accessToken: signAccessToken(userId, role), refreshToken };
   };
 
   private refreshTokenData = (rawToken: string, userId: string, meta: SessionMeta) => ({
