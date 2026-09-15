@@ -19,7 +19,7 @@ const otp = z
 
 const confirmPassword = z.string().min(1, 'Vui lòng nhập lại mật khẩu');
 
-const matchPassword = { message: 'Mật khẩu xác nhận không khớp', path: ['confirmPassword'] as const };
+const matchPassword = { message: 'Mật khẩu xác nhận không khớp', path: ['confirmPassword'] };
 
 export const loginSchema = z.object({
   email: emailSchema,
