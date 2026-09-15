@@ -56,14 +56,21 @@ class AuthService {
     if (purpose === 'REGISTER' && exists) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký');
     }
-    if (purpose === 'PASSWORD_RESET' && !exists) return;
+    if (purpose === 'PASSWORD_RESET' && !exists) {
+      throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
+    }
 
     const latest = await otpRepository.findLatestActive(email, purpose);
     if (latest) {
       const elapsed = (Date.now() - latest.createdAt.getTime()) / 1000;
       if (elapsed < AUTH.OTP_RESEND_COOLDOWN) {
-        const wait = Math.ceil(AUTH.OTP_RESEND_COOLDOWN - elapsed);
-        throw fail(HTTP_STATUS.TOO_MANY_REQUESTS, ERROR_CODE.OTP_COOLDOWN, `Vui lòng đợi ${wait} giây để gửi lại mã`);
+        const retryAfter = Math.ceil(AUTH.OTP_RESEND_COOLDOWN - elapsed);
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.TOO_MANY_REQUESTS,
+          code: ERROR_CODE.OTP_COOLDOWN,
+          message: `Vui lòng đợi ${retryAfter} giây để gửi lại mã`,
+          meta: { retryAfter },
+        });
       }
     }
 
@@ -175,7 +182,7 @@ class AuthService {
     const record = await this.verifyOtp(email, 'PASSWORD_RESET', otp);
 
     const user = await userRepository.findByEmail(email);
-    if (!user) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng');
+    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
 
     const passwordHash = await hashPassword(password);
     await prisma.$transaction(async (tx) => {

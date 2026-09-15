@@ -12,8 +12,8 @@ export const notFoundHandler = (_req: Request, res: Response) => {
 
 export const defaultErrorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ErrorWithStatus) {
-    const { status, code, message, errors } = err;
-    res.status(status).json({ status: false, code, message, ...(errors !== undefined && { errors }) });
+    const { status, code, message, errors, meta } = err;
+    res.status(status).json({ status: false, code, message, ...meta, ...(errors !== undefined && { errors }) });
     return;
   }
 
