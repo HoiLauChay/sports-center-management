@@ -49,12 +49,12 @@ const toPublicUser = (user: User): PublicUser => ({
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
     if (!(await verifyCaptcha(captchaToken, ip))) {
-      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.CAPTCHA_FAILED, 'Xác thực captcha thất bại!');
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.CAPTCHA_FAILED, 'Xác thực captcha thất bại');
     }
 
     const exists = await userRepository.existsByEmail(email);
     if (purpose === 'REGISTER' && exists) {
-      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký!');
+      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký');
     }
     if (purpose === 'PASSWORD_RESET' && !exists) return;
 
@@ -63,7 +63,7 @@ class AuthService {
       const elapsed = (Date.now() - latest.createdAt.getTime()) / 1000;
       if (elapsed < AUTH.OTP_RESEND_COOLDOWN) {
         const wait = Math.ceil(AUTH.OTP_RESEND_COOLDOWN - elapsed);
-        throw fail(HTTP_STATUS.TOO_MANY_REQUESTS, ERROR_CODE.OTP_COOLDOWN, `Vui lòng đợi ${wait} giây để gửi lại mã!`);
+        throw fail(HTTP_STATUS.TOO_MANY_REQUESTS, ERROR_CODE.OTP_COOLDOWN, `Vui lòng đợi ${wait} giây để gửi lại mã`);
       }
     }
 
@@ -82,7 +82,7 @@ class AuthService {
     const record = await this.verifyOtp(email, 'REGISTER', otp);
 
     if (await userRepository.existsByEmail(email)) {
-      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký!');
+      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký');
     }
 
     const passwordHash = await hashPassword(password);
@@ -103,10 +103,10 @@ class AuthService {
     const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
     if (!user || !user.passwordHash || !valid) {
-      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng!');
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng');
     }
     if (user.status !== 'ACTIVE') {
-      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa!');
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
     }
 
     const tokens = await this.issueTokens(user.id, user.role, meta);
@@ -115,24 +115,24 @@ class AuthService {
 
   refresh = async (rawToken: unknown, meta: SessionMeta) => {
     if (typeof rawToken !== 'string' || !rawToken) {
-      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.UNAUTHORIZED, 'Refresh token không được cung cấp!');
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.UNAUTHORIZED, 'Refresh token không được cung cấp');
     }
 
     const tokenHash = hashToken(rawToken);
     const record = await refreshTokenRepository.findByHash(tokenHash);
 
     if (!record) {
-      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ!');
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     if (record.revokedAt) {
       await refreshTokenRepository.revokeAllByUserId(record.userId);
-      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ!');
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     if (record.expiresAt < new Date()) {
-      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_EXPIRED, 'Refresh token đã hết hạn!');
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_EXPIRED, 'Refresh token đã hết hạn');
     }
     if (record.user.status !== 'ACTIVE') {
-      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa!');
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
     }
 
     const refreshToken = generateOpaqueToken();
@@ -154,14 +154,14 @@ class AuthService {
 
   getMe = async (userId: string) => {
     const user = await userRepository.findById(userId);
-    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Người dùng không tồn tại!');
+    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Người dùng không tồn tại');
     return user;
   };
 
   changePassword = async (userId: string, { currentPassword, password }: ChangePasswordBody) => {
     const user = await userRepository.findFullById(userId);
     if (!user?.passwordHash || !(await verifyPassword(currentPassword, user.passwordHash))) {
-      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng!');
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng');
     }
 
     const passwordHash = await hashPassword(password);
@@ -175,7 +175,7 @@ class AuthService {
     const record = await this.verifyOtp(email, 'PASSWORD_RESET', otp);
 
     const user = await userRepository.findByEmail(email);
-    if (!user) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng!');
+    if (!user) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng');
 
     const passwordHash = await hashPassword(password);
     await prisma.$transaction(async (tx) => {
@@ -188,20 +188,20 @@ class AuthService {
   private verifyOtp = async (email: string, purpose: OtpPurpose, code: string) => {
     const record = await otpRepository.findLatestActive(email, purpose);
 
-    if (!record) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng!');
+    if (!record) throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng');
     if (record.expiresAt < new Date()) {
-      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_EXPIRED, 'Mã xác nhận đã hết hạn!');
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_EXPIRED, 'Mã xác nhận đã hết hạn');
     }
     if (record.attempts >= AUTH.OTP_MAX_ATTEMPTS) {
       throw fail(
         HTTP_STATUS.BAD_REQUEST,
         ERROR_CODE.OTP_MAX_ATTEMPTS,
-        'Bạn đã nhập sai quá nhiều lần, vui lòng gửi lại mã!',
+        'Bạn đã nhập sai quá nhiều lần, vui lòng gửi lại mã',
       );
     }
     if (!safeEqual(record.codeHash, hashToken(code))) {
       await otpRepository.incrementAttempts(record.id);
-      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng!');
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.OTP_INVALID, 'Mã xác nhận không đúng');
     }
 
     return record;

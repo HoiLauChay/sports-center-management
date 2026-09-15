@@ -7,7 +7,7 @@ import { ErrorWithStatus } from '~/rules/error';
 export const notFoundHandler = (_req: Request, res: Response) => {
   res
     .status(HTTP_STATUS.NOT_FOUND)
-    .json({ status: false, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy tài nguyên!' });
+    .json({ status: false, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy tài nguyên' });
 };
 
 export const defaultErrorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
@@ -21,6 +21,6 @@ export const defaultErrorHandler = (err: unknown, _req: Request, res: Response, 
   res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     status: false,
     code: ERROR_CODE.INTERNAL,
-    message: 'Lỗi hệ thống!',
+    message: 'Lỗi hệ thống',
   });
 };

@@ -14,19 +14,19 @@ const sessionMeta = (req: Request): SessionMeta => ({
 class AuthController {
   sendOtp = async (req: Request, res: Response) => {
     await authService.sendOtp(req.body, req.ip);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Nếu email hợp lệ, mã xác nhận đã được gửi!' }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: `Đã gửi mã xác nhận đến ${req.body.email}` }));
   };
 
   register = async (req: Request, res: Response) => {
     const { user, accessToken, refreshToken } = await authService.register(req.body, sessionMeta(req));
     setAuthCookies(res, accessToken, refreshToken);
-    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đăng ký thành công!', result: user }));
+    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đăng ký thành công', result: user }));
   };
 
   login = async (req: Request, res: Response) => {
     const { user, accessToken, refreshToken } = await authService.login(req.body, sessionMeta(req));
     setAuthCookies(res, accessToken, refreshToken);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng nhập thành công!', result: user }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng nhập thành công', result: user }));
   };
 
   refresh = async (req: Request, res: Response) => {
@@ -36,7 +36,7 @@ class AuthController {
         sessionMeta(req),
       );
       setAuthCookies(res, accessToken, refreshToken);
-      res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Làm mới phiên đăng nhập thành công!' }));
+      res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Làm mới phiên đăng nhập thành công' }));
     } catch (err) {
       clearAuthCookies(res);
       throw err;
@@ -46,18 +46,18 @@ class AuthController {
   logout = async (req: Request, res: Response) => {
     await authService.logout(req.cookies?.[COOKIE.REFRESH_TOKEN]);
     clearAuthCookies(res);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng xuất thành công!' }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng xuất thành công' }));
   };
 
   logoutAll = async (req: Request, res: Response) => {
     await authService.logoutAll(req.user!.id);
     clearAuthCookies(res);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã đăng xuất khỏi tất cả thiết bị!' }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã đăng xuất khỏi tất cả thiết bị' }));
   };
 
   getMe = async (req: Request, res: Response) => {
     const user = await authService.getMe(req.user!.id);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công!', result: user }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: user }));
   };
 
   changePassword = async (req: Request, res: Response) => {

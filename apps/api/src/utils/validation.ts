@@ -13,7 +13,7 @@ export const validate =
     if (!parsed.success) {
       return next(
         new ErrorWithStatus({
-          message: 'Dữ liệu không hợp lệ!',
+          message: 'Dữ liệu không hợp lệ',
           status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
           code: ERROR_CODE.VALIDATION,
           errors: parsed.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message })),

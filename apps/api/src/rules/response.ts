@@ -3,7 +3,7 @@ export class ResponseClient<T = undefined> {
   message: string;
   result?: T;
 
-  constructor({ message = 'Thao tác thành công!', result }: { message?: string; result?: T }) {
+  constructor({ message = 'Thao tác thành công', result }: { message?: string; result?: T }) {
     this.message = message;
     if (result !== undefined) this.result = result;
   }

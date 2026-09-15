@@ -16,9 +16,9 @@ const limiter = (windowMs: number, limit: number, message: string) =>
 export const loginLimiter = limiter(
   15 * 60 * 1000,
   10,
-  'Bạn đã đăng nhập sai quá nhiều lần, vui lòng thử lại sau 15 phút!',
+  'Bạn đã đăng nhập sai quá nhiều lần, vui lòng thử lại sau 15 phút',
 );
 
-export const otpLimiter = limiter(60 * 60 * 1000, 5, 'Bạn đã yêu cầu mã quá nhiều lần, vui lòng thử lại sau 1 giờ!');
+export const otpLimiter = limiter(60 * 60 * 1000, 5, 'Bạn đã yêu cầu mã quá nhiều lần, vui lòng thử lại sau 1 giờ');
 
-export const authLimiter = limiter(15 * 60 * 1000, 30, 'Quá nhiều yêu cầu, vui lòng thử lại sau!');
+export const authLimiter = limiter(15 * 60 * 1000, 30, 'Quá nhiều yêu cầu, vui lòng thử lại sau');
