@@ -60,7 +60,7 @@ export function OtpField<T extends FieldValues>({
           value={field.value ?? ''}
           status={invalid ? 'error' : undefined}
           prefix={<SafetyOutlined style={{ color: '#9c9890' }} />}
-          placeholder={`Nhập ${OTP_LENGTH} chữ số`}
+          placeholder="Nhập mã xác nhận"
           inputMode="numeric"
           maxLength={OTP_LENGTH}
           autoComplete="one-time-code"
@@ -74,7 +74,7 @@ export function OtpField<T extends FieldValues>({
               loading={isSending}
               className="!px-0"
             >
-              {countdown > 0 ? `Gửi lại (${countdown}s)` : 'Gửi'}
+              {countdown > 0 ? `Gửi lại (${countdown}s)` : 'Gửi mã'}
             </Button>
           }
         />

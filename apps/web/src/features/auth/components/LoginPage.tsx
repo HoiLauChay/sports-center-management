@@ -42,7 +42,7 @@ export function LoginPage() {
               status={invalid ? 'error' : undefined}
               type="email"
               autoComplete="email"
-              placeholder="example@email.com"
+              placeholder="Nhập email của bạn"
               prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
             />
           )}
@@ -57,6 +57,7 @@ export function LoginPage() {
               {...field}
               status={invalid ? 'error' : undefined}
               autoComplete="current-password"
+              placeholder="Nhập mật khẩu"
               prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
             />
           )}

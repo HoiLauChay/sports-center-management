@@ -68,7 +68,7 @@ export function ForgotPasswordPage() {
                   status={invalid ? 'error' : undefined}
                   type="email"
                   autoComplete="email"
-                  placeholder="example@email.com"
+                  placeholder="Nhập email của bạn"
                   prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
                 />
               )}
@@ -89,12 +89,13 @@ export function ForgotPasswordPage() {
               control={form.control}
               name="password"
               label="Mật khẩu mới"
+              extra="Tối thiểu 8 ký tự, gồm chữ và số"
               render={(field, invalid) => (
                 <Input.Password
                   {...field}
                   status={invalid ? 'error' : undefined}
                   autoComplete="new-password"
-                  placeholder="Ít nhất 8 ký tự, gồm chữ và số"
+                  placeholder="Nhập mật khẩu mới"
                   prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
                 />
               )}
@@ -109,6 +110,7 @@ export function ForgotPasswordPage() {
                   {...field}
                   status={invalid ? 'error' : undefined}
                   autoComplete="new-password"
+                  placeholder="Nhập lại mật khẩu mới"
                   prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
                 />
               )}
