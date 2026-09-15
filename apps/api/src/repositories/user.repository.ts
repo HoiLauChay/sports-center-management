@@ -4,6 +4,11 @@ import type { Prisma } from '~/generated/prisma/client';
 export const publicUserSelect = {
   id: true,
   email: true,
+  fullName: true,
+  phone: true,
+  dateOfBirth: true,
+  gender: true,
+  avatarUrl: true,
   role: true,
   status: true,
   emailVerifiedAt: true,

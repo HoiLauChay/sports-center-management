@@ -34,6 +34,11 @@ const fail = (status: number, code: ErrorCode, message: string) => new ErrorWith
 const toPublicUser = (user: User): PublicUser => ({
   id: user.id,
   email: user.email,
+  fullName: user.fullName,
+  phone: user.phone,
+  dateOfBirth: user.dateOfBirth,
+  gender: user.gender,
+  avatarUrl: user.avatarUrl,
   role: user.role,
   status: user.status,
   emailVerifiedAt: user.emailVerifiedAt,
