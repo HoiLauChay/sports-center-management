@@ -49,7 +49,7 @@ export function RegisterPage() {
               status={invalid ? 'error' : undefined}
               type="email"
               autoComplete="email"
-              placeholder="ban@email.com"
+              placeholder="example@email.com"
               prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
             />
           )}
