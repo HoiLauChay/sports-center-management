@@ -1,1 +1,26 @@
 @import './styles/global.css';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme inline {
+  --color-sc-primary: var(--sc-primary);
+  --color-sc-primary-dark: var(--sc-primary-dark);
+  --color-sc-primary-soft: var(--sc-primary-soft);
+  --color-sc-accent: var(--sc-accent);
+  --color-sc-lime: var(--sc-lime);
+  --color-sc-ink: var(--sc-ink);
+  --color-sc-ink-2: var(--sc-ink-2);
+  --color-sc-paper: var(--sc-paper);
+  --color-sc-paper-2: var(--sc-paper-2);
+  --color-sc-muted: var(--sc-muted);
+  --color-sc-line: var(--sc-line);
+  --color-sc-border: var(--sc-border);
+  --color-sc-border-soft: var(--sc-border-soft);
+  --font-display: var(--sc-font-display);
+  --font-body: var(--sc-font-body);
+  --ease-sc: var(--sc-ease);
+}
+
+@theme {
+  --breakpoint-auth: 56.25rem;
+}
