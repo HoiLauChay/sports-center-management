@@ -1,21 +1,26 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import 'dotenv/config';
 import express from 'express';
+import helmet from 'helmet';
 
-const PORT = Number(process.env.PORT) || 8000;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+import { env, isProduction } from '~/configs/env';
+import { defaultErrorHandler, notFoundHandler } from '~/middlewares/error.middlewares';
+import rootRouter from '~/routes/root.routes';
 
 const app = express();
 
-app.use(express.json());
+if (isProduction) app.set('trust proxy', 1);
+
+app.use(helmet());
+app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
 
-app.get('/api/v1/health', (_req, res) => {
-  res.json({ status: true, message: 'OK' });
-});
+app.use('/api/v1', rootRouter);
 
-app.listen(PORT, () => {
-  console.warn(`✓ Server running on http://localhost:${PORT}`);
+app.use(notFoundHandler);
+app.use(defaultErrorHandler);
+
+app.listen(env.PORT, () => {
+  console.warn(`✓ Server running on http://localhost:${env.PORT}`);
 });
