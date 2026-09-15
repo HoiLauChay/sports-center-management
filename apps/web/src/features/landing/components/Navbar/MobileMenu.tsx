@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { PATHS } from '~/constants/paths';
+import { useAuthContext } from '~/features/auth';
 import { NAV_LINKS } from '../../data/content';
 
 const listVariants: Variants = {
@@ -20,6 +21,7 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
+  const { isLoggedIn } = useAuthContext();
   return (
     <AnimatePresence>
       {open && (
@@ -42,12 +44,20 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             ))}
 
             <motion.div variants={itemVariants} className="lp-mobile-menu-actions">
-              <Link to={PATHS.login} className="lp-btn lp-btn-ghost light">
-                Đăng nhập
-              </Link>
-              <Link to={PATHS.register} className="lp-btn lp-btn-primary">
-                Đăng ký
-              </Link>
+              {isLoggedIn ? (
+                <Link to={PATHS.app} className="lp-btn lp-btn-primary">
+                  Vào ứng dụng
+                </Link>
+              ) : (
+                <>
+                  <Link to={PATHS.login} className="lp-btn lp-btn-ghost light">
+                    Đăng nhập
+                  </Link>
+                  <Link to={PATHS.register} className="lp-btn lp-btn-primary">
+                    Đăng ký
+                  </Link>
+                </>
+              )}
             </motion.div>
           </motion.nav>
         </motion.div>
