@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { RegisterPage } from '~/features/auth';
 
-export const Route = createFileRoute('/register')({
+export const Route = createFileRoute('/_auth/register')({
   component: RegisterPage,
 });
-
-// TODO: replace with the real page in features/auth
-function RegisterPage() {
-  return <div style={{ padding: 40 }}>Register — đang phát triển</div>;
-}

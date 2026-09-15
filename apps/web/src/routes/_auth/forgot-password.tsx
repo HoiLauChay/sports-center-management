@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { ForgotPasswordPage } from '~/features/auth';
 
-export const Route = createFileRoute('/forgot-password')({
+export const Route = createFileRoute('/_auth/forgot-password')({
   component: ForgotPasswordPage,
 });
-
-// TODO: replace with the real page in features/auth
-function ForgotPasswordPage() {
-  return <div style={{ padding: 40 }}>ForgotPassword — đang phát triển</div>;
-}

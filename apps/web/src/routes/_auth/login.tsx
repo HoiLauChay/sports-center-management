@@ -1,10 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { LoginPage } from '~/features/auth';
 
-export const Route = createFileRoute('/login')({
+export const Route = createFileRoute('/_auth/login')({
   component: LoginPage,
 });
-
-// TODO: replace with the real page in features/auth
-function LoginPage() {
-  return <div style={{ padding: 40 }}>Login — đang phát triển</div>;
-}
