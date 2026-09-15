@@ -49,13 +49,12 @@ export function useSendOtp({ purpose, onEmailError, onSent }: UseSendOtpOptions)
     },
     onError: (err) => {
       const apiError = toApiError(err);
-      if (apiError.code === 'EMAIL_TAKEN') {
+      if (apiError.code === 'EMAIL_TAKEN' || apiError.code === 'EMAIL_NOT_FOUND') {
         onEmailError?.(apiError.message);
         return;
       }
-      if (apiError.code === 'OTP_COOLDOWN') {
-        const wait = Number(/(\d+)/.exec(apiError.message)?.[1]);
-        if (wait > 0) startCountdown(wait);
+      if (apiError.code === 'OTP_COOLDOWN' && apiError.retryAfter) {
+        startCountdown(apiError.retryAfter);
       }
       message.error(apiError.message);
     },

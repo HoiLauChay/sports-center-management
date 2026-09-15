@@ -32,7 +32,7 @@ export const registerSchema = z
     otp,
     password,
     confirmPassword,
-    agree: z.literal(true, { message: 'Bạn cần đồng ý điều khoản để tiếp tục' }),
+    agree: z.boolean().refine((v) => v, 'Bạn cần đồng ý điều khoản để tiếp tục'),
   })
   .refine((d) => d.password === d.confirmPassword, matchPassword);
 

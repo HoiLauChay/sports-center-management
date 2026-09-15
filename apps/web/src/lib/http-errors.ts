@@ -12,6 +12,7 @@ export interface ApiError {
   code: string;
   message: string;
   errors?: ApiFieldError[];
+  retryAfter?: number;
 }
 
 const FALLBACK = 'Có lỗi xảy ra, vui lòng thử lại.';
@@ -25,6 +26,7 @@ export function toApiError(err: unknown, fallback = FALLBACK): ApiError {
         code: body?.code ?? CLIENT_ERROR_CODE.UNKNOWN,
         message: body?.message ?? fallback,
         errors: body?.errors,
+        retryAfter: body?.retryAfter,
       };
     }
     if (err.code === 'ECONNABORTED') {

@@ -9,12 +9,11 @@ import { useCaptchaToken } from '../hooks/useCaptchaToken';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { CaptchaField, type CaptchaHandle } from './CaptchaField';
 import { FormField, FormRootError } from './FormField';
+import { INPUT_ICON_STYLE } from './inputIcon';
 import { OtpField } from './OtpField';
 
-const ICON_COLOR = '#9c9890';
-
 export function ForgotPasswordPage() {
-  const { form, onSubmit, isSubmitting, done, reset } = useResetPassword();
+  const { form, onSubmit, isSubmitting, done } = useResetPassword();
   const rootError = form.formState.errors.root?.message;
   const captchaRef = useRef<CaptchaHandle>(null);
   const [captchaToken, setCaptchaToken] = useCaptchaToken();
@@ -39,14 +38,11 @@ export function ForgotPasswordPage() {
           status="success"
           title="Đặt lại mật khẩu thành công"
           subTitle="Bạn có thể đăng nhập bằng mật khẩu mới. Các phiên đăng nhập cũ đã được đăng xuất."
-          extra={[
-            <Link key="login" to={PATHS.login}>
+          extra={
+            <Link to={PATHS.login}>
               <Button type="primary">Về trang đăng nhập</Button>
-            </Link>,
-            <Button key="again" onClick={reset}>
-              Đặt lại lần nữa
-            </Button>,
-          ]}
+            </Link>
+          }
         />
       ) : (
         <>
@@ -57,7 +53,7 @@ export function ForgotPasswordPage() {
 
           <FormRootError message={rootError} />
 
-          <Form layout="vertical" size="large" requiredMark={false} onFinish={() => void onSubmit()}>
+          <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
             <FormField
               control={form.control}
               name="email"
@@ -69,7 +65,7 @@ export function ForgotPasswordPage() {
                   type="email"
                   autoComplete="email"
                   placeholder="Nhập email của bạn"
-                  prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
+                  prefix={<MailOutlined style={INPUT_ICON_STYLE} />}
                 />
               )}
             />
@@ -96,7 +92,7 @@ export function ForgotPasswordPage() {
                   status={invalid ? 'error' : undefined}
                   autoComplete="new-password"
                   placeholder="Nhập mật khẩu mới"
-                  prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
+                  prefix={<LockOutlined style={INPUT_ICON_STYLE} />}
                 />
               )}
             />
@@ -111,7 +107,7 @@ export function ForgotPasswordPage() {
                   status={invalid ? 'error' : undefined}
                   autoComplete="new-password"
                   placeholder="Nhập lại mật khẩu mới"
-                  prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
+                  prefix={<LockOutlined style={INPUT_ICON_STYLE} />}
                 />
               )}
             />

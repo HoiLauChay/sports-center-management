@@ -64,7 +64,7 @@ export function useRegister() {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: 'onTouched',
-    defaultValues: { email: '', otp: '', password: '', confirmPassword: '', agree: undefined },
+    defaultValues: { email: '', otp: '', password: '', confirmPassword: '', agree: false },
   });
   const handleApiError = useFormApiError(form);
 
@@ -100,12 +100,8 @@ export function useResetPassword() {
   });
 
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
-  const reset = useCallback(() => {
-    setDone(false);
-    form.reset();
-  }, [form]);
 
-  return { form, onSubmit, isSubmitting: mutation.isPending, done, reset };
+  return { form, onSubmit, isSubmitting: mutation.isPending, done };
 }
 
 export function useLogout() {

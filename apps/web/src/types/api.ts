@@ -14,4 +14,5 @@ export interface ApiErrorBody {
   code: string;
   message: string;
   errors?: ApiFieldError[];
+  retryAfter?: number;
 }

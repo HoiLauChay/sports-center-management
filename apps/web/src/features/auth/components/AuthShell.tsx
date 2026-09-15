@@ -2,7 +2,7 @@ import { ArrowLeftOutlined, ThunderboltFilled } from '@ant-design/icons';
 import { Link } from '@tanstack/react-router';
 import { ConfigProvider } from 'antd';
 import { motion } from 'motion/react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ComponentProps, CSSProperties, ReactNode } from 'react';
 import { PATHS } from '~/constants/paths';
 import { authTheme } from '~/styles/antd-theme';
 
@@ -129,7 +129,7 @@ export function AuthAlt({ children }: { children: ReactNode }) {
   return <div className="mt-[18px] text-center text-[14.5px] text-sc-muted">{children}</div>;
 }
 
-export function AuthLink({ to, children }: { to: string; children: ReactNode }) {
+export function AuthLink({ to, children }: { to: ComponentProps<typeof Link>['to']; children: ReactNode }) {
   return (
     <Link to={to} className="font-semibold text-sc-primary hover:underline">
       {children}

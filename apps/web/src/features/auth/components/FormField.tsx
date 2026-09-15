@@ -33,7 +33,14 @@ export function FormField<T extends FieldValues, N extends FieldPath<T>>({
         <Form.Item
           label={label}
           extra={extra}
-          className={className}
+          className={[
+            className,
+            extra
+              ? '[&_.ant-form-item-extra]:!mt-0.5 [&_.ant-form-item-extra]:!min-h-0 [&_.ant-form-item-extra]:!text-[13px] [&_.ant-form-item-extra]:!leading-[18px]'
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           validateStatus={fieldState.error ? 'error' : undefined}
           help={fieldState.error?.message}
         >

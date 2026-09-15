@@ -5,6 +5,7 @@ import { fieldErrorsToMap, toApiError, type ApiError } from '~/lib/http-errors';
 
 const CODE_TO_FIELD: Record<string, string> = {
   EMAIL_TAKEN: 'email',
+  EMAIL_NOT_FOUND: 'email',
   INVALID_CREDENTIALS: 'root',
   ACCOUNT_INACTIVE: 'root',
   OTP_INVALID: 'otp',

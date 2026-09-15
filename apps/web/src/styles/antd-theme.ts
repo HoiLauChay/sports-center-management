@@ -54,11 +54,18 @@ export const authTheme: ThemeConfig = {
     borderRadius: 6,
     borderRadiusLG: 8,
     controlHeight: 44,
+    controlHeightSM: 24,
     fontSize: 15,
   },
   components: {
     ...antdTheme.components,
-    Form: { labelFontSize: 13.5, labelColor: BRAND.ink2, itemMarginBottom: 16, verticalLabelPadding: '0 0 6px' },
+    Form: {
+      labelFontSize: 14,
+      labelHeight: 22,
+      labelColor: BRAND.ink2,
+      itemMarginBottom: 14,
+      verticalLabelPadding: '0 0 6px',
+    },
     Checkbox: { fontSize: 14 },
   },
 };

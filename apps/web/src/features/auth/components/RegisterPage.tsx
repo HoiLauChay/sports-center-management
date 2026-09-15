@@ -8,9 +8,8 @@ import { useCaptchaToken } from '../hooks/useCaptchaToken';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { CaptchaField, type CaptchaHandle } from './CaptchaField';
 import { FormField, FormRootError } from './FormField';
+import { INPUT_ICON_STYLE } from './inputIcon';
 import { OtpField } from './OtpField';
-
-const ICON_COLOR = '#9c9890';
 
 export function RegisterPage() {
   const { form, onSubmit, isSubmitting } = useRegister();
@@ -38,7 +37,7 @@ export function RegisterPage() {
 
       <FormRootError message={rootError} />
 
-      <Form layout="vertical" size="large" requiredMark={false} onFinish={() => void onSubmit()}>
+      <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
         <FormField
           control={form.control}
           name="email"
@@ -50,7 +49,7 @@ export function RegisterPage() {
               type="email"
               autoComplete="email"
               placeholder="Nhập email của bạn"
-              prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
+              prefix={<MailOutlined style={INPUT_ICON_STYLE} />}
             />
           )}
         />
@@ -77,7 +76,7 @@ export function RegisterPage() {
               status={invalid ? 'error' : undefined}
               autoComplete="new-password"
               placeholder="Nhập mật khẩu"
-              prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
+              prefix={<LockOutlined style={INPUT_ICON_STYLE} />}
             />
           )}
         />
@@ -91,7 +90,7 @@ export function RegisterPage() {
               status={invalid ? 'error' : undefined}
               autoComplete="new-password"
               placeholder="Nhập lại mật khẩu"
-              prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
+              prefix={<LockOutlined style={INPUT_ICON_STYLE} />}
             />
           )}
         />
@@ -102,8 +101,8 @@ export function RegisterPage() {
           className="!mb-[18px]"
           render={(field) => (
             <Checkbox
-              checked={field.value === true}
-              onChange={(e) => field.onChange(e.target.checked ? true : undefined)}
+              checked={field.value}
+              onChange={(e) => field.onChange(e.target.checked)}
               onBlur={field.onBlur}
               ref={field.ref}
             >

@@ -5,8 +5,7 @@ import { PATHS } from '~/constants/paths';
 import { useLogin } from '../hooks/useAuth';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { FormField, FormRootError } from './FormField';
-
-const ICON_COLOR = '#9c9890';
+import { INPUT_ICON_STYLE } from './inputIcon';
 
 export function LoginPage() {
   const { form, onSubmit, isSubmitting } = useLogin();
@@ -31,7 +30,7 @@ export function LoginPage() {
 
       <FormRootError message={rootError} />
 
-      <Form layout="vertical" size="large" requiredMark={false} onFinish={() => void onSubmit()}>
+      <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
         <FormField
           control={form.control}
           name="email"
@@ -43,7 +42,7 @@ export function LoginPage() {
               type="email"
               autoComplete="email"
               placeholder="Nhập email của bạn"
-              prefix={<MailOutlined style={{ color: ICON_COLOR }} />}
+              prefix={<MailOutlined style={INPUT_ICON_STYLE} />}
             />
           )}
         />
@@ -58,7 +57,7 @@ export function LoginPage() {
               status={invalid ? 'error' : undefined}
               autoComplete="current-password"
               placeholder="Nhập mật khẩu"
-              prefix={<LockOutlined style={{ color: ICON_COLOR }} />}
+              prefix={<LockOutlined style={INPUT_ICON_STYLE} />}
             />
           )}
         />
