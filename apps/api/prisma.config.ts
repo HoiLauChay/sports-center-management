@@ -1,5 +1,7 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { defineConfig, env } from 'prisma/config';
+
+config({ path: `.env.${process.env.NODE_ENV ?? 'development'}`, quiet: true });
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -8,6 +10,6 @@ export default defineConfig({
     seed: 'bun src/seeds/seed.ts',
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    url: env('DIRECT_URL'),
   },
 });

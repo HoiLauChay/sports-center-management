@@ -1,21 +1,15 @@
-# Dependencies
 node_modules
-
-# Build output
 dist
 dist-ssr
 *.tsbuildinfo
-
-# Turborepo
 .turbo
+.vercel
 
-# Env
 .env
 .env.*
 !.env.example
 *.local
 
-# Generated
 apps/web/src/routeTree.gen.ts
 apps/web/.tanstack
 apps/api/src/generated
@@ -24,7 +18,7 @@ apps/api/src/generated
 logs
 *.log
 
-# Editor / OS
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea

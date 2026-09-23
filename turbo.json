@@ -3,7 +3,7 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "db:generate"],
+      "dependsOn": ["^build", "^db:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**"]
     },
@@ -16,7 +16,7 @@
       "dependsOn": ["^lint"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck", "db:generate"]
+      "dependsOn": ["^typecheck", "^db:generate", "db:generate"]
     },
     "db:generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
