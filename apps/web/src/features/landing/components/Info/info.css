@@ -1,0 +1,73 @@
+.lp-info {
+  background: var(--paper2);
+}
+.lp-info-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.lp-hours {
+  border-top: 2px solid var(--ink);
+}
+.lp-hours-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 20px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15.5px;
+}
+.lp-hours-row em {
+  grid-column: 1 / -1;
+}
+.lp-hours b {
+  font-family: var(--display);
+  font-size: 19px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.lp-hours span {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lp-hours em {
+  font-style: normal;
+  color: var(--mute);
+  font-size: 13.5px;
+}
+
+.lp-contact {
+  border-top: 2px solid var(--ink);
+}
+.lp-contact dl {
+  margin: 0;
+}
+.lp-contact dt {
+  margin-top: 18px;
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.lp-contact dd {
+  margin: 4px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.lp-contact .lp-btn {
+  margin-top: 26px;
+}
+
+@media (max-width: 1024px) {
+  .lp-info-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
