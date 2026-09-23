@@ -1,21 +1,21 @@
-import bcrypt from 'bcryptjs';
+import {
+  ERROR_CODE,
+  type ChangePasswordBody,
+  type ErrorCode,
+  type LoginBody,
+  type RegisterBody,
+  type ResetPasswordBody,
+  type SendOtpBody,
+} from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
-import { ERROR_CODE, type ErrorCode } from '~/constants/errorCode';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { OtpPurpose, Role, User } from '~/generated/prisma/client';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import userRepository, { type PublicUser } from '~/repositories/user.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import type {
-  ChangePasswordBody,
-  LoginBody,
-  RegisterBody,
-  ResetPasswordBody,
-  SendOtpBody,
-} from '~/schemas/auth.schema';
 import mailService from '~/services/mail.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { signAccessToken } from '~/utils/jwt';
@@ -27,7 +27,7 @@ export interface SessionMeta {
   ip?: string;
 }
 
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync('dummy-password', AUTH.BCRYPT_ROUNDS);
+const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3jfMglIeK/q';
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 

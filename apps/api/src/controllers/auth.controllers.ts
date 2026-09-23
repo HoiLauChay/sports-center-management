@@ -5,15 +5,16 @@ import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ResponseClient } from '~/rules/response';
 import authService, { type SessionMeta } from '~/services/auth.service';
 import { clearAuthCookies, setAuthCookies } from '~/utils/cookie';
+import { getClientIp } from '~/utils/request';
 
 const sessionMeta = (req: Request): SessionMeta => ({
   userAgent: req.get('user-agent'),
-  ip: req.ip,
+  ip: getClientIp(req),
 });
 
 class AuthController {
   sendOtp = async (req: Request, res: Response) => {
-    await authService.sendOtp(req.body, req.ip);
+    await authService.sendOtp(req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: `Đã gửi mã xác nhận đến ${req.body.email}` }));
   };
 

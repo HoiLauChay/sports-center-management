@@ -1,4 +1,4 @@
-import type { ErrorCode } from '~/constants/errorCode';
+import type { ErrorCode } from '@sports-center/shared';
 
 export class ErrorWithStatus extends Error {
   status: number;

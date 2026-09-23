@@ -10,7 +10,7 @@ export const generateOtp = () =>
     .toString()
     .padStart(AUTH.OTP_LENGTH, '0');
 
-export const hashToken = (value: string) => createHmac('sha256', env.JWT_SECRET).update(value).digest('hex');
+export const hashToken = (value: string) => createHmac('sha256', env.TOKEN_HASH_SECRET).update(value).digest('hex');
 
 export const safeEqual = (a: string, b: string) => {
   const bufA = Buffer.from(a);

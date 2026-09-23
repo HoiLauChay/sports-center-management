@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
+import { ERROR_CODE, type ErrorCode } from '@sports-center/shared';
 import { COOKIE } from '~/constants/auth';
-import { ERROR_CODE, type ErrorCode } from '~/constants/errorCode';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import userRepository from '~/repositories/user.repository';

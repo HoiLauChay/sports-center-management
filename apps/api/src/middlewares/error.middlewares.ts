@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-import { ERROR_CODE } from '~/constants/errorCode';
+import { ERROR_CODE } from '@sports-center/shared';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
 
