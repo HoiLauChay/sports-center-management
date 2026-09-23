@@ -1,0 +1,3 @@
+[install]
+# Hoisted layout mirrors npm's node_modules; switch to "isolated" for strict per-package deps.
+linker = "hoisted"
