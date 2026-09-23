@@ -1,6 +1,0 @@
-{
-  "watch": ["src", ".env"],
-  "ext": "ts,json",
-  "ignore": ["src/generated/**"],
-  "exec": "tsx src/index.ts"
-}
