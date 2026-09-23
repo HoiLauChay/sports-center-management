@@ -1,9 +1,8 @@
 import { SafetyOutlined } from '@ant-design/icons';
+import { AUTH_RULES, emailSchema, type OtpPurpose } from '@sports-center/shared';
 import { App, Button, Input } from 'antd';
 import type { Control, FieldPath, FieldValues, PathValue, UseFormReturn } from 'react-hook-form';
 import { useSendOtp } from '../hooks/useSendOtp';
-import { emailSchema, OTP_LENGTH } from '../schemas/auth.schema';
-import type { OtpPurpose } from '../types';
 import { FormField } from './FormField';
 import { INPUT_ICON_STYLE } from './inputIcon';
 
@@ -63,7 +62,7 @@ export function OtpField<T extends FieldValues>({
           prefix={<SafetyOutlined style={INPUT_ICON_STYLE} />}
           placeholder="Nhập mã xác nhận"
           inputMode="numeric"
-          maxLength={OTP_LENGTH}
+          maxLength={AUTH_RULES.OTP_LENGTH}
           autoComplete="one-time-code"
           suffix={
             <span className="ml-1 border-l border-sc-line pl-3">

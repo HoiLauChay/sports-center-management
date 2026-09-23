@@ -1,5 +1,5 @@
+import type { ApiErrorBody, ApiFieldError } from '@sports-center/shared';
 import axios from 'axios';
-import type { ApiErrorBody, ApiFieldError } from '~/types/api';
 
 export const CLIENT_ERROR_CODE = {
   NETWORK: 'NETWORK_ERROR',

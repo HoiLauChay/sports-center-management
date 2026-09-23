@@ -1,11 +1,9 @@
+import { AUTH_RULES, ERROR_CODE, type OtpPurpose } from '@sports-center/shared';
 import { useMutation } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toApiError } from '~/lib/http-errors';
 import { authService } from '../services/auth.service';
-import type { OtpPurpose } from '../types';
-
-export const OTP_RESEND_COOLDOWN = 60;
 
 interface UseSendOtpOptions {
   purpose: OtpPurpose;
@@ -44,16 +42,16 @@ export function useSendOtp({ purpose, onEmailError, onSent }: UseSendOtpOptions)
     mutationFn: (payload: { email: string; captchaToken: string }) => authService.sendOtp({ ...payload, purpose }),
     onSuccess: (msg) => {
       message.success(msg);
-      startCountdown(OTP_RESEND_COOLDOWN);
+      startCountdown(AUTH_RULES.OTP_RESEND_COOLDOWN);
       onSent?.();
     },
     onError: (err) => {
       const apiError = toApiError(err);
-      if (apiError.code === 'EMAIL_TAKEN' || apiError.code === 'EMAIL_NOT_FOUND') {
+      if (apiError.code === ERROR_CODE.EMAIL_TAKEN || apiError.code === ERROR_CODE.EMAIL_NOT_FOUND) {
         onEmailError?.(apiError.message);
         return;
       }
-      if (apiError.code === 'OTP_COOLDOWN' && apiError.retryAfter) {
+      if (apiError.code === ERROR_CODE.OTP_COOLDOWN && apiError.retryAfter) {
         startCountdown(apiError.retryAfter);
       }
       message.error(apiError.message);

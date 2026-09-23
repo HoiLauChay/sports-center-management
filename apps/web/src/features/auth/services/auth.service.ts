@@ -1,26 +1,26 @@
-import { privateApi, publicApi } from '~/lib/http';
-import type { ApiResponse } from '~/types/api';
 import type {
+  ApiResponse,
   AuthUser,
-  ChangePasswordPayload,
-  LoginPayload,
-  RegisterPayload,
-  ResetPasswordPayload,
-  SendOtpPayload,
-} from '../types';
+  ChangePasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResetPasswordBody,
+  SendOtpBody,
+} from '@sports-center/shared';
+import { privateApi, publicApi } from '~/lib/http';
 
 export const authService = {
-  sendOtp: async (payload: SendOtpPayload) => {
+  sendOtp: async (payload: SendOtpBody) => {
     const { data } = await publicApi.post<ApiResponse>('/auth/send-otp', payload);
     return data.message;
   },
 
-  register: async (payload: RegisterPayload) => {
+  register: async (payload: RegisterBody) => {
     const { data } = await publicApi.post<ApiResponse<AuthUser>>('/auth/register', payload);
     return data.result;
   },
 
-  login: async (payload: LoginPayload) => {
+  login: async (payload: LoginBody) => {
     const { data } = await publicApi.post<ApiResponse<AuthUser>>('/auth/login', payload);
     return data.result;
   },
@@ -38,12 +38,12 @@ export const authService = {
     await privateApi.post('/auth/logout-all');
   },
 
-  changePassword: async (payload: ChangePasswordPayload) => {
+  changePassword: async (payload: ChangePasswordBody) => {
     const { data } = await privateApi.post<ApiResponse>('/auth/change-password', payload);
     return data.message;
   },
 
-  resetPassword: async (payload: ResetPasswordPayload) => {
+  resetPassword: async (payload: ResetPasswordBody) => {
     const { data } = await publicApi.post<ApiResponse>('/auth/reset-password', payload);
     return data.message;
   },

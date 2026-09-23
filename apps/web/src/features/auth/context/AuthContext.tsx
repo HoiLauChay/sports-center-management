@@ -1,7 +1,7 @@
+import type { AuthUser } from '@sports-center/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { configureHttpAuthRefreshFailed } from '~/lib/http';
 import { authService } from '../services/auth.service';
-import type { AuthUser } from '../types';
 
 export interface AuthContextValue {
   user: AuthUser | null;

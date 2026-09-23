@@ -12,14 +12,12 @@ export function configureHttpAuthRefreshFailed(fn: () => void) {
 export const publicApi = axios.create({
   baseURL: config.apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
   timeout: 15_000,
 });
 
 export const privateApi = axios.create({
   baseURL: config.apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,
   timeout: 15_000,
 });
 

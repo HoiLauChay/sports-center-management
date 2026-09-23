@@ -1,16 +1,17 @@
+import { ERROR_CODE } from '@sports-center/shared';
 import { App } from 'antd';
 import { useCallback } from 'react';
 import type { FieldValues, Path, UseFormReturn } from 'react-hook-form';
 import { fieldErrorsToMap, toApiError, type ApiError } from '~/lib/http-errors';
 
 const CODE_TO_FIELD: Record<string, string> = {
-  EMAIL_TAKEN: 'email',
-  EMAIL_NOT_FOUND: 'email',
-  INVALID_CREDENTIALS: 'root',
-  ACCOUNT_INACTIVE: 'root',
-  OTP_INVALID: 'otp',
-  OTP_EXPIRED: 'otp',
-  OTP_MAX_ATTEMPTS: 'otp',
+  [ERROR_CODE.EMAIL_TAKEN]: 'email',
+  [ERROR_CODE.EMAIL_NOT_FOUND]: 'email',
+  [ERROR_CODE.INVALID_CREDENTIALS]: 'root',
+  [ERROR_CODE.ACCOUNT_INACTIVE]: 'root',
+  [ERROR_CODE.OTP_INVALID]: 'otp',
+  [ERROR_CODE.OTP_EXPIRED]: 'otp',
+  [ERROR_CODE.OTP_MAX_ATTEMPTS]: 'otp',
 };
 
 export function useFormApiError<T extends FieldValues>(form: UseFormReturn<T>) {

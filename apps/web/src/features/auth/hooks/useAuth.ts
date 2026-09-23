@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { AuthUser } from '@sports-center/shared';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { App } from 'antd';
@@ -15,7 +16,6 @@ import {
   type ResetPasswordFormValues,
 } from '../schemas/auth.schema';
 import { authService } from '../services/auth.service';
-import type { AuthUser } from '../types';
 import { useFormApiError } from './useFormApiError';
 
 const REDIRECT_AFTER_AUTH = PATHS.app;

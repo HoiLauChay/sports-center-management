@@ -1,8 +1,9 @@
 import { ThunderboltFilled } from '@ant-design/icons';
+import type { Role } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Tag } from 'antd';
 import { PATHS } from '~/constants/paths';
-import { useAuthContext, useLogout, type Role } from '~/features/auth';
+import { useAuthContext, useLogout } from '~/features/auth';
 
 const ROLE_LABEL: Record<Role, string> = {
   MANAGER: 'Quản lý trung tâm',
