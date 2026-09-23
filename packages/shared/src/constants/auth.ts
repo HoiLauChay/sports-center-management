@@ -1,0 +1,6 @@
+export const AUTH_RULES = {
+  PASSWORD_MIN_LENGTH: 8,
+  PASSWORD_MAX_LENGTH: 72,
+  OTP_LENGTH: 6,
+  OTP_RESEND_COOLDOWN: 60,
+} as const;

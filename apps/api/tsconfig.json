@@ -1,5 +1,5 @@
 {
-  "extends": "@sports-center/typescript-config/bun.json",
+  "extends": "@sports-center/typescript-config/node.json",
   "compilerOptions": {
     "paths": {
       "~/*": ["./src/*"]
