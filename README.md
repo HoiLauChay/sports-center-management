@@ -10,7 +10,7 @@
 ### Clone the repository
 
 ```bash
-git clone https://github.com/sports-center-management/sports-center-management.git
+git clone https://github.com/HoiLauChay/sports-center-management.git
 cd sports-center-management
 ```
 
