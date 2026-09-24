@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { AuthUser } from '@sports-center/shared';
+import type { Account } from '@sports-center/shared';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { App } from 'antd';
@@ -24,7 +24,7 @@ function useCompleteAuth() {
   const navigate = useNavigate();
   const { setUser } = useAuthContext();
   return useCallback(
-    (user: AuthUser) => {
+    (user: Account) => {
       setUser(user);
       void navigate({ to: REDIRECT_AFTER_AUTH });
     },

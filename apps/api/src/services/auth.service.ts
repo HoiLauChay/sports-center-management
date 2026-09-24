@@ -11,10 +11,11 @@ import {
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import type { OtpPurpose, Role, User } from '~/generated/prisma/client';
+import type { OtpPurpose, Role } from '~/generated/prisma/client';
+import { toAccountResponse } from '~/mappers/account.mapper';
+import accountRepository from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
-import userRepository, { type PublicUser } from '~/repositories/user.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import mailService from '~/services/mail.service';
 import { verifyCaptcha } from '~/utils/captcha';
@@ -31,28 +32,13 @@ const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3j
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
-const toPublicUser = (user: User): PublicUser => ({
-  id: user.id,
-  email: user.email,
-  fullName: user.fullName,
-  phone: user.phone,
-  dateOfBirth: user.dateOfBirth,
-  gender: user.gender,
-  avatarUrl: user.avatarUrl,
-  role: user.role,
-  status: user.status,
-  emailVerifiedAt: user.emailVerifiedAt,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
-
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
     if (!(await verifyCaptcha(captchaToken, ip))) {
       throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.CAPTCHA_FAILED, 'Xác thực captcha thất bại');
     }
 
-    const exists = await userRepository.existsByEmail(email);
+    const exists = await accountRepository.existsByEmail(email);
     if (purpose === 'REGISTER' && exists) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký');
     }
@@ -88,36 +74,43 @@ class AuthService {
   register = async ({ email, otp, fullName, password }: RegisterBody, meta: SessionMeta) => {
     const record = await this.verifyOtp(email, 'REGISTER', otp);
 
-    if (await userRepository.existsByEmail(email)) {
+    if (await accountRepository.existsByEmail(email)) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.EMAIL_TAKEN, 'Email đã được đăng ký');
     }
 
     const passwordHash = await hashPassword(password);
     const refreshToken = generateOpaqueToken();
 
-    const user = await prisma.$transaction(async (tx) => {
+    const account = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
-      const created = await userRepository.create({ email, fullName, passwordHash, emailVerifiedAt: new Date() }, tx);
+      const created = await accountRepository.createMember(
+        { email, fullName, passwordHash, emailVerifiedAt: new Date() },
+        tx,
+      );
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
       return created;
     });
 
-    return { user, accessToken: signAccessToken(user.id, user.role), refreshToken };
+    return {
+      account: toAccountResponse(account),
+      accessToken: signAccessToken(account.id, account.role),
+      refreshToken,
+    };
   };
 
   login = async ({ email, password }: LoginBody, meta: SessionMeta) => {
-    const user = await userRepository.findByEmail(email);
-    const valid = await verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+    const account = await accountRepository.findByEmail(email);
+    const valid = await verifyPassword(password, account?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
-    if (!user || !user.passwordHash || !valid) {
+    if (!account || !valid) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng');
     }
-    if (user.status !== 'ACTIVE') {
+    if (account.status !== 'ACTIVE') {
       throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
     }
 
-    const tokens = await this.issueTokens(user.id, user.role, meta);
-    return { user: toPublicUser(user), ...tokens };
+    const tokens = await this.issueTokens(account.id, account.role, meta);
+    return { account: toAccountResponse(account), ...tokens };
   };
 
   refresh = async (rawToken: unknown, meta: SessionMeta) => {
@@ -132,23 +125,23 @@ class AuthService {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     if (record.revokedAt) {
-      await refreshTokenRepository.revokeAllByUserId(record.userId);
+      await refreshTokenRepository.revokeAllByAccountId(record.accountId);
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     if (record.expiresAt < new Date()) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_EXPIRED, 'Refresh token đã hết hạn');
     }
-    if (record.user.status !== 'ACTIVE') {
+    if (record.account.status !== 'ACTIVE') {
       throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
     }
 
     const refreshToken = generateOpaqueToken();
     await prisma.$transaction(async (tx) => {
       await refreshTokenRepository.revokeByHash(tokenHash, tx);
-      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, record.userId, meta), tx);
+      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, record.accountId, meta), tx);
     });
 
-    return { accessToken: signAccessToken(record.userId, record.user.role), refreshToken };
+    return { accessToken: signAccessToken(record.accountId, record.account.role), refreshToken };
   };
 
   logout = async (rawToken: unknown) => {
@@ -157,38 +150,38 @@ class AuthService {
     }
   };
 
-  logoutAll = (userId: string) => refreshTokenRepository.revokeAllByUserId(userId);
+  logoutAll = (accountId: string) => refreshTokenRepository.revokeAllByAccountId(accountId);
 
-  getMe = async (userId: string) => {
-    const user = await userRepository.findById(userId);
-    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Người dùng không tồn tại');
-    return user;
+  getMe = async (accountId: string) => {
+    const account = await accountRepository.findById(accountId);
+    if (!account) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Tài khoản không tồn tại');
+    return toAccountResponse(account);
   };
 
-  changePassword = async (userId: string, { currentPassword, password }: ChangePasswordBody) => {
-    const user = await userRepository.findFullById(userId);
-    if (!user?.passwordHash || !(await verifyPassword(currentPassword, user.passwordHash))) {
+  changePassword = async (accountId: string, { currentPassword, password }: ChangePasswordBody) => {
+    const account = await accountRepository.findById(accountId);
+    if (!account || !(await verifyPassword(currentPassword, account.passwordHash))) {
       throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng');
     }
 
     const passwordHash = await hashPassword(password);
     await prisma.$transaction(async (tx) => {
-      await userRepository.updatePassword(userId, passwordHash, tx);
-      await refreshTokenRepository.revokeAllByUserId(userId, tx);
+      await accountRepository.updatePassword(accountId, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByAccountId(accountId, tx);
     });
   };
 
   resetPassword = async ({ email, otp, password }: ResetPasswordBody) => {
     const record = await this.verifyOtp(email, 'PASSWORD_RESET', otp);
 
-    const user = await userRepository.findByEmail(email);
-    if (!user) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
+    const account = await accountRepository.findByEmail(email);
+    if (!account) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
 
     const passwordHash = await hashPassword(password);
     await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
-      await userRepository.updatePassword(user.id, passwordHash, tx);
-      await refreshTokenRepository.revokeAllByUserId(user.id, tx);
+      await accountRepository.updatePassword(account.id, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
     });
   };
 
@@ -214,15 +207,15 @@ class AuthService {
     return record;
   };
 
-  private issueTokens = async (userId: string, role: Role, meta: SessionMeta) => {
+  private issueTokens = async (accountId: string, role: Role, meta: SessionMeta) => {
     const refreshToken = generateOpaqueToken();
-    await refreshTokenRepository.create(this.refreshTokenData(refreshToken, userId, meta));
-    return { accessToken: signAccessToken(userId, role), refreshToken };
+    await refreshTokenRepository.create(this.refreshTokenData(refreshToken, accountId, meta));
+    return { accessToken: signAccessToken(accountId, role), refreshToken };
   };
 
-  private refreshTokenData = (rawToken: string, userId: string, meta: SessionMeta) => ({
+  private refreshTokenData = (rawToken: string, accountId: string, meta: SessionMeta) => ({
     tokenHash: hashToken(rawToken),
-    userId,
+    accountId,
     expiresAt: new Date(Date.now() + AUTH.REFRESH_TOKEN_TTL * 1000),
     ...meta,
   });

@@ -19,15 +19,15 @@ class AuthController {
   };
 
   register = async (req: Request, res: Response) => {
-    const { user, accessToken, refreshToken } = await authService.register(req.body, sessionMeta(req));
+    const { account, accessToken, refreshToken } = await authService.register(req.body, sessionMeta(req));
     setAuthCookies(res, accessToken, refreshToken);
-    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đăng ký thành công', result: user }));
+    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đăng ký thành công', result: account }));
   };
 
   login = async (req: Request, res: Response) => {
-    const { user, accessToken, refreshToken } = await authService.login(req.body, sessionMeta(req));
+    const { account, accessToken, refreshToken } = await authService.login(req.body, sessionMeta(req));
     setAuthCookies(res, accessToken, refreshToken);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng nhập thành công', result: user }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đăng nhập thành công', result: account }));
   };
 
   refresh = async (req: Request, res: Response) => {
@@ -57,8 +57,8 @@ class AuthController {
   };
 
   getMe = async (req: Request, res: Response) => {
-    const user = await authService.getMe(req.user!.id);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: user }));
+    const account = await authService.getMe(req.user!.id);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: account }));
   };
 
   changePassword = async (req: Request, res: Response) => {
