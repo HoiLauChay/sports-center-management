@@ -33,7 +33,7 @@ export const auth = async (req: Request, _res: Response, next: NextFunction) => 
     return next(unauthorized('Tài khoản không hợp lệ', ERROR_CODE.UNAUTHORIZED));
   }
 
-  if (payload.iat * 1000 < account.passwordChangedAt.getTime()) {
+  if (payload.iat < Math.floor(account.passwordChangedAt.getTime() / 1000)) {
     return next(unauthorized('Token đã hết hạn', ERROR_CODE.TOKEN_EXPIRED));
   }
 
