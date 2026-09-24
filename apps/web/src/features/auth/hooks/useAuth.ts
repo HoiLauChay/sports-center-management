@@ -18,7 +18,7 @@ import {
 import { authService } from '../services/auth.service';
 import { useFormApiError } from './useFormApiError';
 
-const REDIRECT_AFTER_AUTH = PATHS.app;
+const REDIRECT_AFTER_AUTH = PATHS.dashboard;
 
 function useCompleteAuth() {
   const navigate = useNavigate();

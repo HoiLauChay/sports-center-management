@@ -46,7 +46,7 @@ export function Navbar() {
 
           <div className="lp-nav-cta">
             {isLoggedIn ? (
-              <Link to={PATHS.app} className="lp-btn lp-btn-primary sm">
+              <Link to={PATHS.dashboard} className="lp-btn lp-btn-primary sm">
                 Vào ứng dụng
               </Link>
             ) : (

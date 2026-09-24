@@ -45,7 +45,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
             <motion.div variants={itemVariants} className="lp-mobile-menu-actions">
               {isLoggedIn ? (
-                <Link to={PATHS.app} className="lp-btn lp-btn-primary">
+                <Link to={PATHS.dashboard} className="lp-btn lp-btn-primary">
                   Vào ứng dụng
                 </Link>
               ) : (
