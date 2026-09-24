@@ -7,6 +7,7 @@ import {
   type ResetPasswordBody,
   type SendOtpBody,
 } from '@sports-center/shared';
+import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
@@ -90,6 +91,12 @@ class AuthService {
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
       return created;
     });
+
+    waitUntil(
+      mailService.sendWelcome(account.email, account.fullName).catch((err) => {
+        console.error('Failed to send welcome email:', err);
+      }),
+    );
 
     return {
       account: toAccountResponse(account),
