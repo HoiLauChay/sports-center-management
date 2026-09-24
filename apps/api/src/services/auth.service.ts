@@ -85,7 +85,7 @@ class AuthService {
     await mailService.sendOtp(email, purpose, code);
   };
 
-  register = async ({ email, otp, password }: RegisterBody, meta: SessionMeta) => {
+  register = async ({ email, otp, fullName, password }: RegisterBody, meta: SessionMeta) => {
     const record = await this.verifyOtp(email, 'REGISTER', otp);
 
     if (await userRepository.existsByEmail(email)) {
@@ -97,7 +97,7 @@ class AuthService {
 
     const user = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
-      const created = await userRepository.create({ email, passwordHash, emailVerifiedAt: new Date() }, tx);
+      const created = await userRepository.create({ email, fullName, passwordHash, emailVerifiedAt: new Date() }, tx);
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
       return created;
     });

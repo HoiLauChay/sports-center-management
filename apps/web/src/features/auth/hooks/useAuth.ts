@@ -64,13 +64,13 @@ export function useRegister() {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: 'onTouched',
-    defaultValues: { email: '', otp: '', password: '', confirmPassword: '', agree: false },
+    defaultValues: { email: '', otp: '', fullName: '', password: '', confirmPassword: '', agree: false },
   });
   const handleApiError = useFormApiError(form);
 
   const mutation = useMutation({
-    mutationFn: ({ email, otp, password, confirmPassword }: RegisterFormValues) =>
-      authService.register({ email, otp, password, confirmPassword }),
+    mutationFn: ({ email, otp, fullName, password, confirmPassword }: RegisterFormValues) =>
+      authService.register({ email, otp, fullName, password, confirmPassword }),
     onSuccess: (user) => {
       message.success('Đăng ký thành công');
       completeAuth(user);

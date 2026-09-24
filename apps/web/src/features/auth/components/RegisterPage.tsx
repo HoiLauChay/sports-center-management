@@ -1,4 +1,4 @@
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
+import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Form, Input } from 'antd';
 import { useRef } from 'react';
 import heroImg from '~/assets/images/sports/gym.jpg';
@@ -28,7 +28,7 @@ export function RegisterPage() {
         lead: 'Tạo tài khoản trong một phút bằng email, chọn môn bạn muốn thử, đến tập — chưa cần mua gói.',
         steps: [
           'Nhập email, nhận mã xác nhận trong hộp thư',
-          'Đặt mật khẩu, tạo tài khoản',
+          'Nhập họ tên, đặt mật khẩu, tạo tài khoản',
           'Chọn lớp hoặc sân muốn thử ngay trên app',
         ],
       }}
@@ -63,6 +63,21 @@ export function RegisterPage() {
           purpose="REGISTER"
           captchaToken={captchaToken}
           onCaptchaConsumed={() => captchaRef.current?.reset()}
+        />
+
+        <FormField
+          control={form.control}
+          name="fullName"
+          label="Họ tên"
+          render={(field, invalid) => (
+            <Input
+              {...field}
+              status={invalid ? 'error' : undefined}
+              autoComplete="name"
+              placeholder="Nhập họ tên của bạn"
+              prefix={<UserOutlined style={INPUT_ICON_STYLE} />}
+            />
+          )}
         />
 
         <FormField
