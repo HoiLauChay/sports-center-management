@@ -1,4 +1,4 @@
 [submodule "docs"]
 	path = docs
-	url = https://github.com/sports-center-management/docs.git
+	url = https://github.com/HoiLauChay/sports-center-management-docs.git
 	branch = main
