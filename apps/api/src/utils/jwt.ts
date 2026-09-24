@@ -11,8 +11,8 @@ export interface AccessTokenPayload {
   exp: number;
 }
 
-export const signAccessToken = (userId: string, role: Role) =>
-  jwt.sign({ role }, env.JWT_SECRET, { subject: userId, expiresIn: AUTH.ACCESS_TOKEN_TTL, algorithm: 'HS256' });
+export const signAccessToken = (accountId: string, role: Role) =>
+  jwt.sign({ role }, env.JWT_SECRET, { subject: accountId, expiresIn: AUTH.ACCESS_TOKEN_TTL, algorithm: 'HS256' });
 
 export const verifyAccessToken = (token: string) =>
   jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as AccessTokenPayload;

@@ -26,6 +26,12 @@ export const otpSchema = z
 
 const confirmPasswordSchema = z.string().min(1, 'Vui lòng nhập lại mật khẩu');
 
+export const fullNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Họ tên không được để trống')
+  .max(255, 'Họ tên tối đa 255 ký tự');
+
 export const withPasswordConfirmation = <T extends z.ZodType<{ password: string; confirmPassword: string }>>(
   schema: T,
 ) =>
@@ -48,6 +54,7 @@ export const loginBodySchema = z.object({
 export const registerBaseSchema = z.object({
   email: emailSchema,
   otp: otpSchema,
+  fullName: fullNameSchema,
   password: passwordSchema,
   confirmPassword: confirmPasswordSchema,
 });

@@ -1,20 +1,20 @@
-import type { AuthUser } from '@sports-center/shared';
+import type { Account } from '@sports-center/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { configureHttpAuthRefreshFailed } from '~/lib/http';
 import { authService } from '../services/auth.service';
 
 export interface AuthContextValue {
-  user: AuthUser | null;
+  user: Account | null;
   isAuthReady: boolean;
   isLoggedIn: boolean;
-  setUser: (user: AuthUser | null) => void;
+  setUser: (user: Account | null) => void;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<Account | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {

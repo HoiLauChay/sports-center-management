@@ -1,6 +1,6 @@
 import type {
+  Account,
   ApiResponse,
-  AuthUser,
   ChangePasswordBody,
   LoginBody,
   RegisterBody,
@@ -16,17 +16,17 @@ export const authService = {
   },
 
   register: async (payload: RegisterBody) => {
-    const { data } = await publicApi.post<ApiResponse<AuthUser>>('/auth/register', payload);
+    const { data } = await publicApi.post<ApiResponse<Account>>('/auth/register', payload);
     return data.result;
   },
 
   login: async (payload: LoginBody) => {
-    const { data } = await publicApi.post<ApiResponse<AuthUser>>('/auth/login', payload);
+    const { data } = await publicApi.post<ApiResponse<Account>>('/auth/login', payload);
     return data.result;
   },
 
   me: async () => {
-    const { data } = await privateApi.get<ApiResponse<AuthUser>>('/auth/me');
+    const { data } = await privateApi.get<ApiResponse<Account>>('/auth/me');
     return data.result;
   },
 

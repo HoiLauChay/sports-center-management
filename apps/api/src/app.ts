@@ -3,11 +3,13 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { defaultErrorHandler, notFoundHandler } from '~/middlewares/error.middlewares';
+import { sameOriginJsonWrites } from '~/middlewares/security.middlewares';
 import rootRouter from '~/routes/root.routes';
 
 const app = express();
 
 app.use(helmet());
+app.use(sameOriginJsonWrites);
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
