@@ -1,11 +1,10 @@
 import { Card } from 'antd';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { RoleTag } from '~/components/ui/RoleTag';
-import { useAuthContext } from '~/features/auth';
+import { useCurrentUser } from '~/features/auth';
 
 export function DashboardPlaceholderPage() {
-  const { user } = useAuthContext();
-  if (!user) return null;
+  const user = useCurrentUser();
 
   return (
     <>

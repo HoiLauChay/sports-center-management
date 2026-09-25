@@ -1,12 +1,10 @@
-import { Outlet, useRouterState } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { Button, Drawer, Layout } from 'antd';
 import { Menu as MenuIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { ForbiddenPage } from '~/components/feedback/RouteStatus';
 import { PageLoading } from '~/components/feedback/States';
 import { Logo } from '~/components/ui/Logo';
-import { useAuthContext } from '~/features/auth';
-import { canAccess } from '~/lib/access';
+import { useSession } from '~/features/auth';
 import { BRAND } from '~/styles/antd-theme';
 import { AccountMenu } from './AccountMenu';
 import { SidebarNav } from './SidebarNav';
@@ -14,14 +12,10 @@ import { SidebarNav } from './SidebarNav';
 const SIDER_WIDTH = 248;
 
 export function MainLayout({ children }: { children?: ReactNode }) {
-  const { user, isAuthReady } = useAuthContext();
+  const user = useSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  if (!isAuthReady || !user) return <PageLoading fullScreen />;
-
-  // The route guard only re-runs after auth resolves, so check here too to avoid mounting a forbidden page for one render.
-  const content = children ?? (canAccess(user.role, pathname) ? <Outlet /> : <ForbiddenPage />);
+  if (!user) return <PageLoading fullScreen />;
 
   return (
     <Layout className="min-h-screen">
@@ -57,7 +51,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
         </Layout.Header>
 
         <Layout.Content className="p-4 md:p-6">
-          <div className="mx-auto w-full max-w-[1280px]">{content}</div>
+          <div className="mx-auto w-full max-w-[1280px]">{children ?? <Outlet />}</div>
         </Layout.Content>
       </Layout>
     </Layout>

@@ -1,5 +1,5 @@
 import type { Role } from '@sports-center/shared';
-import { Link, useRouter, useRouterState, type LinkProps } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { Menu, type MenuProps } from 'antd';
 import { useMemo } from 'react';
 import { Logo } from '~/components/ui/Logo';
@@ -13,10 +13,9 @@ function isActive(pathname: string, path: string) {
 }
 
 export function SidebarNav({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
-  const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const groups = useMemo(() => navGroupsFor(role, (path) => path in router.routesByPath), [role, router]);
+  const groups = useMemo(() => navGroupsFor(role), [role]);
 
   const items = useMemo<MenuItem[]>(
     () =>
@@ -24,8 +23,7 @@ export function SidebarNav({ role, onNavigate }: { role: Role; onNavigate?: () =
         const children: MenuItem[] = group.items.map(({ path, label, icon: Icon }) => ({
           key: path,
           icon: <Icon size={17} strokeWidth={2} />,
-          // Items are filtered to registered routes, so the path is a valid `to`.
-          label: <Link to={path as LinkProps['to']}>{label}</Link>,
+          label: <Link to={path}>{label}</Link>,
         }));
         if (group.title) return [{ type: 'group', key: `group-${index}`, label: group.title, children }];
         return index === 0 ? children : [{ type: 'divider', key: `divider-${index}` }, ...children];

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { PATHS } from '~/constants/paths';
-import { useAuthContext } from '~/features/auth';
+import { useIsLoggedIn } from '~/features/auth';
 import { NAV_LINKS } from '../../data/content';
 
 const listVariants: Variants = {
@@ -21,7 +21,7 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
-  const { isLoggedIn } = useAuthContext();
+  const isLoggedIn = useIsLoggedIn();
   return (
     <AnimatePresence>
       {open && (
