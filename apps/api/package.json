@@ -30,6 +30,8 @@
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "@sports-center/shared": "workspace:*",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0",
     "@vercel/functions": "^3.9.9",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
