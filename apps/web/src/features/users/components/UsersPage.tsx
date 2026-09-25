@@ -16,7 +16,7 @@ import { formatDate } from '~/lib/format';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
 
-const routeApi = getRouteApi('/_authenticated/admin/users');
+const routeApi = getRouteApi('/_authenticated/_manager/admin/users');
 
 const STATUS_COLOR: Record<AccountStatus, string> = {
   ACTIVE: 'success',
