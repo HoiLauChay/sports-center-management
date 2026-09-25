@@ -69,7 +69,10 @@ export function OtpField<T extends FieldValues>({
               <Button
                 type="link"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={handleSend}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSend();
+                }}
                 disabled={disabled}
                 loading={isSending}
                 className="!h-auto !p-0 font-semibold"
