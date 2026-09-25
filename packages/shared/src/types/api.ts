@@ -6,6 +6,13 @@ export interface ApiResponse<T = undefined> {
   result: T;
 }
 
+export interface Paginated<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
 export interface ApiFieldError {
   path: string;
   message: string;

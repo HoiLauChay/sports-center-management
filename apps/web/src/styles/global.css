@@ -6,15 +6,28 @@
   --sc-primary-dark: #0b3b28;
   --sc-primary-soft: #e3efe8;
   --sc-accent: #c94a1e;
+  --sc-accent-light: #e07a4f;
+  --sc-accent-soft: #f9e6dd;
   --sc-lime: #d6f24b;
   --sc-ink: #14130f;
   --sc-ink-2: #3d3b35;
   --sc-paper: #f2efe8;
   --sc-paper-2: #e9e5dc;
+  --sc-surface: #ffffff;
   --sc-muted: #7a776f;
+  --sc-muted-2: #9a968c;
   --sc-line: #d8d3c7;
   --sc-border: #e2ddd2;
   --sc-border-soft: #ece8df;
+
+  --sc-success: #16a34a;
+  --sc-warning: #d97706;
+  --sc-error: #dc2626;
+
+  --sc-role-manager: #c94a1e;
+  --sc-role-coach: #0f4d34;
+  --sc-role-member: #0891b2;
+  --sc-role-receptionist: #d9a400;
 
   --sc-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --sc-font-body: 'Barlow', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
