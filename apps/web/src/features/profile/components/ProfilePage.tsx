@@ -1,14 +1,13 @@
 import { Avatar, Card, Descriptions } from 'antd';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { RoleTag } from '~/components/ui/RoleTag';
-import { useAuthContext } from '~/features/auth';
+import { useCurrentUser } from '~/features/auth';
 import { formatDate } from '~/lib/format';
 
 const GENDER_LABEL = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' } as const;
 
 export function ProfilePage() {
-  const { user } = useAuthContext();
-  if (!user) return null;
+  const user = useCurrentUser();
 
   return (
     <>

@@ -3,7 +3,7 @@ import { Menu } from 'lucide-react';
 import { motion, useMotionValueEvent, useScroll } from 'motion/react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
-import { useAuthContext } from '~/features/auth';
+import { useIsLoggedIn } from '~/features/auth';
 import { NAV_LINKS } from '../../data/content';
 import { useActiveSection } from '../../hooks/useActiveSection';
 import { Brand, EASE } from '../shared';
@@ -18,7 +18,7 @@ export function Navbar() {
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const activeSection = useActiveSection(SECTION_IDS);
-  const { isLoggedIn } = useAuthContext();
+  const isLoggedIn = useIsLoggedIn();
 
   useMotionValueEvent(scrollY, 'change', (y) => {
     const prev = scrollY.getPrevious() ?? 0;

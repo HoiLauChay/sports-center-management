@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Account } from '@sports-center/shared';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { App } from 'antd';
 import { useCallback, useState } from 'react';
@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { PATHS } from '~/constants/paths';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { safeRedirectPath } from '~/lib/access';
-import { useAuthContext } from '../context/AuthContext';
 import {
   loginSchema,
   registerSchema,
@@ -18,18 +17,19 @@ import {
   type ResetPasswordFormValues,
 } from '../schemas/auth.schema';
 import { authService } from '../services/auth.service';
+import { sessionQueryOptions } from '../session';
 import { AUTH_ERROR_FIELDS } from '../utils/authErrorFields';
 
 function useCompleteAuth() {
   const navigate = useNavigate();
-  const { setUser } = useAuthContext();
+  const queryClient = useQueryClient();
   const search: { redirect?: unknown } = useSearch({ strict: false });
   return useCallback(
     (user: Account) => {
-      setUser(user);
+      queryClient.setQueryData(sessionQueryOptions.queryKey, user);
       void navigate({ href: safeRedirectPath(search.redirect) ?? PATHS.dashboard });
     },
-    [navigate, setUser, search.redirect],
+    [navigate, queryClient, search.redirect],
   );
 }
 
@@ -107,12 +107,14 @@ export function useResetPassword() {
 
 export function useLogout() {
   const navigate = useNavigate();
-  const { logout } = useAuthContext();
+  const queryClient = useQueryClient();
   const { message } = App.useApp();
 
   return useCallback(async () => {
-    await logout();
+    await authService.logout().catch(() => undefined);
+    queryClient.setQueryData(sessionQueryOptions.queryKey, null);
+    await navigate({ to: PATHS.login });
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
     message.success('Đã đăng xuất');
-    void navigate({ to: PATHS.login });
-  }, [logout, message, navigate]);
+  }, [message, navigate, queryClient]);
 }
