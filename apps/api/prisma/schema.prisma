@@ -1,7 +1,8 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "esm"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -285,6 +286,7 @@ model Sport {
   courses              Course[]
   coachSpecializations CoachSpecialization[]
 
+  @@unique([name], map: "uq_sports_name", where: raw("deleted_at IS NULL"))
   @@map("sports")
 }
 
@@ -307,6 +309,7 @@ model Facility {
   classes      Class[]
   sessions     ClassSession[]
 
+  @@unique([name], map: "uq_facilities_name", where: raw("deleted_at IS NULL"))
   @@map("facilities")
 }
 
@@ -381,6 +384,7 @@ model FacilityBooking {
   cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([orderItemId], map: "uq_booking_single_item", where: raw("package_id IS NULL"))
   @@index([facilityId, bookingDate, startTime], map: "idx_booking_facility_date_time")
   @@index([accountId, bookingDate], map: "idx_booking_account_date")
   @@index([packageId], map: "idx_booking_package")
@@ -453,6 +457,7 @@ model ClassCoachRegistration {
   reviewedAt   DateTime?               @map("reviewed_at") @db.Timestamptz()
   createdAt    DateTime                @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([classId, coachId], map: "uq_ccr_pending", where: raw("status = 'PENDING'"))
   @@index([classId, coachId], map: "idx_ccr_class_coach")
   @@map("class_coach_registrations")
 }
@@ -494,6 +499,7 @@ model ClassEnrollment {
   enrolledAt  DateTime         @default(now()) @map("enrolled_at") @db.Timestamptz()
   cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
 
+  @@unique([classId, accountId], map: "uq_enrollment_active", where: raw("status = 'ENROLLED'"))
   @@index([classId, accountId], map: "idx_enrollment_class_account")
   @@index([accountId], map: "idx_enrollment_account")
   @@map("class_enrollments")
@@ -554,6 +560,7 @@ model OrderItem {
   walletTransactions WalletTransaction[]
 
   @@unique([orderId, lineNumber], map: "uq_order_item_line")
+  @@unique([orderId], map: "uq_order_one_membership", where: raw("type = 'MEMBERSHIP'"))
   @@index([type, createdAt], map: "idx_order_items_type_date")
   @@map("order_items")
 }
@@ -578,6 +585,7 @@ model Coupon {
 
   orders Order[]
 
+  @@unique([code], map: "uq_coupons_code", where: raw("deleted_at IS NULL"))
   @@map("coupons")
 }
 
@@ -650,6 +658,7 @@ model MemberMembership {
 
   periods MembershipOrder[]
 
+  @@unique([accountId], map: "uq_mm_one_active", where: raw("status = 'ACTIVE'"))
   @@index([accountId, status], map: "idx_mm_account_status")
   @@index([status, endDate], map: "idx_mm_status_end")
   @@map("member_memberships")
@@ -879,6 +888,7 @@ model CoachSpecialization {
   reviewedAt   DateTime?            @map("reviewed_at") @db.Timestamptz()
   createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([coachId, sportId], map: "uq_coach_spec_active", where: raw("status = ANY (ARRAY['PENDING'::specialization_status, 'APPROVED'::specialization_status])"))
   @@index([coachId, sportId], map: "idx_coach_spec_coach_sport")
   @@index([status, createdAt], map: "idx_coach_spec_status_date")
   @@map("coach_specializations")
