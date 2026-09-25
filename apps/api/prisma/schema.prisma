@@ -1,7 +1,8 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "esm"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -73,6 +74,16 @@ model Account {
   classEnrollments           ClassEnrollment[]
   orders                     Order[]                  @relation("OrderBuyer")
   createdOrders              Order[]                  @relation("OrderCreator")
+  memberships                MemberMembership[]
+  createdWalletTransactions  WalletTransaction[]
+  handledBankTransactions    BankTransaction[]
+  notifications              Notification[]
+  auditLogs                  AuditLog[]
+  supportRequests            SupportRequest[]         @relation("SupportRequester")
+  handledSupportRequests     SupportRequest[]         @relation("SupportHandler")
+  updatedSettings            SystemSetting[]
+  specializations            CoachSpecialization[]    @relation("SpecializationCoach")
+  reviewedSpecializations    CoachSpecialization[]    @relation("SpecializationReviewer")
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -87,6 +98,10 @@ model MemberProfile {
   walletBalance    Decimal  @default(0) @map("wallet_balance") @db.Decimal(12, 0)
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  walletTransactions       WalletTransaction[]
+  walletTopUps             WalletTopUp[]
+  resolvedBankTransactions BankTransaction[]
 
   @@map("member_profile")
 }
@@ -267,9 +282,11 @@ model Sport {
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  facilities FacilitySport[]
-  courses    Course[]
+  facilities           FacilitySport[]
+  courses              Course[]
+  coachSpecializations CoachSpecialization[]
 
+  @@unique([name], map: "uq_sports_name", where: raw("deleted_at IS NULL"))
   @@map("sports")
 }
 
@@ -292,6 +309,7 @@ model Facility {
   classes      Class[]
   sessions     ClassSession[]
 
+  @@unique([name], map: "uq_facilities_name", where: raw("deleted_at IS NULL"))
   @@map("facilities")
 }
 
@@ -366,6 +384,7 @@ model FacilityBooking {
   cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([orderItemId], map: "uq_booking_single_item", where: raw("package_id IS NULL"))
   @@index([facilityId, bookingDate, startTime], map: "idx_booking_facility_date_time")
   @@index([accountId, bookingDate], map: "idx_booking_account_date")
   @@index([packageId], map: "idx_booking_package")
@@ -438,6 +457,7 @@ model ClassCoachRegistration {
   reviewedAt   DateTime?               @map("reviewed_at") @db.Timestamptz()
   createdAt    DateTime                @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([classId, coachId], map: "uq_ccr_pending", where: raw("status = 'PENDING'"))
   @@index([classId, coachId], map: "idx_ccr_class_coach")
   @@map("class_coach_registrations")
 }
@@ -479,6 +499,7 @@ model ClassEnrollment {
   enrolledAt  DateTime         @default(now()) @map("enrolled_at") @db.Timestamptz()
   cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
 
+  @@unique([classId, accountId], map: "uq_enrollment_active", where: raw("status = 'ENROLLED'"))
   @@index([classId, accountId], map: "idx_enrollment_class_account")
   @@index([accountId], map: "idx_enrollment_account")
   @@map("class_enrollments")
@@ -507,7 +528,8 @@ model Order {
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  items OrderItem[]
+  items              OrderItem[]
+  walletTransactions WalletTransaction[]
 
   @@index([accountId], map: "idx_orders_account")
   @@index([createdAt, status], map: "idx_orders_date_status")
@@ -531,11 +553,14 @@ model OrderItem {
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  facilityPackage FacilityPackage?
-  bookings        FacilityBooking[]
-  enrollment      ClassEnrollment?
+  facilityPackage    FacilityPackage?
+  bookings           FacilityBooking[]
+  enrollment         ClassEnrollment?
+  membershipOrder    MembershipOrder?
+  walletTransactions WalletTransaction[]
 
   @@unique([orderId, lineNumber], map: "uq_order_item_line")
+  @@unique([orderId], map: "uq_order_one_membership", where: raw("type = 'MEMBERSHIP'"))
   @@index([type, createdAt], map: "idx_order_items_type_date")
   @@map("order_items")
 }
@@ -560,5 +585,311 @@ model Coupon {
 
   orders Order[]
 
+  @@unique([code], map: "uq_coupons_code", where: raw("deleted_at IS NULL"))
   @@map("coupons")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+
+  @@map("membership_status")
+}
+
+enum TransactionType {
+  TOP_UP
+  PAYMENT
+  REFUND
+
+  @@map("transaction_type")
+}
+
+enum TopUpStatus {
+  PENDING
+  SUCCESS
+  EXPIRED
+
+  @@map("top_up_status")
+}
+
+enum BankTransactionStatus {
+  MATCHED
+  UNMATCHED
+  RESOLVED
+  IGNORED
+
+  @@map("bank_transaction_status")
+}
+
+model Membership {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String    @db.VarChar(255)
+  description              String?
+  price                    Decimal   @db.Decimal(12, 0)
+  durationDays             Int       @map("duration_days")
+  gymAccess                Boolean   @default(false) @map("gym_access")
+  bookingDiscountPct       Int       @default(0) @map("booking_discount_pct")
+  classDiscountPct         Int       @default(0) @map("class_discount_pct")
+  freeBookingSlotsPerMonth Int       @default(0) @map("free_booking_slots_per_month")
+  isActive                 Boolean   @default(true) @map("is_active")
+  deletedAt                DateTime? @map("deleted_at") @db.Timestamptz()
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  memberMemberships MemberMembership[]
+
+  @@map("memberships")
+}
+
+model MemberMembership {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId   String           @map("account_id") @db.Uuid
+  account     Account          @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  packageId   String           @map("package_id") @db.Uuid
+  package     Membership       @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  startDate   DateTime         @map("start_date") @db.Date
+  endDate     DateTime         @map("end_date") @db.Date
+  autoRenew   Boolean          @default(false) @map("auto_renew")
+  status      MembershipStatus @default(ACTIVE)
+  cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  periods MembershipOrder[]
+
+  @@unique([accountId], map: "uq_mm_one_active", where: raw("status = 'ACTIVE'"))
+  @@index([accountId, status], map: "idx_mm_account_status")
+  @@index([status, endDate], map: "idx_mm_status_end")
+  @@map("member_memberships")
+}
+
+model MembershipOrder {
+  id                       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId             String           @map("membership_id") @db.Uuid
+  membership               MemberMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  orderItemId              String           @unique @map("order_item_id") @db.Uuid
+  orderItem                OrderItem        @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  periodStart              DateTime         @map("period_start") @db.Date
+  periodEnd                DateTime         @map("period_end") @db.Date
+  gymAccess                Boolean          @map("gym_access")
+  bookingDiscountPct       Int              @map("booking_discount_pct")
+  classDiscountPct         Int              @map("class_discount_pct")
+  freeBookingSlotsPerMonth Int              @map("free_booking_slots_per_month")
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@unique([membershipId, periodStart], map: "uq_membership_order_period")
+  @@map("membership_orders")
+}
+
+model WalletTransaction {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String           @map("account_id") @db.Uuid
+  account           MemberProfile    @relation(fields: [accountId], references: [accountId], onDelete: Restrict)
+  transactionCode   String           @unique @map("transaction_code") @db.VarChar(50)
+  idempotencyKey    String           @unique @map("idempotency_key") @db.VarChar(150)
+  type              TransactionType
+  topUpMethod       PaymentMethod?   @map("top_up_method")
+  amount            Decimal          @db.Decimal(12, 0)
+  balanceAfter      Decimal          @map("balance_after") @db.Decimal(12, 0)
+  orderId           String?          @map("order_id") @db.Uuid
+  order             Order?           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItemId       String?          @map("order_item_id") @db.Uuid
+  orderItem         OrderItem?       @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  bankTransactionId String?          @unique @map("bank_transaction_id") @db.Uuid
+  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  createdById       String?          @map("created_by") @db.Uuid
+  createdBy         Account?         @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  description       String?          @db.VarChar(500)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_wtx_account_date")
+  @@index([type, createdAt], map: "idx_wtx_type_date")
+  @@index([orderId], map: "idx_wtx_order")
+  @@index([orderItemId], map: "idx_wtx_order_item")
+  @@map("wallet_transactions")
+}
+
+model WalletTopUp {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String           @map("account_id") @db.Uuid
+  account           MemberProfile    @relation(fields: [accountId], references: [accountId], onDelete: Restrict)
+  paymentCode       String           @unique @map("payment_code") @db.VarChar(20)
+  amount            Decimal          @db.Decimal(12, 0)
+  status            TopUpStatus      @default(PENDING)
+  expiresAt         DateTime         @map("expires_at") @db.Timestamptz()
+  bankTransactionId String?          @unique @map("bank_transaction_id") @db.Uuid
+  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  completedAt       DateTime?        @map("completed_at") @db.Timestamptz()
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_top_ups_account_date")
+  @@index([status, expiresAt], map: "idx_top_ups_status_expires")
+  @@map("wallet_top_ups")
+}
+
+model BankTransaction {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sepayId           BigInt                @unique @map("sepay_id")
+  bankName          String                @map("bank_name") @db.VarChar(100)
+  accountNumber     String                @map("account_number") @db.VarChar(50)
+  amount            Decimal               @db.Decimal(12, 0)
+  content           String
+  paymentCode       String?               @map("payment_code") @db.VarChar(50)
+  referenceCode     String?               @map("reference_code") @db.VarChar(100)
+  transactionDate   DateTime              @map("transaction_date") @db.Timestamptz()
+  status            BankTransactionStatus
+  resolvedAccountId String?               @map("resolved_account_id") @db.Uuid
+  resolvedAccount   MemberProfile?        @relation(fields: [resolvedAccountId], references: [accountId], onDelete: Restrict)
+  handledById       String?               @map("handled_by") @db.Uuid
+  handledBy         Account?              @relation(fields: [handledById], references: [id], onDelete: Restrict)
+  handledAt         DateTime?             @map("handled_at") @db.Timestamptz()
+  note              String?               @db.VarChar(500)
+  rawPayload        Json                  @map("raw_payload")
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  topUp             WalletTopUp?
+  walletTransaction WalletTransaction?
+
+  @@index([status, transactionDate], map: "idx_bank_tx_status_date")
+  @@index([paymentCode], map: "idx_bank_tx_payment_code")
+  @@map("bank_transactions")
+}
+
+enum NotificationType {
+  PAYMENT
+  MEMBERSHIP
+  BOOKING
+  CLASS
+  TRAINING
+  SUPPORT
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+enum SupportRequestCategory {
+  ACCOUNT
+  MEMBERSHIP
+  BOOKING
+  CLASS
+  PAYMENT
+  OTHER
+
+  @@map("support_request_category")
+}
+
+enum SupportRequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+
+  @@map("support_request_status")
+}
+
+model Notification {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId     String           @map("account_id") @db.Uuid
+  account       Account          @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  type          NotificationType
+  title         String           @db.VarChar(255)
+  message       String
+  referenceType String?          @map("reference_type") @db.VarChar(50)
+  referenceId   String?          @map("reference_id") @db.Uuid
+  dedupKey      String?          @unique @map("dedup_key") @db.VarChar(150)
+  readAt        DateTime?        @map("read_at") @db.Timestamptz()
+  sendEmail     Boolean          @default(false) @map("send_email")
+  emailSentAt   DateTime?        @map("email_sent_at") @db.Timestamptz()
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_noti_account_date")
+  @@index([accountId, readAt], map: "idx_noti_account_read")
+  @@index([createdAt], map: "idx_noti_date")
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId  String?  @map("account_id") @db.Uuid
+  account    Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  action     String   @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id")
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([entityType, createdAt], map: "idx_audit_entity_date")
+  @@index([accountId, createdAt], map: "idx_audit_account_date")
+  @@map("audit_logs")
+}
+
+model SupportRequest {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String                 @map("account_id") @db.Uuid
+  account        Account                @relation("SupportRequester", fields: [accountId], references: [id], onDelete: Restrict)
+  handledById    String?                @map("handled_by") @db.Uuid
+  handledBy      Account?               @relation("SupportHandler", fields: [handledById], references: [id], onDelete: Restrict)
+  category       SupportRequestCategory @default(OTHER)
+  subject        String                 @db.VarChar(255)
+  description    String
+  resolutionNote String?                @map("resolution_note")
+  status         SupportRequestStatus   @default(OPEN)
+  resolvedAt     DateTime?              @map("resolved_at") @db.Timestamptz()
+  deletedAt      DateTime?              @map("deleted_at") @db.Timestamptz()
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([accountId, status], map: "idx_sr_account_status")
+  @@index([status, createdAt], map: "idx_sr_status_date")
+  @@map("support_requests")
+}
+
+model SystemSetting {
+  id                          Int      @id @default(1)
+  openTime                    DateTime @default(dbgenerated("'06:00:00'::time without time zone")) @map("open_time") @db.Time()
+  closeTime                   DateTime @default(dbgenerated("'22:00:00'::time without time zone")) @map("close_time") @db.Time()
+  slotDurationMinutes         Int      @default(60) @map("slot_duration_minutes")
+  maxAdvanceBookingDays       Int      @default(7) @map("max_advance_booking_days")
+  bookingCancelDeadlineHours  Int      @default(24) @map("booking_cancel_deadline_hours")
+  courseCancelDeadlineDays    Int      @default(3) @map("course_cancel_deadline_days")
+  membershipExpiryWarningDays Int      @default(7) @map("membership_expiry_warning_days")
+  topUpMinAmount              Decimal  @default(10000) @map("top_up_min_amount") @db.Decimal(12, 0)
+  topUpExpiryMinutes          Int      @default(30) @map("top_up_expiry_minutes")
+  updatedById                 String?  @map("updated_by") @db.Uuid
+  updatedBy                   Account? @relation(fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedAt                   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("system_settings")
+}
+
+enum SpecializationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("specialization_status")
+}
+
+model CoachSpecialization {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coachId      String               @map("coach_id") @db.Uuid
+  coach        Account              @relation("SpecializationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  sportId      String               @map("sport_id") @db.Uuid
+  sport        Sport                @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  status       SpecializationStatus @default(PENDING)
+  reviewNote   String?              @map("review_note") @db.VarChar(500)
+  reviewedById String?              @map("reviewed_by") @db.Uuid
+  reviewedBy   Account?             @relation("SpecializationReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  reviewedAt   DateTime?            @map("reviewed_at") @db.Timestamptz()
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@unique([coachId, sportId], map: "uq_coach_spec_active", where: raw("status = ANY (ARRAY['PENDING'::specialization_status, 'APPROVED'::specialization_status])"))
+  @@index([coachId, sportId], map: "idx_coach_spec_coach_sport")
+  @@index([status, createdAt], map: "idx_coach_spec_status_date")
+  @@map("coach_specializations")
 }
