@@ -76,6 +76,11 @@ model Account {
   memberships                MemberMembership[]
   createdWalletTransactions  WalletTransaction[]
   handledBankTransactions    BankTransaction[]
+  notifications              Notification[]
+  auditLogs                  AuditLog[]
+  supportRequests            SupportRequest[]         @relation("SupportRequester")
+  handledSupportRequests     SupportRequest[]         @relation("SupportHandler")
+  updatedSettings            SystemSetting[]
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -739,4 +744,113 @@ model BankTransaction {
   @@index([status, transactionDate], map: "idx_bank_tx_status_date")
   @@index([paymentCode], map: "idx_bank_tx_payment_code")
   @@map("bank_transactions")
+}
+
+enum NotificationType {
+  PAYMENT
+  MEMBERSHIP
+  BOOKING
+  CLASS
+  TRAINING
+  SUPPORT
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+enum SupportRequestCategory {
+  ACCOUNT
+  MEMBERSHIP
+  BOOKING
+  CLASS
+  PAYMENT
+  OTHER
+
+  @@map("support_request_category")
+}
+
+enum SupportRequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+
+  @@map("support_request_status")
+}
+
+model Notification {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId     String           @map("account_id") @db.Uuid
+  account       Account          @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  type          NotificationType
+  title         String           @db.VarChar(255)
+  message       String
+  referenceType String?          @map("reference_type") @db.VarChar(50)
+  referenceId   String?          @map("reference_id") @db.Uuid
+  dedupKey      String?          @unique @map("dedup_key") @db.VarChar(150)
+  readAt        DateTime?        @map("read_at") @db.Timestamptz()
+  sendEmail     Boolean          @default(false) @map("send_email")
+  emailSentAt   DateTime?        @map("email_sent_at") @db.Timestamptz()
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_noti_account_date")
+  @@index([accountId, readAt], map: "idx_noti_account_read")
+  @@index([createdAt], map: "idx_noti_date")
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId  String?  @map("account_id") @db.Uuid
+  account    Account? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  action     String   @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id")
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([entityType, createdAt], map: "idx_audit_entity_date")
+  @@index([accountId, createdAt], map: "idx_audit_account_date")
+  @@map("audit_logs")
+}
+
+model SupportRequest {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId      String                 @map("account_id") @db.Uuid
+  account        Account                @relation("SupportRequester", fields: [accountId], references: [id], onDelete: Restrict)
+  handledById    String?                @map("handled_by") @db.Uuid
+  handledBy      Account?               @relation("SupportHandler", fields: [handledById], references: [id], onDelete: Restrict)
+  category       SupportRequestCategory @default(OTHER)
+  subject        String                 @db.VarChar(255)
+  description    String
+  resolutionNote String?                @map("resolution_note")
+  status         SupportRequestStatus   @default(OPEN)
+  resolvedAt     DateTime?              @map("resolved_at") @db.Timestamptz()
+  deletedAt      DateTime?              @map("deleted_at") @db.Timestamptz()
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([accountId, status], map: "idx_sr_account_status")
+  @@index([status, createdAt], map: "idx_sr_status_date")
+  @@map("support_requests")
+}
+
+model SystemSetting {
+  id                          Int      @id @default(1)
+  openTime                    DateTime @default(dbgenerated("'06:00:00'::time without time zone")) @map("open_time") @db.Time()
+  closeTime                   DateTime @default(dbgenerated("'22:00:00'::time without time zone")) @map("close_time") @db.Time()
+  slotDurationMinutes         Int      @default(60) @map("slot_duration_minutes")
+  maxAdvanceBookingDays       Int      @default(7) @map("max_advance_booking_days")
+  bookingCancelDeadlineHours  Int      @default(24) @map("booking_cancel_deadline_hours")
+  courseCancelDeadlineDays    Int      @default(3) @map("course_cancel_deadline_days")
+  membershipExpiryWarningDays Int      @default(7) @map("membership_expiry_warning_days")
+  topUpMinAmount              Decimal  @default(10000) @map("top_up_min_amount") @db.Decimal(12, 0)
+  topUpExpiryMinutes          Int      @default(30) @map("top_up_expiry_minutes")
+  updatedById                 String?  @map("updated_by") @db.Uuid
+  updatedBy                   Account? @relation(fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedAt                   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("system_settings")
 }
