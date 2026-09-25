@@ -115,5 +115,4 @@ ALTER TABLE "support_requests" ADD CONSTRAINT "support_requests_handled_by_fkey"
 -- AddForeignKey
 ALTER TABLE "system_settings" ADD CONSTRAINT "system_settings_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- Seed
 INSERT INTO "system_settings" ("id") VALUES (1) ON CONFLICT ("id") DO NOTHING;
