@@ -81,6 +81,8 @@ model Account {
   supportRequests            SupportRequest[]         @relation("SupportRequester")
   handledSupportRequests     SupportRequest[]         @relation("SupportHandler")
   updatedSettings            SystemSetting[]
+  specializations            CoachSpecialization[]    @relation("SpecializationCoach")
+  reviewedSpecializations    CoachSpecialization[]    @relation("SpecializationReviewer")
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -279,8 +281,9 @@ model Sport {
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  facilities FacilitySport[]
-  courses    Course[]
+  facilities           FacilitySport[]
+  courses              Course[]
+  coachSpecializations CoachSpecialization[]
 
   @@map("sports")
 }
@@ -853,4 +856,30 @@ model SystemSetting {
   updatedAt                   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("system_settings")
+}
+
+enum SpecializationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("specialization_status")
+}
+
+model CoachSpecialization {
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coachId      String               @map("coach_id") @db.Uuid
+  coach        Account              @relation("SpecializationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  sportId      String               @map("sport_id") @db.Uuid
+  sport        Sport                @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  status       SpecializationStatus @default(PENDING)
+  reviewNote   String?              @map("review_note") @db.VarChar(500)
+  reviewedById String?              @map("reviewed_by") @db.Uuid
+  reviewedBy   Account?             @relation("SpecializationReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  reviewedAt   DateTime?            @map("reviewed_at") @db.Timestamptz()
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([coachId, sportId], map: "idx_coach_spec_coach_sport")
+  @@index([status, createdAt], map: "idx_coach_spec_status_date")
+  @@map("coach_specializations")
 }
