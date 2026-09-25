@@ -33,3 +33,16 @@ export interface Account {
   createdAt: string;
   profile: MemberProfile | CoachProfile | StaffProfile;
 }
+
+export type AccountSummary = Pick<
+  Account,
+  'id' | 'email' | 'fullName' | 'phone' | 'avatarUrl' | 'role' | 'status' | 'createdAt'
+>;
+
+export interface ListUsersQuery {
+  q?: string;
+  role?: Role;
+  status?: AccountStatus;
+  page?: number;
+  limit?: number;
+}

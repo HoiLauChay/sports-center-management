@@ -1,20 +1,12 @@
-import { ERROR_CODE } from '@sports-center/shared';
 import { App } from 'antd';
 import { useCallback } from 'react';
 import type { FieldValues, Path, UseFormReturn } from 'react-hook-form';
 import { fieldErrorsToMap, toApiError, type ApiError } from '~/lib/http-errors';
 
-const CODE_TO_FIELD: Record<string, string> = {
-  [ERROR_CODE.EMAIL_TAKEN]: 'email',
-  [ERROR_CODE.EMAIL_NOT_FOUND]: 'email',
-  [ERROR_CODE.INVALID_CREDENTIALS]: 'root',
-  [ERROR_CODE.ACCOUNT_INACTIVE]: 'root',
-  [ERROR_CODE.OTP_INVALID]: 'otp',
-  [ERROR_CODE.OTP_EXPIRED]: 'otp',
-  [ERROR_CODE.OTP_MAX_ATTEMPTS]: 'otp',
-};
+/** Maps an API error `code` to the form field that should show it; `'root'` means a form-level error. */
+export type ErrorFieldMap = Partial<Record<string, string>>;
 
-export function useFormApiError<T extends FieldValues>(form: UseFormReturn<T>) {
+export function useFormApiError<T extends FieldValues>(form: UseFormReturn<T>, codeToField: ErrorFieldMap = {}) {
   const { message } = App.useApp();
 
   return useCallback(
@@ -30,7 +22,7 @@ export function useFormApiError<T extends FieldValues>(form: UseFormReturn<T>) {
         return apiError;
       }
 
-      const target = CODE_TO_FIELD[apiError.code];
+      const target = codeToField[apiError.code];
       if (target === 'root') {
         form.setError('root', { message: apiError.message });
       } else if (target) {
@@ -40,6 +32,6 @@ export function useFormApiError<T extends FieldValues>(form: UseFormReturn<T>) {
       }
       return apiError;
     },
-    [form, message],
+    [form, message, codeToField],
   );
 }

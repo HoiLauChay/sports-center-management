@@ -1,4 +1,3 @@
-export { AuthenticatedLayout } from './components/AuthenticatedLayout';
 export { ForgotPasswordPage } from './components/ForgotPasswordPage';
 export { LoginPage } from './components/LoginPage';
 export { RegisterPage } from './components/RegisterPage';
