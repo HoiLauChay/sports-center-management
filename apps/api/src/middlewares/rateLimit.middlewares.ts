@@ -31,7 +31,7 @@ const rateLimit = (limiter: Ratelimit | null) => async (req: Request, _res: Resp
       new ErrorWithStatus({
         status: HTTP_STATUS.TOO_MANY_REQUESTS,
         code: ERROR_CODE.RATE_LIMITED,
-        message: `Bạn thao tác quá nhanh, vui lòng thử lại sau ${retryAfter} giây`,
+        message: 'Bạn thao tác quá nhanh, vui lòng thử lại sau',
         meta: { retryAfter },
       }),
     );
