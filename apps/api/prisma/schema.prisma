@@ -73,6 +73,9 @@ model Account {
   classEnrollments           ClassEnrollment[]
   orders                     Order[]                  @relation("OrderBuyer")
   createdOrders              Order[]                  @relation("OrderCreator")
+  memberships                MemberMembership[]
+  createdWalletTransactions  WalletTransaction[]
+  handledBankTransactions    BankTransaction[]
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -87,6 +90,10 @@ model MemberProfile {
   walletBalance    Decimal  @default(0) @map("wallet_balance") @db.Decimal(12, 0)
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  walletTransactions       WalletTransaction[]
+  walletTopUps             WalletTopUp[]
+  resolvedBankTransactions BankTransaction[]
 
   @@map("member_profile")
 }
@@ -507,7 +514,8 @@ model Order {
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  items OrderItem[]
+  items              OrderItem[]
+  walletTransactions WalletTransaction[]
 
   @@index([accountId], map: "idx_orders_account")
   @@index([createdAt, status], map: "idx_orders_date_status")
@@ -531,9 +539,11 @@ model OrderItem {
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  facilityPackage FacilityPackage?
-  bookings        FacilityBooking[]
-  enrollment      ClassEnrollment?
+  facilityPackage    FacilityPackage?
+  bookings           FacilityBooking[]
+  enrollment         ClassEnrollment?
+  membershipOrder    MembershipOrder?
+  walletTransactions WalletTransaction[]
 
   @@unique([orderId, lineNumber], map: "uq_order_item_line")
   @@index([type, createdAt], map: "idx_order_items_type_date")
@@ -561,4 +571,172 @@ model Coupon {
   orders Order[]
 
   @@map("coupons")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+
+  @@map("membership_status")
+}
+
+enum TransactionType {
+  TOP_UP
+  PAYMENT
+  REFUND
+
+  @@map("transaction_type")
+}
+
+enum TopUpStatus {
+  PENDING
+  SUCCESS
+  EXPIRED
+
+  @@map("top_up_status")
+}
+
+enum BankTransactionStatus {
+  MATCHED
+  UNMATCHED
+  RESOLVED
+  IGNORED
+
+  @@map("bank_transaction_status")
+}
+
+model Membership {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String    @db.VarChar(255)
+  description              String?
+  price                    Decimal   @db.Decimal(12, 0)
+  durationDays             Int       @map("duration_days")
+  gymAccess                Boolean   @default(false) @map("gym_access")
+  bookingDiscountPct       Int       @default(0) @map("booking_discount_pct")
+  classDiscountPct         Int       @default(0) @map("class_discount_pct")
+  freeBookingSlotsPerMonth Int       @default(0) @map("free_booking_slots_per_month")
+  isActive                 Boolean   @default(true) @map("is_active")
+  deletedAt                DateTime? @map("deleted_at") @db.Timestamptz()
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt                DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  memberMemberships MemberMembership[]
+
+  @@map("memberships")
+}
+
+model MemberMembership {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId   String           @map("account_id") @db.Uuid
+  account     Account          @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  packageId   String           @map("package_id") @db.Uuid
+  package     Membership       @relation(fields: [packageId], references: [id], onDelete: Restrict)
+  startDate   DateTime         @map("start_date") @db.Date
+  endDate     DateTime         @map("end_date") @db.Date
+  autoRenew   Boolean          @default(false) @map("auto_renew")
+  status      MembershipStatus @default(ACTIVE)
+  cancelledAt DateTime?        @map("cancelled_at") @db.Timestamptz()
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  periods MembershipOrder[]
+
+  @@index([accountId, status], map: "idx_mm_account_status")
+  @@index([status, endDate], map: "idx_mm_status_end")
+  @@map("member_memberships")
+}
+
+model MembershipOrder {
+  id                       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId             String           @map("membership_id") @db.Uuid
+  membership               MemberMembership @relation(fields: [membershipId], references: [id], onDelete: Restrict)
+  orderItemId              String           @unique @map("order_item_id") @db.Uuid
+  orderItem                OrderItem        @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  periodStart              DateTime         @map("period_start") @db.Date
+  periodEnd                DateTime         @map("period_end") @db.Date
+  gymAccess                Boolean          @map("gym_access")
+  bookingDiscountPct       Int              @map("booking_discount_pct")
+  classDiscountPct         Int              @map("class_discount_pct")
+  freeBookingSlotsPerMonth Int              @map("free_booking_slots_per_month")
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@unique([membershipId, periodStart], map: "uq_membership_order_period")
+  @@map("membership_orders")
+}
+
+model WalletTransaction {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String           @map("account_id") @db.Uuid
+  account           MemberProfile    @relation(fields: [accountId], references: [accountId], onDelete: Restrict)
+  transactionCode   String           @unique @map("transaction_code") @db.VarChar(50)
+  idempotencyKey    String           @unique @map("idempotency_key") @db.VarChar(150)
+  type              TransactionType
+  topUpMethod       PaymentMethod?   @map("top_up_method")
+  amount            Decimal          @db.Decimal(12, 0)
+  balanceAfter      Decimal          @map("balance_after") @db.Decimal(12, 0)
+  orderId           String?          @map("order_id") @db.Uuid
+  order             Order?           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  orderItemId       String?          @map("order_item_id") @db.Uuid
+  orderItem         OrderItem?       @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  bankTransactionId String?          @unique @map("bank_transaction_id") @db.Uuid
+  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  createdById       String?          @map("created_by") @db.Uuid
+  createdBy         Account?         @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  description       String?          @db.VarChar(500)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_wtx_account_date")
+  @@index([type, createdAt], map: "idx_wtx_type_date")
+  @@index([orderId], map: "idx_wtx_order")
+  @@index([orderItemId], map: "idx_wtx_order_item")
+  @@map("wallet_transactions")
+}
+
+model WalletTopUp {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String           @map("account_id") @db.Uuid
+  account           MemberProfile    @relation(fields: [accountId], references: [accountId], onDelete: Restrict)
+  paymentCode       String           @unique @map("payment_code") @db.VarChar(20)
+  amount            Decimal          @db.Decimal(12, 0)
+  status            TopUpStatus      @default(PENDING)
+  expiresAt         DateTime         @map("expires_at") @db.Timestamptz()
+  bankTransactionId String?          @unique @map("bank_transaction_id") @db.Uuid
+  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id], onDelete: Restrict)
+  completedAt       DateTime?        @map("completed_at") @db.Timestamptz()
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([accountId, createdAt], map: "idx_top_ups_account_date")
+  @@index([status, expiresAt], map: "idx_top_ups_status_expires")
+  @@map("wallet_top_ups")
+}
+
+model BankTransaction {
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sepayId           BigInt                @unique @map("sepay_id")
+  bankName          String                @map("bank_name") @db.VarChar(100)
+  accountNumber     String                @map("account_number") @db.VarChar(50)
+  amount            Decimal               @db.Decimal(12, 0)
+  content           String
+  paymentCode       String?               @map("payment_code") @db.VarChar(50)
+  referenceCode     String?               @map("reference_code") @db.VarChar(100)
+  transactionDate   DateTime              @map("transaction_date") @db.Timestamptz()
+  status            BankTransactionStatus
+  resolvedAccountId String?               @map("resolved_account_id") @db.Uuid
+  resolvedAccount   MemberProfile?        @relation(fields: [resolvedAccountId], references: [accountId], onDelete: Restrict)
+  handledById       String?               @map("handled_by") @db.Uuid
+  handledBy         Account?              @relation(fields: [handledById], references: [id], onDelete: Restrict)
+  handledAt         DateTime?             @map("handled_at") @db.Timestamptz()
+  note              String?               @db.VarChar(500)
+  rawPayload        Json                  @map("raw_payload")
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  topUp             WalletTopUp?
+  walletTransaction WalletTransaction?
+
+  @@index([status, transactionDate], map: "idx_bank_tx_status_date")
+  @@index([paymentCode], map: "idx_bank_tx_payment_code")
+  @@map("bank_transactions")
 }
