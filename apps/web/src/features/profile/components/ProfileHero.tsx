@@ -1,13 +1,14 @@
 import type { Account } from '@sports-center/shared';
 import { Avatar, Button } from 'antd';
 import { CalendarDays, Mail, Pencil } from 'lucide-react';
+import { ImageEditButton } from '~/components/form/ImageEditButton';
 import { RoleTag } from '~/components/ui/RoleTag';
 import { CROP_PRESETS } from '~/constants/crop';
 import { ACCOUNT_STATUS_LABEL } from '~/constants/roles';
 import { formatDate, initialsOf } from '~/lib/format';
 import { ROLE_COLOR } from '~/styles/antd-theme';
+import { useSaveProfile } from '../hooks/useProfile';
 import { getCoachProfile } from '../utils/profile';
-import { ImageEditButton } from './ImageEditButton';
 
 interface ProfileHeroProps {
   user: Account;
@@ -19,11 +20,12 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
   const coach = getCoachProfile(user);
   const cover = coach?.coverImageUrl;
   const roleColor = ROLE_COLOR[user.role];
+  const save = useSaveProfile();
 
   return (
     <section className="sc-profile-hero">
       <div
-        className={`sc-profile-cover${cover ? '' : ' is-default'}`}
+        className={`sc-profile-cover sc-image-edit-host${cover ? '' : ' is-default'}`}
         style={cover ? { backgroundImage: `url("${encodeURI(cover)}")` } : undefined}
       >
         {coach && (
@@ -31,14 +33,14 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             purpose="COVER_IMAGE"
             crop={CROP_PRESETS.cover}
             hasImage={Boolean(cover)}
-            toPatch={(url) => ({ profile: { coverImageUrl: url } })}
+            onChange={(url) => save.mutateAsync({ profile: { coverImageUrl: url } })}
             noun="ảnh bìa"
             className="cover"
           />
         )}
       </div>
       <div className="sc-profile-hero-body">
-        <div className="sc-profile-avatar-wrap">
+        <div className="sc-profile-avatar-wrap sc-image-edit-host">
           <Avatar
             src={user.avatarUrl ?? undefined}
             size={104}
@@ -51,7 +53,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             purpose="AVATAR"
             crop={CROP_PRESETS.avatar}
             hasImage={Boolean(user.avatarUrl)}
-            toPatch={(url) => ({ avatarUrl: url })}
+            onChange={(url) => save.mutateAsync({ avatarUrl: url })}
             noun="ảnh đại diện"
             className="avatar"
           />

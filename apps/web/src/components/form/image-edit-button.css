@@ -1,0 +1,39 @@
+.sc-image-edit {
+  position: absolute;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--sc-ink);
+  box-shadow: 0 2px 10px rgba(20, 19, 15, 0.22);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    background 0.15s;
+}
+.sc-image-edit:hover {
+  background: #fff;
+}
+.sc-image-edit:disabled {
+  cursor: default;
+}
+.sc-image-edit-host:hover .sc-image-edit,
+.sc-image-edit:focus-visible,
+.sc-image-edit.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+@media (hover: none) {
+  .sc-image-edit {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,31 +1,40 @@
-import { IMAGE_CONTENT_TYPES, type UpdateMeBody, type UploadPurpose } from '@sports-center/shared';
+import { IMAGE_CONTENT_TYPES, type UploadPurpose } from '@sports-center/shared';
 import { App, Dropdown, Spin, Tooltip } from 'antd';
 import { ImageUp, Pencil, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import type { CropOptions } from '~/components/form/ImageCropModal';
 import { useCroppedUpload } from '~/hooks/useCroppedUpload';
 import { toApiError } from '~/lib/http-errors';
-import { useSaveProfile } from '../hooks/useProfile';
+import type { CropOptions } from './ImageCropModal';
+import './image-edit-button.css';
 
 interface ImageEditButtonProps {
   purpose: UploadPurpose;
   crop: CropOptions;
   hasImage: boolean;
-  toPatch: (url: string | null) => UpdateMeBody;
   noun: string;
-  className: string;
+  onChange: (url: string | null) => Promise<unknown>;
+  className?: string;
 }
 
-export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, className }: ImageEditButtonProps) {
+export function ImageEditButton({ purpose, crop, hasImage, noun, onChange, className }: ImageEditButtonProps) {
   const { message } = App.useApp();
   const inputRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const update = useSaveProfile();
-  const { pick, uploading, modal } = useCroppedUpload(purpose, crop, (url) => update.mutateAsync(toPatch(url)));
-  const busy = uploading || update.isPending;
+  const [removing, setRemoving] = useState(false);
+  const { pick, uploading, modal } = useCroppedUpload(purpose, crop, onChange);
+  const busy = uploading || removing;
 
   const openPicker = () => inputRef.current?.click();
-  const remove = () => update.mutate(toPatch(null), { onError: (err) => message.error(toApiError(err).message) });
+  const remove = async () => {
+    setRemoving(true);
+    try {
+      await onChange(null);
+    } catch (err) {
+      message.error(toApiError(err).message);
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   const button = (
     <button
@@ -33,7 +42,7 @@ export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, classN
       aria-label={`Sửa ${noun}`}
       disabled={busy}
       onClick={hasImage ? undefined : openPicker}
-      className={`sc-image-edit ${className}${menuOpen || busy ? ' is-active' : ''}`}
+      className={`sc-image-edit${className ? ` ${className}` : ''}${menuOpen || busy ? ' is-active' : ''}`}
     >
       {busy ? <Spin size="small" /> : <Pencil size={16} />}
     </button>
@@ -66,7 +75,7 @@ export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, classN
             onClick: ({ key }) => {
               setMenuOpen(false);
               if (key === 'change') openPicker();
-              if (key === 'remove') remove();
+              if (key === 'remove') void remove();
             },
           }}
         >
