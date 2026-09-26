@@ -32,6 +32,28 @@ class AccountRepository {
       include: accountProfileInclude,
     });
 
+  existsByPhone = async (phone: string, excludeId?: string) =>
+    (await prisma.account.count({ where: { phone, ...(excludeId && { id: { not: excludeId } }) } })) > 0;
+
+  updateProfile = (
+    id: string,
+    data: {
+      account: Prisma.AccountUpdateInput;
+      memberProfile?: Prisma.MemberProfileUpdateWithoutAccountInput;
+      coachProfile?: Prisma.CoachProfileUpdateWithoutAccountInput;
+    },
+    tx: Prisma.TransactionClient = prisma,
+  ) =>
+    tx.account.update({
+      where: { id },
+      data: {
+        ...data.account,
+        ...(data.memberProfile && { memberProfile: { update: data.memberProfile } }),
+        ...(data.coachProfile && { coachProfile: { update: data.coachProfile } }),
+      },
+      include: accountProfileInclude,
+    });
+
   updatePassword = (id: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({
       where: { id },

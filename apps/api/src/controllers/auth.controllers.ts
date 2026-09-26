@@ -61,6 +61,11 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: account }));
   };
 
+  updateMe = async (req: Request, res: Response) => {
+    const account = await authService.updateMe(req.user!.id, req.body, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Cập nhật hồ sơ thành công', result: account }));
+  };
+
   changePassword = async (req: Request, res: Response) => {
     await authService.changePassword(req.user!.id, req.body);
     clearAuthCookies(res);
