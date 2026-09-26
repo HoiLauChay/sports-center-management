@@ -1,5 +1,5 @@
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import { Prisma } from '~/generated/prisma/client';
 import { isRetryableTransactionError } from '~/utils/dbError';
 
 const MAX_ATTEMPTS = 3;
@@ -37,18 +37,13 @@ export const withScheduleLock = (tx: Prisma.TransactionClient) =>
 
 export const lockRows = async (tx: Prisma.TransactionClient, targets: LockTargets) => {
   if (targets.systemSettings) {
-    await tx.$queryRawUnsafe(
-      `SELECT 1 FROM system_settings FOR ${targets.systemSettings === 'update' ? 'UPDATE' : 'SHARE'}`,
-    );
+    await tx.$queryRaw`SELECT 1 FROM system_settings FOR ${Prisma.raw(targets.systemSettings === 'update' ? 'UPDATE' : 'SHARE')}`;
   }
 
   for (const [key, table, column] of LOCK_ORDER) {
     const ids = targets[key];
     if (!ids?.length) continue;
-    const sorted = [...new Set(ids)].sort();
-    await tx.$queryRawUnsafe(
-      `SELECT 1 FROM ${table} WHERE ${column} = ANY($1::uuid[]) ORDER BY ${column} FOR UPDATE`,
-      sorted,
-    );
+    const [from, by] = [Prisma.raw(table), Prisma.raw(column)];
+    await tx.$queryRaw`SELECT 1 FROM ${from} WHERE ${by} = ANY(${ids}::uuid[]) ORDER BY ${by} FOR UPDATE`;
   }
 };

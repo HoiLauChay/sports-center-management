@@ -17,7 +17,7 @@ export const isRetryableTransactionError = (err: unknown) =>
   (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') ||
   RETRYABLE_CODES.has(getCause(err)?.originalCode ?? '');
 
-export const isUniqueViolation = (err: unknown, index: (name: string) => boolean) =>
+export const isUniqueViolation = (err: unknown, indexSuffix: string) =>
   err instanceof Prisma.PrismaClientKnownRequestError &&
   err.code === 'P2002' &&
-  index(getCause(err)?.constraint?.index ?? '');
+  (getCause(err)?.constraint?.index ?? '').endsWith(indexSuffix);

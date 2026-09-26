@@ -28,9 +28,6 @@ interface IdempotentOperation<T extends { requestHash: string | null }> {
   execute: () => Promise<T>;
 }
 
-const isIdempotencyKeyViolation = (err: unknown) =>
-  isUniqueViolation(err, (index) => index.endsWith('_idempotency_key_key'));
-
 export const withIdempotency = async <T extends { requestHash: string | null }>({
   requestHash,
   find,
@@ -54,7 +51,7 @@ export const withIdempotency = async <T extends { requestHash: string | null }>(
   try {
     return await execute();
   } catch (err) {
-    if (!isIdempotencyKeyViolation(err)) throw err;
+    if (!isUniqueViolation(err, '_idempotency_key_key')) throw err;
     const stored = await replay();
     if (!stored) throw err;
     return stored;
