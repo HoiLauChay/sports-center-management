@@ -12,10 +12,11 @@ export const assertTestDatabase = (url: string) => {
 
 export const resetDatabase = async () => {
   assertTestDatabase(env.DATABASE_URL);
-  const tables = await prisma.$queryRaw<{ tablename: string }[]>`
-    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
+  const [row] = await prisma.$queryRaw<{ tables: string | null }[]>`
+    SELECT string_agg(format('%I.%I', schemaname, tablename), ', ') AS tables
+    FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'
   `;
-  if (tables.length === 0) return;
-  const list = tables.map(({ tablename }) => `"${tablename}"`).join(', ');
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
+  const tables = row?.tables;
+  if (!tables) return;
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE`);
 };
