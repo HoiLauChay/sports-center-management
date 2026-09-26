@@ -1,4 +1,5 @@
 {
   "extends": "@sports-center/typescript-config/library.json",
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }
