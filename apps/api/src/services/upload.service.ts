@@ -5,7 +5,7 @@ import {
   type UploadPurpose,
   type UploadTicket,
 } from '@sports-center/shared';
-import { issueSignedToken, parseStoreIdFromDelegationToken, presignUrl } from '@vercel/blob';
+import { issueSignedToken, presignUrl } from '@vercel/blob';
 import { randomUUID } from 'node:crypto';
 
 import { env } from '~/configs/env';
@@ -28,6 +28,13 @@ const EXTENSION: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
   'application/pdf': 'pdf',
+};
+
+const FILE_NAME = /^[0-9a-f-]{36}\.(jpg|png|webp|pdf)$/;
+
+const blobStoreUrl = () => {
+  const storeId = env.BLOB_READ_WRITE_TOKEN?.split('_')[3];
+  return storeId ? `https://${storeId}.public.blob.vercel-storage.com` : null;
 };
 
 class UploadService {
@@ -77,8 +84,14 @@ class UploadService {
       ...constraints,
     });
 
-    const storeId = parseStoreIdFromDelegationToken(signedToken.delegationToken);
-    return { uploadUrl: presignedUrl, fileUrl: `https://${storeId}.public.blob.vercel-storage.com/${pathname}` };
+    return { uploadUrl: presignedUrl, fileUrl: `${blobStoreUrl()}/${pathname}` };
+  };
+
+  isUploadedFileUrl = (url: string, purpose: UploadPurpose, accountId: string) => {
+    const base = blobStoreUrl();
+    if (!base) return false;
+    const prefix = `${base}/${FOLDER[purpose]}/${accountId}/`;
+    return url.startsWith(prefix) && FILE_NAME.test(url.slice(prefix.length));
   };
 }
 

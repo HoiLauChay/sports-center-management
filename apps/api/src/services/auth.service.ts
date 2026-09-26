@@ -9,6 +9,7 @@ import {
   type ResetPasswordBody,
   type SendOtpBody,
   type UpdateMeBody,
+  type UploadPurpose,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
@@ -23,6 +24,7 @@ import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import mailService from '~/services/mail.service';
 import notificationService from '~/services/notification.service';
+import uploadService from '~/services/upload.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
@@ -203,6 +205,17 @@ class AuthService {
       throw this.phoneTaken();
     }
 
+    this.assertUploadedFile(fields.avatarUrl, current.avatarUrl, 'AVATAR', accountId, 'body.avatarUrl');
+    if (current.role === 'COACH') {
+      this.assertUploadedFile(
+        profile?.coverImageUrl,
+        current.coachProfile?.coverImageUrl,
+        'COVER_IMAGE',
+        accountId,
+        'body.profile.coverImageUrl',
+      );
+    }
+
     const { dateOfBirth, ...rest } = fields;
     const account: Prisma.AccountUpdateInput = {
       ...rest,
@@ -283,6 +296,22 @@ class AuthService {
     }
 
     return record;
+  };
+
+  private assertUploadedFile = (
+    url: string | null | undefined,
+    currentUrl: string | null | undefined,
+    purpose: UploadPurpose,
+    accountId: string,
+    path: string,
+  ) => {
+    if (!url || url === currentUrl || uploadService.isUploadedFileUrl(url, purpose, accountId)) return;
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      code: ERROR_CODE.VALIDATION,
+      message: 'Dữ liệu không hợp lệ',
+      errors: [{ path, message: 'Ảnh phải được tải lên qua hệ thống' }],
+    });
   };
 
   private phoneTaken = () =>

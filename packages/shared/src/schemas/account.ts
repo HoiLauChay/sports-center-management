@@ -19,7 +19,7 @@ const optionalUrl = (label: string) =>
     .trim()
     .max(2048, `${label} tối đa 2048 ký tự`)
     .transform((value) => value || null)
-    .pipe(z.url({ protocol: /^https?$/, error: `${label} phải là URL http(s) hợp lệ` }).nullable())
+    .pipe(z.url({ protocol: /^https$/, error: `${label} phải là URL https hợp lệ` }).nullable())
     .nullable()
     .optional();
 
