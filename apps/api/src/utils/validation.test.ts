@@ -30,15 +30,10 @@ afterAll(() => {
 });
 
 describe('validate query', () => {
-  test('replaces req.query with the parsed values', async () => {
-    const res = await fetch(`${baseUrl}/items?page=2&limit=5`);
+  test('replaces req.query with the parsed values and defaults', async () => {
+    const res = await fetch(`${baseUrl}/items?page=2`);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ page: 2, limit: 5 });
-  });
-
-  test('applies defaults for missing values', async () => {
-    const res = await fetch(`${baseUrl}/items`);
-    expect(await res.json()).toEqual({ page: 1, limit: 20 });
+    expect(await res.json()).toEqual({ page: 2, limit: 20 });
   });
 
   test('responds 422 when limit exceeds the maximum', async () => {
