@@ -1,0 +1,8 @@
+const DAY = 24 * 60 * 60 * 1000;
+
+export const CRON = {
+  BATCH_SIZE: 1000,
+  REFRESH_TOKEN_RETENTION: 30 * DAY,
+  OTP_RETENTION: 7 * DAY,
+  NOTIFICATION_RETENTION: 90 * DAY,
+} as const;

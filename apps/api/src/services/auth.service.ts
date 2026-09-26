@@ -2,7 +2,6 @@ import {
   COACH_PROFILE_FIELDS,
   ERROR_CODE,
   MEMBER_PROFILE_FIELDS,
-  type Account,
   type ChangePasswordBody,
   type ErrorCode,
   type LoginBody,
@@ -11,20 +10,21 @@ import {
   type SendOtpBody,
   type UpdateMeBody,
 } from '@sports-center/shared';
-import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import { Prisma, type OtpPurpose, type Role } from '~/generated/prisma/client';
+import type { OtpPurpose, Prisma, Role } from '~/generated/prisma/client';
 import { toAccountResponse } from '~/mappers/account.mapper';
 import accountRepository from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import auditService, { AUDIT_ACTION, AUDIT_ENTITY, diffAuditFields, type AuditValues } from '~/services/audit.service';
+import auditService from '~/services/audit.service';
 import mailService from '~/services/mail.service';
+import notificationService from '~/services/notification.service';
 import { verifyCaptcha } from '~/utils/captcha';
+import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
 import { hashPassword, verifyPassword } from '~/utils/password';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
@@ -48,24 +48,6 @@ const pickDefined = <K extends keyof ProfileFields>(profile: ProfileFields | und
   }
   return Object.keys(picked).length > 0 ? picked : undefined;
 };
-
-const toAuditValues = ({
-  fullName,
-  phone,
-  dateOfBirth,
-  gender,
-  address,
-  avatarUrl,
-  profile,
-}: Account): AuditValues => ({
-  fullName,
-  phone,
-  dateOfBirth,
-  gender,
-  address,
-  avatarUrl,
-  ...profile,
-});
 
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
@@ -116,21 +98,31 @@ class AuthService {
     const passwordHash = await hashPassword(password);
     const refreshToken = generateOpaqueToken();
 
-    const account = await prisma.$transaction(async (tx) => {
+    const { account, notifications } = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
       const created = await accountRepository.createMember(
         { email, fullName, passwordHash, emailVerifiedAt: new Date() },
         tx,
       );
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
-      return created;
+      const notifications = await notificationService.create(
+        [
+          {
+            accountId: created.id,
+            type: 'SYSTEM',
+            title: 'Chào mừng bạn đến với Sports Center',
+            message:
+              'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+            dedupKey: `welcome:${created.id}`,
+            sendEmail: true,
+          },
+        ],
+        tx,
+      );
+      return { account: created, notifications };
     });
 
-    waitUntil(
-      mailService.sendWelcome(account.email, account.fullName).catch((err) => {
-        console.error('Failed to send welcome email:', err);
-      }),
-    );
+    notificationService.sendEmailsAfterCommit(notifications);
 
     return {
       account: toAccountResponse(account),
@@ -223,22 +215,15 @@ class AuthService {
     try {
       const updated = await prisma.$transaction(async (tx) => {
         const next = await accountRepository.updateProfile(accountId, { account, memberProfile, coachProfile }, tx);
-        const { oldValues, newValues } = diffAuditFields(
-          AUDIT_ENTITY.ACCOUNT,
-          toAuditValues(toAccountResponse(current)),
-          toAuditValues(toAccountResponse(next)),
-        );
-        if (newValues) {
+        const changes = [
+          ['ACCOUNT', current, next],
+          ['MEMBER_PROFILE', current.memberProfile, next.memberProfile],
+          ['COACH_PROFILE', current.coachProfile, next.coachProfile],
+        ] as const;
+        for (const [entityType, oldValues, newValues] of changes) {
+          if (!oldValues || !newValues) continue;
           await auditService.record(
-            {
-              accountId,
-              action: AUDIT_ACTION.UPDATE_PROFILE,
-              entityType: AUDIT_ENTITY.ACCOUNT,
-              entityId: accountId,
-              oldValues,
-              newValues,
-              ipAddress: ip,
-            },
+            { accountId, action: 'UPDATE', entityType, entityId: accountId, oldValues, newValues, ipAddress: ip },
             tx,
           );
         }
@@ -246,8 +231,7 @@ class AuthService {
       });
       return toAccountResponse(updated);
     } catch (err) {
-      // Another account claimed the phone between the check and the update.
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') throw this.phoneTaken();
+      if (isUniqueViolation(err, 'phone_key')) throw this.phoneTaken();
       throw err;
     }
   };

@@ -19,6 +19,11 @@
     "typecheck": {
       "dependsOn": ["^typecheck", "^db:generate", "db:generate"]
     },
+    "test": {
+      "dependsOn": ["^db:generate", "db:generate"],
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL", "DIRECT_URL", "JWT_SECRET", "TOKEN_HASH_SECRET"]
+    },
     "db:generate": {
       "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
       "outputs": ["src/generated/**"]

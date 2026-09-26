@@ -13,6 +13,11 @@ export interface Paginated<T> {
   total: number;
 }
 
+export interface CursorPaginated<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
 export interface ApiFieldError {
   path: string;
   message: string;
