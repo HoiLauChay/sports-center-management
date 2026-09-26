@@ -4,7 +4,7 @@ import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { SectionTitle } from '~/components/ui/SectionTitle';
-import { useChangePassword, useLogoutAll } from '~/features/auth';
+import { useChangePassword, useCurrentUser, useForgotCurrentPassword, useLogoutAll } from '~/features/auth';
 
 function SettingsSection({
   title,
@@ -27,6 +27,8 @@ function SettingsSection({
 }
 
 function ChangePasswordForm() {
+  const user = useCurrentUser();
+  const forgotCurrentPassword = useForgotCurrentPassword();
   const { form, onSubmit, isSubmitting } = useChangePassword();
   const rootError = form.formState.errors.root?.message;
 
@@ -75,7 +77,10 @@ function ChangePasswordForm() {
           )}
         />
       </div>
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button type="link" onClick={() => void forgotCurrentPassword(user.email)} className="!h-auto !p-0">
+          Quên mật khẩu hiện tại?
+        </Button>
         <Button type="primary" htmlType="submit" loading={isSubmitting}>
           Đổi mật khẩu
         </Button>

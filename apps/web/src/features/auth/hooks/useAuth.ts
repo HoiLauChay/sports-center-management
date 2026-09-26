@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Account } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch, type HistoryState } from '@tanstack/react-router';
 import { App } from 'antd';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -36,17 +36,22 @@ function useCompleteAuth() {
   );
 }
 
+interface EndSessionTarget {
+  to?: typeof PATHS.login | typeof PATHS.forgotPassword;
+  state?: HistoryState;
+}
+
 function useEndSession() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
 
   return useCallback(
-    async (successMessage: string) => {
+    async (successMessage?: string, { to = PATHS.login, state }: EndSessionTarget = {}) => {
       queryClient.setQueryData(sessionQueryOptions.queryKey, null);
-      await navigate({ to: PATHS.login });
+      await navigate({ to, state });
       queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
-      message.success(successMessage);
+      if (successMessage) message.success(successMessage);
     },
     [message, navigate, queryClient],
   );
@@ -103,13 +108,13 @@ export function useRegister() {
   return { form, onSubmit, isSubmitting: mutation.isPending };
 }
 
-export function useResetPassword() {
+export function useResetPassword(defaultEmail = '') {
   const [done, setDone] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     mode: 'onTouched',
-    defaultValues: { email: '', otp: '', password: '', confirmPassword: '' },
+    defaultValues: { email: defaultEmail, otp: '', password: '', confirmPassword: '' },
   });
   const handleApiError = useFormApiError(form, AUTH_ERROR_FIELDS);
 
@@ -173,4 +178,16 @@ export function useLogoutAll() {
         }
       },
     });
+}
+
+export function useForgotCurrentPassword() {
+  const endSession = useEndSession();
+
+  return useCallback(
+    async (email: string) => {
+      await authService.logout().catch(() => undefined);
+      await endSession(undefined, { to: PATHS.forgotPassword, state: { resetEmail: email } });
+    },
+    [endSession],
+  );
 }
