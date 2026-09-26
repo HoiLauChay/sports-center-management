@@ -5,7 +5,6 @@ export interface InfoItem {
   label: string;
   value: ReactNode;
   icon?: LucideIcon;
-  /** Spans both columns (long text such as bio or address). */
   full?: boolean;
 }
 

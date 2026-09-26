@@ -7,7 +7,6 @@ interface ImageUploadFieldProps {
   purpose: UploadPurpose;
   value: string | null | undefined;
   onChange: (url: string | null) => void;
-  /** `avatar` crops to a circle with a round preview, `cover` crops to 3:1 with a banner preview. */
   variant?: 'avatar' | 'cover';
   fallback?: string;
   invalid?: boolean;

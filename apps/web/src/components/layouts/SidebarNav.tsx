@@ -18,7 +18,6 @@ function isActive(pathname: string, path: string) {
 interface SidebarNavProps {
   user: Account;
   collapsed?: boolean;
-  /** Rendered inside the mobile drawer: full width with a close button. */
   mobile?: boolean;
   onClose?: () => void;
   onNavigate?: () => void;
@@ -31,7 +30,6 @@ export function SidebarNav({ user, collapsed = false, mobile = false, onClose, o
   const groups = useMemo(() => navGroupsFor(user.role), [user.role]);
   const roleColor = ROLE_COLOR_ON_DARK[user.role];
 
-  // Longest matching path wins, so /admin/users/1 highlights "Người dùng" rather than a shorter prefix.
   const activePath = useMemo(
     () =>
       groups

@@ -1,13 +1,8 @@
 import { UPLOAD_RULES, type ApiResponse, type UploadPurpose, type UploadTicket } from '@sports-center/shared';
 import { privateApi } from './http';
 
-// Headers the Vercel Blob API expects on a presigned PUT (mirrors what @vercel/blob sends).
 const BLOB_API_VERSION = '12';
 
-/**
- * Returns a Vietnamese error message if the file breaks the purpose's type/size rule, otherwise null.
- * Pass `checkSize: false` for files that get cropped and re-encoded before upload.
- */
 export function validateUploadFile(file: File, purpose: UploadPurpose, { checkSize = true } = {}) {
   const rule = UPLOAD_RULES[purpose];
   if (!rule.contentTypes.includes(file.type)) return 'Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP';
@@ -15,7 +10,6 @@ export function validateUploadFile(file: File, purpose: UploadPurpose, { checkSi
   return null;
 }
 
-/** Uploads straight to storage via a presigned URL from the API and returns the public file URL. */
 export async function uploadFile(file: File, purpose: UploadPurpose) {
   const { data } = await privateApi.post<ApiResponse<UploadTicket>>('/uploads/token', {
     purpose,

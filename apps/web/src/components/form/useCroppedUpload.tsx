@@ -18,24 +18,18 @@ export const CROP_PRESETS = {
     aspect: COVER_ASPECT_RATIO,
     shape: 'rect',
     maxWidth: COVER_MAX_WIDTH,
-    // Desktop shows the cover at 4:1 (see .sc-profile-cover).
     visibleAspect: 4,
     visibleHint: 'Phần tối phía trên và dưới có thể bị cắt khi xem trên máy tính, hãy để nội dung chính ở giữa.',
     fileName: 'cover.jpg',
   },
 } satisfies Record<string, CropOptions>;
 
-/**
- * Pick → crop → upload flow. `pick(file)` validates the type and opens the crop modal;
- * render `modal` somewhere in the tree. `onUploaded` receives the public URL.
- */
 export function useCroppedUpload(purpose: UploadPurpose, options: CropOptions, onUploaded: (url: string) => unknown) {
   const { message } = App.useApp();
   const [cropping, setCropping] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const pick = (file: File) => {
-    // The cropped output is re-encoded and small, so only the source type is checked here.
     const error = validateUploadFile(file, purpose, { checkSize: false });
     if (error) message.error(error);
     else setCropping(file);

@@ -35,7 +35,6 @@ function toProfileFormValues(user: Account): UpdateMeInput {
     avatarUrl: user.avatarUrl ?? '',
   };
 
-  // Only the caller's own role fields are sent; the API ignores the rest anyway.
   if (user.role === 'MEMBER' && 'healthNotes' in user.profile) {
     const { emergencyContact, fitnessGoals, healthNotes } = user.profile;
     return {
@@ -76,7 +75,6 @@ export function useUpdateProfile(user: Account, onDone: () => void) {
   const mutation = useMutation({
     mutationFn: (values: UpdateMeBody) => authService.updateMe(values),
     onSuccess: (updated) => {
-      // Header, account menu and profile page all read the session query, so they update without a reload.
       queryClient.setQueryData(sessionQueryOptions.queryKey, updated);
       message.success('Đã cập nhật hồ sơ');
       onDone();
@@ -89,7 +87,6 @@ export function useUpdateProfile(user: Account, onDone: () => void) {
   return { form, onSubmit, isSubmitting: mutation.isPending };
 }
 
-/** Saves a partial profile change straight away (e.g. a new cover image) without the edit form. */
 export function useQuickProfileUpdate() {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -115,7 +112,6 @@ export function useChangePassword() {
 
   const mutation = useMutation({
     mutationFn: (values: ChangePasswordBody) => authService.changePassword(values),
-    // The API revokes every session and clears the cookies, so the user must sign in again.
     onSuccess: () => endSession('Đổi mật khẩu thành công, vui lòng đăng nhập lại'),
     onError: handleApiError,
   });

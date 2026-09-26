@@ -105,7 +105,6 @@ export function useResetPassword() {
   return { form, onSubmit, isSubmitting: mutation.isPending, done };
 }
 
-/** Clears the cached session and user data, then sends the user to the login page. */
 export function useEndSession() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();

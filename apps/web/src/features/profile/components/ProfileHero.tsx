@@ -26,7 +26,6 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
         className={`sc-profile-cover${cover ? '' : ' is-default'}`}
         style={cover ? { backgroundImage: `url("${encodeURI(cover)}")` } : undefined}
       >
-        {/* Only coaches have a cover field (coach_profile.cover_image_url). */}
         {coach && (
           <ImageEditButton
             purpose="COVER_IMAGE"

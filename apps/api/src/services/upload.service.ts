@@ -38,10 +38,6 @@ const blobStoreUrl = () => {
 };
 
 class UploadService {
-  /**
-   * Issues a presigned URL for a single direct `PUT` from the browser to Vercel Blob.
-   * The URL is locked to one server-generated pathname, the declared content type and the declared size.
-   */
   createUploadUrl = async (
     user: { id: string; role: Role },
     { purpose, contentType, size }: CreateUploadBody,

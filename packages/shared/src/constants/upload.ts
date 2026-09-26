@@ -2,13 +2,8 @@ import type { Role, UploadPurpose } from './enums';
 
 const MB = 1024 * 1024;
 
-/** Avatars are cropped to a square on the client and scaled down to at most this many pixels per side. */
 export const AVATAR_MAX_DIMENSION = 600;
 
-/**
- * Covers are stored at 3:1 (like X/Twitter headers) and shown at 4:1 on desktop, so the top and
- * bottom 12.5% may be cut there; phones show the full 3:1 image.
- */
 export const COVER_ASPECT_RATIO = 3;
 export const COVER_MAX_WIDTH = 1500;
 

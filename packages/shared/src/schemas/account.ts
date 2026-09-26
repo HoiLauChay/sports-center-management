@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { GENDERS } from '../constants/enums';
 import { fullNameSchema } from './auth';
 
-/** Trims, turns blank input into `null` (never store empty strings) and caps the length. */
 const optionalText = (max: number, label: string) =>
   z
     .string()
@@ -23,7 +22,6 @@ const optionalUrl = (label: string) =>
     .nullable()
     .optional();
 
-/** Strips separators and converts the +84 / 84 prefix to 0, e.g. `+84 912-345.678` → `0912345678`. */
 export const normalizePhone = (value: string) => {
   const digits = value.replace(/[\s.\-()]/g, '');
   if (digits.startsWith('+84')) return `0${digits.slice(3)}`;
@@ -50,8 +48,6 @@ export const dateOfBirthSchema = z.iso
 export const MEMBER_PROFILE_FIELDS = ['emergencyContact', 'fitnessGoals', 'healthNotes'] as const;
 export const COACH_PROFILE_FIELDS = ['bio', 'experience', 'certifications', 'coverImageUrl'] as const;
 
-// Role-specific fields are all accepted here; the API keeps only those matching the caller's role.
-// Unknown keys (walletBalance, staffNotes, ...) are stripped by z.object.
 export const updateProfileFieldsSchema = z.object({
   emergencyContact: optionalText(255, 'Liên hệ khẩn cấp'),
   fitnessGoals: optionalText(2000, 'Mục tiêu tập luyện'),
@@ -62,7 +58,6 @@ export const updateProfileFieldsSchema = z.object({
   coverImageUrl: optionalUrl('Ảnh bìa'),
 });
 
-// email, role, status, walletBalance, staffNotes are not part of the schema and get stripped.
 export const updateMeBodySchema = z.object({
   fullName: fullNameSchema.optional(),
   phone: phoneSchema.nullable().optional(),

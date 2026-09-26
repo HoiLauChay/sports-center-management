@@ -221,7 +221,6 @@ class AuthService {
       ...rest,
       ...(dateOfBirth !== undefined && { dateOfBirth: dateOfBirth === null ? null : new Date(dateOfBirth) }),
     };
-    // Only the fields belonging to the caller's own role are applied; the rest are ignored.
     const memberProfile = current.role === 'MEMBER' ? pickDefined(profile, MEMBER_PROFILE_FIELDS) : undefined;
     const coachProfile = current.role === 'COACH' ? pickDefined(profile, COACH_PROFILE_FIELDS) : undefined;
 

@@ -20,11 +20,18 @@ function readCollapsed() {
   }
 }
 
+function saveCollapsed(collapsed: boolean) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    return;
+  }
+}
+
 export function MainLayout({ children }: { children?: ReactNode }) {
   const user = useSession();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  // `md` is undefined before the first measurement; treat that as desktop to avoid a layout flash.
   const isMobile = Grid.useBreakpoint().md === false;
 
   if (!user) return <PageLoading fullScreen />;
@@ -32,11 +39,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
   const toggleCollapsed = () => {
     const next = !collapsed;
     setCollapsed(next);
-    try {
-      localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
-    } catch {
-      // Storage can be unavailable (private mode); the toggle still works for this session.
-    }
+    saveCollapsed(next);
   };
 
   return (

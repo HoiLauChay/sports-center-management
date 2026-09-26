@@ -11,17 +11,11 @@ interface ImageEditButtonProps {
   purpose: UploadPurpose;
   crop: CropOptions;
   hasImage: boolean;
-  /** Builds the PATCH /auth/me body for a new URL, or `null` to remove the image. */
   toPatch: (url: string | null) => UpdateMeBody;
-  /** e.g. "ảnh bìa", "ảnh đại diện". */
   noun: string;
   className: string;
 }
 
-/**
- * Pencil button shown when hovering an image (always visible on touch screens).
- * No image yet → opens the file picker; otherwise a menu to change or remove it. Saves immediately.
- */
 export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, className }: ImageEditButtonProps) {
   const { message } = App.useApp();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +48,6 @@ export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, classN
         accept={IMAGE_CONTENT_TYPES.join(',')}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          // Reset so picking the same file again still fires `change`.
           e.target.value = '';
           if (file) pick(file);
         }}

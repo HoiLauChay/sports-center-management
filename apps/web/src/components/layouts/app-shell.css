@@ -1,6 +1,3 @@
-/* App shell: dark side nav + sticky header, ported from the design demo. */
-
-/* ---------- Side nav ---------- */
 .sc-nav {
   width: 252px;
   height: 100vh;
@@ -260,7 +257,6 @@
   background: var(--sc-ink);
 }
 
-/* ---------- Header ---------- */
 .sc-header {
   position: sticky;
   top: 0;
