@@ -1,19 +1,20 @@
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { Link } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { Button, Form, Input, Result } from 'antd';
 import { useRef } from 'react';
 import heroImg from '~/assets/images/sports/swim.jpg';
+import { FormField, FormRootError } from '~/components/form/FormField';
 import { PATHS } from '~/constants/paths';
 import { useResetPassword } from '../hooks/useAuth';
 import { useCaptchaToken } from '../hooks/useCaptchaToken';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { CaptchaField, type CaptchaHandle } from './CaptchaField';
-import { FormField, FormRootError } from './FormField';
 import { INPUT_ICON_STYLE } from './inputIcon';
 import { OtpField } from './OtpField';
 
 export function ForgotPasswordPage() {
-  const { form, onSubmit, isSubmitting, done } = useResetPassword();
+  const resetEmail = useRouterState({ select: (s) => s.location.state.resetEmail });
+  const { form, onSubmit, isSubmitting, done } = useResetPassword(resetEmail);
   const rootError = form.formState.errors.root?.message;
   const captchaRef = useRef<CaptchaHandle>(null);
   const [captchaToken, setCaptchaToken] = useCaptchaToken();

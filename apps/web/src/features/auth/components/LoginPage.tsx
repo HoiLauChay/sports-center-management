@@ -1,10 +1,10 @@
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { Button, Form, Input } from 'antd';
 import heroImg from '~/assets/images/sports/badminton.jpg';
+import { FormField, FormRootError } from '~/components/form/FormField';
 import { PATHS } from '~/constants/paths';
 import { useLogin } from '../hooks/useAuth';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
-import { FormField, FormRootError } from './FormField';
 import { INPUT_ICON_STYLE } from './inputIcon';
 
 export function LoginPage() {

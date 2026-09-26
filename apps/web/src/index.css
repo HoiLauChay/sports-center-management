@@ -35,3 +35,10 @@
 @theme {
   --breakpoint-auth: 56.25rem;
 }
+
+@utility bg-court-pattern {
+  background-image:
+    radial-gradient(circle at 88% -20%, rgba(214, 242, 75, 0.28), transparent 45%),
+    radial-gradient(circle at 12% 130%, rgba(15, 77, 52, 0.9), transparent 55%),
+    repeating-linear-gradient(115deg, transparent 0 46px, rgba(255, 255, 255, 0.035) 46px 47px);
+}

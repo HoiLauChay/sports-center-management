@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import authRouter from '~/routes/auth.routes';
 import cronRouter from '~/routes/cron.routes';
+import uploadRouter from '~/routes/upload.routes';
 import { ResponseClient } from '~/rules/response';
 
 const rootRouter = Router();
@@ -12,5 +13,6 @@ rootRouter.get('/health', (_req, res) => {
 
 rootRouter.use('/auth', authRouter);
 rootRouter.use('/cron', cronRouter);
+rootRouter.use('/uploads', uploadRouter);
 
 export default rootRouter;

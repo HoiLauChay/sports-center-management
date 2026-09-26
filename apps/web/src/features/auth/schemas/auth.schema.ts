@@ -1,4 +1,5 @@
 import {
+  changePasswordBodySchema,
   loginBodySchema,
   registerBaseSchema,
   resetPasswordBodySchema,
@@ -16,6 +17,9 @@ export const registerSchema = withPasswordConfirmation(
 
 export const resetPasswordSchema = resetPasswordBodySchema;
 
+export const changePasswordSchema = changePasswordBodySchema;
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

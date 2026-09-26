@@ -24,3 +24,8 @@ export function formatDate(value: string | Date) {
 export function formatDateTime(value: string | Date) {
   return dayjs(value).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY');
 }
+
+export function initialsOf(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  return ((parts.at(-1)?.[0] ?? '') + (parts.length > 1 ? (parts[0]?.[0] ?? '') : '')).toUpperCase();
+}

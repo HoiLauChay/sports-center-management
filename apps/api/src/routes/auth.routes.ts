@@ -4,6 +4,7 @@ import {
   registerBodySchema,
   resetPasswordBodySchema,
   sendOtpBodySchema,
+  updateMeBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
@@ -27,6 +28,7 @@ authRouter.post('/refresh', refreshLimit, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);
+authRouter.patch('/me', auth, validate({ body: updateMeBodySchema }), authController.updateMe);
 authRouter.post('/change-password', auth, validate({ body: changePasswordBodySchema }), authController.changePassword);
 authRouter.post(
   '/reset-password',

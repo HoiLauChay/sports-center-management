@@ -30,6 +30,13 @@ export const ROLE_COLOR: Record<Role, string> = {
   RECEPTIONIST: '#d9a400',
 };
 
+export const ROLE_COLOR_ON_DARK: Record<Role, string> = {
+  MANAGER: BRAND.accentLight,
+  COACH: '#5cbf8a',
+  MEMBER: '#38bdf8',
+  RECEPTIONIST: '#eab308',
+};
+
 export const FONT_BODY =
   "'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 export const FONT_DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
@@ -42,6 +49,18 @@ export const antdTheme: ThemeConfig = {
     colorSuccess: BRAND.success,
     colorWarning: BRAND.warning,
     colorError: BRAND.error,
+    colorPrimaryBg: BRAND.primarySoft,
+    colorPrimaryBgHover: '#d3e6db',
+    colorPrimaryBorder: '#b9d3c5',
+    colorPrimaryBorderHover: '#8fb8a3',
+    colorInfoBg: BRAND.primarySoft,
+    colorInfoBgHover: '#d3e6db',
+    colorInfoBorder: '#b9d3c5',
+    colorInfoBorderHover: '#8fb8a3',
+    colorSuccessBg: '#f0fdf4',
+    colorSuccessBgHover: '#dcfce7',
+    colorSuccessBorder: '#bbf7d0',
+    colorSuccessBorderHover: '#86efac',
     colorBgLayout: BRAND.paper,
     colorBgContainer: BRAND.surface,
     colorText: BRAND.ink,

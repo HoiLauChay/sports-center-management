@@ -1,25 +1,32 @@
 import {
+  COACH_PROFILE_FIELDS,
   ERROR_CODE,
+  MEMBER_PROFILE_FIELDS,
   type ChangePasswordBody,
   type ErrorCode,
   type LoginBody,
   type RegisterBody,
   type ResetPasswordBody,
   type SendOtpBody,
+  type UpdateMeBody,
+  type UploadPurpose,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import type { OtpPurpose, Role } from '~/generated/prisma/client';
+import type { OtpPurpose, Prisma, Role } from '~/generated/prisma/client';
 import { toAccountResponse } from '~/mappers/account.mapper';
 import accountRepository from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import auditService from '~/services/audit.service';
 import mailService from '~/services/mail.service';
 import notificationService from '~/services/notification.service';
+import uploadService from '~/services/upload.service';
 import { verifyCaptcha } from '~/utils/captcha';
+import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
 import { hashPassword, verifyPassword } from '~/utils/password';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
@@ -32,6 +39,17 @@ export interface SessionMeta {
 const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3jfMglIeK/q';
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
+
+type ProfileFields = NonNullable<UpdateMeBody['profile']>;
+
+const pickDefined = <K extends keyof ProfileFields>(profile: ProfileFields | undefined, keys: readonly K[]) => {
+  if (!profile) return undefined;
+  const picked: Partial<Pick<ProfileFields, K>> = {};
+  for (const key of keys) {
+    if (profile[key] !== undefined) picked[key] = profile[key];
+  }
+  return Object.keys(picked).length > 0 ? picked : undefined;
+};
 
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
@@ -175,6 +193,61 @@ class AuthService {
     return toAccountResponse(account);
   };
 
+  updateMe = async (accountId: string, { profile, ...fields }: UpdateMeBody, ip?: string) => {
+    const current = await accountRepository.findById(accountId);
+    if (!current) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Tài khoản không tồn tại');
+
+    if (
+      fields.phone &&
+      fields.phone !== current.phone &&
+      (await accountRepository.existsByPhone(fields.phone, accountId))
+    ) {
+      throw this.phoneTaken();
+    }
+
+    this.assertUploadedFile(fields.avatarUrl, current.avatarUrl, 'AVATAR', accountId, 'body.avatarUrl');
+    if (current.role === 'COACH') {
+      this.assertUploadedFile(
+        profile?.coverImageUrl,
+        current.coachProfile?.coverImageUrl,
+        'COVER_IMAGE',
+        accountId,
+        'body.profile.coverImageUrl',
+      );
+    }
+
+    const { dateOfBirth, ...rest } = fields;
+    const account: Prisma.AccountUpdateInput = {
+      ...rest,
+      ...(dateOfBirth !== undefined && { dateOfBirth: dateOfBirth === null ? null : new Date(dateOfBirth) }),
+    };
+    const memberProfile = current.role === 'MEMBER' ? pickDefined(profile, MEMBER_PROFILE_FIELDS) : undefined;
+    const coachProfile = current.role === 'COACH' ? pickDefined(profile, COACH_PROFILE_FIELDS) : undefined;
+
+    try {
+      const updated = await prisma.$transaction(async (tx) => {
+        const next = await accountRepository.updateProfile(accountId, { account, memberProfile, coachProfile }, tx);
+        const changes = [
+          ['ACCOUNT', current, next],
+          ['MEMBER_PROFILE', current.memberProfile, next.memberProfile],
+          ['COACH_PROFILE', current.coachProfile, next.coachProfile],
+        ] as const;
+        for (const [entityType, oldValues, newValues] of changes) {
+          if (!oldValues || !newValues) continue;
+          await auditService.record(
+            { accountId, action: 'UPDATE', entityType, entityId: accountId, oldValues, newValues, ipAddress: ip },
+            tx,
+          );
+        }
+        return next;
+      });
+      return toAccountResponse(updated);
+    } catch (err) {
+      if (isUniqueViolation(err, 'phone_key')) throw this.phoneTaken();
+      throw err;
+    }
+  };
+
   changePassword = async (accountId: string, { currentPassword, password }: ChangePasswordBody) => {
     const account = await accountRepository.findById(accountId);
     if (!account || !(await verifyPassword(currentPassword, account.passwordHash))) {
@@ -223,6 +296,30 @@ class AuthService {
 
     return record;
   };
+
+  private assertUploadedFile = (
+    url: string | null | undefined,
+    currentUrl: string | null | undefined,
+    purpose: UploadPurpose,
+    accountId: string,
+    path: string,
+  ) => {
+    if (!url || url === currentUrl || uploadService.isUploadedFileUrl(url, purpose, accountId)) return;
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      code: ERROR_CODE.VALIDATION,
+      message: 'Dữ liệu không hợp lệ',
+      errors: [{ path, message: 'Ảnh phải được tải lên qua hệ thống' }],
+    });
+  };
+
+  private phoneTaken = () =>
+    new ErrorWithStatus({
+      status: HTTP_STATUS.CONFLICT,
+      code: ERROR_CODE.PHONE_TAKEN,
+      message: 'Số điện thoại đã được sử dụng',
+      errors: [{ path: 'body.phone', message: 'Số điện thoại đã được sử dụng' }],
+    });
 
   private issueTokens = async (accountId: string, role: Role, meta: SessionMeta) => {
     const refreshToken = generateOpaqueToken();

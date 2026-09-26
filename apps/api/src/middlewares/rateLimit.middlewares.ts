@@ -19,30 +19,36 @@ const createLimiter = (name: string, requests: number, window: Duration) =>
       })
     : null;
 
-const rateLimit = (limiter: Ratelimit | null) => async (req: Request, _res: Response, next: NextFunction) => {
-  if (!limiter) return next();
+const byIp = (req: Request) => getClientIp(req) ?? 'unknown';
+const byAccount = (req: Request) => req.user?.id ?? byIp(req);
 
-  try {
-    const { success, reset } = await limiter.limit(getClientIp(req) ?? 'unknown');
-    if (success) return next();
+const rateLimit =
+  (limiter: Ratelimit | null, keyOf: (req: Request) => string = byIp) =>
+  async (req: Request, _res: Response, next: NextFunction) => {
+    if (!limiter) return next();
 
-    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-    next(
-      new ErrorWithStatus({
-        status: HTTP_STATUS.TOO_MANY_REQUESTS,
-        code: ERROR_CODE.RATE_LIMITED,
-        message: 'Bạn thao tác quá nhanh, vui lòng thử lại sau',
-        meta: { retryAfter },
-      }),
-    );
-  } catch (err) {
-    console.error('Rate limit check failed:', err);
-    next();
-  }
-};
+    try {
+      const { success, reset } = await limiter.limit(keyOf(req));
+      if (success) return next();
+
+      const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+      next(
+        new ErrorWithStatus({
+          status: HTTP_STATUS.TOO_MANY_REQUESTS,
+          code: ERROR_CODE.RATE_LIMITED,
+          message: 'Bạn thao tác quá nhanh, vui lòng thử lại sau',
+          meta: { retryAfter },
+        }),
+      );
+    } catch (err) {
+      console.error('Rate limit check failed:', err);
+      next();
+    }
+  };
 
 export const sendOtpLimit = rateLimit(createLimiter('auth:send-otp', 5, '1 h'));
 export const loginLimit = rateLimit(createLimiter('auth:login', 10, '15 m'));
 export const registerLimit = rateLimit(createLimiter('auth:register', 30, '15 m'));
 export const resetPasswordLimit = rateLimit(createLimiter('auth:reset-password', 30, '15 m'));
 export const refreshLimit = rateLimit(createLimiter('auth:refresh', 120, '15 m'));
+export const uploadLimit = rateLimit(createLimiter('uploads:token', 30, '1 h'), byAccount);
