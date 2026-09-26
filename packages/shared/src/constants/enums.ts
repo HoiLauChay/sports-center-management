@@ -9,3 +9,12 @@ export type Gender = (typeof GENDERS)[number];
 
 export const OTP_PURPOSES = ['REGISTER', 'PASSWORD_RESET'] as const;
 export type OtpPurpose = (typeof OTP_PURPOSES)[number];
+
+export const UPLOAD_PURPOSES = [
+  'AVATAR',
+  'COVER_IMAGE',
+  'SESSION_ATTACHMENT',
+  'COURSE_THUMBNAIL',
+  'SPORT_ICON',
+] as const;
+export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];

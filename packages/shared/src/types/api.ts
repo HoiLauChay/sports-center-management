@@ -25,3 +25,8 @@ export interface ApiErrorBody {
   errors?: ApiFieldError[];
   retryAfter?: number;
 }
+
+export interface UploadTicket {
+  uploadUrl: string;
+  fileUrl: string;
+}
