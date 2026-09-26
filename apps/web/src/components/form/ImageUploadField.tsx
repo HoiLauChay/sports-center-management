@@ -1,5 +1,5 @@
-import { IMAGE_CONTENT_TYPES, type UploadPurpose } from '@sports-center/shared';
-import { Avatar, Button, Upload } from 'antd';
+import type { UploadPurpose } from '@sports-center/shared';
+import { Avatar, Button } from 'antd';
 import { ImageUp, Trash2 } from 'lucide-react';
 import { CROP_PRESETS } from '~/constants/crop';
 import { useCroppedUpload } from '~/hooks/useCroppedUpload';
@@ -21,7 +21,12 @@ export function ImageUploadField({
   fallback,
   invalid,
 }: ImageUploadFieldProps) {
-  const { pick, uploading, modal } = useCroppedUpload(purpose, CROP_PRESETS[variant], onChange);
+  const { open, uploading, modal } = useCroppedUpload(
+    purpose,
+    CROP_PRESETS[variant],
+    onChange,
+    variant === 'avatar' ? 'Chọn ảnh đại diện' : 'Chọn ảnh bìa',
+  );
 
   const preview =
     variant === 'avatar' ? (
@@ -40,19 +45,9 @@ export function ImageUploadField({
     <div className={variant === 'avatar' ? 'flex items-center gap-4' : 'flex flex-col gap-3'}>
       {preview}
       <div className="flex flex-wrap gap-2">
-        <Upload
-          accept={IMAGE_CONTENT_TYPES.join(',')}
-          showUploadList={false}
-          disabled={uploading}
-          beforeUpload={(file) => {
-            pick(file);
-            return false;
-          }}
-        >
-          <Button icon={<ImageUp size={16} />} loading={uploading}>
-            {value ? 'Đổi ảnh' : 'Tải ảnh lên'}
-          </Button>
-        </Upload>
+        <Button icon={<ImageUp size={16} />} loading={uploading} onClick={open}>
+          {value ? 'Đổi ảnh' : 'Tải ảnh lên'}
+        </Button>
         {value && (
           <Button icon={<Trash2 size={16} />} onClick={() => onChange(null)} disabled={uploading}>
             Xóa ảnh
