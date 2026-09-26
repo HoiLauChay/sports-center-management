@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import { env } from '~/configs/env';
+import { Prisma } from '~/generated/prisma/client';
 
 export const assertTestDatabase = (url: string) => {
   const name = new URL(url).pathname.slice(1);
@@ -18,5 +19,5 @@ export const resetDatabase = async () => {
   `;
   const tables = row?.tables;
   if (!tables) return;
-  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE`);
+  await prisma.$executeRaw`TRUNCATE TABLE ${Prisma.raw(tables)} RESTART IDENTITY CASCADE`;
 };
