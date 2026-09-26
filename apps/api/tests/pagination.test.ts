@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
-import { resetDatabase } from '~/test/db';
 import { cursorArgs, toCursorPage } from '~/utils/pagination';
+import { resetDatabase } from './helpers/db';
 
 describe('cursor pagination', () => {
   beforeEach(resetDatabase);
