@@ -1,13 +1,17 @@
+import { createHash } from 'node:crypto';
+
 import { ERROR_CODE } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
 import { isUniqueViolation } from '~/utils/dbError';
 
+const toDateKey = (date: Date) => date.toISOString().slice(0, 10);
+
 export const idempotencyKey = {
   checkout: (accountId: string, clientKey: string) => `checkout:${accountId}:${clientKey}`,
   counter: (receptionistId: string, clientKey: string) => `counter:${receptionistId}:${clientKey}`,
-  renew: (membershipId: string, periodStart: string) => `renew:${membershipId}:${periodStart}`,
+  renew: (membershipId: string, periodStart: Date) => `renew:${membershipId}:${toDateKey(periodStart)}`,
   payment: (orderId: string) => `payment:${orderId}`,
   sepay: (bankTransactionId: string) => `sepay:${bankTransactionId}`,
   cash: (receptionistId: string, clientKey: string) => `cash:${receptionistId}:${clientKey}`,
@@ -16,19 +20,25 @@ export const idempotencyKey = {
   refundEnrollment: (enrollmentId: string) => `refund:enrollment:${enrollmentId}`,
 };
 
-interface IdempotentOperation<T> {
+export const hashRequest = (payload: unknown) => createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+interface IdempotentOperation<T extends { requestHash: string | null }> {
+  requestHash: string | null;
   find: () => Promise<T | null>;
-  matches: (existing: T) => boolean;
   execute: () => Promise<T>;
 }
 
 const isIdempotencyKeyViolation = (err: unknown) =>
   isUniqueViolation(err, (index) => index.endsWith('_idempotency_key_key'));
 
-export const withIdempotency = async <T>({ find, matches, execute }: IdempotentOperation<T>) => {
+export const withIdempotency = async <T extends { requestHash: string | null }>({
+  requestHash,
+  find,
+  execute,
+}: IdempotentOperation<T>) => {
   const replay = async () => {
     const existing = await find();
-    if (existing && !matches(existing)) {
+    if (existing && existing.requestHash !== requestHash) {
       throw new ErrorWithStatus({
         message: 'Yêu cầu đã được xử lý với nội dung khác',
         status: HTTP_STATUS.CONFLICT,

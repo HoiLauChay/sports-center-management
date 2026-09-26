@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
 import { ErrorWithStatus } from '~/rules/error';
-import { idempotencyKey, withIdempotency } from '~/utils/idempotency';
+import { hashRequest, idempotencyKey, withIdempotency } from '~/utils/idempotency';
 import { resetDatabase } from './helpers/db';
 
 let accountId: string;
@@ -15,10 +15,11 @@ beforeEach(async () => {
   accountId = account.id;
 });
 
-const topUp = (key: string, amount: number) =>
-  withIdempotency({
+const topUp = (key: string, amount: number) => {
+  const requestHash = hashRequest({ accountId, amount, method: 'CASH' });
+  return withIdempotency({
+    requestHash,
     find: () => prisma.walletTransaction.findUnique({ where: { idempotencyKey: key } }),
-    matches: (existing) => existing.accountId === accountId && existing.amount.equals(amount),
     execute: () =>
       prisma.walletTransaction.create({
         data: {
@@ -29,9 +30,11 @@ const topUp = (key: string, amount: number) =>
           topUpMethod: 'CASH',
           amount,
           balanceAfter: amount,
+          requestHash,
         },
       }),
   });
+};
 
 describe('withIdempotency', () => {
   test('executes a new key once and replays it for the same payload, even concurrently', async () => {
