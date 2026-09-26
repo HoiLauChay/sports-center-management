@@ -24,7 +24,7 @@ describe('allocate', () => {
     for (const [total, weights] of cases) {
       const parts = allocate(total, weights);
       expect(parts.reduce((sum, part) => sum + part, 0)).toBe(total);
-      weights.forEach((weight, i) => weight === 0 && expect(parts[i]).toBe(0));
+      expect(parts.filter((_, i) => weights[i] === 0).every((part) => part === 0)).toBe(true);
     }
   });
 

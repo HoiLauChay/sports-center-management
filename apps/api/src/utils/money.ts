@@ -40,8 +40,4 @@ export const allocate = (total: number, weights: number[]) => {
   return shares.map(({ amount }) => Number(amount));
 };
 
-export const splitEvenly = (total: number, parts: number) =>
-  allocate(
-    total,
-    Array.from({ length: parts }, () => 1),
-  );
+export const splitEvenly = (total: number, parts: number) => allocate(total, new Array<number>(parts).fill(1));
