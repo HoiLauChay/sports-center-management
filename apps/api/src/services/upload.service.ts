@@ -33,7 +33,7 @@ const EXTENSION: Record<string, string> = {
 const FILE_NAME = /^[0-9a-f-]{36}\.(jpg|png|webp|pdf)$/;
 
 const blobStoreUrl = () => {
-  const storeId = env.BLOB_READ_WRITE_TOKEN?.split('_')[3];
+  const storeId = env.BLOB_STORE_ID?.replace(/^store_/, '') ?? env.BLOB_READ_WRITE_TOKEN?.split('_')[3];
   return storeId ? `https://${storeId}.public.blob.vercel-storage.com` : null;
 };
 
@@ -50,7 +50,8 @@ class UploadService {
         message: 'Bạn không có quyền tải lên loại file này',
       });
     }
-    if (!env.BLOB_READ_WRITE_TOKEN) {
+    const baseUrl = blobStoreUrl();
+    if (!baseUrl) {
       throw new ErrorWithStatus({
         status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
         code: ERROR_CODE.INTERNAL,
@@ -66,7 +67,6 @@ class UploadService {
     };
 
     const signedToken = await issueSignedToken({
-      token: env.BLOB_READ_WRITE_TOKEN,
       pathname,
       operations: ['put'],
       ...constraints,
@@ -80,7 +80,7 @@ class UploadService {
       ...constraints,
     });
 
-    return { uploadUrl: presignedUrl, fileUrl: `${blobStoreUrl()}/${pathname}` };
+    return { uploadUrl: presignedUrl, fileUrl: `${baseUrl}/${pathname}` };
   };
 
   isUploadedFileUrl = (url: string, purpose: UploadPurpose, accountId: string) => {
