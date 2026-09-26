@@ -8,7 +8,6 @@ import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
 import { AccountMenu } from './AccountMenu';
 import { SidebarNav } from './SidebarNav';
-import './app-shell.css';
 
 const COLLAPSED_KEY = 'sc_nav_collapsed';
 
@@ -52,15 +51,17 @@ export function MainLayout({ children }: { children?: ReactNode }) {
           onClose={() => setDrawerOpen(false)}
           closable={false}
           size={288}
-          className="sc-nav-drawer"
-          styles={{ body: { padding: 0 } }}
+          styles={{ body: { padding: 0, background: 'var(--sc-ink)' } }}
         >
           <SidebarNav user={user} mobile onClose={() => setDrawerOpen(false)} onNavigate={() => setDrawerOpen(false)} />
         </Drawer>
       )}
 
       <Layout className="min-w-0">
-        <Layout.Header className="sc-header" style={{ padding: isMobile ? '0 12px' : '0 24px' }}>
+        <Layout.Header
+          className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-b-sc-border-soft !bg-[rgba(255,255,255,0.9)] [backdrop-filter:blur(8px)]"
+          style={{ padding: isMobile ? '0 12px' : '0 24px' }}
+        >
           {isMobile ? (
             <div className="flex min-w-0 items-center gap-1.5">
               <Button
@@ -80,7 +81,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
                 type="button"
                 aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
                 aria-pressed={collapsed}
-                className="sc-collapse-btn"
+                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-sc-border bg-white text-sc-ink-2 [transition:all_0.15s] hover:border-[#b9d3c5] hover:bg-sc-primary-soft hover:text-sc-primary"
                 onClick={toggleCollapsed}
               >
                 {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}

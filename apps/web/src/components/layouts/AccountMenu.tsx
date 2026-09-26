@@ -26,7 +26,11 @@ export function AccountMenu({ user, compact = false }: { user: Account; compact?
 
   return (
     <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
-      <button type="button" aria-label="Menu tài khoản" className={`sc-user-pill${compact ? ' compact' : ''}`}>
+      <button
+        type="button"
+        aria-label="Menu tài khoản"
+        className={`flex cursor-pointer items-center gap-2.5 rounded-[999px] border border-sc-border-soft bg-white [font:inherit] text-sc-ink [transition:border-color_0.15s] hover:border-sc-border ${compact ? 'p-0.5' : 'py-1 pr-2.5 pl-1'}`}
+      >
         <Avatar
           src={user.avatarUrl ?? undefined}
           size={30}
