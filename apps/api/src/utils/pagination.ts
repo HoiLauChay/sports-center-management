@@ -16,6 +16,5 @@ export const cursorArgs = ({ cursor, limit }: CursorQuery) => ({
 
 export const toCursorPage = <T extends { id: string }>(rows: T[], { limit }: CursorQuery): CursorPaginated<T> => {
   const items = rows.slice(0, limit);
-  const last = items.at(-1);
-  return { items, nextCursor: rows.length > limit && last ? last.id : null };
+  return { items, nextCursor: rows.length > limit ? (items.at(-1)?.id ?? null) : null };
 };
