@@ -1,0 +1,9 @@
+.sc-section-title {
+  margin: 0 0 14px;
+  font-family: var(--sc-font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-ink);
+}

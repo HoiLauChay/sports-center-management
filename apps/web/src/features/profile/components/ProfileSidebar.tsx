@@ -1,25 +1,22 @@
 import type { Account } from '@sports-center/shared';
 import { Card, Tag } from 'antd';
 import { BadgeCheck, CalendarDays, Mail, ShieldCheck } from 'lucide-react';
+import { InfoGrid } from '~/components/data/InfoGrid';
+import { SectionTitle } from '~/components/ui/SectionTitle';
+import { WalletCard } from '~/components/ui/WalletCard';
 import { ROLE_LABEL } from '~/constants/roles';
-import { formatDate, formatVND } from '~/lib/format';
+import { formatDate } from '~/lib/format';
 import { getMemberProfile } from '../utils/profile';
-import { InfoGrid } from './InfoGrid';
 
 export function ProfileSidebar({ user }: { user: Account }) {
   const member = getMemberProfile(user);
 
   return (
     <div className="flex flex-col gap-4">
-      {member && (
-        <div className="sc-wallet-card">
-          <small>Số dư ví</small>
-          <div className="amount">{formatVND(member.walletBalance)}</div>
-        </div>
-      )}
+      {member && <WalletCard balance={member.walletBalance} />}
 
       <Card>
-        <h3 className="sc-section-title">Tài khoản</h3>
+        <SectionTitle>Tài khoản</SectionTitle>
         <InfoGrid
           single
           items={[

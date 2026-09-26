@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import './info-grid.css';
 
 export interface InfoItem {
   label: string;

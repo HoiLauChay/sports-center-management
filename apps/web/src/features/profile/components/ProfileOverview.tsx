@@ -12,9 +12,10 @@ import {
   UserRound,
   VenusAndMars,
 } from 'lucide-react';
+import { InfoGrid, type InfoItem } from '~/components/data/InfoGrid';
+import { SectionTitle } from '~/components/ui/SectionTitle';
 import { formatDate } from '~/lib/format';
 import { GENDER_LABEL, getCoachProfile, getMemberProfile } from '../utils/profile';
-import { InfoGrid, type InfoItem } from './InfoGrid';
 
 function roleSection(user: Account): { title: string; items: InfoItem[] } | null {
   const member = getMemberProfile(user);
@@ -54,7 +55,7 @@ export function ProfileOverview({ user }: { user: Account }) {
 
   return (
     <>
-      <h3 className="sc-section-title">Thông tin cá nhân</h3>
+      <SectionTitle>Thông tin cá nhân</SectionTitle>
       <InfoGrid
         items={[
           { label: 'Họ tên', value: user.fullName, icon: UserRound },
@@ -67,7 +68,7 @@ export function ProfileOverview({ user }: { user: Account }) {
 
       {section && (
         <>
-          <h3 className="sc-section-title mt-8">{section.title}</h3>
+          <SectionTitle className="mt-8">{section.title}</SectionTitle>
           <InfoGrid items={section.items} />
         </>
       )}

@@ -1,0 +1,40 @@
+.sc-wallet-card {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--sc-ink);
+  color: #fff;
+}
+.sc-wallet-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(214, 242, 75, 0.35), transparent 70%);
+}
+.sc-wallet-card small {
+  font-family: var(--sc-font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sc-wallet-card .amount {
+  margin-top: 6px;
+  font-family: var(--sc-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sc-lime);
+  font-variant-numeric: tabular-nums;
+}
+.sc-wallet-card p {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
