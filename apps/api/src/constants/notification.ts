@@ -1,0 +1,5 @@
+export const NOTIFICATION = {
+  EMAIL_BATCH_SIZE: 100,
+  EMAIL_RETRY_DELAY: 10 * 60 * 1000,
+  EMAIL_RETRY_WINDOW: 3 * 24 * 60 * 60 * 1000,
+} as const;
