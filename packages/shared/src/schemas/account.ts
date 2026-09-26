@@ -69,4 +69,3 @@ export const updateMeBodySchema = z.object({
 });
 
 export type UpdateMeBody = z.infer<typeof updateMeBodySchema>;
-export type UpdateMeInput = z.input<typeof updateMeBodySchema>;

@@ -3,7 +3,7 @@ import { Button, Col, DatePicker, Divider, Form, Input, Row, Select } from 'antd
 import dayjs from 'dayjs';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { ImageUploadField } from '~/components/form/ImageUploadField';
-import { useUpdateProfile } from '~/features/auth';
+import { useUpdateProfile } from '../hooks/useProfile';
 import { GENDER_LABEL } from '../utils/profile';
 
 const GENDER_OPTIONS = GENDERS.map((value) => ({ value, label: GENDER_LABEL[value] }));

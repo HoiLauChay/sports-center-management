@@ -6,7 +6,6 @@ import type {
   RegisterBody,
   ResetPasswordBody,
   SendOtpBody,
-  UpdateMeBody,
 } from '@sports-center/shared';
 import { privateApi, publicApi } from '~/lib/http';
 
@@ -28,11 +27,6 @@ export const authService = {
 
   me: async () => {
     const { data } = await privateApi.get<ApiResponse<Account>>('/auth/me');
-    return data.result;
-  },
-
-  updateMe: async (payload: UpdateMeBody) => {
-    const { data } = await privateApi.patch<ApiResponse<Account>>('/auth/me', payload);
     return data.result;
   },
 

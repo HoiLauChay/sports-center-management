@@ -10,3 +10,7 @@ export const AUTH_ERROR_FIELDS: ErrorFieldMap = {
   [ERROR_CODE.OTP_EXPIRED]: 'otp',
   [ERROR_CODE.OTP_MAX_ATTEMPTS]: 'otp',
 };
+
+export const CHANGE_PASSWORD_ERROR_FIELDS: ErrorFieldMap = {
+  [ERROR_CODE.INVALID_CREDENTIALS]: 'currentPassword',
+};

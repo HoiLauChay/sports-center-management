@@ -1,8 +1,8 @@
 import type { Account } from '@sports-center/shared';
 import { Avatar, Button } from 'antd';
 import { CalendarDays, Mail, Pencil } from 'lucide-react';
-import { CROP_PRESETS } from '~/components/form/useCroppedUpload';
 import { RoleTag } from '~/components/ui/RoleTag';
+import { CROP_PRESETS } from '~/constants/crop';
 import { ACCOUNT_STATUS_LABEL } from '~/constants/roles';
 import { formatDate, initialsOf } from '~/lib/format';
 import { ROLE_COLOR } from '~/styles/antd-theme';

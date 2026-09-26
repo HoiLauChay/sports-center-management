@@ -3,9 +3,9 @@ import { App, Dropdown, Spin, Tooltip } from 'antd';
 import { ImageUp, Pencil, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { CropOptions } from '~/components/form/ImageCropModal';
-import { useCroppedUpload } from '~/components/form/useCroppedUpload';
-import { useQuickProfileUpdate } from '~/features/auth';
+import { useCroppedUpload } from '~/hooks/useCroppedUpload';
 import { toApiError } from '~/lib/http-errors';
+import { useSaveProfile } from '../hooks/useProfile';
 
 interface ImageEditButtonProps {
   purpose: UploadPurpose;
@@ -20,7 +20,7 @@ export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, classN
   const { message } = App.useApp();
   const inputRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const update = useQuickProfileUpdate();
+  const update = useSaveProfile();
   const { pick, uploading, modal } = useCroppedUpload(purpose, crop, (url) => update.mutateAsync(toPatch(url)));
   const busy = uploading || update.isPending;
 
