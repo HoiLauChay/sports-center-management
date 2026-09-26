@@ -12,6 +12,7 @@ const schema = z
     TURNSTILE_SECRET_KEY: z.string().optional(),
     UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+    CRON_SECRET: z.string().min(32).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;
@@ -20,6 +21,7 @@ const schema = z
       'TURNSTILE_SECRET_KEY',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
+      'CRON_SECRET',
     ] as const) {
       if (!value[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'Required in production' });
     }
