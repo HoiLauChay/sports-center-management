@@ -1,7 +1,8 @@
 import { IMAGE_CONTENT_TYPES, type UploadPurpose } from '@sports-center/shared';
 import { Avatar, Button, Upload } from 'antd';
 import { ImageUp, Trash2 } from 'lucide-react';
-import { CROP_PRESETS, useCroppedUpload } from './useCroppedUpload';
+import { CROP_PRESETS } from '~/constants/crop';
+import { useCroppedUpload } from '~/hooks/useCroppedUpload';
 
 interface ImageUploadFieldProps {
   purpose: UploadPurpose;

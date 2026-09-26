@@ -7,9 +7,10 @@ import { Fragment, useMemo } from 'react';
 import logoMark from '~/assets/brand/logo-mark.svg';
 import { navGroupsFor } from '~/config/navigation';
 import { PATHS } from '~/constants/paths';
-import { ROLE_COLOR_ON_DARK, ROLE_LABEL } from '~/constants/roles';
+import { ROLE_LABEL } from '~/constants/roles';
 import { useLogout } from '~/features/auth';
 import { initialsOf } from '~/lib/format';
+import { ROLE_COLOR_ON_DARK } from '~/styles/antd-theme';
 
 function isActive(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(`${path}/`);

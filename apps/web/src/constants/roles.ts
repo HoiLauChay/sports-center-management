@@ -12,10 +12,3 @@ export const ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
   INACTIVE: 'Vô hiệu hóa',
   BANNED: 'Bị khóa',
 };
-
-export const ROLE_COLOR_ON_DARK: Record<Role, string> = {
-  MANAGER: '#e07a4f',
-  COACH: '#5cbf8a',
-  MEMBER: '#38bdf8',
-  RECEPTIONIST: '#eab308',
-};

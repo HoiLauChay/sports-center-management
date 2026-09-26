@@ -30,6 +30,13 @@ export const ROLE_COLOR: Record<Role, string> = {
   RECEPTIONIST: '#d9a400',
 };
 
+export const ROLE_COLOR_ON_DARK: Record<Role, string> = {
+  MANAGER: BRAND.accentLight,
+  COACH: '#5cbf8a',
+  MEMBER: '#38bdf8',
+  RECEPTIONIST: '#eab308',
+};
+
 export const FONT_BODY =
   "'Barlow', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 export const FONT_DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
