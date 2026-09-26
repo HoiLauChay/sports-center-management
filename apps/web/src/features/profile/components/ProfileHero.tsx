@@ -35,6 +35,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             hasImage={Boolean(cover)}
             onChange={(url) => save.mutateAsync({ profile: { coverImageUrl: url } })}
             noun="ảnh bìa"
+            alwaysVisible={editing}
             className="top-3 right-3"
           />
         )}
@@ -56,6 +57,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             onChange={(url) => save.mutateAsync({ avatarUrl: url })}
             noun="ảnh đại diện"
             small
+            alwaysVisible={editing}
             className="right-0 bottom-0.5"
           />
         </div>

@@ -13,6 +13,7 @@ interface ImageEditButtonProps {
   noun: string;
   onChange: (url: string | null) => Promise<unknown>;
   small?: boolean;
+  alwaysVisible?: boolean;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export function ImageEditButton({
   noun,
   onChange,
   small = false,
+  alwaysVisible = false,
   className,
 }: ImageEditButtonProps) {
   const { message } = App.useApp();
@@ -31,7 +33,7 @@ export function ImageEditButton({
   const [removing, setRemoving] = useState(false);
   const { pick, uploading, modal } = useCroppedUpload(purpose, crop, onChange);
   const busy = uploading || removing;
-  const visible = menuOpen || busy;
+  const visible = alwaysVisible || menuOpen || busy;
 
   const openPicker = () => inputRef.current?.click();
   const remove = async () => {

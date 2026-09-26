@@ -1,8 +1,9 @@
 import { GENDERS, type Account } from '@sports-center/shared';
-import { Button, Col, DatePicker, Divider, Form, Input, Row, Select } from 'antd';
+import { Button, Col, DatePicker, Form, Input, Row, Select, Tooltip } from 'antd';
 import dayjs from 'dayjs';
+import { Lock } from 'lucide-react';
 import { FormField, FormRootError } from '~/components/form/FormField';
-import { ImageUploadField } from '~/components/form/ImageUploadField';
+import { SectionTitle } from '~/components/ui/SectionTitle';
 import { useUpdateProfile } from '../hooks/useProfile';
 import { GENDER_LABEL } from '../utils/profile';
 
@@ -23,6 +24,7 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
     <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
       <FormRootError message={rootError} />
 
+      <SectionTitle>Thông tin cá nhân</SectionTitle>
       <Row gutter={16}>
         <Col xs={24} md={12}>
           <FormField
@@ -33,8 +35,16 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
           />
         </Col>
         <Col xs={24} md={12}>
-          <Form.Item label="Email" extra="Email dùng để đăng nhập, không thể thay đổi">
-            <Input value={user.email} disabled />
+          <Form.Item label="Email đăng nhập">
+            <Input
+              value={user.email}
+              disabled
+              suffix={
+                <Tooltip title="Email dùng để đăng nhập, không thể thay đổi">
+                  <Lock size={14} className="text-sc-muted-2" />
+                </Tooltip>
+              }
+            />
           </Form.Item>
         </Col>
         <Col xs={24} xl={12}>
@@ -109,28 +119,11 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
             )}
           />
         </Col>
-        <Col xs={24}>
-          <FormField
-            control={control}
-            name="avatarUrl"
-            label="Ảnh đại diện"
-            extra="JPG, PNG hoặc WEBP, tối đa 5 MB"
-            render={(field, invalid) => (
-              <ImageUploadField
-                purpose="AVATAR"
-                value={field.value}
-                onChange={field.onChange}
-                fallback={user.fullName.charAt(0).toUpperCase()}
-                invalid={invalid}
-              />
-            )}
-          />
-        </Col>
       </Row>
 
       {user.role === 'MEMBER' && (
         <>
-          <Divider titlePlacement="start">Hồ sơ hội viên</Divider>
+          <SectionTitle>Hồ sơ hội viên</SectionTitle>
           <FormField
             control={control}
             name="profile.emergencyContact"
@@ -176,7 +169,7 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
 
       {user.role === 'COACH' && (
         <>
-          <Divider titlePlacement="start">Hồ sơ huấn luyện viên</Divider>
+          <SectionTitle>Hồ sơ huấn luyện viên</SectionTitle>
           <FormField
             control={control}
             name="profile.bio"
@@ -216,31 +209,21 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
               />
             )}
           />
-          <FormField
-            control={control}
-            name="profile.coverImageUrl"
-            label="Ảnh bìa"
-            extra="JPG, PNG hoặc WEBP, tối đa 5 MB"
-            render={(field, invalid) => (
-              <ImageUploadField
-                purpose="COVER_IMAGE"
-                variant="cover"
-                value={field.value}
-                onChange={field.onChange}
-                invalid={invalid}
-              />
-            )}
-          />
         </>
       )}
 
-      <div className="flex justify-end gap-2">
-        <Button onClick={onDone} disabled={isSubmitting}>
-          Hủy
-        </Button>
-        <Button type="primary" htmlType="submit" loading={isSubmitting}>
-          Lưu thay đổi
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-sc-border-soft pt-5">
+        <span className="text-[13px] text-sc-muted-2">
+          {user.role === 'COACH' ? 'Ảnh đại diện và ảnh bìa' : 'Ảnh đại diện'} đổi trực tiếp bằng nút bút chì trên ảnh.
+        </span>
+        <div className="flex gap-2">
+          <Button onClick={onDone} disabled={isSubmitting}>
+            Hủy
+          </Button>
+          <Button type="primary" htmlType="submit" loading={isSubmitting}>
+            Lưu thay đổi
+          </Button>
+        </div>
       </div>
     </Form>
   );

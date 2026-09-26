@@ -17,7 +17,6 @@ function toProfileFormValues(user: Account): ProfileFormInput {
     dateOfBirth: user.dateOfBirth,
     gender: user.gender,
     address: user.address ?? '',
-    avatarUrl: user.avatarUrl ?? '',
   };
 
   const member = getMemberProfile(user);
@@ -40,7 +39,6 @@ function toProfileFormValues(user: Account): ProfileFormInput {
         bio: coach.bio ?? '',
         experience: coach.experience ?? '',
         certifications: coach.certifications ?? '',
-        coverImageUrl: coach.coverImageUrl ?? '',
       },
     };
   }
