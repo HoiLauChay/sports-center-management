@@ -40,11 +40,11 @@ const blobStoreUrl = () => {
 class UploadService {
   /**
    * Issues a presigned URL for a single direct `PUT` from the browser to Vercel Blob.
-   * The URL is locked to one server-generated pathname, the declared content type and the purpose's size limit.
+   * The URL is locked to one server-generated pathname, the declared content type and the declared size.
    */
   createUploadUrl = async (
     user: { id: string; role: Role },
-    { purpose, contentType }: CreateUploadBody,
+    { purpose, contentType, size }: CreateUploadBody,
   ): Promise<UploadTicket> => {
     const rule = UPLOAD_RULES[purpose];
     if (!rule.roles.includes(user.role)) {
@@ -66,7 +66,7 @@ class UploadService {
     const constraints = {
       validUntil: Date.now() + UPLOAD_URL_TTL_MS,
       allowedContentTypes: [contentType],
-      maximumSizeInBytes: rule.maxSize,
+      maximumSizeInBytes: size,
     };
 
     const signedToken = await issueSignedToken({
