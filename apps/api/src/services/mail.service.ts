@@ -23,6 +23,18 @@ class MailService {
     if (error) throw new Error(`Failed to send mail: ${error.message}`);
   };
 
+  sendBatch = async (emails: MailOptions[]) => {
+    if (!mailer) {
+      for (const options of emails) {
+        console.warn(`[mail:dev] to=${options.to} subject=${options.subject}\n${options.text}`);
+      }
+      return;
+    }
+
+    const { error } = await mailer.batch.send(emails.map((options) => ({ from: env.MAIL_FROM, ...options })));
+    if (error) throw new Error(`Failed to send mail batch: ${error.message}`);
+  };
+
   sendOtp = (to: string, purpose: OtpPurpose, code: string) => this.send({ to, ...otpTemplate(purpose, code) });
 
   sendWelcome = (to: string, fullName: string) => this.send({ to, ...welcomeTemplate(fullName) });
