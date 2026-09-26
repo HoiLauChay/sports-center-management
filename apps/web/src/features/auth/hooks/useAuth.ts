@@ -105,16 +105,28 @@ export function useResetPassword() {
   return { form, onSubmit, isSubmitting: mutation.isPending, done };
 }
 
-export function useLogout() {
+/** Clears the cached session and user data, then sends the user to the login page. */
+export function useEndSession() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { message } = App.useApp();
 
+  return useCallback(
+    async (successMessage: string) => {
+      queryClient.setQueryData(sessionQueryOptions.queryKey, null);
+      await navigate({ to: PATHS.login });
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+      message.success(successMessage);
+    },
+    [message, navigate, queryClient],
+  );
+}
+
+export function useLogout() {
+  const endSession = useEndSession();
+
   return useCallback(async () => {
     await authService.logout().catch(() => undefined);
-    queryClient.setQueryData(sessionQueryOptions.queryKey, null);
-    await navigate({ to: PATHS.login });
-    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
-    message.success('Đã đăng xuất');
-  }, [message, navigate, queryClient]);
+    await endSession('Đã đăng xuất');
+  }, [endSession]);
 }

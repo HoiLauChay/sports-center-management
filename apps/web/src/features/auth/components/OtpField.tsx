@@ -2,8 +2,8 @@ import { SafetyOutlined } from '@ant-design/icons';
 import { AUTH_RULES, emailSchema, type OtpPurpose } from '@sports-center/shared';
 import { App, Button, Input } from 'antd';
 import type { Control, FieldPath, FieldValues, PathValue, UseFormReturn } from 'react-hook-form';
+import { FormField } from '~/components/form/FormField';
 import { useSendOtp } from '../hooks/useSendOtp';
-import { FormField } from './FormField';
 import { INPUT_ICON_STYLE } from './inputIcon';
 
 interface OtpFieldProps<T extends FieldValues> {

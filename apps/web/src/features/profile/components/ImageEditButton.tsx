@@ -1,0 +1,88 @@
+import { IMAGE_CONTENT_TYPES, type UpdateMeBody, type UploadPurpose } from '@sports-center/shared';
+import { App, Dropdown, Spin, Tooltip } from 'antd';
+import { ImageUp, Pencil, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { CropOptions } from '~/components/form/ImageCropModal';
+import { useCroppedUpload } from '~/components/form/useCroppedUpload';
+import { useQuickProfileUpdate } from '~/features/auth';
+import { toApiError } from '~/lib/http-errors';
+
+interface ImageEditButtonProps {
+  purpose: UploadPurpose;
+  crop: CropOptions;
+  hasImage: boolean;
+  /** Builds the PATCH /auth/me body for a new URL, or `null` to remove the image. */
+  toPatch: (url: string | null) => UpdateMeBody;
+  /** e.g. "ảnh bìa", "ảnh đại diện". */
+  noun: string;
+  className: string;
+}
+
+/**
+ * Pencil button shown when hovering an image (always visible on touch screens).
+ * No image yet → opens the file picker; otherwise a menu to change or remove it. Saves immediately.
+ */
+export function ImageEditButton({ purpose, crop, hasImage, toPatch, noun, className }: ImageEditButtonProps) {
+  const { message } = App.useApp();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const update = useQuickProfileUpdate();
+  const { pick, uploading, modal } = useCroppedUpload(purpose, crop, (url) => update.mutateAsync(toPatch(url)));
+  const busy = uploading || update.isPending;
+
+  const openPicker = () => inputRef.current?.click();
+  const remove = () => update.mutate(toPatch(null), { onError: (err) => message.error(toApiError(err).message) });
+
+  const button = (
+    <button
+      type="button"
+      aria-label={`Sửa ${noun}`}
+      disabled={busy}
+      onClick={hasImage ? undefined : openPicker}
+      className={`sc-image-edit ${className}${menuOpen || busy ? ' is-active' : ''}`}
+    >
+      {busy ? <Spin size="small" /> : <Pencil size={16} />}
+    </button>
+  );
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        hidden
+        accept={IMAGE_CONTENT_TYPES.join(',')}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          // Reset so picking the same file again still fires `change`.
+          e.target.value = '';
+          if (file) pick(file);
+        }}
+      />
+      {hasImage ? (
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          menu={{
+            items: [
+              { key: 'change', icon: <ImageUp size={15} />, label: `Đổi ${noun}` },
+              { key: 'remove', icon: <Trash2 size={15} />, label: `Xóa ${noun}`, danger: true },
+            ],
+            onClick: ({ key }) => {
+              setMenuOpen(false);
+              if (key === 'change') openPicker();
+              if (key === 'remove') remove();
+            },
+          }}
+        >
+          {button}
+        </Dropdown>
+      ) : (
+        <Tooltip title={`Thêm ${noun}`}>{button}</Tooltip>
+      )}
+      {modal}
+    </>
+  );
+}

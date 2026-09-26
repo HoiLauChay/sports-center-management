@@ -3,12 +3,12 @@ import { Link } from '@tanstack/react-router';
 import { Button, Form, Input, Result } from 'antd';
 import { useRef } from 'react';
 import heroImg from '~/assets/images/sports/swim.jpg';
+import { FormField, FormRootError } from '~/components/form/FormField';
 import { PATHS } from '~/constants/paths';
 import { useResetPassword } from '../hooks/useAuth';
 import { useCaptchaToken } from '../hooks/useCaptchaToken';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { CaptchaField, type CaptchaHandle } from './CaptchaField';
-import { FormField, FormRootError } from './FormField';
 import { INPUT_ICON_STYLE } from './inputIcon';
 import { OtpField } from './OtpField';
 

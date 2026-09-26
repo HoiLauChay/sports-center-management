@@ -1,38 +1,55 @@
-import { Avatar, Card, Descriptions } from 'antd';
-import { PageHeader } from '~/components/ui/PageHeader';
-import { RoleTag } from '~/components/ui/RoleTag';
+import { Card, Col, Row, Tabs } from 'antd';
+import { useState } from 'react';
 import { useCurrentUser } from '~/features/auth';
-import { formatDate } from '~/lib/format';
+import '../profile.css';
+import { ProfileEditForm } from './ProfileEditForm';
+import { ProfileHero } from './ProfileHero';
+import { ProfileOverview } from './ProfileOverview';
+import { ProfileSidebar } from './ProfileSidebar';
+import { SecurityPanel } from './SecurityPanel';
 
-const GENDER_LABEL = { MALE: 'Nam', FEMALE: 'Nữ', OTHER: 'Khác' } as const;
+type TabKey = 'info' | 'security';
 
 export function ProfilePage() {
   const user = useCurrentUser();
+  const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<TabKey>('info');
+
+  const startEditing = () => {
+    setTab('info');
+    setEditing(true);
+  };
 
   return (
-    <>
-      <PageHeader title="Hồ sơ" description="Thông tin tài khoản của bạn." />
-      <Card>
-        <div className="mb-6 flex items-center gap-4">
-          <Avatar src={user.avatarUrl ?? undefined} size={64} className="!bg-sc-primary !text-2xl">
-            {user.fullName.charAt(0).toUpperCase()}
-          </Avatar>
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-lg font-semibold">{user.fullName}</span>
-            <RoleTag role={user.role} />
-          </div>
-        </div>
-        <Descriptions column={{ xs: 1, md: 2 }} bordered size="middle">
-          <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
-          <Descriptions.Item label="Số điện thoại">{user.phone ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label="Ngày sinh">
-            {user.dateOfBirth ? formatDate(user.dateOfBirth) : '—'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Giới tính">{user.gender ? GENDER_LABEL[user.gender] : '—'}</Descriptions.Item>
-          <Descriptions.Item label="Ngày tham gia">{formatDate(user.createdAt)}</Descriptions.Item>
-          <Descriptions.Item label="Địa chỉ">{user.address ?? '—'}</Descriptions.Item>
-        </Descriptions>
-      </Card>
-    </>
+    <div className="flex flex-col gap-4">
+      <ProfileHero user={user} editing={editing} onEdit={startEditing} />
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card>
+            <Tabs
+              activeKey={tab}
+              onChange={(key) => setTab(key as TabKey)}
+              className="-mt-2"
+              items={[
+                {
+                  key: 'info',
+                  label: editing ? 'Chỉnh sửa hồ sơ' : 'Thông tin',
+                  children: editing ? (
+                    <ProfileEditForm user={user} onDone={() => setEditing(false)} />
+                  ) : (
+                    <ProfileOverview user={user} />
+                  ),
+                },
+                { key: 'security', label: 'Bảo mật', children: <SecurityPanel /> },
+              ]}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <ProfileSidebar user={user} />
+        </Col>
+      </Row>
+    </div>
   );
 }
