@@ -7,7 +7,6 @@ import {
   type ResetPasswordBody,
   type SendOtpBody,
 } from '@sports-center/shared';
-import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
 import { AUTH } from '~/constants/auth';
@@ -19,6 +18,7 @@ import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import mailService from '~/services/mail.service';
+import notificationService from '~/services/notification.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { signAccessToken } from '~/utils/jwt';
 import { hashPassword, verifyPassword } from '~/utils/password';
@@ -82,21 +82,31 @@ class AuthService {
     const passwordHash = await hashPassword(password);
     const refreshToken = generateOpaqueToken();
 
-    const account = await prisma.$transaction(async (tx) => {
+    const { account, notifications } = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
       const created = await accountRepository.createMember(
         { email, fullName, passwordHash, emailVerifiedAt: new Date() },
         tx,
       );
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
-      return created;
+      const notifications = await notificationService.create(
+        [
+          {
+            accountId: created.id,
+            type: 'SYSTEM',
+            title: 'Chào mừng bạn đến với Sports Center',
+            message:
+              'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+            dedupKey: `welcome:${created.id}`,
+            sendEmail: true,
+          },
+        ],
+        tx,
+      );
+      return { account: created, notifications };
     });
 
-    waitUntil(
-      mailService.sendWelcome(account.email, account.fullName).catch((err) => {
-        console.error('Failed to send welcome email:', err);
-      }),
-    );
+    notificationService.sendEmailsAfterCommit(notifications);
 
     return {
       account: toAccountResponse(account),

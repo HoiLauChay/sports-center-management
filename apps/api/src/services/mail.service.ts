@@ -3,7 +3,6 @@ import type { OtpPurpose } from '@sports-center/shared';
 import { env } from '~/configs/env';
 import { mailer } from '~/configs/mailer';
 import { otpTemplate } from '~/templates/otp.template';
-import { welcomeTemplate } from '~/templates/welcome.template';
 
 interface MailOptions {
   to: string;
@@ -36,8 +35,6 @@ class MailService {
   };
 
   sendOtp = (to: string, purpose: OtpPurpose, code: string) => this.send({ to, ...otpTemplate(purpose, code) });
-
-  sendWelcome = (to: string, fullName: string) => this.send({ to, ...welcomeTemplate(fullName) });
 }
 
 export default new MailService();
