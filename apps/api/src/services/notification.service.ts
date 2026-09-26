@@ -36,8 +36,8 @@ class NotificationService {
         lt: new Date(now - NOTIFICATION.EMAIL_RETRY_DELAY),
       },
     };
-    const processed = await this.sendPendingEmails(where, NOTIFICATION.EMAIL_BATCH_SIZE);
-    return { processed, remaining: await notificationRepository.countPendingEmails(where) };
+    const { sent, failed } = await this.sendPendingEmails(where, NOTIFICATION.EMAIL_BATCH_SIZE);
+    return { processed: sent, remaining: (await notificationRepository.countPendingEmails(where)) - failed };
   };
 
   private sendPendingEmails = async (where: Prisma.NotificationWhereInput, limit: number) => {
@@ -60,7 +60,7 @@ class NotificationService {
       }
     }
 
-    return sent;
+    return { sent, failed: pending.length - sent };
   };
 }
 

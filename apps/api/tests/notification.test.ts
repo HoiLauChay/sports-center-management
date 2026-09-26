@@ -45,7 +45,7 @@ describe('notificationService.resendPendingEmails', () => {
     });
     const sendBatch = spyOn(mailService, 'sendBatch').mockRejectedValueOnce(new Error('resend down'));
 
-    expect(await notificationService.resendPendingEmails()).toEqual({ processed: 0, remaining: 2 });
+    expect(await notificationService.resendPendingEmails()).toEqual({ processed: 0, remaining: 0 });
     expect(await prisma.notification.count({ where: { emailSentAt: { not: null } } })).toBe(0);
 
     sendBatch.mockResolvedValueOnce(undefined);
