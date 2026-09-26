@@ -23,9 +23,9 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
   const save = useSaveProfile();
 
   return (
-    <section className="sc-profile-hero">
+    <section className="overflow-hidden rounded-xl border border-sc-border-soft bg-sc-surface [box-shadow:0_1px_2px_rgba(20,19,15,0.03),0_2px_10px_rgba(20,19,15,0.04)]">
       <div
-        className={`sc-profile-cover sc-image-edit-host${cover ? '' : ' is-default'}`}
+        className={`group/image-edit relative aspect-[4/1] max-h-[260px] w-full overflow-hidden bg-sc-ink bg-cover bg-center max-md:aspect-[3/1] ${cover ? '' : "bg-court-pattern after:absolute after:right-12 after:-bottom-[60px] after:size-[180px] after:rounded-[50%] after:border-2 after:border-[rgba(214,242,75,0.35)] after:content-['']"}`}
         style={cover ? { backgroundImage: `url("${encodeURI(cover)}")` } : undefined}
       >
         {coach && (
@@ -35,16 +35,16 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             hasImage={Boolean(cover)}
             onChange={(url) => save.mutateAsync({ profile: { coverImageUrl: url } })}
             noun="ảnh bìa"
-            className="cover"
+            className="top-3 right-3"
           />
         )}
       </div>
-      <div className="sc-profile-hero-body">
-        <div className="sc-profile-avatar-wrap sc-image-edit-host">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4 px-6 pb-5 max-md:px-4 max-md:pb-4">
+        <div className="group/image-edit relative -mt-[52px] shrink-0 rounded-[999px]">
           <Avatar
             src={user.avatarUrl ?? undefined}
             size={104}
-            className="sc-profile-avatar !text-[34px] !font-bold"
+            className="!border-4 !border-sc-surface !text-[34px] !font-bold [box-shadow:0_8px_20px_rgba(20,19,15,0.16)]"
             style={{ background: `color-mix(in srgb, ${roleColor} 14%, white)`, color: roleColor }}
           >
             {initialsOf(user.fullName)}
@@ -55,29 +55,32 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
             hasImage={Boolean(user.avatarUrl)}
             onChange={(url) => save.mutateAsync({ avatarUrl: url })}
             noun="ảnh đại diện"
-            className="avatar"
+            small
+            className="right-0 bottom-0.5"
           />
         </div>
-        <div className="sc-profile-hero-info">
-          <h2 className="sc-profile-name">{user.fullName}</h2>
-          <div className="sc-profile-meta">
+        <div className="min-w-0 flex-[1_1_260px] pt-3 max-md:pt-0">
+          <h2 className="m-0 font-display text-[30px] leading-[1.05] font-extrabold wrap-anywhere text-sc-ink uppercase max-md:text-[24px]">
+            {user.fullName}
+          </h2>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[13px] text-sc-muted">
             <RoleTag role={user.role} />
-            <span className="item">
-              <span className="status-dot" />
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2 rounded-[999px] bg-sc-success [box-shadow:0_0_0_3px_rgba(22,163,74,0.15)]" />
               {ACCOUNT_STATUS_LABEL[user.status]}
             </span>
-            <span className="item">
+            <span className="inline-flex items-center gap-1.5">
               <Mail size={14} />
               {user.email}
             </span>
-            <span className="item">
+            <span className="inline-flex items-center gap-1.5">
               <CalendarDays size={14} />
               Tham gia {formatDate(user.createdAt)}
             </span>
           </div>
         </div>
         {!editing && (
-          <Button type="primary" icon={<Pencil size={16} />} onClick={onEdit} className="sc-profile-hero-action">
+          <Button type="primary" icon={<Pencil size={16} />} onClick={onEdit} className="max-md:w-full">
             Sửa hồ sơ
           </Button>
         )}

@@ -5,7 +5,6 @@ import { useRef, useState } from 'react';
 import { useCroppedUpload } from '~/hooks/useCroppedUpload';
 import { toApiError } from '~/lib/http-errors';
 import type { CropOptions } from './ImageCropModal';
-import './image-edit-button.css';
 
 interface ImageEditButtonProps {
   purpose: UploadPurpose;
@@ -13,16 +12,26 @@ interface ImageEditButtonProps {
   hasImage: boolean;
   noun: string;
   onChange: (url: string | null) => Promise<unknown>;
+  small?: boolean;
   className?: string;
 }
 
-export function ImageEditButton({ purpose, crop, hasImage, noun, onChange, className }: ImageEditButtonProps) {
+export function ImageEditButton({
+  purpose,
+  crop,
+  hasImage,
+  noun,
+  onChange,
+  small = false,
+  className,
+}: ImageEditButtonProps) {
   const { message } = App.useApp();
   const inputRef = useRef<HTMLInputElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const { pick, uploading, modal } = useCroppedUpload(purpose, crop, onChange);
   const busy = uploading || removing;
+  const visible = menuOpen || busy;
 
   const openPicker = () => inputRef.current?.click();
   const remove = async () => {
@@ -42,7 +51,7 @@ export function ImageEditButton({ purpose, crop, hasImage, noun, onChange, class
       aria-label={`Sửa ${noun}`}
       disabled={busy}
       onClick={hasImage ? undefined : openPicker}
-      className={`sc-image-edit${className ? ` ${className}` : ''}${menuOpen || busy ? ' is-active' : ''}`}
+      className={`absolute z-1 flex cursor-pointer items-center justify-center rounded-[999px] bg-[rgba(255,255,255,0.92)] text-sc-ink [box-shadow:0_2px_10px_rgba(20,19,15,0.22)] [transition:opacity_0.15s,transform_0.15s,background_0.15s] hover:bg-white disabled:cursor-default ${small ? 'size-8 border-2 border-sc-surface' : 'size-9 [border:none]'} ${visible ? 'opacity-100 [transform:scale(1)]' : 'opacity-0 [transform:scale(0.9)] group-hover/image-edit:opacity-100 group-hover/image-edit:[transform:scale(1)] focus-visible:opacity-100 focus-visible:[transform:scale(1)] [@media(hover:none)]:opacity-100 [@media(hover:none)]:[transform:none]'}${className ? ` ${className}` : ''}`}
     >
       {busy ? <Spin size="small" /> : <Pencil size={16} />}
     </button>

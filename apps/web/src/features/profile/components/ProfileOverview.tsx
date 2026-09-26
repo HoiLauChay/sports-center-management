@@ -68,7 +68,7 @@ export function ProfileOverview({ user }: { user: Account }) {
 
       {section && (
         <>
-          <SectionTitle className="mt-8">{section.title}</SectionTitle>
+          <SectionTitle>{section.title}</SectionTitle>
           <InfoGrid items={section.items} />
         </>
       )}

@@ -1,11 +1,9 @@
 import type { ReactNode } from 'react';
-import './section-title.css';
 
-interface SectionTitleProps {
-  children: ReactNode;
-  className?: string;
-}
-
-export function SectionTitle({ children, className }: SectionTitleProps) {
-  return <h3 className={className ? `sc-section-title ${className}` : 'sc-section-title'}>{children}</h3>;
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mx-0 mt-0 mb-[14px] font-display text-[15px] font-bold tracking-[0.08em] text-sc-ink uppercase">
+      {children}
+    </h3>
+  );
 }

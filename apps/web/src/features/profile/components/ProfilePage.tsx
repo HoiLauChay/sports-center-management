@@ -1,7 +1,6 @@
 import { Card, Col, Row, Tabs } from 'antd';
 import { useState } from 'react';
 import { useCurrentUser } from '~/features/auth';
-import '../profile.css';
 import { ProfileEditForm } from './ProfileEditForm';
 import { ProfileHero } from './ProfileHero';
 import { ProfileOverview } from './ProfileOverview';
