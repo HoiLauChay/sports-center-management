@@ -25,8 +25,8 @@ export const validate = (schemas: RequestSchemas) => async (req: Request, _res: 
       for (const issue of parsed.error.issues) {
         errors.push({ path: [target, ...issue.path].join('.'), message: issue.message });
       }
-    } else if (target === 'body') {
-      req.body = parsed.data;
+    } else {
+      Object.defineProperty(req, target, { value: parsed.data, writable: true, enumerable: true, configurable: true });
     }
   }
 

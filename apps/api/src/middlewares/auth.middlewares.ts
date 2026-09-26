@@ -41,15 +41,17 @@ export const auth = async (req: Request, _res: Response, next: NextFunction) => 
   next();
 };
 
-export const isRole = (roles: Role[]) => (req: Request, _res: Response, next: NextFunction) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return next(
-      new ErrorWithStatus({
-        message: 'Bạn không có quyền truy cập',
-        status: HTTP_STATUS.FORBIDDEN,
-        code: ERROR_CODE.FORBIDDEN,
-      }),
-    );
-  }
-  next();
-};
+export const isRole =
+  (...roles: Role[]) =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return next(
+        new ErrorWithStatus({
+          message: 'Bạn không có quyền truy cập',
+          status: HTTP_STATUS.FORBIDDEN,
+          code: ERROR_CODE.FORBIDDEN,
+        }),
+      );
+    }
+    next();
+  };
