@@ -40,6 +40,15 @@ bun run db:seed
 bun run dev
 ```
 
+### Test
+
+Create `apps/api/.env.test` from `apps/api/.env.example`, pointing `DATABASE_URL` and `DIRECT_URL` to a database whose name ends with `_test`.
+
+```bash
+bun --filter @sports-center/api db:deploy:test
+bun run test
+```
+
 ### Build
 
 ```bash
