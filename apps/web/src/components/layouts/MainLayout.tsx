@@ -1,53 +1,90 @@
-import { Outlet } from '@tanstack/react-router';
-import { Button, Drawer, Layout } from 'antd';
-import { Menu as MenuIcon } from 'lucide-react';
+import { Link, Outlet } from '@tanstack/react-router';
+import { Button, Drawer, Grid, Layout, Tooltip } from 'antd';
+import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import logoMark from '~/assets/brand/logo-mark.svg';
 import { PageLoading } from '~/components/feedback/States';
-import { Logo } from '~/components/ui/Logo';
+import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
-import { BRAND } from '~/styles/antd-theme';
 import { AccountMenu } from './AccountMenu';
 import { SidebarNav } from './SidebarNav';
+import './app-shell.css';
 
-const SIDER_WIDTH = 248;
+const COLLAPSED_KEY = 'sc_nav_collapsed';
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function MainLayout({ children }: { children?: ReactNode }) {
   const user = useSession();
+  const [collapsed, setCollapsed] = useState(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // `md` is undefined before the first measurement; treat that as desktop to avoid a layout flash.
+  const isMobile = Grid.useBreakpoint().md === false;
 
   if (!user) return <PageLoading fullScreen />;
 
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+    } catch {
+      // Storage can be unavailable (private mode); the toggle still works for this session.
+    }
+  };
+
   return (
-    <Layout className="min-h-screen">
-      <Layout.Sider width={SIDER_WIDTH} className="!sticky top-0 !hidden h-screen lg:!block">
-        <SidebarNav role={user.role} />
-      </Layout.Sider>
+    <Layout className="min-h-screen" hasSider={!isMobile}>
+      {!isMobile && <SidebarNav user={user} collapsed={collapsed} />}
+      {isMobile && (
+        <Drawer
+          placement="left"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          closable={false}
+          size={288}
+          className="sc-nav-drawer"
+          styles={{ body: { padding: 0 } }}
+        >
+          <SidebarNav user={user} mobile onClose={() => setDrawerOpen(false)} onNavigate={() => setDrawerOpen(false)} />
+        </Drawer>
+      )}
 
-      <Drawer
-        placement="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        closable={false}
-        size={SIDER_WIDTH + 16}
-        styles={{ body: { padding: 0, background: BRAND.ink } }}
-        className="lg:hidden"
-      >
-        <SidebarNav role={user.role} onNavigate={() => setDrawerOpen(false)} />
-      </Drawer>
-
-      <Layout>
-        <Layout.Header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-sc-border !px-4 md:!px-6">
-          <div className="flex items-center gap-2 lg:invisible">
-            <Button
-              type="text"
-              aria-label="Mở menu"
-              icon={<MenuIcon size={20} />}
-              onClick={() => setDrawerOpen(true)}
-              className="lg:hidden"
-            />
-            <Logo size={28} className="lg:hidden" />
-          </div>
-          <AccountMenu user={user} />
+      <Layout className="min-w-0">
+        <Layout.Header className="sc-header" style={{ padding: isMobile ? '0 12px' : '0 24px' }}>
+          {isMobile ? (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Button
+                type="text"
+                aria-label="Mở menu"
+                icon={<MenuIcon size={20} />}
+                onClick={() => setDrawerOpen(true)}
+              />
+              <Link to={PATHS.dashboard} className="flex min-w-0 items-center gap-2 !text-sc-ink no-underline">
+                <img src={logoMark} width={28} height={28} alt="" className="block shrink-0" />
+                <b className="text-sm whitespace-nowrap">Sports Center</b>
+              </Link>
+            </div>
+          ) : (
+            <Tooltip title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'} placement="bottom">
+              <button
+                type="button"
+                aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+                aria-pressed={collapsed}
+                className="sc-collapse-btn"
+                onClick={toggleCollapsed}
+              >
+                {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+              </button>
+            </Tooltip>
+          )}
+          <AccountMenu user={user} compact={isMobile} />
         </Layout.Header>
 
         <Layout.Content className="p-4 md:p-6">
