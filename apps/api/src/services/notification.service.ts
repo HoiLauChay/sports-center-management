@@ -28,17 +28,16 @@ class NotificationService {
     );
   };
 
-  resendPendingEmails = () => {
+  resendPendingEmails = async () => {
     const now = Date.now();
-    return this.sendPendingEmails(
-      {
-        createdAt: {
-          gte: new Date(now - NOTIFICATION.EMAIL_RETRY_WINDOW),
-          lt: new Date(now - NOTIFICATION.EMAIL_RETRY_DELAY),
-        },
+    const where: Prisma.NotificationWhereInput = {
+      createdAt: {
+        gte: new Date(now - NOTIFICATION.EMAIL_RETRY_WINDOW),
+        lt: new Date(now - NOTIFICATION.EMAIL_RETRY_DELAY),
       },
-      NOTIFICATION.EMAIL_BATCH_SIZE,
-    );
+    };
+    const { sent, failed } = await this.sendPendingEmails(where, NOTIFICATION.EMAIL_BATCH_SIZE);
+    return { processed: sent, remaining: (await notificationRepository.countPendingEmails(where)) - failed };
   };
 
   private sendPendingEmails = async (where: Prisma.NotificationWhereInput, limit: number) => {

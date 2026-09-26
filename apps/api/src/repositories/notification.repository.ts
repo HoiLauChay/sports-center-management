@@ -13,6 +13,9 @@ class NotificationRepository {
       take,
     });
 
+  countPendingEmails = (where: Prisma.NotificationWhereInput) =>
+    prisma.notification.count({ where: { ...where, sendEmail: true, emailSentAt: null } });
+
   markEmailSent = (ids: string[]) =>
     prisma.notification.updateMany({
       where: { id: { in: ids }, emailSentAt: null },
