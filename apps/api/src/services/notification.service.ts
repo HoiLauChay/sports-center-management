@@ -1,11 +1,13 @@
-import type { ListNotificationsQuery } from '@sports-center/shared';
+import { ERROR_CODE, type ListNotificationsQuery } from '@sports-center/shared';
 import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
+import { HTTP_STATUS } from '~/constants/httpStatus';
 import { NOTIFICATION } from '~/constants/notification';
 import type { Prisma } from '~/generated/prisma/client';
 import { toNotificationResponse } from '~/mappers/notification.mapper';
 import notificationRepository from '~/repositories/notification.repository';
+import { ErrorWithStatus } from '~/rules/error';
 import mailService from '~/services/mail.service';
 import { notificationTemplate } from '~/templates/notification.template';
 import { toCursorPage } from '~/utils/pagination';
@@ -25,6 +27,21 @@ class NotificationService {
     ]);
     const page = toCursorPage(rows, query);
     return { ...page, items: page.items.map(toNotificationResponse), unreadCount };
+  };
+
+  markRead = async (accountId: string, id: string) => {
+    const { count } = await notificationRepository.markRead(accountId, id);
+    if (count === 0 && !(await notificationRepository.exists(accountId, id))) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.NOT_FOUND,
+        code: ERROR_CODE.NOT_FOUND,
+        message: 'Không tìm thấy thông báo',
+      });
+    }
+  };
+
+  markAllRead = async (accountId: string) => {
+    await notificationRepository.markAllRead(accountId);
   };
 
   create = (inputs: NotificationInput[], tx: Prisma.TransactionClient = prisma) =>

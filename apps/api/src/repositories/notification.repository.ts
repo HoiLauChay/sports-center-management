@@ -47,6 +47,14 @@ class NotificationRepository {
     });
 
   countUnread = (accountId: string) => prisma.notification.count({ where: { accountId, readAt: null } });
+
+  exists = async (accountId: string, id: string) => (await prisma.notification.count({ where: { id, accountId } })) > 0;
+
+  markRead = (accountId: string, id: string) =>
+    prisma.notification.updateMany({ where: { id, accountId, readAt: null }, data: { readAt: new Date() } });
+
+  markAllRead = (accountId: string) =>
+    prisma.notification.updateMany({ where: { accountId, readAt: null }, data: { readAt: new Date() } });
 }
 
 export default new NotificationRepository();

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
+import type { ErrorWithStatus } from '~/rules/error';
 import mailService from '~/services/mail.service';
 import notificationService from '~/services/notification.service';
 import { resetDatabase } from './helpers/db';
@@ -89,5 +90,20 @@ describe('notification inbox', () => {
 
     const unread = await notificationService.list(accountId, { limit: 20, unreadOnly: true });
     expect(unread.items.map(({ title }) => title)).toEqual(['C', 'A']);
+  });
+
+  test('cannot mark notifications of another account', async () => {
+    const foreign = await prisma.notification.findFirstOrThrow({ where: { accountId: otherId } });
+    const error = await notificationService.markRead(accountId, foreign.id).catch((err: unknown) => err);
+    expect((error as ErrorWithStatus).status).toBe(404);
+
+    const own = await prisma.notification.findFirstOrThrow({ where: { accountId, title: 'C' } });
+    await notificationService.markRead(accountId, own.id);
+    await notificationService.markRead(accountId, own.id);
+    expect((await notificationService.list(accountId, { limit: 20 })).unreadCount).toBe(1);
+
+    await notificationService.markAllRead(accountId);
+    expect(await prisma.notification.count({ where: { accountId, readAt: null } })).toBe(0);
+    expect(await prisma.notification.count({ where: { accountId: otherId, readAt: null } })).toBe(1);
   });
 });

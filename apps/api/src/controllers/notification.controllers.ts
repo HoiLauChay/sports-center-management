@@ -10,6 +10,16 @@ class NotificationController {
     const page = await notificationService.list(req.user!.id, req.query as unknown as ListNotificationsQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: page }));
   };
+
+  markRead = async (req: Request, res: Response) => {
+    await notificationService.markRead(req.user!.id, req.params.id as string);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã đánh dấu đã đọc' }));
+  };
+
+  markAllRead = async (req: Request, res: Response) => {
+    await notificationService.markAllRead(req.user!.id);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã đánh dấu tất cả đã đọc' }));
+  };
 }
 
 export default new NotificationController();
