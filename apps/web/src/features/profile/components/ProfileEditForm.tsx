@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import { Lock } from 'lucide-react';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { GENDER_LABEL } from '~/lib/account';
 import { useUpdateProfile } from '../hooks/useProfile';
-import { GENDER_LABEL } from '../utils/profile';
 
 const GENDER_OPTIONS = GENDERS.map((value) => ({ value, label: GENDER_LABEL[value] }));
 const TEXTAREA_ROWS = { minRows: 2, maxRows: 6 };

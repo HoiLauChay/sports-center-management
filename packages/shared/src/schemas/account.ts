@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { GENDERS } from '../constants/enums';
 import { fullNameSchema } from './auth';
 
-const optionalText = (max: number, label: string) =>
+export const optionalText = (max: number, label: string) =>
   z
     .string()
     .trim()

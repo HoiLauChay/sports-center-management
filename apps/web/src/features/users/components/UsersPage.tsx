@@ -1,58 +1,32 @@
-import {
-  ACCOUNT_STATUSES,
-  ROLES,
-  type AccountStatus,
-  type AccountSummary,
-  type ListUsersQuery,
-} from '@sports-center/shared';
+import { ACCOUNT_STATUSES, ROLES, type AccountSummary, type ListUsersQuery } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { getRouteApi } from '@tanstack/react-router';
-import { Avatar, Card, Input, Select, Tag, type TableColumnsType } from 'antd';
+import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { Button, Card, Input, Select, type TableColumnsType } from 'antd';
+import { UserPlus } from 'lucide-react';
+import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { RoleTag } from '~/components/ui/RoleTag';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
-import { formatDate } from '~/lib/format';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
+import { CreateUserModal } from './CreateUserModal';
+import { USER_COLUMNS } from './userColumns';
 
-const routeApi = getRouteApi('/_authenticated/_manager/admin/users');
-
-const STATUS_COLOR: Record<AccountStatus, string> = {
-  ACTIVE: 'success',
-  INACTIVE: 'default',
-  BANNED: 'error',
-};
+const routeApi = getRouteApi('/_authenticated/_manager/admin/users/');
 
 const columns: TableColumnsType<AccountSummary> = [
-  {
-    title: 'Người dùng',
-    key: 'user',
-    render: (_, user) => (
-      <div className="flex items-center gap-3">
-        <Avatar src={user.avatarUrl ?? undefined} className="!bg-sc-primary">
-          {user.fullName.charAt(0).toUpperCase()}
-        </Avatar>
-        <div className="flex flex-col">
-          <span className="font-semibold">{user.fullName}</span>
-          <span className="text-xs text-sc-muted">{user.email}</span>
-        </div>
-      </div>
-    ),
-  },
-  { title: 'Số điện thoại', dataIndex: 'phone', render: (phone: string | null) => phone ?? '—' },
-  { title: 'Vai trò', dataIndex: 'role', render: (_, user) => <RoleTag role={user.role} /> },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'status',
-    render: (status: AccountStatus) => <Tag color={STATUS_COLOR[status]}>{ACCOUNT_STATUS_LABEL[status]}</Tag>,
-  },
-  { title: 'Ngày tạo', dataIndex: 'createdAt', render: (value: string) => formatDate(value) },
+  USER_COLUMNS.user,
+  USER_COLUMNS.phone,
+  USER_COLUMNS.role,
+  USER_COLUMNS.status,
+  USER_COLUMNS.createdAt,
 ];
 
 export function UsersPage() {
   const search = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
+  const navigateTo = useNavigate();
+  const [creating, setCreating] = useState(false);
   const { page, limit } = withPaginationDefaults(search);
   const query: ListUsersQuery = { ...search, page, limit };
 
@@ -67,7 +41,15 @@ export function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Người dùng" description="Tài khoản thành viên, huấn luyện viên và nhân viên." />
+      <PageHeader
+        title="Người dùng"
+        description="Tài khoản thành viên, huấn luyện viên và nhân viên."
+        extra={
+          <Button type="primary" icon={<UserPlus size={16} />} onClick={() => setCreating(true)}>
+            Tạo tài khoản
+          </Button>
+        }
+      />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
           <Input.Search
@@ -107,8 +89,13 @@ export function UsersPage() {
             updateSearch({ page: nextLimit === limit ? nextPage : undefined, limit: nextLimit })
           }
           emptyTitle="Không có người dùng phù hợp"
+          rowClassName="cursor-pointer"
+          onRow={(user) => ({
+            onClick: () => void navigateTo({ to: '/admin/users/$userId', params: { userId: user.id } }),
+          })}
         />
       </Card>
+      <CreateUserModal open={creating} onClose={() => setCreating(false)} />
     </>
   );
 }

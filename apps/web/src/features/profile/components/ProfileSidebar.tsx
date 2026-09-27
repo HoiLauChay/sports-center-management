@@ -5,8 +5,8 @@ import { InfoGrid } from '~/components/data/InfoGrid';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { WalletCard } from '~/components/ui/WalletCard';
 import { ROLE_LABEL } from '~/constants/roles';
+import { getMemberProfile } from '~/lib/account';
 import { formatDate } from '~/lib/format';
-import { getMemberProfile } from '../utils/profile';
 
 export function ProfileSidebar({ user }: { user: Account }) {
   const member = getMemberProfile(user);

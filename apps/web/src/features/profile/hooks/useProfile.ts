@@ -5,9 +5,9 @@ import { App } from 'antd';
 import { useForm } from 'react-hook-form';
 import { sessionQueryOptions } from '~/features/auth';
 import { useFormApiError } from '~/hooks/useFormApiError';
+import { getCoachProfile, getMemberProfile } from '~/lib/account';
 import { profileSchema, type ProfileFormInput, type ProfileFormValues } from '../schemas/profile.schema';
 import { profileService } from '../services/profile.service';
-import { getCoachProfile, getMemberProfile } from '../utils/profile';
 import { PROFILE_ERROR_FIELDS } from '../utils/profileErrorFields';
 
 function toProfileFormValues(user: Account): ProfileFormInput {
