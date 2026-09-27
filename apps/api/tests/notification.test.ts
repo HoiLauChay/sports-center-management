@@ -58,3 +58,36 @@ describe('notificationService.resendPendingEmails', () => {
     expect(sent.map(({ title }) => title)).toEqual(['A', 'B']);
   });
 });
+
+describe('notification inbox', () => {
+  let otherId: string;
+  const at = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
+
+  beforeEach(async () => {
+    const other = await prisma.account.create({
+      data: { email: 'other@example.com', passwordHash: 'hash', fullName: 'Other', memberProfile: { create: {} } },
+    });
+    otherId = other.id;
+    await prisma.notification.createMany({
+      data: [
+        { accountId, type: 'SYSTEM', title: 'A', message: 'a', createdAt: at(3) },
+        { accountId, type: 'SYSTEM', title: 'B', message: 'b', createdAt: at(2), readAt: at(1) },
+        { accountId, type: 'SYSTEM', title: 'C', message: 'c', createdAt: at(1) },
+        { accountId: otherId, type: 'SYSTEM', title: 'X', message: 'x' },
+      ],
+    });
+  });
+
+  test('pages only own notifications with the unread count', async () => {
+    const first = await notificationService.list(accountId, { limit: 2 });
+    expect(first.items.map(({ title }) => title)).toEqual(['C', 'B']);
+    expect(first.unreadCount).toBe(2);
+
+    const second = await notificationService.list(accountId, { limit: 2, cursor: first.nextCursor! });
+    expect(second.items.map(({ title }) => title)).toEqual(['A']);
+    expect(second.nextCursor).toBeNull();
+
+    const unread = await notificationService.list(accountId, { limit: 20, unreadOnly: true });
+    expect(unread.items.map(({ title }) => title)).toEqual(['C', 'A']);
+  });
+});

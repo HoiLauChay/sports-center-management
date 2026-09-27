@@ -1,11 +1,14 @@
+import type { ListNotificationsQuery } from '@sports-center/shared';
 import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
 import { NOTIFICATION } from '~/constants/notification';
 import type { Prisma } from '~/generated/prisma/client';
+import { toNotificationResponse } from '~/mappers/notification.mapper';
 import notificationRepository from '~/repositories/notification.repository';
 import mailService from '~/services/mail.service';
 import { notificationTemplate } from '~/templates/notification.template';
+import { toCursorPage } from '~/utils/pagination';
 
 export type NotificationInput = Pick<
   Prisma.NotificationCreateManyInput,
@@ -15,6 +18,15 @@ export type NotificationInput = Pick<
 export type CreatedNotification = { id: string; sendEmail: boolean };
 
 class NotificationService {
+  list = async (accountId: string, query: ListNotificationsQuery) => {
+    const [rows, unreadCount] = await Promise.all([
+      notificationRepository.findPage(accountId, query),
+      notificationRepository.countUnread(accountId),
+    ]);
+    const page = toCursorPage(rows, query);
+    return { ...page, items: page.items.map(toNotificationResponse), unreadCount };
+  };
+
   create = (inputs: NotificationInput[], tx: Prisma.TransactionClient = prisma) =>
     notificationRepository.createMany(inputs, tx);
 

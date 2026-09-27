@@ -15,9 +15,3 @@ export interface AppNotification {
 export interface NotificationPage extends CursorPaginated<AppNotification> {
   unreadCount: number;
 }
-
-export interface ListNotificationsQuery {
-  unreadOnly?: boolean;
-  cursor?: string;
-  limit?: number;
-}
