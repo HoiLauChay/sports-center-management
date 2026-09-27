@@ -271,6 +271,7 @@ class AuthService {
     await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
       await accountRepository.updatePassword(account.id, passwordHash, tx);
+      if (!account.emailVerifiedAt) await accountRepository.markEmailVerified(account.id, tx);
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
     });
   };
