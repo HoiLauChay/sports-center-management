@@ -10,17 +10,15 @@ const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/$m
 function ComingSoonCard({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
   return (
     <Card>
-      <div className="flex items-start gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <SectionTitle>{title}</SectionTitle>
+        <Tag className="!m-0">Sắp có</Tag>
+      </div>
+      <div className="flex items-center gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sc-paper text-sc-ink-2">
           <Icon size={17} />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2 [&>h3]:!mb-0">
-            <SectionTitle>{title}</SectionTitle>
-            <Tag className="!m-0">Sắp có</Tag>
-          </div>
-          <p className="mt-1 mb-0 text-[13px] text-sc-muted">{description}</p>
-        </div>
+        <p className="m-0 min-w-0 flex-1 text-[13px] text-sc-muted">{description}</p>
       </div>
     </Card>
   );
