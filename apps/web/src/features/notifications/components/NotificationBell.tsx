@@ -3,6 +3,7 @@ import { Badge, Popover, Spin } from 'antd';
 import { Bell } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
+import { IconButton } from '~/components/ui/IconButton';
 import { PATHS } from '~/constants/paths';
 import { useMarkAllRead, useNotificationSummary, useOpenNotification } from '../hooks/useNotifications';
 import { NotificationItem } from './NotificationItem';
@@ -63,16 +64,14 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
   );
 
   const bell = (
-    <button
-      type="button"
-      className="relative inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-sc-border bg-white text-sc-ink-2 [transition:all_0.15s] hover:border-[#b9d3c5] hover:bg-sc-primary-soft hover:text-sc-primary"
+    <IconButton
       aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}
       onClick={compact ? () => void navigate({ to: PATHS.notifications }) : undefined}
     >
       <Badge count={unread} size="small" overflowCount={99} offset={[4, -4]}>
         <Bell size={18} />
       </Badge>
-    </button>
+    </IconButton>
   );
   if (compact) return bell;
 

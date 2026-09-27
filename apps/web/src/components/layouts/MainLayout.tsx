@@ -4,6 +4,7 @@ import { Menu as MenuIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import logoMark from '~/assets/brand/logo-mark.svg';
 import { PageLoading } from '~/components/feedback/States';
+import { IconButton } from '~/components/ui/IconButton';
 import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
 import { NotificationBell } from '~/features/notifications';
@@ -78,15 +79,13 @@ export function MainLayout({ children }: { children?: ReactNode }) {
             </div>
           ) : (
             <Tooltip title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'} placement="bottom">
-              <button
-                type="button"
+              <IconButton
                 aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
                 aria-pressed={collapsed}
-                className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-sc-border bg-white text-sc-ink-2 [transition:all_0.15s] hover:border-[#b9d3c5] hover:bg-sc-primary-soft hover:text-sc-primary"
                 onClick={toggleCollapsed}
               >
                 {collapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-              </button>
+              </IconButton>
             </Tooltip>
           )}
           <div className="flex items-center gap-2">

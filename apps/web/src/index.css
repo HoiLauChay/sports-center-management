@@ -6,6 +6,7 @@
   --color-sc-primary: var(--sc-primary);
   --color-sc-primary-dark: var(--sc-primary-dark);
   --color-sc-primary-soft: var(--sc-primary-soft);
+  --color-sc-primary-border: var(--sc-primary-border);
   --color-sc-accent: var(--sc-accent);
   --color-sc-accent-light: var(--sc-accent-light);
   --color-sc-accent-soft: var(--sc-accent-soft);
