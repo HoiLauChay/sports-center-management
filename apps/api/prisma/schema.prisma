@@ -84,6 +84,12 @@ model Account {
   updatedSettings            SystemSetting[]
   specializations            CoachSpecialization[]    @relation("SpecializationCoach")
   reviewedSpecializations    CoachSpecialization[]    @relation("SpecializationReviewer")
+  checkins                   CenterCheckin[]          @relation("CheckinMember")
+  performedCheckins          CenterCheckin[]          @relation("CheckinStaff")
+  attendances                ClassAttendance[]        @relation("AttendanceMember")
+  updatedAttendances         ClassAttendance[]        @relation("AttendanceUpdater")
+  evaluations                MemberEvaluation[]       @relation("EvaluationMember")
+  givenEvaluations           MemberEvaluation[]       @relation("EvaluationCoach")
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -480,6 +486,9 @@ model ClassSession {
   noteUpdatedAt   DateTime?     @map("note_updated_at") @db.Timestamptz()
   createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  attendances ClassAttendance[]
+  evaluations MemberEvaluation[]
 
   @@unique([classId, sessionNumber], map: "uq_cs_class_session_num")
   @@index([facilityId, sessionDate, startTime], map: "idx_cs_facility_date_time")
@@ -894,4 +903,62 @@ model CoachSpecialization {
   @@index([coachId, sportId], map: "idx_coach_spec_coach_sport")
   @@index([status, createdAt], map: "idx_coach_spec_status_date")
   @@map("coach_specializations")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+
+  @@map("attendance_status")
+}
+
+model CenterCheckin {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId   String   @map("account_id") @db.Uuid
+  account     Account  @relation("CheckinMember", fields: [accountId], references: [id], onDelete: Restrict)
+  checkedById String   @map("checked_by") @db.Uuid
+  checkedBy   Account  @relation("CheckinStaff", fields: [checkedById], references: [id], onDelete: Restrict)
+  checkInTime DateTime @default(now()) @map("check_in_time") @db.Timestamptz()
+
+  @@index([accountId, checkInTime], map: "idx_checkin_account_time")
+  @@map("center_checkins")
+}
+
+model ClassAttendance {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId   String           @map("session_id") @db.Uuid
+  session     ClassSession     @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  accountId   String           @map("account_id") @db.Uuid
+  account     Account          @relation("AttendanceMember", fields: [accountId], references: [id], onDelete: Restrict)
+  status      AttendanceStatus
+  note        String?          @db.VarChar(500)
+  updatedById String?          @map("updated_by") @db.Uuid
+  updatedBy   Account?         @relation("AttendanceUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([sessionId, accountId], map: "uq_attendance_session_account")
+  @@index([accountId], map: "idx_attendance_account")
+  @@map("class_attendance")
+}
+
+model MemberEvaluation {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId String       @map("session_id") @db.Uuid
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  accountId String       @map("account_id") @db.Uuid
+  account   Account      @relation("EvaluationMember", fields: [accountId], references: [id], onDelete: Restrict)
+  coachId   String       @map("coach_id") @db.Uuid
+  coach     Account      @relation("EvaluationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  rating    Int
+  comment   String?
+  deletedAt DateTime?    @map("deleted_at") @db.Timestamptz()
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([sessionId, accountId], map: "uq_eval_session_account", where: raw("deleted_at IS NULL"))
+  @@index([sessionId, accountId], map: "idx_eval_session_account")
+  @@index([accountId], map: "idx_eval_account")
+  @@map("member_evaluations")
 }
