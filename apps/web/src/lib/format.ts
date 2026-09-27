@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(relativeTime);
 
 export const VN_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -23,6 +25,11 @@ export function formatDate(value: string | Date) {
 
 export function formatDateTime(value: string | Date) {
   return dayjs(value).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY');
+}
+
+export function formatRelative(value: string | Date) {
+  const date = dayjs(value);
+  return dayjs().diff(date, 'day') < 7 ? date.fromNow() : formatDateTime(value);
 }
 
 export function initialsOf(fullName: string) {

@@ -6,6 +6,7 @@ import logoMark from '~/assets/brand/logo-mark.svg';
 import { PageLoading } from '~/components/feedback/States';
 import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
+import { NotificationBell } from '~/features/notifications';
 import { AccountMenu } from './AccountMenu';
 import { SidebarNav } from './SidebarNav';
 
@@ -88,7 +89,10 @@ export function MainLayout({ children }: { children?: ReactNode }) {
               </button>
             </Tooltip>
           )}
-          <AccountMenu user={user} compact={isMobile} />
+          <div className="flex items-center gap-2">
+            <NotificationBell compact={isMobile} />
+            <AccountMenu user={user} compact={isMobile} />
+          </div>
         </Layout.Header>
 
         <Layout.Content className="p-4 md:p-6">

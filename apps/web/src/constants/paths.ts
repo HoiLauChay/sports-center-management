@@ -7,4 +7,5 @@ export const PATHS = {
   profile: '/profile',
   adminUsers: '/admin/users',
   receptionMembers: '/reception/members',
+  notifications: '/notifications',
 } as const;

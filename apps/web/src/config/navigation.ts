@@ -3,7 +3,7 @@ import type { LinkProps } from '@tanstack/react-router';
 import {
   // Award,
   // BadgeCheck,
-  // Bell,
+  Bell,
   // BookOpen,
   // CalendarCheck,
   // CalendarDays,
@@ -47,7 +47,7 @@ export interface NavGroup {
 const COMMON: NavGroup = {
   items: [
     { path: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-    // { path: '/notifications', label: 'Thông báo', icon: Bell },
+    { path: '/notifications', label: 'Thông báo', icon: Bell },
   ],
 };
 
