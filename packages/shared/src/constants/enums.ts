@@ -43,3 +43,17 @@ export const AUDIT_ENTITY_TYPES = [
   'WALLET_TOP_UP',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
+
+export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
+export type CreatableRole = (typeof CREATABLE_ROLES)[number];
+
+export const NOTIFICATION_TYPES = [
+  'PAYMENT',
+  'MEMBERSHIP',
+  'BOOKING',
+  'CLASS',
+  'TRAINING',
+  'SUPPORT',
+  'SYSTEM',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
