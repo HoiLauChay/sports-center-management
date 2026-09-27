@@ -61,7 +61,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
       <Layout className="min-w-0">
         <Layout.Header
           className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-b-sc-border-soft !bg-[rgba(255,255,255,0.9)] [backdrop-filter:blur(8px)]"
-          style={{ padding: isMobile ? '0 12px' : '0 24px' }}
+          style={{ padding: isMobile ? '0 12px' : '0 36px' }}
         >
           {isMobile ? (
             <div className="flex min-w-0 items-center gap-1.5">
@@ -95,7 +95,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
           </div>
         </Layout.Header>
 
-        <Layout.Content className="p-4 md:p-6">
+        <Layout.Content className="p-4 md:p-9">
           <div className="mx-auto w-full max-w-[1280px]">{children ?? <Outlet />}</div>
         </Layout.Content>
       </Layout>
