@@ -1,6 +1,7 @@
 import { env, isProduction } from '~/configs/env';
 
 const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const VERIFY_TIMEOUT = 5000;
 
 let warnedMissingKey = false;
 
@@ -14,14 +15,19 @@ export const verifyCaptcha = async (token: string, ip?: string): Promise<boolean
     return true;
   }
 
-  const res = await fetch(VERIFY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: ip }),
-  });
+  try {
+    const res = await fetch(VERIFY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: ip }),
+      signal: AbortSignal.timeout(VERIFY_TIMEOUT),
+    });
+    if (!res.ok) return false;
 
-  if (!res.ok) return false;
-
-  const data = (await res.json()) as { success: boolean };
-  return data.success;
+    const data = (await res.json()) as { success: boolean };
+    return data.success;
+  } catch (err) {
+    console.error('Captcha verification failed:', err);
+    return false;
+  }
 };
