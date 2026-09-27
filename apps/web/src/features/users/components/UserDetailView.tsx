@@ -100,7 +100,6 @@ export function UserDetailLoader({ id, backLabel, onBack, aside }: UserDetailLoa
     </Button>
   );
 
-  if (isPending) return <PageLoading />;
   if (notFound) {
     return (
       <Card>
@@ -117,6 +116,7 @@ export function UserDetailLoader({ id, backLabel, onBack, aside }: UserDetailLoa
       </Card>
     );
   }
+  if (isPending) return <PageLoading />;
   if (isError || !user) {
     return (
       <>
