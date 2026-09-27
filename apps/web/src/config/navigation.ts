@@ -92,7 +92,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/reception/checkin', label: 'Check-in', icon: ScanLine },
         // { path: '/reception/order', label: 'Bán tại quầy', icon: Store },
         // { path: '/reception/top-up', label: 'Nạp ví', icon: HandCoins },
-        // { path: '/reception/members', label: 'Thành viên', icon: Users },
+        { path: '/reception/members', label: 'Thành viên', icon: Users },
         // { path: '/reception/bookings', label: 'Lịch sân', icon: CalendarCheck },
         // { path: '/reception/orders', label: 'Hóa đơn', icon: Receipt },
         // { path: '/reception/support', label: 'Hỗ trợ', icon: LifeBuoy },
