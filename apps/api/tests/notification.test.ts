@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
+import type { ErrorWithStatus } from '~/rules/error';
 import mailService from '~/services/mail.service';
 import notificationService from '~/services/notification.service';
 import { resetDatabase } from './helpers/db';
@@ -56,5 +57,53 @@ describe('notificationService.resendPendingEmails', () => {
       orderBy: { title: 'asc' },
     });
     expect(sent.map(({ title }) => title)).toEqual(['A', 'B']);
+  });
+});
+
+describe('notification inbox', () => {
+  let otherId: string;
+  const at = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
+
+  beforeEach(async () => {
+    const other = await prisma.account.create({
+      data: { email: 'other@example.com', passwordHash: 'hash', fullName: 'Other', memberProfile: { create: {} } },
+    });
+    otherId = other.id;
+    await prisma.notification.createMany({
+      data: [
+        { accountId, type: 'SYSTEM', title: 'A', message: 'a', createdAt: at(3) },
+        { accountId, type: 'SYSTEM', title: 'B', message: 'b', createdAt: at(2), readAt: at(1) },
+        { accountId, type: 'SYSTEM', title: 'C', message: 'c', createdAt: at(1) },
+        { accountId: otherId, type: 'SYSTEM', title: 'X', message: 'x' },
+      ],
+    });
+  });
+
+  test('pages only own notifications with the unread count', async () => {
+    const first = await notificationService.list(accountId, { limit: 2 });
+    expect(first.items.map(({ title }) => title)).toEqual(['C', 'B']);
+    expect(first.unreadCount).toBe(2);
+
+    const second = await notificationService.list(accountId, { limit: 2, cursor: first.nextCursor! });
+    expect(second.items.map(({ title }) => title)).toEqual(['A']);
+    expect(second.nextCursor).toBeNull();
+
+    const unread = await notificationService.list(accountId, { limit: 20, unreadOnly: true });
+    expect(unread.items.map(({ title }) => title)).toEqual(['C', 'A']);
+  });
+
+  test('cannot mark notifications of another account', async () => {
+    const foreign = await prisma.notification.findFirstOrThrow({ where: { accountId: otherId } });
+    const error = await notificationService.markRead(accountId, foreign.id).catch((err: unknown) => err);
+    expect((error as ErrorWithStatus).status).toBe(404);
+
+    const own = await prisma.notification.findFirstOrThrow({ where: { accountId, title: 'C' } });
+    await notificationService.markRead(accountId, own.id);
+    await notificationService.markRead(accountId, own.id);
+    expect((await notificationService.list(accountId, { limit: 20 })).unreadCount).toBe(1);
+
+    await notificationService.markAllRead(accountId);
+    expect(await prisma.notification.count({ where: { accountId, readAt: null } })).toBe(0);
+    expect(await prisma.notification.count({ where: { accountId: otherId, readAt: null } })).toBe(1);
   });
 });

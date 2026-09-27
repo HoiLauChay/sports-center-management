@@ -1,5 +1,4 @@
 import type { AccountStatus, Gender, Role } from '../constants/enums';
-import type { PageQuery } from '../schemas/pagination';
 
 export interface MemberProfile {
   emergencyContact: string | null;
@@ -39,9 +38,3 @@ export type AccountSummary = Pick<
   Account,
   'id' | 'email' | 'fullName' | 'phone' | 'avatarUrl' | 'role' | 'status' | 'createdAt'
 >;
-
-export interface ListUsersQuery extends Partial<PageQuery> {
-  q?: string;
-  role?: Role;
-  status?: AccountStatus;
-}
