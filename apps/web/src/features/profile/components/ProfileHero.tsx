@@ -5,10 +5,10 @@ import { ImageEditButton } from '~/components/form/ImageEditButton';
 import { RoleTag } from '~/components/ui/RoleTag';
 import { CROP_PRESETS } from '~/constants/crop';
 import { ACCOUNT_STATUS_LABEL } from '~/constants/roles';
+import { getCoachProfile } from '~/lib/account';
 import { formatDate, initialsOf } from '~/lib/format';
 import { ROLE_COLOR } from '~/styles/antd-theme';
 import { useSaveProfile } from '../hooks/useProfile';
-import { getCoachProfile } from '../utils/profile';
 
 interface ProfileHeroProps {
   user: Account;

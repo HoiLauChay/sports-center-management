@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import { InfoGrid, type InfoItem } from '~/components/data/InfoGrid';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { GENDER_LABEL, getCoachProfile, getMemberProfile } from '~/lib/account';
 import { formatDate } from '~/lib/format';
-import { GENDER_LABEL, getCoachProfile, getMemberProfile } from '../utils/profile';
 
 function roleSection(user: Account): { title: string; items: InfoItem[] } | null {
   const member = getMemberProfile(user);
