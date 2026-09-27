@@ -1,65 +1,18 @@
 import type { Account } from '@sports-center/shared';
 import { Avatar, Button, Card, Col, Result, Row } from 'antd';
-import {
-  ArrowLeft,
-  Award,
-  BriefcaseBusiness,
-  Cake,
-  CalendarDays,
-  HeartPulse,
-  Mail,
-  MapPin,
-  NotebookPen,
-  Phone,
-  PhoneCall,
-  StickyNote,
-  Target,
-  VenusAndMars,
-} from 'lucide-react';
+import { ArrowLeft, Cake, CalendarDays, Mail, MapPin, Phone, VenusAndMars } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { InfoGrid, type InfoItem } from '~/components/data/InfoGrid';
+import { AccountRoleSection } from '~/components/data/AccountRoleSection';
+import { InfoGrid } from '~/components/data/InfoGrid';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { RoleTag } from '~/components/ui/RoleTag';
 import { SectionTitle } from '~/components/ui/SectionTitle';
-import { GENDER_LABEL, getCoachProfile, getMemberProfile, getStaffProfile } from '~/lib/account';
+import { GENDER_LABEL } from '~/lib/account';
 import { formatDate, initialsOf } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { ROLE_COLOR } from '~/styles/antd-theme';
 import { useUserDetail } from '../hooks/useUserDetail';
 import { StatusTag } from './StatusTag';
-
-function roleSection(user: Account): { title: string; items: InfoItem[] } | null {
-  const member = getMemberProfile(user);
-  if (member) {
-    return {
-      title: 'Hồ sơ hội viên',
-      items: [
-        { label: 'Liên hệ khẩn cấp', value: member.emergencyContact, icon: PhoneCall, full: true },
-        { label: 'Mục tiêu tập luyện', value: member.fitnessGoals, icon: Target, full: true },
-        { label: 'Ghi chú sức khỏe', value: member.healthNotes, icon: HeartPulse, full: true },
-      ],
-    };
-  }
-  const coach = getCoachProfile(user);
-  if (coach) {
-    return {
-      title: 'Hồ sơ huấn luyện viên',
-      items: [
-        { label: 'Giới thiệu', value: coach.bio, icon: NotebookPen, full: true },
-        { label: 'Kinh nghiệm', value: coach.experience, icon: BriefcaseBusiness, full: true },
-        { label: 'Chứng chỉ', value: coach.certifications, icon: Award, full: true },
-      ],
-    };
-  }
-  const staff = getStaffProfile(user);
-  if (staff) {
-    return {
-      title: 'Hồ sơ nhân sự',
-      items: [{ label: 'Ghi chú nhân sự', value: staff.staffNotes, icon: StickyNote, full: true }],
-    };
-  }
-  return null;
-}
 
 function UserSummary({ user }: { user: Account }) {
   const roleColor = ROLE_COLOR[user.role];
@@ -102,8 +55,6 @@ interface UserDetailViewProps {
 }
 
 export function UserDetailView({ user, aside }: UserDetailViewProps) {
-  const section = roleSection(user);
-
   return (
     <div className="flex flex-col gap-4">
       <UserSummary user={user} />
@@ -120,12 +71,7 @@ export function UserDetailView({ user, aside }: UserDetailViewProps) {
                 { label: 'Địa chỉ', value: user.address, icon: MapPin, full: true },
               ]}
             />
-            {section && (
-              <div className="mt-8">
-                <SectionTitle>{section.title}</SectionTitle>
-                <InfoGrid items={section.items} />
-              </div>
-            )}
+            <AccountRoleSection user={user} />
           </Card>
         </Col>
         {aside && (
