@@ -1,6 +1,17 @@
-import type { Account } from '@sports-center/shared';
+import type { Account, AccountSummary } from '@sports-center/shared';
 
-import type { AccountWithProfile } from '~/repositories/account.repository';
+import type { AccountSummaryRow, AccountWithProfile } from '~/repositories/account.repository';
+
+export const toAccountSummary = (account: AccountSummaryRow): AccountSummary => ({
+  id: account.id,
+  email: account.email,
+  fullName: account.fullName,
+  phone: account.phone,
+  avatarUrl: account.avatarUrl,
+  role: account.role,
+  status: account.status,
+  createdAt: account.createdAt.toISOString(),
+});
 
 const toProfile = (account: AccountWithProfile): Account['profile'] => {
   switch (account.role) {

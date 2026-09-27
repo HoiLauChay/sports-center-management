@@ -36,7 +36,7 @@ export function UsersPage() {
     placeholderData: keepPreviousData,
   });
 
-  const updateSearch = (patch: ListUsersQuery) =>
+  const updateSearch = (patch: Partial<ListUsersQuery>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
 
   return (
