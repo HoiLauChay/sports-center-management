@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  CREATABLE_ROLES,
   createUserBodySchema,
   ERROR_CODE,
-  STAFF_ROLES,
   type CreateUserBody,
   type CreateUserInput,
 } from '@sports-center/shared';
@@ -101,7 +101,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
               block
               value={field.value}
               onChange={field.onChange}
-              options={STAFF_ROLES.map((value) => ({ value, label: ROLE_LABEL[value] }))}
+              options={CREATABLE_ROLES.map((value) => ({ value, label: ROLE_LABEL[value] }))}
             />
           )}
         />

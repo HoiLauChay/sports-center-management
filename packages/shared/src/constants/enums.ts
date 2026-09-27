@@ -44,8 +44,8 @@ export const AUDIT_ENTITY_TYPES = [
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
-export const STAFF_ROLES = ['COACH', 'RECEPTIONIST'] as const;
-export type StaffRole = (typeof STAFF_ROLES)[number];
+export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
+export type CreatableRole = (typeof CREATABLE_ROLES)[number];
 
 export const NOTIFICATION_TYPES = [
   'PAYMENT',

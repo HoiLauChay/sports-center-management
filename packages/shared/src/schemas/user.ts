@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { STAFF_ROLES } from '../constants/enums';
+import { CREATABLE_ROLES } from '../constants/enums';
 import { optionalText, phoneSchema } from './account';
 import { emailSchema, fullNameSchema } from './auth';
 
@@ -14,7 +14,7 @@ export const createUserProfileSchema = z.object({
 export const createUserBodySchema = z.object({
   email: emailSchema,
   fullName: fullNameSchema,
-  role: z.enum(STAFF_ROLES, 'Vui lòng chọn vai trò'),
+  role: z.enum(CREATABLE_ROLES, 'Vui lòng chọn vai trò'),
   phone: phoneSchema.nullable().optional(),
   profile: createUserProfileSchema.optional(),
 });
