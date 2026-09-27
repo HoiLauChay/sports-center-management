@@ -2,6 +2,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { Card, Tag } from 'antd';
 import { BadgeCheck, History, Wallet, type LucideIcon } from 'lucide-react';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { PATHS } from '~/constants/paths';
 import { UserDetailLoader } from './UserDetailView';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/$memberId');
@@ -32,7 +33,7 @@ export function MemberDetailPage() {
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
-    else void navigate({ to: '/reception/members' });
+    else void navigate({ to: PATHS.receptionMembers });
   };
 
   return (

@@ -3,6 +3,7 @@ import { Badge, Popover, Spin } from 'antd';
 import { Bell } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
+import { PATHS } from '~/constants/paths';
 import { useMarkAllRead, useNotificationSummary, useOpenNotification } from '../hooks/useNotifications';
 import { NotificationItem } from './NotificationItem';
 
@@ -54,7 +55,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         )}
       </div>
       <div className="border-t border-sc-border-soft px-4 py-2.5 text-center">
-        <Link to="/notifications" onClick={() => setOpen(false)} className="text-[13px] font-semibold">
+        <Link to={PATHS.notifications} onClick={() => setOpen(false)} className="text-[13px] font-semibold">
           Xem tất cả thông báo
         </Link>
       </div>
@@ -66,7 +67,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
       type="button"
       className="relative inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-sc-border bg-white text-sc-ink-2 [transition:all_0.15s] hover:border-[#b9d3c5] hover:bg-sc-primary-soft hover:text-sc-primary"
       aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}
-      onClick={compact ? () => void navigate({ to: '/notifications' }) : undefined}
+      onClick={compact ? () => void navigate({ to: PATHS.notifications }) : undefined}
     >
       <Badge count={unread} size="small" overflowCount={99} offset={[4, -4]}>
         <Bell size={18} />
