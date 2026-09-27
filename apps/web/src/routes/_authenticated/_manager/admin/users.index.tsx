@@ -4,7 +4,7 @@ import { UsersPage } from '~/features/users';
 import { parseEnumSearch, parsePaginationSearch, parseStringSearch } from '~/lib/search';
 
 export const Route = createFileRoute('/_authenticated/_manager/admin/users/')({
-  validateSearch: (search: Record<string, unknown>): ListUsersQuery => ({
+  validateSearch: (search: Record<string, unknown>): Partial<ListUsersQuery> => ({
     ...parsePaginationSearch(search),
     q: parseStringSearch(search.q),
     role: parseEnumSearch(ROLES, search.role),

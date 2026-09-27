@@ -1,6 +1,7 @@
-import type { ListUsersQueryParsed } from '@sports-center/shared';
+import type { ListUsersQuery } from '@sports-center/shared';
+
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { Prisma, Role } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 
 export const accountProfileInclude = {
@@ -26,32 +27,23 @@ const accountSummarySelect = {
 export type AccountSummaryRow = Prisma.AccountGetPayload<{ select: typeof accountSummarySelect }>;
 
 class AccountRepository {
-  findById = (id: string) => prisma.account.findUnique({ where: { id }, include: accountProfileInclude });
+  findById = (id: string, role?: Role) =>
+    prisma.account.findUnique({ where: { id, role }, include: accountProfileInclude });
 
-  findVisibleById = (id: string, viewerRole: 'MANAGER' | 'RECEPTIONIST') =>
-    prisma.account.findFirst({
-      where: { id, ...(viewerRole === 'RECEPTIONIST' && { role: 'MEMBER' }) },
-      include: accountProfileInclude,
-    });
-
-  listVisible = (query: ListUsersQueryParsed, viewerRole: 'MANAGER' | 'RECEPTIONIST') => {
-    const search = query.q?.trim();
+  findPage = ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
     const where: Prisma.AccountWhereInput = {
       AND: [
-        ...(viewerRole === 'RECEPTIONIST' ? [{ role: 'MEMBER' as const }] : []),
-        ...(query.role ? [{ role: query.role }] : []),
-        ...(query.status ? [{ status: query.status }] : []),
-        ...(search
-          ? [
-              {
-                OR: [
-                  { fullName: { contains: search, mode: 'insensitive' as const } },
-                  { email: { contains: search, mode: 'insensitive' as const } },
-                  { phone: { contains: search } },
-                ],
-              },
-            ]
-          : []),
+        { role: visibleRole },
+        { role, status },
+        q
+          ? {
+              OR: [
+                { fullName: { contains: q, mode: 'insensitive' } },
+                { email: { contains: q, mode: 'insensitive' } },
+                { phone: { contains: q } },
+              ],
+            }
+          : {},
       ],
     };
 
@@ -60,7 +52,7 @@ class AccountRepository {
         where,
         select: accountSummarySelect,
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        ...pageArgs(query),
+        ...pageArgs(page),
       }),
       prisma.account.count({ where }),
     ]);
