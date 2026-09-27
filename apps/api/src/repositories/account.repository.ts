@@ -77,6 +77,9 @@ class AccountRepository {
       include: accountProfileInclude,
     });
 
+  create = (data: Prisma.AccountCreateInput, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.create({ data, include: accountProfileInclude });
+
   existsByPhone = async (phone: string, excludeId?: string) =>
     (await prisma.account.count({ where: { phone, ...(excludeId && { id: { not: excludeId } }) } })) > 0;
 
@@ -105,6 +108,9 @@ class AccountRepository {
       data: { passwordHash, passwordChangedAt: new Date() },
       select: { id: true },
     });
+
+  markEmailVerified = (id: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.update({ where: { id }, data: { emailVerifiedAt: new Date() }, select: { id: true } });
 }
 
 export default new AccountRepository();

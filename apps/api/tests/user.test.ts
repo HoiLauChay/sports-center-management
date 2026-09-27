@@ -1,10 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import app from '~/app';
 import { prisma } from '~/configs/db';
 import type { Role } from '~/generated/prisma/client';
+import authService from '~/services/auth.service';
+import mailService from '~/services/mail.service';
 import { signAccessToken } from '~/utils/jwt';
 import { resetDatabase } from './helpers/db';
 
@@ -19,6 +21,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close());
 beforeEach(resetDatabase);
+afterEach(() => mock.restore());
 
 const createAccount = (role: 'MANAGER' | 'RECEPTIONIST' | 'COACH' | 'MEMBER', email: string) =>
   prisma.account.create({
@@ -36,8 +39,17 @@ const createAccount = (role: 'MANAGER' | 'RECEPTIONIST' | 'COACH' | 'MEMBER', em
     },
   });
 
+const cookieOf = (viewer: { id: string; role: Role }) => `access_token=${signAccessToken(viewer.id, viewer.role)}`;
+
 const getAs = (path: string, viewer: { id: string; role: Role }) =>
-  fetch(baseUrl + path, { headers: { Cookie: `access_token=${signAccessToken(viewer.id, viewer.role)}` } });
+  fetch(baseUrl + path, { headers: { Cookie: cookieOf(viewer) } });
+
+const postAs = (path: string, viewer: { id: string; role: Role }, body: unknown) =>
+  fetch(baseUrl + path, {
+    method: 'POST',
+    headers: { Cookie: cookieOf(viewer), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 
 interface ListResult {
   items: { id: string; passwordHash?: string }[];
@@ -91,5 +103,51 @@ describe('user list and detail permissions', () => {
     expect((await getAs('/', coach)).status).toBe(403);
     expect((await getAs(`/${member.id}`, coach)).status).toBe(403);
     expect((await getAs('/', manager)).status).toBe(200);
+  });
+});
+
+describe('create staff account', () => {
+  test('manager creates a coach who can set a password through the reset flow and log in', async () => {
+    spyOn(mailService, 'sendBatch').mockResolvedValue(undefined);
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    const body = {
+      email: 'new.coach@example.com',
+      fullName: 'Trần Huấn',
+      role: 'COACH',
+      phone: '0987654321',
+      profile: { bio: 'Bơi lội', staffNotes: 'Bị bỏ qua' },
+    };
+
+    expect((await postAs('/', receptionist, body)).status).toBe(403);
+
+    const response = await postAs('/', manager, body);
+    expect(response.status).toBe(201);
+    const created = await readResult<{ id: string; role: string; profile: { bio: string } }>(response);
+    expect(created).toMatchObject({ role: 'COACH', profile: { bio: 'Bơi lội' } });
+    expect(await prisma.coachProfile.count({ where: { accountId: created.id } })).toBe(1);
+    expect(await prisma.receptionistProfile.count({ where: { accountId: created.id } })).toBe(0);
+    expect(await prisma.auditLog.count({ where: { entityId: created.id, action: 'CREATE' } })).toBe(2);
+    expect(await prisma.notification.count({ where: { accountId: created.id, sendEmail: true } })).toBe(1);
+
+    const duplicate = await postAs('/', manager, { ...body, phone: null });
+    expect(duplicate.status).toBe(409);
+    expect(((await duplicate.json()) as { code: string }).code).toBe('EMAIL_TAKEN');
+
+    let otp = '';
+    spyOn(mailService, 'sendOtp').mockImplementation(async (_to, _purpose, code) => {
+      otp = code;
+    });
+    await authService.sendOtp({ email: body.email, purpose: 'PASSWORD_RESET', captchaToken: 'test' });
+    await authService.resetPassword({
+      email: body.email,
+      otp,
+      password: 'NewPassword1!',
+      confirmPassword: 'NewPassword1!',
+    });
+
+    const { account } = await authService.login({ email: body.email, password: 'NewPassword1!' }, {});
+    expect(account.id).toBe(created.id);
+    expect(account.emailVerifiedAt).not.toBeNull();
   });
 });

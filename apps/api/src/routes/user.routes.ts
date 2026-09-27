@@ -1,4 +1,4 @@
-import { listUsersQuerySchema, userIdParamsSchema } from '@sports-center/shared';
+import { createUserBodySchema, listUsersQuerySchema, userIdParamsSchema } from '@sports-center/shared';
 import { Router } from 'express';
 
 import userController from '~/controllers/user.controllers';
@@ -15,5 +15,6 @@ userRouter.get(
   validate({ params: userIdParamsSchema }),
   userController.getById,
 );
+userRouter.post('/', isRole('MANAGER'), validate({ body: createUserBodySchema }), userController.create);
 
 export default userRouter;
