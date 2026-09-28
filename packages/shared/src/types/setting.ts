@@ -1,3 +1,5 @@
+import type { Ref } from './api';
+
 export interface SystemSettings {
   openTime: string;
   closeTime: string;
@@ -12,7 +14,7 @@ export interface SystemSettings {
 
 export interface ScheduleConflict {
   id: string;
-  facility: { id: string; name: string };
+  facility: Ref;
   date: string;
   startTime: string;
   endTime: string;

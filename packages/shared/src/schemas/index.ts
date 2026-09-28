@@ -1,5 +1,6 @@
 export * from './account';
 export * from './auth';
+export * from './facility';
 export * from './notification';
 export * from './pagination';
 export * from './setting';

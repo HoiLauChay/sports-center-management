@@ -57,3 +57,6 @@ export const NOTIFICATION_TYPES = [
   'SYSTEM',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export const FACILITY_TYPES = ['GYM', 'COURT', 'ROOM', 'FIELD'] as const;
+export type FacilityType = (typeof FACILITY_TYPES)[number];

@@ -45,7 +45,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
   RECEPTIONIST_PROFILE: fields<ReceptionistProfile>()('staffNotes'),
   MANAGER_PROFILE: fields<ManagerProfile>()('staffNotes'),
   SPORT: fields<Sport>()('name', 'description', 'iconUrl', 'isActive', 'deletedAt'),
-  FACILITY: fields<Facility>()(
+  FACILITY: fields<Facility & { sportIds: string[] }>()(
     'name',
     'type',
     'capacityPerSlot',
@@ -53,6 +53,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'isActive',
     'description',
     'deletedAt',
+    'sportIds',
   ),
   FACILITY_MAINTENANCE: fields<FacilityMaintenance>()('facilityId', 'startAt', 'endAt', 'reason', 'deletedAt'),
   COURSE: fields<Course>()('name', 'sportId', 'description', 'totalSessions', 'price', 'thumbnailUrl', 'deletedAt'),
