@@ -2,7 +2,8 @@ import { ERROR_CODE, type UpdateSettingsBody } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
-import { toBookingConflict, toSessionConflict, toSettingResponse } from '~/mappers/setting.mapper';
+import { toBookingConflict, toSessionConflict } from '~/mappers/schedule.mapper';
+import { toSettingResponse } from '~/mappers/setting.mapper';
 import scheduleRepository from '~/repositories/schedule.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
