@@ -12,7 +12,7 @@ export const optionalText = (max: number, label: string) =>
     .nullable()
     .optional();
 
-const optionalUrl = (label: string) =>
+export const optionalUrl = (label: string) =>
   z
     .string()
     .trim()
