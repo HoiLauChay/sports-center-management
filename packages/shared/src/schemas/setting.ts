@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const MAX_MONEY = 999_999_999_999;
+import { MAX_MONEY } from '../constants/money';
 
 const timeSchema = (label: string) =>
   z.string(`${label} không hợp lệ`).regex(/^([01]\d|2[0-3]):[0-5]\d$/, `${label} phải có dạng HH:mm`);

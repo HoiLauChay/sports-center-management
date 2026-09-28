@@ -6,6 +6,11 @@ export interface ApiResponse<T = undefined> {
   result: T;
 }
 
+export interface Ref {
+  id: string;
+  name: string;
+}
+
 export interface Paginated<T> {
   items: T[];
   page: number;
