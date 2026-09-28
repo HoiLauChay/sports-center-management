@@ -40,3 +40,15 @@ export const isOnSlotGrid = ({ start, end }: Interval, openTime: number, closeTi
   start < end &&
   (start - openTime) % slotMinutes === 0 &&
   (end - start) % slotMinutes === 0;
+
+export const minutesInCenter = (now = new Date()) =>
+  (now.getUTCHours() * 60 + now.getUTCMinutes() + CENTER_UTC_OFFSET_MINUTES) % (24 * 60);
+
+export const fromDbTime = (time: Date) => time.getUTCHours() * 60 + time.getUTCMinutes();
+
+export const toDbTime = (minutes: number) => new Date(minutes * MINUTE);
+
+export const formatTime = (minutes: number) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+export const formatDate = (date: Date) => date.toISOString().slice(0, 10);
