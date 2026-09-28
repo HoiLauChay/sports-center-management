@@ -89,6 +89,22 @@ class UploadService {
     const prefix = `${base}/${FOLDER[purpose]}/${accountId}/`;
     return url.startsWith(prefix) && FILE_NAME.test(url.slice(prefix.length));
   };
+
+  assertUploadedFile = (
+    url: string | null | undefined,
+    currentUrl: string | null | undefined,
+    purpose: UploadPurpose,
+    accountId: string,
+    path: string,
+  ) => {
+    if (!url || url === currentUrl || this.isUploadedFileUrl(url, purpose, accountId)) return;
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      code: ERROR_CODE.VALIDATION,
+      message: 'Dữ liệu không hợp lệ',
+      errors: [{ path, message: 'Ảnh phải được tải lên qua hệ thống' }],
+    });
+  };
 }
 
 export default new UploadService();
