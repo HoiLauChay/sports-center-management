@@ -1,55 +1,33 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 
-import app from '~/app';
 import { prisma } from '~/configs/db';
-import type { Role } from '~/generated/prisma/client';
 import authService from '~/services/auth.service';
 import mailService from '~/services/mail.service';
-import { signAccessToken } from '~/utils/jwt';
 import { resetDatabase } from './helpers/db';
+import type { buildFetcher } from './helpers/http';
+import { createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
 
 let server: Server;
-let baseUrl: string;
+let request: ReturnType<typeof buildFetcher>;
 
 beforeAll(async () => {
-  server = app.listen(0);
-  await new Promise((resolve) => server.once('listening', resolve));
-  baseUrl = `http://localhost:${(server.address() as AddressInfo).port}/api/v1/users`;
+  ({ server, request } = await startServer('/users'));
 });
 
 afterAll(() => server.close());
 beforeEach(resetDatabase);
 afterEach(() => mock.restore());
 
-const createAccount = (role: 'MANAGER' | 'RECEPTIONIST' | 'COACH' | 'MEMBER', email: string) =>
-  prisma.account.create({
-    data: {
-      email,
-      passwordHash: 'hash',
-      fullName: email.startsWith('member') ? 'Nguyễn Minh' : role,
-      phone: role === 'MEMBER' ? '0912345678' : null,
-      role,
-      passwordChangedAt: new Date('2020-01-01'),
-      ...(role === 'MANAGER' && { managerProfile: { create: {} } }),
-      ...(role === 'RECEPTIONIST' && { receptionistProfile: { create: {} } }),
-      ...(role === 'COACH' && { coachProfile: { create: {} } }),
-      ...(role === 'MEMBER' && { memberProfile: { create: { healthNotes: 'Ghi chú riêng' } } }),
-    },
+const createMember = (email: string) =>
+  createAccount('MEMBER', email, {
+    fullName: 'Nguyễn Minh',
+    phone: '0912345678',
+    memberProfile: { create: { healthNotes: 'Ghi chú riêng' } },
   });
 
-const cookieOf = (viewer: { id: string; role: Role }) => `access_token=${signAccessToken(viewer.id, viewer.role)}`;
-
-const getAs = (path: string, viewer: { id: string; role: Role }) =>
-  fetch(baseUrl + path, { headers: { Cookie: cookieOf(viewer) } });
-
-const postAs = (path: string, viewer: { id: string; role: Role }, body: unknown) =>
-  fetch(baseUrl + path, {
-    method: 'POST',
-    headers: { Cookie: cookieOf(viewer), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+const getAs = (path: string, viewer: Viewer) => request('GET', path, viewer);
+const postAs = (path: string, viewer: Viewer, body: unknown) => request('POST', path, viewer, body);
 
 interface ListResult {
   items: { id: string; passwordHash?: string }[];
@@ -58,13 +36,11 @@ interface ListResult {
   limit: number;
 }
 
-const readResult = async <T>(response: Response) => ((await response.json()) as { result: T }).result;
-
 describe('user list and detail permissions', () => {
   test('manager searches and filters roles while receptionist only sees members in items and total', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
-    const member = await createAccount('MEMBER', 'member@example.com');
+    const member = await createMember('member@example.com');
     const coach = await createAccount('COACH', 'coach@example.com');
 
     const managerResponse = await getAs('/?q=COACH&role=COACH', manager);
@@ -90,7 +66,7 @@ describe('user list and detail permissions', () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const coach = await createAccount('COACH', 'coach@example.com');
-    const member = await createAccount('MEMBER', 'member@example.com');
+    const member = await createMember('member@example.com');
 
     expect((await getAs(`/${manager.id}`, receptionist)).status).toBe(404);
     expect((await getAs(`/${coach.id}`, receptionist)).status).toBe(404);
@@ -132,7 +108,7 @@ describe('create staff account', () => {
 
     const duplicate = await postAs('/', manager, { ...body, phone: null });
     expect(duplicate.status).toBe(409);
-    expect(((await duplicate.json()) as { code: string }).code).toBe('EMAIL_TAKEN');
+    expect(await readCode(duplicate)).toBe('EMAIL_TAKEN');
 
     let otp = '';
     spyOn(mailService, 'sendOtp').mockImplementation(async (_to, _purpose, code) => {
