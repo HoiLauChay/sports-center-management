@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import authRouter from '~/routes/auth.routes';
 import cronRouter from '~/routes/cron.routes';
+import facilityRouter from '~/routes/facility.routes';
 import notificationRouter from '~/routes/notification.routes';
 import settingRouter from '~/routes/setting.routes';
 import sportRouter from '~/routes/sport.routes';
@@ -17,6 +18,7 @@ rootRouter.get('/health', (_req, res) => {
 
 rootRouter.use('/auth', authRouter);
 rootRouter.use('/cron', cronRouter);
+rootRouter.use('/facilities', facilityRouter);
 rootRouter.use('/me/notifications', notificationRouter);
 rootRouter.use('/settings', settingRouter);
 rootRouter.use('/sports', sportRouter);

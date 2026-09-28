@@ -23,6 +23,14 @@ class SportRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.sport.findUnique({ where: { id, deletedAt: null }, select: sportSelect });
 
+  findActiveIds = async (ids: string[], tx: Prisma.TransactionClient = prisma) =>
+    (
+      await tx.sport.findMany({
+        where: { id: { in: ids }, deletedAt: null, isActive: true },
+        select: { id: true },
+      })
+    ).map(({ id }) => id);
+
   create = (data: Prisma.SportCreateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.sport.create({ data, select: sportSelect });
 
