@@ -280,7 +280,7 @@ enum DiscountType {
 
 model Sport {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String    @db.VarChar(100)
+  name        String    @db.Citext
   description String?
   iconUrl     String?   @map("icon_url")
   isActive    Boolean   @default(true) @map("is_active")
@@ -298,7 +298,7 @@ model Sport {
 
 model Facility {
   id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String       @db.VarChar(100)
+  name            String       @db.Citext
   type            FacilityType
   capacityPerSlot Int          @map("capacity_per_slot")
   pricePerSlot    Decimal      @map("price_per_slot") @db.Decimal(12, 0)

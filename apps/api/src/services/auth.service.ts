@@ -9,7 +9,6 @@ import {
   type ResetPasswordBody,
   type SendOtpBody,
   type UpdateMeBody,
-  type UploadPurpose,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
@@ -205,9 +204,9 @@ class AuthService {
       throw this.phoneTaken();
     }
 
-    this.assertUploadedFile(fields.avatarUrl, current.avatarUrl, 'AVATAR', accountId, 'body.avatarUrl');
+    uploadService.assertUploadedFile(fields.avatarUrl, current.avatarUrl, 'AVATAR', accountId, 'body.avatarUrl');
     if (current.role === 'COACH') {
-      this.assertUploadedFile(
+      uploadService.assertUploadedFile(
         profile?.coverImageUrl,
         current.coachProfile?.coverImageUrl,
         'COVER_IMAGE',
@@ -296,22 +295,6 @@ class AuthService {
     }
 
     return record;
-  };
-
-  private assertUploadedFile = (
-    url: string | null | undefined,
-    currentUrl: string | null | undefined,
-    purpose: UploadPurpose,
-    accountId: string,
-    path: string,
-  ) => {
-    if (!url || url === currentUrl || uploadService.isUploadedFileUrl(url, purpose, accountId)) return;
-    throw new ErrorWithStatus({
-      status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-      code: ERROR_CODE.VALIDATION,
-      message: 'Dữ liệu không hợp lệ',
-      errors: [{ path, message: 'Ảnh phải được tải lên qua hệ thống' }],
-    });
   };
 
   private phoneTaken = () =>
