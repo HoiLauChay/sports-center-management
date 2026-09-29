@@ -1,5 +1,5 @@
+import type { COACH_PROFILE_FIELDS } from '@sports-center/shared';
 import {
-  COACH_PROFILE_FIELDS,
   ERROR_CODE,
   MEMBER_PROFILE_FIELDS,
   type CreateUserBody,
@@ -9,7 +9,6 @@ import {
   type UpdateUserStatusBody,
 } from '@sports-center/shared';
 
-import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
 import { toAccountResponse, toAccountSummary } from '~/mappers/account.mapper';
@@ -54,7 +53,7 @@ const notFound = () =>
 const forbidden = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 
-const COACH_EDITABLE_FIELDS = COACH_PROFILE_FIELDS.filter((field) => field !== 'coverImageUrl') as Exclude<
+const COACH_EDITABLE_FIELDS = ['bio', 'experience', 'certifications'] as const satisfies readonly Exclude<
   (typeof COACH_PROFILE_FIELDS)[number],
   'coverImageUrl'
 >[];
@@ -108,7 +107,7 @@ class UserService {
     const passwordHash = await hashPassword(generateOpaqueToken());
 
     try {
-      const { account, notifications } = await prisma.$transaction(async (tx) => {
+      const { account, notifications } = await runTransaction(async (tx) => {
         const created = await accountRepository.create(
           { email, fullName, phone, role, passwordHash, ...profileData(body) },
           tx,
@@ -165,7 +164,7 @@ class UserService {
     };
 
     try {
-      const updated = await prisma.$transaction(async (tx) => {
+      const updated = await runTransaction(async (tx) => {
         const next = await accountRepository.updateProfile(
           id,
           { account, ...profileUpdates(current.role, profile) },
