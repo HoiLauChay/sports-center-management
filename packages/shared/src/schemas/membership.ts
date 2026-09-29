@@ -23,9 +23,12 @@ export const createMembershipBodySchema = z.object({
   isActive: z.boolean('Trạng thái không hợp lệ').default(true),
 });
 
-export const updateMembershipBodySchema = createMembershipBodySchema.omit({ isActive: true }).partial().extend({
-  isActive: z.boolean('Trạng thái không hợp lệ').optional(),
-});
+export const updateMembershipBodySchema = createMembershipBodySchema
+  .omit({ isActive: true })
+  .partial()
+  .extend({
+    isActive: z.boolean('Trạng thái không hợp lệ').optional(),
+  });
 
 export const membershipIdParamsSchema = z.object({ id: z.uuid('Mã gói không hợp lệ') });
 

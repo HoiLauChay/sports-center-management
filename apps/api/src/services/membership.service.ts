@@ -21,7 +21,14 @@ class MembershipService {
     const membership = await runTransaction(async (tx) => {
       const created = await membershipRepository.create(body, tx);
       await auditService.record(
-        { accountId: managerId, action: 'CREATE', entityType: 'MEMBERSHIP', entityId: created.id, newValues: created, ipAddress: ip },
+        {
+          accountId: managerId,
+          action: 'CREATE',
+          entityType: 'MEMBERSHIP',
+          entityId: created.id,
+          newValues: created,
+          ipAddress: ip,
+        },
         tx,
       );
       return created;
@@ -36,14 +43,20 @@ class MembershipService {
 
       const updated = await membershipRepository.update(id, body, tx);
       await auditService.record(
-        { accountId: managerId, action: 'UPDATE', entityType: 'MEMBERSHIP', entityId: id, oldValues: current, newValues: updated, ipAddress: ip },
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'MEMBERSHIP',
+          entityId: id,
+          oldValues: current,
+          newValues: updated,
+          ipAddress: ip,
+        },
         tx,
       );
 
       const deactivating = body.isActive === false && current.isActive;
-      const notifications = deactivating
-        ? await this.notifyAutoRenewMembers(id, current.name, 'ngừng bán', tx)
-        : [];
+      const notifications = deactivating ? await this.notifyAutoRenewMembers(id, current.name, 'ngừng bán', tx) : [];
       return { membership: updated, notifications };
     });
 
@@ -60,7 +73,14 @@ class MembershipService {
 
       await membershipRepository.update(id, { isActive: false, deletedAt: new Date() }, tx);
       await auditService.record(
-        { accountId: managerId, action: 'DELETE', entityType: 'MEMBERSHIP', entityId: id, oldValues: current, ipAddress: ip },
+        {
+          accountId: managerId,
+          action: 'DELETE',
+          entityType: 'MEMBERSHIP',
+          entityId: id,
+          oldValues: current,
+          ipAddress: ip,
+        },
         tx,
       );
       return notifications;

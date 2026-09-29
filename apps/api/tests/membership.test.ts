@@ -3,7 +3,7 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import { resetDatabase } from './helpers/db';
-import { type Viewer, buildFetcher, createAccount, readCode, readResult, startServer } from './helpers/http';
+import { buildFetcher, createAccount, readResult, startServer } from './helpers/http';
 
 let server: Server;
 let req: ReturnType<typeof buildFetcher>;
