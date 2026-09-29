@@ -1,7 +1,7 @@
 import type { ListUsersQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { Prisma, Role } from '~/generated/prisma/client';
+import type { AccountStatus, Prisma, Role } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 
 export const accountProfileInclude = {
@@ -27,8 +27,8 @@ const accountSummarySelect = {
 export type AccountSummaryRow = Prisma.AccountGetPayload<{ select: typeof accountSummarySelect }>;
 
 class AccountRepository {
-  findById = (id: string, role?: Role) =>
-    prisma.account.findUnique({ where: { id, role }, include: accountProfileInclude });
+  findById = (id: string, role?: Role, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.findUnique({ where: { id, role }, include: accountProfileInclude });
 
   findPage = ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
     const where: Prisma.AccountWhereInput = {
@@ -89,6 +89,8 @@ class AccountRepository {
       account: Prisma.AccountUpdateInput;
       memberProfile?: Prisma.MemberProfileUpdateWithoutAccountInput;
       coachProfile?: Prisma.CoachProfileUpdateWithoutAccountInput;
+      receptionistProfile?: Prisma.ReceptionistProfileUpdateWithoutAccountInput;
+      managerProfile?: Prisma.ManagerProfileUpdateWithoutAccountInput;
     },
     tx: Prisma.TransactionClient = prisma,
   ) =>
@@ -98,9 +100,19 @@ class AccountRepository {
         ...data.account,
         ...(data.memberProfile && { memberProfile: { update: data.memberProfile } }),
         ...(data.coachProfile && { coachProfile: { update: data.coachProfile } }),
+        ...(data.receptionistProfile && { receptionistProfile: { update: data.receptionistProfile } }),
+        ...(data.managerProfile && { managerProfile: { update: data.managerProfile } }),
       },
       include: accountProfileInclude,
     });
+
+  updateStatus = (id: string, status: AccountStatus, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.update({ where: { id }, data: { status }, include: accountProfileInclude });
+
+  findActiveManagerIds = async (tx: Prisma.TransactionClient = prisma) =>
+    (await tx.account.findMany({ where: { role: 'MANAGER', status: 'ACTIVE' }, select: { id: true } })).map(
+      ({ id }) => id,
+    );
 
   updatePassword = (id: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({

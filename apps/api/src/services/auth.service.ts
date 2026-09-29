@@ -27,6 +27,7 @@ import uploadService from '~/services/upload.service';
 import { verifyCaptcha } from '~/utils/captcha';
 import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
+import { pickDefined } from '~/utils/object';
 import { hashPassword, verifyPassword } from '~/utils/password';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
 
@@ -38,17 +39,6 @@ export interface SessionMeta {
 const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3jfMglIeK/q';
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
-
-type ProfileFields = NonNullable<UpdateMeBody['profile']>;
-
-const pickDefined = <K extends keyof ProfileFields>(profile: ProfileFields | undefined, keys: readonly K[]) => {
-  if (!profile) return undefined;
-  const picked: Partial<Pick<ProfileFields, K>> = {};
-  for (const key of keys) {
-    if (profile[key] !== undefined) picked[key] = profile[key];
-  }
-  return Object.keys(picked).length > 0 ? picked : undefined;
-};
 
 class AuthService {
   sendOtp = async ({ email, purpose, captchaToken }: SendOtpBody, ip?: string) => {
