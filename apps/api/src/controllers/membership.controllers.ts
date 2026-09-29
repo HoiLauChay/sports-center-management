@@ -21,6 +21,11 @@ class MembershipController {
     const membership = await membershipService.update(req.user!.id, req.params.id as string, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã cập nhật gói thành viên', result: membership }));
   };
+
+  remove = async (req: Request, res: Response) => {
+    await membershipService.remove(req.user!.id, req.params.id as string, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã xóa gói thành viên' }));
+  };
 }
 
 export default new MembershipController();

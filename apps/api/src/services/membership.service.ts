@@ -51,6 +51,24 @@ class MembershipService {
     return toMembershipResponse(membership);
   };
 
+  remove = async (managerId: string, id: string, ip?: string) => {
+    const notifications = await runTransaction(async (tx) => {
+      const current = await membershipRepository.findById(id, tx);
+      if (!current) throw notFound();
+
+      const notifications = await this.notifyAutoRenewMembers(id, current.name, 'bị xóa', tx);
+
+      await membershipRepository.update(id, { isActive: false, deletedAt: new Date() }, tx);
+      await auditService.record(
+        { accountId: managerId, action: 'DELETE', entityType: 'MEMBERSHIP', entityId: id, oldValues: current, ipAddress: ip },
+        tx,
+      );
+      return notifications;
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+  };
+
   private notifyAutoRenewMembers = async (
     packageId: string,
     packageName: string,
