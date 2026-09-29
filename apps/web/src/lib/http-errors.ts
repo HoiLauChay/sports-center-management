@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ApiFieldError } from '@sports-center/shared';
+import type { ApiErrorBody, ApiFieldError, ScheduleConflict, SessionConflict } from '@sports-center/shared';
 import axios from 'axios';
 
 export const CLIENT_ERROR_CODE = {
@@ -44,4 +44,16 @@ export function fieldErrorsToMap(errors: ApiFieldError[] | undefined) {
     if (!(key in map)) map[key] = e.message;
   }
   return map;
+}
+
+export interface ScheduleConflicts {
+  bookings: ScheduleConflict[];
+  sessions: SessionConflict[];
+}
+
+/** Upcoming bookings / class sessions the API returned alongside a 409 `SCHEDULE_CONFLICT` / `HAS_DEPENDENCIES`. */
+export function scheduleConflictsOf(err: unknown): ScheduleConflicts | null {
+  if (!axios.isAxiosError<Partial<ScheduleConflicts>>(err)) return null;
+  const { bookings = [], sessions = [] } = err.response?.data ?? {};
+  return bookings.length || sessions.length ? { bookings, sessions } : null;
 }

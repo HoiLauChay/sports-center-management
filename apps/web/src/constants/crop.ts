@@ -9,6 +9,13 @@ export const CROP_PRESETS = {
     maxWidth: AVATAR_MAX_DIMENSION,
     fileName: 'avatar.jpg',
   },
+  icon: {
+    title: 'Cắt icon',
+    aspect: 1,
+    shape: 'rect',
+    maxWidth: AVATAR_MAX_DIMENSION,
+    fileName: 'icon.jpg',
+  },
   cover: {
     title: 'Cắt ảnh bìa',
     aspect: COVER_ASPECT_RATIO,

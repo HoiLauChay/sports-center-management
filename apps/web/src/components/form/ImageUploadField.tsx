@@ -8,7 +8,7 @@ interface ImageUploadFieldProps {
   purpose: UploadPurpose;
   value: string | null | undefined;
   onChange: (url: string | null) => void;
-  variant?: 'avatar' | 'cover';
+  variant?: 'avatar' | 'icon' | 'cover';
   fallback?: string;
   invalid?: boolean;
 }
@@ -25,12 +25,17 @@ export function ImageUploadField({
     purpose,
     CROP_PRESETS[variant],
     onChange,
-    variant === 'avatar' ? 'Chọn ảnh đại diện' : 'Chọn ảnh bìa',
+    { avatar: 'Chọn ảnh đại diện', icon: 'Chọn icon', cover: 'Chọn ảnh bìa' }[variant],
   );
 
   const preview =
-    variant === 'avatar' ? (
-      <Avatar src={value || undefined} size={72} className="!shrink-0 !bg-sc-primary !text-2xl">
+    variant !== 'cover' ? (
+      <Avatar
+        src={value || undefined}
+        size={72}
+        shape={variant === 'icon' ? 'square' : 'circle'}
+        className="!shrink-0 !bg-sc-primary !text-2xl"
+      >
         {fallback}
       </Avatar>
     ) : (
@@ -42,7 +47,7 @@ export function ImageUploadField({
     );
 
   return (
-    <div className={variant === 'avatar' ? 'flex items-center gap-4' : 'flex flex-col gap-3'}>
+    <div className={variant !== 'cover' ? 'flex items-center gap-4' : 'flex flex-col gap-3'}>
       {preview}
       <div className="flex flex-wrap gap-2">
         <Button icon={<ImageUp size={16} />} loading={uploading} onClick={open}>
