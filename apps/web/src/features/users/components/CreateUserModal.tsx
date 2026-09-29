@@ -86,9 +86,6 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
       onCancel={close}
       destroyOnHidden
     >
-      <p className="mt-0 mb-4 text-sm text-sc-muted">
-        Hệ thống tạo mật khẩu ngẫu nhiên và gửi email để người được tạo tự đặt mật khẩu.
-      </p>
       <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
         <FormRootError message={form.formState.errors.root?.message} />
 
@@ -138,7 +135,6 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
           control={control}
           name="email"
           label="Email"
-          extra="Dùng để đăng nhập và nhận email đặt mật khẩu"
           render={(field, invalid) => (
             <Input {...field} status={invalid ? 'error' : undefined} type="email" autoComplete="off" />
           )}
@@ -191,7 +187,6 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
             control={control}
             name="profile.staffNotes"
             label="Ghi chú nhân sự"
-            extra="Chỉ Quản lý xem và sửa được"
             render={(field, invalid) => (
               <Input.TextArea
                 {...field}
