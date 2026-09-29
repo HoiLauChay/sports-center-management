@@ -14,7 +14,7 @@ import { ROLE_COLOR } from '~/styles/antd-theme';
 import { useUserDetail } from '../hooks/useUserDetail';
 import { StatusTag } from './StatusTag';
 
-function UserSummary({ user }: { user: Account }) {
+function UserSummary({ user, actions }: { user: Account; actions?: ReactNode }) {
   const roleColor = ROLE_COLOR[user.role];
   return (
     <Card>
@@ -44,6 +44,7 @@ function UserSummary({ user }: { user: Account }) {
             </span>
           </div>
         </div>
+        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
     </Card>
   );
@@ -52,27 +53,33 @@ function UserSummary({ user }: { user: Account }) {
 interface UserDetailViewProps {
   user: Account;
   aside?: ReactNode;
+  actions?: ReactNode;
+  editor?: ReactNode;
 }
 
-export function UserDetailView({ user, aside }: UserDetailViewProps) {
+export function UserDetailView({ user, aside, actions, editor }: UserDetailViewProps) {
   return (
     <div className="flex flex-col gap-4">
-      <UserSummary user={user} />
+      <UserSummary user={user} actions={actions} />
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={aside ? 16 : 24}>
-          <Card>
-            <SectionTitle>Thông tin cá nhân</SectionTitle>
-            <InfoGrid
-              items={[
-                { label: 'Email', value: user.email, icon: Mail },
-                { label: 'Số điện thoại', value: user.phone, icon: Phone },
-                { label: 'Ngày sinh', value: user.dateOfBirth && formatDate(user.dateOfBirth), icon: Cake },
-                { label: 'Giới tính', value: user.gender && GENDER_LABEL[user.gender], icon: VenusAndMars },
-                { label: 'Địa chỉ', value: user.address, icon: MapPin, full: true },
-              ]}
-            />
-            <AccountRoleSection user={user} />
-          </Card>
+          {editor ? (
+            <Card>{editor}</Card>
+          ) : (
+            <Card>
+              <SectionTitle>Thông tin cá nhân</SectionTitle>
+              <InfoGrid
+                items={[
+                  { label: 'Email', value: user.email, icon: Mail },
+                  { label: 'Số điện thoại', value: user.phone, icon: Phone },
+                  { label: 'Ngày sinh', value: user.dateOfBirth && formatDate(user.dateOfBirth), icon: Cake },
+                  { label: 'Giới tính', value: user.gender && GENDER_LABEL[user.gender], icon: VenusAndMars },
+                  { label: 'Địa chỉ', value: user.address, icon: MapPin, full: true },
+                ]}
+              />
+              <AccountRoleSection user={user} />
+            </Card>
+          )}
         </Col>
         {aside && (
           <Col xs={24} lg={8}>
@@ -89,9 +96,11 @@ interface UserDetailLoaderProps {
   backLabel: string;
   onBack: () => void;
   aside?: (user: Account) => ReactNode;
+  actions?: (user: Account) => ReactNode;
+  editor?: (user: Account) => ReactNode;
 }
 
-export function UserDetailLoader({ id, backLabel, onBack, aside }: UserDetailLoaderProps) {
+export function UserDetailLoader({ id, backLabel, onBack, aside, actions, editor }: UserDetailLoaderProps) {
   const { data: user, isPending, isError, error, notFound, refetch } = useUserDetail(id);
 
   const back = (
@@ -131,7 +140,7 @@ export function UserDetailLoader({ id, backLabel, onBack, aside }: UserDetailLoa
   return (
     <>
       {back}
-      <UserDetailView user={user} aside={aside?.(user)} />
+      <UserDetailView user={user} aside={aside?.(user)} actions={actions?.(user)} editor={editor?.(user)} />
     </>
   );
 }

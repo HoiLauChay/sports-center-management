@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import cronRouter from '~/routes/cron.routes';
 import facilityRouter from '~/routes/facility.routes';
@@ -16,6 +17,7 @@ rootRouter.get('/health', (_req, res) => {
   res.json(new ResponseClient({ message: 'OK' }));
 });
 
+rootRouter.use('/audit-logs', auditRouter);
 rootRouter.use('/auth', authRouter);
 rootRouter.use('/cron', cronRouter);
 rootRouter.use('/facilities', facilityRouter);

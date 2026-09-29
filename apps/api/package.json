@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "bun src/seeds/seed.ts",
+    "db:seed:demo": "bun src/seeds/seed.ts --demo",
     "clean": "rm -rf dist .turbo src/generated"
   },
   "lint-staged": {

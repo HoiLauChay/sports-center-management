@@ -1,9 +1,11 @@
-import type { AuditAction, AuditEntityType } from '@sports-center/shared';
+import type { AuditAction, AuditEntityType, ListAuditLogsQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import { AUDIT_FIELDS } from '~/constants/audit';
 import type { Prisma } from '~/generated/prisma/client';
+import { toAuditLogResponse } from '~/mappers/audit.mapper';
 import auditLogRepository from '~/repositories/auditLog.repository';
+import { toCursorPage } from '~/utils/pagination';
 
 type Values = Prisma.InputJsonObject;
 
@@ -31,6 +33,11 @@ const diff = (oldValues: object, newValues: object, fields: readonly string[]) =
 };
 
 class AuditService {
+  list = async (query: ListAuditLogsQuery) => {
+    const page = toCursorPage(await auditLogRepository.findPage(query), query);
+    return { ...page, items: page.items.map(toAuditLogResponse) };
+  };
+
   record = async (
     { accountId, action, entityType, entityId, oldValues, newValues, ipAddress }: AuditEntry,
     tx: Prisma.TransactionClient = prisma,

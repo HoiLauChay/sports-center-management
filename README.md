@@ -34,6 +34,8 @@ bun run db:migrate
 bun run db:seed
 ```
 
+`db:seed` creates `system_settings` and the first manager. Run `bun run db:seed:demo` instead to also add sample sports, facilities, memberships, coaches, receptionists and members with wallet balance. Both are safe to run repeatedly.
+
 ### Run the Application
 
 ```bash

@@ -28,7 +28,7 @@ const fields =
     keys;
 
 export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
-  ACCOUNT: fields<Account>()(
+  ACCOUNT: fields<Account & { statusReason: string | null }>()(
     'email',
     'phone',
     'fullName',
@@ -39,6 +39,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'dateOfBirth',
     'gender',
     'address',
+    'statusReason',
   ),
   MEMBER_PROFILE: fields<MemberProfile>()('emergencyContact', 'fitnessGoals'),
   COACH_PROFILE: fields<CoachProfile>()('bio', 'experience', 'certifications', 'coverImageUrl'),

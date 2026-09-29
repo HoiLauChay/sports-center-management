@@ -1,4 +1,10 @@
-import { createUserBodySchema, listUsersQuerySchema, userIdParamsSchema } from '@sports-center/shared';
+import {
+  createUserBodySchema,
+  listUsersQuerySchema,
+  updateUserBodySchema,
+  updateUserStatusBodySchema,
+  userIdParamsSchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import userController from '~/controllers/user.controllers';
@@ -16,5 +22,17 @@ userRouter.get(
   userController.getById,
 );
 userRouter.post('/', isRole('MANAGER'), validate({ body: createUserBodySchema }), userController.create);
+userRouter.patch(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: userIdParamsSchema, body: updateUserBodySchema }),
+  userController.update,
+);
+userRouter.patch(
+  '/:id/status',
+  isRole('MANAGER'),
+  validate({ params: userIdParamsSchema, body: updateUserStatusBodySchema }),
+  userController.updateStatus,
+);
 
 export default userRouter;
