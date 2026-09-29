@@ -6,6 +6,9 @@ export const PATHS = {
   dashboard: '/dashboard',
   profile: '/profile',
   adminUsers: '/admin/users',
+  adminSports: '/admin/sports',
+  adminFacilities: '/admin/facilities',
+  adminSettings: '/admin/settings',
   receptionMembers: '/reception/members',
   notifications: '/notifications',
 } as const;

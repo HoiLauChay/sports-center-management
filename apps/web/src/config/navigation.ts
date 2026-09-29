@@ -16,15 +16,15 @@ import {
   // Landmark,
   LayoutDashboard,
   // LifeBuoy,
-  // MapPin,
+  MapPin,
   // Receipt,
   // ScanLine,
   // School,
-  // Settings,
+  Settings,
   // ShoppingCart,
   // Store,
   // Ticket,
-  // Trophy,
+  Trophy,
   Users,
   // Wallet,
   // Wrench,
@@ -113,8 +113,8 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Danh mục',
       items: [
-        // { path: '/admin/sports', label: 'Bộ môn', icon: Trophy },
-        // { path: '/admin/facilities', label: 'Sân & phòng', icon: MapPin },
+        { path: '/admin/sports', label: 'Bộ môn', icon: Trophy },
+        { path: '/admin/facilities', label: 'Sân & phòng', icon: MapPin },
         // { path: '/admin/courses', label: 'Khóa học', icon: BookOpen },
         // { path: '/admin/classes', label: 'Lớp học', icon: School },
         // { path: '/admin/memberships', label: 'Gói thành viên', icon: BadgeCheck },
@@ -122,7 +122,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
       ],
     },
-    // { items: [{ path: '/admin/settings', label: 'Cấu hình', icon: Settings }] },
+    { items: [{ path: '/admin/settings', label: 'Cấu hình', icon: Settings }] },
   ],
 };
 
