@@ -7,6 +7,7 @@ import facilityRouter from '~/routes/facility.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import settingRouter from '~/routes/setting.routes';
+import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
 import uploadRouter from '~/routes/upload.routes';
 import userRouter from '~/routes/user.routes';
@@ -20,11 +21,13 @@ rootRouter.get('/health', (_req, res) => {
 
 rootRouter.use('/audit-logs', auditRouter);
 rootRouter.use('/auth', authRouter);
+rootRouter.use('/coach/specializations', coachSpecializationRouter);
 rootRouter.use('/cron', cronRouter);
 rootRouter.use('/facilities', facilityRouter);
 rootRouter.use('/memberships', membershipRouter);
 rootRouter.use('/me/notifications', notificationRouter);
 rootRouter.use('/settings', settingRouter);
+rootRouter.use('/specializations', managerSpecializationRouter);
 rootRouter.use('/sports', sportRouter);
 rootRouter.use('/uploads', uploadRouter);
 rootRouter.use('/users', userRouter);
