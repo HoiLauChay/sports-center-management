@@ -96,6 +96,6 @@ describe('membership crud', () => {
 
     const notifications = await prisma.notification.findMany({ where: { accountId: member.id } });
     expect(notifications).toHaveLength(1);
-    expect(notifications[0].title).toContain('ngừng bán');
+    expect(notifications[0]!.title).toContain('ngừng bán');
   });
 });

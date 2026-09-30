@@ -13,6 +13,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
+  "lint-staged": {
+    "**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "zod": "^4.6.5"
   },
