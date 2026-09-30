@@ -25,5 +25,11 @@ membershipRouter.patch(
   validate({ params: membershipIdParamsSchema, body: updateMembershipBodySchema }),
   membershipController.update,
 );
+membershipRouter.delete(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: membershipIdParamsSchema }),
+  membershipController.remove,
+);
 
 export default membershipRouter;
