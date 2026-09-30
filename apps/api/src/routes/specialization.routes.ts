@@ -1,4 +1,8 @@
-import { createSpecializationBodySchema } from '@sports-center/shared';
+import {
+  createSpecializationBodySchema,
+  reviewSpecializationBodySchema,
+  specializationIdParamsSchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import specializationController from '~/controllers/specialization.controllers';
@@ -17,3 +21,13 @@ coachSpecializationRouter.post(
 export const managerSpecializationRouter = Router();
 managerSpecializationRouter.use(auth, isRole('MANAGER'));
 managerSpecializationRouter.get('/', specializationController.listForManager);
+managerSpecializationRouter.post(
+  '/:id/approve',
+  validate({ params: specializationIdParamsSchema, body: reviewSpecializationBodySchema }),
+  specializationController.approve,
+);
+managerSpecializationRouter.post(
+  '/:id/reject',
+  validate({ params: specializationIdParamsSchema, body: reviewSpecializationBodySchema }),
+  specializationController.reject,
+);

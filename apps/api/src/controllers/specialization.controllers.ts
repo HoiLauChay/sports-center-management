@@ -22,6 +22,26 @@ class SpecializationController {
     const specializations = await specializationService.listForManager();
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: specializations }));
   };
+
+  approve = async (req: Request, res: Response) => {
+    const specialization = await specializationService.approve(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã duyệt chuyên môn', result: specialization }));
+  };
+
+  reject = async (req: Request, res: Response) => {
+    const specialization = await specializationService.reject(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã từ chối chuyên môn', result: specialization }));
+  };
 }
 
 export default new SpecializationController();
