@@ -16,6 +16,16 @@ class MembershipController {
     const membership = await membershipService.create(req.user!.id, req.body, getClientIp(req));
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã tạo gói thành viên', result: membership }));
   };
+
+  update = async (req: Request, res: Response) => {
+    const membership = await membershipService.update(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã cập nhật gói thành viên', result: membership }));
+  };
 }
 
 export default new MembershipController();

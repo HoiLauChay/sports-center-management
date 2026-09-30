@@ -1,4 +1,8 @@
-import { createMembershipBodySchema } from '@sports-center/shared';
+import {
+  createMembershipBodySchema,
+  membershipIdParamsSchema,
+  updateMembershipBodySchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import membershipController from '~/controllers/membership.controllers';
@@ -14,6 +18,12 @@ membershipRouter.post(
   isRole('MANAGER'),
   validate({ body: createMembershipBodySchema }),
   membershipController.create,
+);
+membershipRouter.patch(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: membershipIdParamsSchema, body: updateMembershipBodySchema }),
+  membershipController.update,
 );
 
 export default membershipRouter;
