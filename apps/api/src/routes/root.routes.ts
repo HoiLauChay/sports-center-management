@@ -11,6 +11,7 @@ import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes
 import sportRouter from '~/routes/sport.routes';
 import uploadRouter from '~/routes/upload.routes';
 import userRouter from '~/routes/user.routes';
+import { myWalletRouter } from '~/routes/wallet.routes';
 import { ResponseClient } from '~/rules/response';
 
 const rootRouter = Router();
@@ -26,6 +27,7 @@ rootRouter.use('/cron', cronRouter);
 rootRouter.use('/facilities', facilityRouter);
 rootRouter.use('/memberships', membershipRouter);
 rootRouter.use('/me/notifications', notificationRouter);
+rootRouter.use('/me/wallet', myWalletRouter);
 rootRouter.use('/settings', settingRouter);
 rootRouter.use('/specializations', managerSpecializationRouter);
 rootRouter.use('/sports', sportRouter);
