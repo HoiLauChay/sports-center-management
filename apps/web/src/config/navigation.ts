@@ -66,7 +66,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Thanh toán',
       items: [
-        // { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
         // { path: '/wallet', label: 'Ví', icon: Wallet },
         // { path: '/cart', label: 'Giỏ hàng', icon: ShoppingCart },
         // { path: '/orders', label: 'Hóa đơn', icon: Receipt },

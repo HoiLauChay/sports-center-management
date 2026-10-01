@@ -11,6 +11,7 @@ export const PATHS = {
   adminSettings: '/admin/settings',
   adminAuditLogs: '/admin/audit-logs',
   adminMemberships: '/admin/memberships',
+  memberships: '/memberships',
   receptionMembers: '/reception/members',
   notifications: '/notifications',
 } as const;
