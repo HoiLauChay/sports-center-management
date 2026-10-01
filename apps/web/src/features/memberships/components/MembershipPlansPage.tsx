@@ -1,11 +1,15 @@
 import type { MembershipPackage } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { Alert, Button, Card, Tooltip } from 'antd';
+import dayjs from 'dayjs';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { formatVND } from '~/lib/format';
+import { PATHS } from '~/constants/paths';
+import { formatVND, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { membershipsQueryOptions } from '../hooks/useMemberships';
+import { useMyMemberships } from '../hooks/useMyMemberships';
 
 interface BenefitRow {
   label: string;
@@ -36,9 +40,32 @@ function periodLabel(plan: MembershipPackage) {
   return `${months >= 12 ? '12 tháng' : `${months} tháng`} · ${formatVND(perMonth)}/tháng`;
 }
 
-function PlanCard({ plan }: { plan: MembershipPackage }) {
+interface PlanCardProps {
+  plan: MembershipPackage;
+  current: boolean;
+  locked: boolean;
+  daysLeft: number;
+}
+
+function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
+  const buttonLabel = current ? 'Gia hạn gói này' : locked ? 'Không đổi khi còn gói' : 'Đăng ký gói này';
+  const tooltip = locked
+    ? 'Đang có gói khác còn hiệu lực. Đổi gói sau khi hết hạn hoặc hủy gói.'
+    : 'Đăng ký gói trực tuyến sắp được mở. Liên hệ quầy lễ tân để được hỗ trợ.';
+
   return (
-    <div className="flex min-w-0 flex-col rounded-xl border border-sc-border-soft bg-white px-6 pt-[22px] pb-6 shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)]">
+    <div
+      className={`flex min-w-0 flex-col rounded-xl bg-white px-6 pt-[22px] pb-6 shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)] ${
+        current ? 'border-2 border-sc-primary !px-[23px] !pt-[21px] !pb-[23px]' : 'border border-sc-border-soft'
+      } ${locked ? 'opacity-60' : ''}`}
+    >
+      <div
+        className={`mb-3.5 min-h-4 font-display text-xs font-bold tracking-[.12em] uppercase ${
+          current ? 'text-sc-primary' : 'text-sc-accent'
+        }`}
+      >
+        {current ? `Gói của bạn · còn ${daysLeft} ngày` : ' '}
+      </div>
       <h2 className="m-0 font-display text-[28px] leading-none font-extrabold tracking-[.005em] uppercase [overflow-wrap:anywhere]">
         {plan.name}
       </h2>
@@ -61,14 +88,15 @@ function PlanCard({ plan }: { plan: MembershipPackage }) {
           </li>
         ))}
       </ul>
-      <Tooltip title="Đăng ký gói trực tuyến sắp được mở. Liên hệ quầy lễ tân để được hỗ trợ.">
+      <Tooltip title={tooltip}>
         <span className="block">
           <Button
             block
             disabled
+            type={current ? 'primary' : 'default'}
             className="!h-[46px] !font-display !text-[17px] !font-extrabold !tracking-[.04em] !uppercase"
           >
-            Đăng ký gói này
+            {buttonLabel}
           </Button>
         </span>
       </Tooltip>
@@ -78,7 +106,11 @@ function PlanCard({ plan }: { plan: MembershipPackage }) {
 
 export function MembershipPlansPage() {
   const packages = useQuery(membershipsQueryOptions);
+  const mine = useMyMemberships().query.data?.current;
   const plans = packages.data?.filter((membership) => membership.isActive);
+  const today = dayjs().tz(VN_TIMEZONE).format('YYYY-MM-DD');
+  const ownedPlan = mine && mine.status === 'ACTIVE' && today < mine.endDate ? mine : null;
+  const daysLeft = ownedPlan ? Math.max(0, dayjs(ownedPlan.endDate).diff(dayjs(today), 'day')) : 0;
 
   return (
     <>
@@ -110,7 +142,13 @@ export function MembershipPlansPage() {
           {plans?.length ? (
             <div className="grid grid-cols-1 items-stretch gap-4 min-[601px]:grid-cols-2 min-[1001px]:grid-cols-3 min-[1401px]:grid-cols-4">
               {plans.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} />
+                <PlanCard
+                  key={plan.id}
+                  plan={plan}
+                  current={ownedPlan?.package.id === plan.id}
+                  locked={Boolean(ownedPlan) && ownedPlan?.package.id !== plan.id}
+                  daysLeft={daysLeft}
+                />
               ))}
             </div>
           ) : (
@@ -122,7 +160,15 @@ export function MembershipPlansPage() {
             <span>
               Gia hạn nối tiếp từ ngày hết hạn; gói mua trong cùng đơn chưa giảm giá cho các dòng khác của đơn đó.
             </span>
-            <span>Hủy gói: mất quyền lợi ngay, không hoàn tiền.</span>
+            <span>
+              Hủy gói: mất quyền lợi ngay, không hoàn tiền.{' '}
+              <Link
+                to={PATHS.myMemberships}
+                className="font-semibold text-sc-ink underline decoration-sc-border underline-offset-[3px] hover:text-sc-primary"
+              >
+                Gói của tôi
+              </Link>
+            </span>
           </div>
         </>
       )}
