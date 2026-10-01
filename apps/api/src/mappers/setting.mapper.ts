@@ -13,5 +13,5 @@ export const toSettingResponse = (setting: SettingRow): SystemSettings => ({
   courseCancelDeadlineDays: setting.courseCancelDeadlineDays,
   membershipExpiryWarningDays: setting.membershipExpiryWarningDays,
   topUpMinAmount: roundMoney(setting.topUpMinAmount),
-  topUpExpiryMinutes: setting.topUpExpiryMinutes,
+  invoiceExpiryMinutes: setting.invoiceExpiryMinutes,
 });

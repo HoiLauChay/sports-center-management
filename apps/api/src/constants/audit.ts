@@ -12,6 +12,7 @@ import type {
   Course,
   Facility,
   FacilityMaintenance,
+  Invoice,
   ManagerProfile,
   MemberMembership,
   MemberProfile,
@@ -19,7 +20,6 @@ import type {
   ReceptionistProfile,
   Sport,
   SystemSetting,
-  WalletTopUp,
 } from '~/generated/prisma/client';
 
 const fields =
@@ -113,8 +113,8 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'courseCancelDeadlineDays',
     'membershipExpiryWarningDays',
     'topUpMinAmount',
-    'topUpExpiryMinutes',
+    'invoiceExpiryMinutes',
   ),
   BANK_TRANSACTION: fields<BankTransaction>()('amount', 'paymentCode', 'status', 'resolvedAccountId', 'note'),
-  WALLET_TOP_UP: fields<WalletTopUp>()('accountId', 'amount', 'status', 'bankTransactionId'),
+  INVOICE: fields<Invoice>()('purpose', 'accountId', 'amount', 'status', 'bankTransactionId', 'orderId'),
 };

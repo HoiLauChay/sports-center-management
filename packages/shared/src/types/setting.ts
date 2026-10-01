@@ -9,7 +9,7 @@ export interface SystemSettings {
   courseCancelDeadlineDays: number;
   membershipExpiryWarningDays: number;
   topUpMinAmount: number;
-  topUpExpiryMinutes: number;
+  invoiceExpiryMinutes: number;
 }
 
 export interface ScheduleConflict {

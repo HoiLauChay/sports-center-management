@@ -14,7 +14,7 @@ const LOCK_ORDER = [
   ['coupons', 'coupons', 'id'],
   ['orders', 'orders', 'id'],
   ['orderItems', 'order_items', 'id'],
-  ['walletTopUps', 'wallet_top_ups', 'id'],
+  ['invoices', 'invoices', 'id'],
   ['bankTransactions', 'bank_transactions', 'id'],
 ] as const;
 
