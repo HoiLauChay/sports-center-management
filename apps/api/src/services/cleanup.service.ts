@@ -38,14 +38,14 @@ class CleanupService {
       OR: [{ expiresAt: { lt: before(CRON.OTP_RETENTION) } }, { consumedAt: { lt: before(CRON.OTP_RETENTION) } }],
     };
     const notificationWhere = { createdAt: { lt: before(CRON.NOTIFICATION_RETENTION) } };
-    const topUpWhere = { status: 'PENDING' as const, expiresAt: { lt: now } };
+    const invoiceWhere = { status: 'PENDING' as const, expiresAt: { lt: now } };
 
     const results = [
       await runBatch({
-        findIds: (take) => prisma.walletTopUp.findMany({ where: topUpWhere, select: { id: true }, take }),
+        findIds: (take) => prisma.invoice.findMany({ where: invoiceWhere, select: { id: true }, take }),
         apply: (ids) =>
-          prisma.walletTopUp.updateMany({ where: { ...topUpWhere, id: { in: ids } }, data: { status: 'EXPIRED' } }),
-        count: () => prisma.walletTopUp.count({ where: topUpWhere }),
+          prisma.invoice.updateMany({ where: { ...invoiceWhere, id: { in: ids } }, data: { status: 'EXPIRED' } }),
+        count: () => prisma.invoice.count({ where: invoiceWhere }),
       }),
       await notificationService.resendPendingEmails(),
       await runBatch({

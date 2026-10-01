@@ -12,7 +12,7 @@ const settingSelect = {
   courseCancelDeadlineDays: true,
   membershipExpiryWarningDays: true,
   topUpMinAmount: true,
-  topUpExpiryMinutes: true,
+  invoiceExpiryMinutes: true,
 } satisfies Prisma.SystemSettingSelect;
 
 export type SettingRow = Prisma.SystemSettingGetPayload<{ select: typeof settingSelect }>;

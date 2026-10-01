@@ -40,12 +40,15 @@ export const AUDIT_ENTITY_TYPES = [
   'COUPON',
   'SYSTEM_SETTING',
   'BANK_TRANSACTION',
-  'WALLET_TOP_UP',
+  'INVOICE',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
 export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
 export type CreatableRole = (typeof CREATABLE_ROLES)[number];
+
+export const SPECIALIZATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export type SpecializationStatus = (typeof SPECIALIZATION_STATUSES)[number];
 
 export const NOTIFICATION_TYPES = [
   'PAYMENT',
@@ -60,3 +63,15 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export const FACILITY_TYPES = ['GYM', 'COURT', 'ROOM', 'FIELD'] as const;
 export type FacilityType = (typeof FACILITY_TYPES)[number];
+
+export const PAYMENT_METHODS = ['WALLET', 'CASH', 'CARD', 'TRANSFER'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const WALLET_TRANSACTION_TYPES = ['TOP_UP', 'PAYMENT', 'REFUND'] as const;
+export type WalletTransactionType = (typeof WALLET_TRANSACTION_TYPES)[number];
+
+export const INVOICE_PURPOSES = ['WALLET_TOP_UP', 'COUNTER_ORDER'] as const;
+export type InvoicePurpose = (typeof INVOICE_PURPOSES)[number];
+
+export const INVOICE_STATUSES = ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'FAILED'] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];

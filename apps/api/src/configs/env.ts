@@ -15,6 +15,10 @@ const schema = z
     BLOB_STORE_ID: z.string().optional(),
     BLOB_READ_WRITE_TOKEN: z.string().optional(),
     CRON_SECRET: z.string().min(32).optional(),
+    SEPAY_BANK_ACCOUNT: z.string().optional(),
+    SEPAY_BANK_CODE: z.string().optional(),
+    SEPAY_ACCOUNT_NAME: z.string().optional(),
+    SEPAY_WEBHOOK_API_KEY: z.string().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;

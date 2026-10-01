@@ -4,10 +4,12 @@ import {
   updateUserBodySchema,
   updateUserStatusBodySchema,
   userIdParamsSchema,
+  walletQuerySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
 import userController from '~/controllers/user.controllers';
+import walletController from '~/controllers/wallet.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
@@ -20,6 +22,12 @@ userRouter.get(
   isRole('MANAGER', 'RECEPTIONIST'),
   validate({ params: userIdParamsSchema }),
   userController.getById,
+);
+userRouter.get(
+  '/:id/wallet',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, query: walletQuerySchema }),
+  walletController.getForMember,
 );
 userRouter.post('/', isRole('MANAGER'), validate({ body: createUserBodySchema }), userController.create);
 userRouter.patch(
