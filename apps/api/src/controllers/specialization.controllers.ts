@@ -1,0 +1,48 @@
+import type { ListSpecializationsQuery } from '@sports-center/shared';
+import type { Request, Response } from 'express';
+
+import { HTTP_STATUS } from '~/constants/httpStatus';
+import { ResponseClient } from '~/rules/response';
+import specializationService from '~/services/specialization.service';
+import { getClientIp } from '~/utils/request';
+
+class SpecializationController {
+  listForCoach = async (req: Request, res: Response) => {
+    const specializations = await specializationService.listForCoach(req.user!.id);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: specializations }));
+  };
+
+  register = async (req: Request, res: Response) => {
+    const specialization = await specializationService.register(req.user!.id, req.body.sportId, getClientIp(req));
+    res
+      .status(HTTP_STATUS.CREATED)
+      .json(new ResponseClient({ message: 'Đã đăng ký chuyên môn', result: specialization }));
+  };
+
+  listForManager = async (req: Request, res: Response) => {
+    const page = await specializationService.listForManager(req.query as unknown as ListSpecializationsQuery);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: page }));
+  };
+
+  approve = async (req: Request, res: Response) => {
+    const specialization = await specializationService.approve(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã duyệt chuyên môn', result: specialization }));
+  };
+
+  reject = async (req: Request, res: Response) => {
+    const specialization = await specializationService.reject(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã từ chối chuyên môn', result: specialization }));
+  };
+}
+
+export default new SpecializationController();
