@@ -1,12 +1,16 @@
 import { ERROR_CODE, type CreateTopUpBody, type ListMyInvoicesQuery } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import type { Role } from '~/generated/prisma/client';
+import type { Prisma, Role } from '~/generated/prisma/client';
 import { toInvoiceResponse } from '~/mappers/invoice.mapper';
 import accountRepository from '~/repositories/account.repository';
 import invoiceRepository from '~/repositories/invoice.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import type { InvoiceSettler } from '~/services/bankTransaction.service';
+import notificationService from '~/services/notification.service';
+import walletService from '~/services/wallet.service';
+import { idempotencyKey } from '~/utils/idempotency';
 import { toPage } from '~/utils/pagination';
 import { paymentCode, retryOnDuplicateCode } from '~/utils/paymentCode';
 import { lockRows, runTransaction } from '~/utils/transaction';
@@ -71,6 +75,41 @@ class InvoiceService {
       }),
     );
     return toInvoiceResponse(invoice);
+  };
+
+  settleTopUp: InvoiceSettler = async (tx: Prisma.TransactionClient, { invoice, bankTransactionId }) => {
+    const accountId = invoice.accountId!;
+    await lockRows(tx, { accounts: [accountId], memberProfiles: [accountId], invoices: [invoice.id] });
+
+    const current = await invoiceRepository.findById(invoice.id, tx);
+    if (!current || current.status === 'PAID') return null;
+
+    const amount = Number(current.amount);
+    await walletService.credit(tx, {
+      accountId,
+      amount,
+      idempotencyKey: idempotencyKey.sepay(bankTransactionId),
+      method: 'TRANSFER',
+      bankTransactionId,
+      description: `Nạp ví qua hóa đơn ${current.paymentCode}`,
+    });
+    await invoiceRepository.markPaid(invoice.id, bankTransactionId, tx);
+
+    return notificationService.create(
+      [
+        {
+          accountId,
+          type: 'PAYMENT',
+          title: 'Nạp ví thành công',
+          message: `Ví của bạn đã được cộng ${amount.toLocaleString('vi-VN')}đ từ hóa đơn ${current.paymentCode}.`,
+          referenceType: 'INVOICE',
+          referenceId: invoice.id,
+          dedupKey: `invoice-paid:${invoice.id}`,
+          sendEmail: true,
+        },
+      ],
+      tx,
+    );
   };
 
   get = async (viewer: Actor, id: string) => {

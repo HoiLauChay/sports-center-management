@@ -29,6 +29,19 @@ class InvoiceRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.invoice.findUnique({ where: { id }, select: invoiceSelect });
 
+  findByPaymentCode = (paymentCode: string, tx: Prisma.TransactionClient) =>
+    tx.invoice.findUnique({
+      where: { paymentCode },
+      select: { id: true, purpose: true, accountId: true, amount: true, status: true },
+    });
+
+  markPaid = (id: string, bankTransactionId: string, tx: Prisma.TransactionClient) =>
+    tx.invoice.update({
+      where: { id },
+      data: { status: 'PAID', bankTransactionId, paidAt: new Date() },
+      select: { id: true },
+    });
+
   findPage = (accountId: string, { purpose, status, ...page }: ListMyInvoicesQuery) => {
     const where: Prisma.InvoiceWhereInput = { accountId, purpose, status };
     return Promise.all([
