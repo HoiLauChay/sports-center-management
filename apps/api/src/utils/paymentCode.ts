@@ -4,6 +4,7 @@ import { isUniqueViolation } from '~/utils/dbError';
 import { todayInCenter } from '~/utils/time';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const PAYMENT_CODE_PATTERN = /HLC[A-Z0-9]{8}/;
 const MAX_ATTEMPTS = 3;
 
 const randomCode = (length: number) => Array.from({ length }, () => ALPHABET[randomInt(ALPHABET.length)]).join('');
@@ -17,6 +18,8 @@ export const paymentCode = {
 export const transactionCode = {
   generate: (now = new Date()) => `GD${centerDateStamp(now)}${randomCode(8)}`,
 };
+
+export const extractPaymentCode = (content: string) => content.toUpperCase().match(PAYMENT_CODE_PATTERN)?.[0] ?? null;
 
 export const retryOnDuplicateCode = async <T>(indexSuffix: string, run: () => Promise<T>) => {
   for (let attempt = 1; ; attempt++) {
