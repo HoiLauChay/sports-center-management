@@ -12,7 +12,7 @@ import {
   // Dumbbell,
   // GraduationCap,
   // HandCoins,
-  // History,
+  History,
   // Landmark,
   LayoutDashboard,
   // LifeBuoy,
@@ -107,7 +107,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/admin/bank-transactions', label: 'Giao dịch ngân hàng', icon: Landmark },
         { path: '/admin/users', label: 'Người dùng', icon: Users },
         // { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
-        // { path: '/admin/audit-logs', label: 'Nhật ký thao tác', icon: History },
+        { path: '/admin/audit-logs', label: 'Lịch sử thao tác', icon: History },
       ],
     },
     {
