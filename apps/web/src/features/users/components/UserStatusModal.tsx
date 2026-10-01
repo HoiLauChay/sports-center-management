@@ -11,7 +11,7 @@ const COACH_NOTE =
 const REASON_MAX = 500;
 
 interface UserStatusModalProps {
-  user: Account;
+  user: Pick<Account, 'id' | 'fullName' | 'email' | 'role'>;
   target: AccountStatus;
   open: boolean;
   onClose: () => void;
@@ -34,6 +34,7 @@ export function UserStatusModal({ user, target, open, onClose }: UserStatusModal
   const deactivating = target !== 'ACTIVE';
 
   const confirm = () => {
+    if (mutation.isPending) return;
     setError(null);
     mutation.mutate(
       { status: target, reason: reason.trim() || null },
@@ -55,17 +56,25 @@ export function UserStatusModal({ user, target, open, onClose }: UserStatusModal
       cancelText="Hủy"
       okButtonProps={{ danger: deactivating }}
       confirmLoading={mutation.isPending}
+      cancelButtonProps={{ disabled: mutation.isPending }}
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
       mask={{ closable: false }}
       onOk={confirm}
-      onCancel={close}
+      onCancel={() => {
+        if (!mutation.isPending) close();
+      }}
       destroyOnHidden
     >
       <p className="mt-0 mb-4 text-sm text-sc-muted">
         <span className="font-semibold text-sc-ink">{user.fullName}</span> · {user.email}
       </p>
       {deactivating && user.role === 'COACH' && <Alert type="warning" showIcon className="!mb-4" title={COACH_NOTE} />}
+      {deactivating && (
+        <p className="text-sm text-sc-muted">Tài khoản sẽ bị đăng xuất khỏi mọi phiên và không thể đăng nhập.</p>
+      )}
       {error && <Alert type="error" showIcon className="!mb-4" title={error} />}
-      <Form layout="vertical" requiredMark={false}>
+      <Form layout="vertical" requiredMark={false} disabled={mutation.isPending}>
         <Form.Item label="Lý do (tùy chọn)" className="!mb-0">
           <Input.TextArea
             value={reason}
