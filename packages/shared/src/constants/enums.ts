@@ -63,3 +63,15 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export const FACILITY_TYPES = ['GYM', 'COURT', 'ROOM', 'FIELD'] as const;
 export type FacilityType = (typeof FACILITY_TYPES)[number];
+
+export const PAYMENT_METHODS = ['WALLET', 'CASH', 'CARD', 'TRANSFER'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const WALLET_TRANSACTION_TYPES = ['TOP_UP', 'PAYMENT', 'REFUND'] as const;
+export type WalletTransactionType = (typeof WALLET_TRANSACTION_TYPES)[number];
+
+export const INVOICE_PURPOSES = ['WALLET_TOP_UP', 'COUNTER_ORDER'] as const;
+export type InvoicePurpose = (typeof INVOICE_PURPOSES)[number];
+
+export const INVOICE_STATUSES = ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'FAILED'] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
