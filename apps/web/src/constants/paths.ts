@@ -10,6 +10,7 @@ export const PATHS = {
   adminFacilities: '/admin/facilities',
   adminSettings: '/admin/settings',
   adminAuditLogs: '/admin/audit-logs',
+  adminMemberships: '/admin/memberships',
   receptionMembers: '/reception/members',
   notifications: '/notifications',
 } as const;
