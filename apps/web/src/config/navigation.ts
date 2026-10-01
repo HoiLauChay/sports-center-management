@@ -13,6 +13,7 @@ import {
   // GraduationCap,
   // HandCoins,
   History,
+  IdCard,
   // Landmark,
   LayoutDashboard,
   // LifeBuoy,
@@ -67,6 +68,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       title: 'Thanh toán',
       items: [
         { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/memberships/mine', label: 'Gói của tôi', icon: IdCard },
         // { path: '/wallet', label: 'Ví', icon: Wallet },
         // { path: '/cart', label: 'Giỏ hàng', icon: ShoppingCart },
         // { path: '/orders', label: 'Hóa đơn', icon: Receipt },

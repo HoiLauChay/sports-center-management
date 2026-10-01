@@ -12,6 +12,7 @@ export const PATHS = {
   adminAuditLogs: '/admin/audit-logs',
   adminMemberships: '/admin/memberships',
   memberships: '/memberships',
+  myMemberships: '/memberships/mine',
   receptionMembers: '/reception/members',
   notifications: '/notifications',
 } as const;
