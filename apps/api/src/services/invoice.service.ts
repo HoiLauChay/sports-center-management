@@ -1,4 +1,4 @@
-import { ERROR_CODE, type CreateTopUpBody } from '@sports-center/shared';
+import { ERROR_CODE, type CreateTopUpBody, type ListMyInvoicesQuery } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
@@ -7,6 +7,7 @@ import accountRepository from '~/repositories/account.repository';
 import invoiceRepository from '~/repositories/invoice.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import { toPage } from '~/utils/pagination';
 import { paymentCode, retryOnDuplicateCode } from '~/utils/paymentCode';
 import { lockRows, runTransaction } from '~/utils/transaction';
 
@@ -16,6 +17,9 @@ interface Actor {
   id: string;
   role: Role;
 }
+
+const notFound = () =>
+  new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy hóa đơn' });
 
 const invalidField = (path: string, message: string) =>
   new ErrorWithStatus({
@@ -67,6 +71,17 @@ class InvoiceService {
       }),
     );
     return toInvoiceResponse(invoice);
+  };
+
+  get = async (viewer: Actor, id: string) => {
+    const invoice = await invoiceRepository.findById(id);
+    if (!invoice || (viewer.role === 'MEMBER' && invoice.accountId !== viewer.id)) throw notFound();
+    return toInvoiceResponse(invoice);
+  };
+
+  listMine = async (accountId: string, query: ListMyInvoicesQuery) => {
+    const [rows, total] = await invoiceRepository.findPage(accountId, query);
+    return toPage(rows.map(toInvoiceResponse), total, query);
   };
 }
 

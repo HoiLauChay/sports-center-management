@@ -1,4 +1,8 @@
+import type { ListMyInvoicesQuery } from '@sports-center/shared';
+
+import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { pageArgs } from '~/utils/pagination';
 
 const person = { select: { id: true, fullName: true } } as const;
 
@@ -22,6 +26,22 @@ const invoiceSelect = {
 export type InvoiceRow = Prisma.InvoiceGetPayload<{ select: typeof invoiceSelect }>;
 
 class InvoiceRepository {
+  findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.invoice.findUnique({ where: { id }, select: invoiceSelect });
+
+  findPage = (accountId: string, { purpose, status, ...page }: ListMyInvoicesQuery) => {
+    const where: Prisma.InvoiceWhereInput = { accountId, purpose, status };
+    return Promise.all([
+      prisma.invoice.findMany({
+        where,
+        select: invoiceSelect,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs(page),
+      }),
+      prisma.invoice.count({ where }),
+    ]);
+  };
+
   countPendingTopUps = (accountId: string, now: Date, tx: Prisma.TransactionClient) =>
     tx.invoice.count({
       where: { accountId, purpose: 'WALLET_TOP_UP', status: 'PENDING', expiresAt: { gt: now } },
