@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { SPECIALIZATION_STATUSES } from '../constants/enums';
+import { optionalText } from './account';
 import { pageQuerySchema } from './pagination';
 
 export const createSpecializationBodySchema = z.object({
@@ -7,11 +9,11 @@ export const createSpecializationBodySchema = z.object({
 });
 
 export const reviewSpecializationBodySchema = z.object({
-  reviewNote: z.string().trim().max(500, 'Ghi chú tối đa 500 ký tự').nullable().optional(),
+  reviewNote: optionalText(500, 'Ghi chú'),
 });
 
 export const listSpecializationsQuerySchema = pageQuerySchema.extend({
-  status: z.enum(['PENDING', 'APPROVED', 'REJECTED'], 'Trạng thái không hợp lệ').optional(),
+  status: z.enum(SPECIALIZATION_STATUSES, 'Trạng thái không hợp lệ').optional(),
   coachId: z.uuid('Mã huấn luyện viên không hợp lệ').optional(),
   sportId: z.uuid('Mã bộ môn không hợp lệ').optional(),
 });

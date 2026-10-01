@@ -47,6 +47,9 @@ export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
 export type CreatableRole = (typeof CREATABLE_ROLES)[number];
 
+export const SPECIALIZATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export type SpecializationStatus = (typeof SPECIALIZATION_STATUSES)[number];
+
 export const NOTIFICATION_TYPES = [
   'PAYMENT',
   'MEMBERSHIP',

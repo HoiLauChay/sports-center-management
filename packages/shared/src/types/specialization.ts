@@ -1,8 +1,12 @@
-export interface SpecializationResponse {
+import type { SpecializationStatus } from '../constants/enums';
+import type { Ref } from './api';
+import type { Person } from './audit';
+
+export interface Specialization {
   id: string;
-  coach: { id: string; fullName: string };
-  sport: { id: string; name: string };
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  coach: Person;
+  sport: Ref;
+  status: SpecializationStatus;
   reviewNote: string | null;
   reviewedAt: string | null;
   createdAt: string;
