@@ -4,6 +4,7 @@ import type { Prisma } from '~/generated/prisma/client';
 import accountRepository from '~/repositories/account.repository';
 import bankTransactionRepository from '~/repositories/bankTransaction.repository';
 import invoiceRepository from '~/repositories/invoice.repository';
+import invoiceService from '~/services/invoice.service';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
 import { extractPaymentCode, retryOnDuplicateCode } from '~/utils/paymentCode';
 import { runTransaction } from '~/utils/transaction';
@@ -24,7 +25,9 @@ export type InvoiceSettler = (
   input: { invoice: { id: string; accountId: string | null }; bankTransactionId: string },
 ) => Promise<CreatedNotification[] | null>;
 
-const settlers: Partial<Record<InvoicePurpose, InvoiceSettler>> = {};
+const settlers: Partial<Record<InvoicePurpose, InvoiceSettler>> = {
+  WALLET_TOP_UP: invoiceService.settleTopUp,
+};
 
 class BankTransactionService {
   ingest = async (input: IncomingBankTransaction) => {
