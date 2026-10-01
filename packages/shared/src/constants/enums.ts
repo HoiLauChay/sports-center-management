@@ -40,7 +40,7 @@ export const AUDIT_ENTITY_TYPES = [
   'COUPON',
   'SYSTEM_SETTING',
   'BANK_TRANSACTION',
-  'WALLET_TOP_UP',
+  'INVOICE',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 

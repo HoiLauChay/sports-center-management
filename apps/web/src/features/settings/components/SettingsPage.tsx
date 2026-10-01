@@ -221,7 +221,7 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
                 />
               </Col>
               <Col xs={12} md={8}>
-                <NumberInputField control={control} name="topUpExpiryMinutes" label="Hạn mã nạp ví" unit="phút" />
+                <NumberInputField control={control} name="invoiceExpiryMinutes" label="Hạn hóa đơn" unit="phút" />
               </Col>
             </Row>
 

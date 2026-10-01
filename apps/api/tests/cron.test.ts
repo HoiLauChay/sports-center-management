@@ -63,8 +63,15 @@ describe('POST /cron/cleanup', () => {
         { accountId, type: 'SYSTEM', title: 'new', message: 'new', createdAt: daysAgo(89) },
       ],
     });
-    await prisma.walletTopUp.create({
-      data: { accountId, paymentCode: 'SCTUEXPIRED', amount: 100_000, expiresAt: daysAgo(1) },
+    await prisma.invoice.create({
+      data: {
+        purpose: 'WALLET_TOP_UP',
+        accountId,
+        createdById: accountId,
+        paymentCode: 'HLCEXPIRED',
+        amount: 100_000,
+        expiresAt: daysAgo(1),
+      },
     });
 
     const first = await callCleanup(`Bearer ${SECRET}`);
@@ -76,6 +83,6 @@ describe('POST /cron/cleanup', () => {
     expect((await prisma.refreshToken.findMany()).map(({ tokenHash }) => tokenHash)).toEqual(['active']);
     expect((await prisma.otpCode.findMany()).map(({ codeHash }) => codeHash)).toEqual(['new']);
     expect((await prisma.notification.findMany()).map(({ title }) => title)).toEqual(['new']);
-    expect((await prisma.walletTopUp.findFirst())?.status).toBe('EXPIRED');
+    expect((await prisma.invoice.findFirst())?.status).toBe('EXPIRED');
   });
 });
