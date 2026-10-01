@@ -1,12 +1,13 @@
-import { ERROR_CODE, type ReviewSpecializationBody } from '@sports-center/shared';
+import { ERROR_CODE, type ListSpecializationsQuery, type ReviewSpecializationBody } from '@sports-center/shared';
 
-import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toSpecializationResponse } from '~/mappers/specialization.mapper';
 import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
+import { isUniqueViolation } from '~/utils/dbError';
+import { toPage } from '~/utils/pagination';
 import { runTransaction } from '~/utils/transaction';
 
 const notFound = () =>
@@ -16,62 +17,68 @@ const notFound = () =>
     message: 'Không tìm thấy đăng ký chuyên môn',
   });
 
+const invalidSport = (message: string) =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    code: ERROR_CODE.VALIDATION,
+    message: 'Dữ liệu không hợp lệ',
+    errors: [{ path: 'body.sportId', message }],
+  });
+
+const alreadyRegistered = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.CONFLICT,
+    code: ERROR_CODE.CONFLICT,
+    message: 'Bạn đã đăng ký bộ môn này rồi',
+  });
+
+const notPending = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    code: ERROR_CODE.VALIDATION,
+    message: 'Chỉ có thể duyệt đăng ký ở trạng thái chờ',
+  });
+
 class SpecializationService {
   listForCoach = async (coachId: string) => {
     const rows = await specializationRepository.findAll(coachId);
     return rows.map(toSpecializationResponse);
   };
 
-  listForManager = async () => {
-    const rows = await specializationRepository.findAll();
-    return rows.map(toSpecializationResponse);
+  listForManager = async (query: ListSpecializationsQuery) => {
+    const [rows, total] = await specializationRepository.findPage(query);
+    return toPage(rows.map(toSpecializationResponse), total, query);
   };
 
   register = async (coachId: string, sportId: string, ip?: string) => {
-    const sport = await prisma.sport.findUnique({
-      where: { id: sportId },
-      select: { id: true, isActive: true, deletedAt: true },
-    });
-    if (!sport || sport.deletedAt) {
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-        code: ERROR_CODE.VALIDATION,
-        message: 'Bộ môn không tồn tại',
-      });
-    }
-    if (!sport.isActive) {
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-        code: ERROR_CODE.VALIDATION,
-        message: 'Bộ môn đã ngừng hoạt động',
-      });
-    }
+    try {
+      const specialization = await runTransaction(async (tx) => {
+        const sport = await specializationRepository.lockSport(sportId, tx);
+        if (!sport || sport.deletedAt) throw invalidSport('Bộ môn không tồn tại');
+        if (!sport.isActive) throw invalidSport('Bộ môn đã ngừng hoạt động');
 
-    const specialization = await runTransaction(async (tx) => {
-      const existing = await specializationRepository.findExisting(coachId, sportId, tx);
-      if (existing) {
-        throw new ErrorWithStatus({
-          status: HTTP_STATUS.CONFLICT,
-          code: ERROR_CODE.DUPLICATE_REQUEST,
-          message: 'Bạn đã đăng ký bộ môn này rồi',
-        });
-      }
+        const existing = await specializationRepository.findExisting(coachId, sportId, tx);
+        if (existing) throw alreadyRegistered();
 
-      const created = await specializationRepository.create(coachId, sportId, tx);
-      await auditService.record(
-        {
-          accountId: coachId,
-          action: 'CREATE',
-          entityType: 'COACH_SPECIALIZATION',
-          entityId: created.id,
-          newValues: created,
-          ipAddress: ip,
-        },
-        tx,
-      );
-      return created;
-    });
-    return toSpecializationResponse(specialization);
+        const created = await specializationRepository.create(coachId, sportId, tx);
+        await auditService.record(
+          {
+            accountId: coachId,
+            action: 'CREATE',
+            entityType: 'COACH_SPECIALIZATION',
+            entityId: created.id,
+            newValues: created,
+            ipAddress: ip,
+          },
+          tx,
+        );
+        return created;
+      });
+      return toSpecializationResponse(specialization);
+    } catch (err) {
+      if (isUniqueViolation(err, 'uq_coach_spec_active')) throw alreadyRegistered();
+      throw err;
+    }
   };
 
   approve = async (managerId: string, id: string, body: ReviewSpecializationBody, ip?: string) =>
@@ -87,23 +94,18 @@ class SpecializationService {
     body: ReviewSpecializationBody,
     ip?: string,
   ) => {
-    const { specialization, notifications } = await runTransaction(async (tx) => {
+    const specialization = await runTransaction(async (tx) => {
       const current = await specializationRepository.findById(id, tx);
       if (!current) throw notFound();
 
-      if (current.status !== 'PENDING') {
-        throw new ErrorWithStatus({
-          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-          code: ERROR_CODE.VALIDATION,
-          message: 'Chỉ có thể duyệt đăng ký ở trạng thái chờ',
-        });
-      }
+      if (current.status !== 'PENDING') throw notPending();
 
       const updated = await specializationRepository.review(
         id,
         { status, reviewNote: body.reviewNote, reviewedById: managerId },
         tx,
       );
+      if (!updated) throw notPending();
       await auditService.record(
         {
           accountId: managerId,
@@ -118,22 +120,20 @@ class SpecializationService {
       );
 
       const statusText = status === 'APPROVED' ? 'được duyệt' : 'bị từ chối';
-      const notifications = await notificationService.create(
+      await notificationService.create(
         [
           {
             accountId: current.coachId,
             type: 'SYSTEM' as const,
             title: `Đăng ký chuyên môn đã ${statusText}`,
             message: `Đăng ký bộ môn "${current.sport.name}" đã ${statusText}.${body.reviewNote ? ` Ghi chú: ${body.reviewNote}` : ''}`,
-            sendEmail: true,
           },
         ],
         tx,
       );
-      return { specialization: updated, notifications };
+      return updated;
     });
 
-    notificationService.sendEmailsAfterCommit(notifications);
     return toSpecializationResponse(specialization);
   };
 }

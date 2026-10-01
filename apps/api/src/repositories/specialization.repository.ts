@@ -1,5 +1,8 @@
+import type { ListSpecializationsQuery } from '@sports-center/shared';
+
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { pageArgs } from '~/utils/pagination';
 
 const specializationSelect = {
   id: true,
@@ -17,12 +20,33 @@ const specializationSelect = {
 export type SpecializationRow = Prisma.CoachSpecializationGetPayload<{ select: typeof specializationSelect }>;
 
 class SpecializationRepository {
-  findAll = (coachId?: string) =>
+  findAll = (coachId: string) =>
     prisma.coachSpecialization.findMany({
-      where: coachId ? { coachId } : undefined,
+      where: { coachId },
       select: specializationSelect,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
+
+  findPage = ({ status, coachId, sportId, ...page }: ListSpecializationsQuery) => {
+    const where: Prisma.CoachSpecializationWhereInput = { status, coachId, sportId };
+    return Promise.all([
+      prisma.coachSpecialization.findMany({
+        where,
+        select: specializationSelect,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs(page),
+      }),
+      prisma.coachSpecialization.count({ where }),
+    ]);
+  };
+
+  lockSport = async (sportId: string, tx: Prisma.TransactionClient) => {
+    const [sport] = await tx.$queryRaw<{ isActive: boolean; deletedAt: Date | null }[]>`
+      SELECT is_active AS "isActive", deleted_at AS "deletedAt"
+      FROM sports WHERE id = ${sportId}::uuid FOR SHARE
+    `;
+    return sport;
+  };
 
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.coachSpecialization.findUnique({ where: { id }, select: specializationSelect });
@@ -39,16 +63,17 @@ class SpecializationRepository {
       select: specializationSelect,
     });
 
-  review = (
+  review = async (
     id: string,
     data: { status: 'APPROVED' | 'REJECTED'; reviewNote?: string | null; reviewedById: string },
     tx: Prisma.TransactionClient = prisma,
-  ) =>
-    tx.coachSpecialization.update({
-      where: { id },
+  ) => {
+    const { count } = await tx.coachSpecialization.updateMany({
+      where: { id, status: 'PENDING' },
       data: { ...data, reviewedAt: new Date() },
-      select: specializationSelect,
     });
+    return count === 0 ? null : this.findById(id, tx);
+  };
 }
 
 export default new SpecializationRepository();

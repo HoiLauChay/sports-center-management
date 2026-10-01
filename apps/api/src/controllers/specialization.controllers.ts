@@ -1,3 +1,4 @@
+import type { ListSpecializationsQuery } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -18,9 +19,9 @@ class SpecializationController {
       .json(new ResponseClient({ message: 'Đã đăng ký chuyên môn', result: specialization }));
   };
 
-  listForManager = async (_req: Request, res: Response) => {
-    const specializations = await specializationService.listForManager();
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: specializations }));
+  listForManager = async (req: Request, res: Response) => {
+    const page = await specializationService.listForManager(req.query as unknown as ListSpecializationsQuery);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: page }));
   };
 
   approve = async (req: Request, res: Response) => {

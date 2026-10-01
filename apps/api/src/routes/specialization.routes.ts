@@ -1,5 +1,6 @@
 import {
   createSpecializationBodySchema,
+  listSpecializationsQuerySchema,
   reviewSpecializationBodySchema,
   specializationIdParamsSchema,
 } from '@sports-center/shared';
@@ -20,7 +21,11 @@ coachSpecializationRouter.post(
 
 export const managerSpecializationRouter = Router();
 managerSpecializationRouter.use(auth, isRole('MANAGER'));
-managerSpecializationRouter.get('/', specializationController.listForManager);
+managerSpecializationRouter.get(
+  '/',
+  validate({ query: listSpecializationsQuerySchema }),
+  specializationController.listForManager,
+);
 managerSpecializationRouter.post(
   '/:id/approve',
   validate({ params: specializationIdParamsSchema, body: reviewSpecializationBodySchema }),
