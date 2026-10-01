@@ -10,3 +10,4 @@ export * from './specialization';
 export * from './sport';
 export * from './upload';
 export * from './user';
+export * from './wallet';

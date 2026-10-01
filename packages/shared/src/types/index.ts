@@ -7,3 +7,4 @@ export * from './notification';
 export * from './setting';
 export * from './specialization';
 export * from './sport';
+export * from './wallet';
