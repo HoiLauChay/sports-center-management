@@ -1,14 +1,21 @@
 import { randomInt } from 'node:crypto';
 
 import { isUniqueViolation } from '~/utils/dbError';
+import { todayInCenter } from '~/utils/time';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MAX_ATTEMPTS = 3;
 
 const randomCode = (length: number) => Array.from({ length }, () => ALPHABET[randomInt(ALPHABET.length)]).join('');
 
+const centerDateStamp = (now: Date) => todayInCenter(now).replaceAll('-', '').slice(2);
+
 export const paymentCode = {
   generate: () => `HLC${randomCode(8)}`,
+};
+
+export const transactionCode = {
+  generate: (now = new Date()) => `GD${centerDateStamp(now)}${randomCode(8)}`,
 };
 
 export const retryOnDuplicateCode = async <T>(indexSuffix: string, run: () => Promise<T>) => {

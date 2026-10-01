@@ -25,6 +25,21 @@ class WalletRepository {
   findBalance = (accountId: string) =>
     prisma.memberProfile.findUnique({ where: { accountId }, select: { walletBalance: true } });
 
+  readBalance = async (accountId: string, tx: Prisma.TransactionClient) =>
+    Number(
+      (await tx.memberProfile.findUniqueOrThrow({ where: { accountId }, select: { walletBalance: true } }))
+        .walletBalance,
+    );
+
+  updateBalance = (accountId: string, walletBalance: number, tx: Prisma.TransactionClient) =>
+    tx.memberProfile.update({ where: { accountId }, data: { walletBalance }, select: { accountId: true } });
+
+  findTransactionByKey = (idempotencyKey: string, tx: Prisma.TransactionClient) =>
+    tx.walletTransaction.findUnique({ where: { idempotencyKey }, select: walletTransactionSelect });
+
+  createTransaction = (data: Prisma.WalletTransactionUncheckedCreateInput, tx: Prisma.TransactionClient) =>
+    tx.walletTransaction.create({ data, select: walletTransactionSelect });
+
   findTransactionPage = (accountId: string, { type, ...page }: WalletQuery) => {
     const where: Prisma.WalletTransactionWhereInput = { accountId, type };
     return Promise.all([
