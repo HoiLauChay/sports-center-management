@@ -34,9 +34,16 @@ const alreadyRegistered = () =>
 
 const notPending = () =>
   new ErrorWithStatus({
-    status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
-    code: ERROR_CODE.VALIDATION,
+    status: HTTP_STATUS.CONFLICT,
+    code: ERROR_CODE.CONFLICT,
     message: 'Chỉ có thể duyệt đăng ký ở trạng thái chờ',
+  });
+
+const sportUnavailable = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.CONFLICT,
+    code: ERROR_CODE.CONFLICT,
+    message: 'Bộ môn đã ngừng hoạt động',
   });
 
 class SpecializationService {
@@ -100,6 +107,11 @@ class SpecializationService {
 
       if (current.status !== 'PENDING') throw notPending();
 
+      if (status === 'APPROVED') {
+        const sport = await specializationRepository.lockSport(current.sportId, tx);
+        if (!sport?.isActive || sport.deletedAt) throw sportUnavailable();
+      }
+
       const updated = await specializationRepository.review(
         id,
         { status, reviewNote: body.reviewNote, reviewedById: managerId },
@@ -109,7 +121,7 @@ class SpecializationService {
       await auditService.record(
         {
           accountId: managerId,
-          action: 'UPDATE',
+          action: status === 'APPROVED' ? 'APPROVE' : 'REJECT',
           entityType: 'COACH_SPECIALIZATION',
           entityId: id,
           oldValues: current,
