@@ -99,18 +99,19 @@ export function AdminUserEditForm({ user, onDone }: AdminUserEditFormProps) {
   const { control } = form;
   const handleApiError = useFormApiError(form, ERROR_FIELDS);
 
-  const onSubmit = form.handleSubmit((values) =>
+  const onSubmit = form.handleSubmit((values) => {
+    if (mutation.isPending) return;
     mutation.mutate(values, {
       onSuccess: () => {
         message.success('Đã cập nhật thông tin tài khoản');
         onDone();
       },
       onError: handleApiError,
-    }),
-  );
+    });
+  });
 
   return (
-    <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
+    <Form layout="vertical" requiredMark={false} disabled={mutation.isPending} onFinish={() => void onSubmit()}>
       <FormRootError message={form.formState.errors.root?.message} />
 
       <SectionTitle>Thông tin cá nhân</SectionTitle>
