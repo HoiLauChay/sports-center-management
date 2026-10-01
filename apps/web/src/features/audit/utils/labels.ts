@@ -39,7 +39,7 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   COUPON: 'Mã giảm giá',
   SYSTEM_SETTING: 'Cấu hình hệ thống',
   BANK_TRANSACTION: 'Giao dịch ngân hàng',
-  WALLET_TOP_UP: 'Nạp ví',
+  INVOICE: 'Hóa đơn',
 };
 
 const FIELD_LABEL: Record<string, string> = {
