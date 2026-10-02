@@ -22,22 +22,26 @@ rootRouter.get('/health', (_req, res) => {
   res.json(new ResponseClient({ message: 'OK' }));
 });
 
-rootRouter.use('/audit-logs', auditRouter);
-rootRouter.use('/auth', authRouter);
-rootRouter.use('/coach/specializations', coachSpecializationRouter);
-rootRouter.use('/cron', cronRouter);
-rootRouter.use('/facilities', facilityRouter);
-rootRouter.use('/invoices', invoiceRouter);
-rootRouter.use('/memberships', membershipRouter);
-rootRouter.use('/me/invoices', myInvoiceRouter);
-rootRouter.use('/me/notifications', notificationRouter);
-rootRouter.use('/me/wallet', myWalletRouter);
-rootRouter.use('/payments', paymentRouter);
-rootRouter.use('/settings', settingRouter);
-rootRouter.use('/specializations', managerSpecializationRouter);
-rootRouter.use('/sports', sportRouter);
-rootRouter.use('/uploads', uploadRouter);
-rootRouter.use('/users', userRouter);
-rootRouter.use('/wallet', walletRouter);
+export const apiRoutes: [string, Router][] = [
+  ['/audit-logs', auditRouter],
+  ['/auth', authRouter],
+  ['/coach/specializations', coachSpecializationRouter],
+  ['/cron', cronRouter],
+  ['/facilities', facilityRouter],
+  ['/invoices', invoiceRouter],
+  ['/memberships', membershipRouter],
+  ['/me/invoices', myInvoiceRouter],
+  ['/me/notifications', notificationRouter],
+  ['/me/wallet', myWalletRouter],
+  ['/payments', paymentRouter],
+  ['/settings', settingRouter],
+  ['/specializations', managerSpecializationRouter],
+  ['/sports', sportRouter],
+  ['/uploads', uploadRouter],
+  ['/users', userRouter],
+  ['/wallet', walletRouter],
+];
+
+for (const [path, router] of apiRoutes) rootRouter.use(path, router);
 
 export default rootRouter;
