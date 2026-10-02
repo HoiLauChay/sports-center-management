@@ -9,6 +9,7 @@ export {
   invoiceQueryOptions,
   useCountdown,
   useInvoice,
+  useMemberWallet,
   useMyWallet,
   useRefreshAfterPaid,
   walletQueryKey,

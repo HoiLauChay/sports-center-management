@@ -71,3 +71,25 @@ a {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* Printing an invoice / receipt: only the element marked `.print-sheet` is printed. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+  .print-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

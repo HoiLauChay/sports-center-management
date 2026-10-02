@@ -1,4 +1,5 @@
 import type { Paginated, WalletTransaction } from '@sports-center/shared';
+import { Link } from '@tanstack/react-router';
 import type { TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -37,6 +38,15 @@ const columns: TableColumnsType<WalletTransaction> = [
           {transaction.method && ` · ${PAYMENT_METHOD_LABEL[transaction.method]}`}
           {transaction.createdBy && ` · ${transaction.createdBy.fullName}`}
         </span>
+        {transaction.orderId && (
+          <Link
+            to="/orders/$orderId"
+            params={{ orderId: transaction.orderId }}
+            className="text-xs font-semibold underline underline-offset-2"
+          >
+            Xem đơn hàng
+          </Link>
+        )}
       </div>
     ),
   },
