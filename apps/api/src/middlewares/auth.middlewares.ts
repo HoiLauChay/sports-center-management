@@ -8,6 +8,7 @@ import type { Role } from '~/generated/prisma/client';
 import accountRepository from '~/repositories/account.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import { verifyAccessToken, type AccessTokenPayload } from '~/utils/jwt';
+import { describeHandler } from '~/utils/routeMeta';
 
 const unauthorized = (message: string, code: ErrorCode) =>
   new ErrorWithStatus({ message, status: HTTP_STATUS.UNAUTHORIZED, code });
@@ -41,17 +42,19 @@ export const auth = async (req: Request, _res: Response, next: NextFunction) => 
   next();
 };
 
-export const isRole =
-  (...roles: Role[]) =>
-  (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return next(
-        new ErrorWithStatus({
-          message: 'Bạn không có quyền truy cập',
-          status: HTTP_STATUS.FORBIDDEN,
-          code: ERROR_CODE.FORBIDDEN,
-        }),
-      );
-    }
-    next();
-  };
+const requireRole = (roles: Role[]) => (req: Request, _res: Response, next: NextFunction) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return next(
+      new ErrorWithStatus({
+        message: 'Bạn không có quyền truy cập',
+        status: HTTP_STATUS.FORBIDDEN,
+        code: ERROR_CODE.FORBIDDEN,
+      }),
+    );
+  }
+  next();
+};
+
+describeHandler(auth, { security: 'cookie' });
+
+export const isRole = (...roles: Role[]) => describeHandler(requireRole(roles), { roles });

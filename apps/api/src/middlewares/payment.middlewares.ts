@@ -4,6 +4,7 @@ import { ERROR_CODE } from '@sports-center/shared';
 import { env } from '~/configs/env';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
+import { describeHandler } from '~/utils/routeMeta';
 import { safeEqual } from '~/utils/token';
 
 export const sepayAuth = (req: Request, _res: Response, next: NextFunction) => {
@@ -19,3 +20,5 @@ export const sepayAuth = (req: Request, _res: Response, next: NextFunction) => {
   }
   next();
 };
+
+describeHandler(sepayAuth, { security: 'sepay' });

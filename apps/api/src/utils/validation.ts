@@ -4,6 +4,7 @@ import type { z } from 'zod';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
+import { describeHandler } from '~/utils/routeMeta';
 
 interface RequestSchemas {
   body?: z.ZodType;
@@ -13,7 +14,7 @@ interface RequestSchemas {
 
 const TARGETS = ['body', 'query', 'params'] as const;
 
-export const validate = (schemas: RequestSchemas) => async (req: Request, _res: Response, next: NextFunction) => {
+const validateRequest = (schemas: RequestSchemas) => async (req: Request, _res: Response, next: NextFunction) => {
   const errors: ApiFieldError[] = [];
 
   for (const target of TARGETS) {
@@ -43,3 +44,5 @@ export const validate = (schemas: RequestSchemas) => async (req: Request, _res: 
 
   next();
 };
+
+export const validate = (schemas: RequestSchemas) => describeHandler(validateRequest(schemas), { schemas });
