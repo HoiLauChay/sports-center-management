@@ -20,7 +20,7 @@ import {
   MapPin,
   Receipt,
   // ScanLine,
-  // School,
+  School,
   Settings,
   ShoppingCart,
   // Store,
@@ -57,8 +57,8 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Tập luyện',
       items: [
-        // { path: '/bookings', label: 'Đặt sân', icon: MapPin },
-        // { path: '/classes', label: 'Lớp học', icon: School },
+        { path: '/bookings', label: 'Đặt sân', icon: MapPin },
+        { path: '/classes', label: 'Lớp học', icon: School },
         // { path: '/schedule', label: 'Lịch của tôi', icon: CalendarDays },
         // { path: '/enrollments', label: 'Lớp đã đăng ký', icon: GraduationCap },
         // { path: '/training', label: 'Kết quả tập luyện', icon: Dumbbell },
