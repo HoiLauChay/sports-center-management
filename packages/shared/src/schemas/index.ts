@@ -2,6 +2,7 @@ export * from './account';
 export * from './audit';
 export * from './auth';
 export * from './checkout';
+export * from './course';
 export * from './facility';
 export * from './membership';
 export * from './notification';
