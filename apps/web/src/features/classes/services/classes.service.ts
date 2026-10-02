@@ -1,5 +1,8 @@
-import type { Paginated } from '@sports-center/shared';
+import type { Account, Paginated } from '@sports-center/shared';
+import { cancelEnrollment, listMyEnrollments } from '~/features/bookings/mocks/bookings';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
+import { actorOf } from '~/features/checkout/services/checkout.service';
+import { walletService } from '~/features/wallet/services/wallet.service';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { classesDb, ensureClassSeed } from '../mocks/classes';
 import type { GymClass } from '../types';
@@ -18,8 +21,8 @@ async function seeded() {
 }
 
 /**
- * Open classes and class detail. Mock until #72, #89 and #108 ship; the shapes follow `api.design.md`
- * (`GET /classes`, `GET /classes/{id}`).
+ * Open classes, class detail, my enrollments and enrollment cancellation. Mock until #72, #89, #108 and #133 ship;
+ * the shapes follow `api.design.md` (`GET /classes`, `GET /classes/{id}`, `GET /me/enrollments`).
  */
 export const classesService = {
   list: (query: ListClassesQuery) =>
@@ -48,4 +51,16 @@ export const classesService = {
       if (!found) throw mockErrors.notFound('Không tìm thấy lớp học');
       return found;
     }, 150),
+
+  listMyEnrollments: (user: Account) =>
+    mockRequest(async () => {
+      await seeded();
+      return listMyEnrollments(actorOf(user));
+    }),
+
+  cancelEnrollment: (user: Account, id: string) =>
+    mockRequest(async () => {
+      const { settings } = await seeded();
+      return cancelEnrollment(actorOf(user), id, settings, (accountId) => walletService.balanceOfMine(accountId));
+    }, 350),
 };

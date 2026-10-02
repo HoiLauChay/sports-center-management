@@ -3,6 +3,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { useCurrentUser } from '~/features/auth';
 import { useAddToMemberCart } from '~/features/checkout/hooks/useAddToCart';
 import { useSettings } from '~/features/settings';
+import { MyBookings } from './MyBookings';
 import { RecurringPackagePicker } from './RecurringPackagePicker';
 import { SlotBookingPicker } from './SlotBookingPicker';
 
@@ -39,6 +40,9 @@ export function BookingsPage() {
               },
             ]}
           />
+        </Card>
+        <Card title="Lịch đặt của tôi">
+          <MyBookings />
         </Card>
       </div>
     </>
