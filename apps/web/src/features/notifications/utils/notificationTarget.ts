@@ -4,6 +4,8 @@ import type { NavigateOptions } from '@tanstack/react-router';
 const TARGETS: Partial<Record<string, (id: string) => NavigateOptions>> = {
   INVOICE: (invoiceId) => ({ to: '/invoices/$invoiceId', params: { invoiceId } }),
   ORDER: (orderId) => ({ to: '/orders/$orderId', params: { orderId } }),
+  BOOKING: () => ({ to: '/bookings' }),
+  CLASS: (classId) => ({ to: '/classes/$classId', params: { classId } }),
 };
 
 export function notificationTarget({ referenceType, referenceId }: AppNotification) {
