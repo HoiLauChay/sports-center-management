@@ -27,7 +27,7 @@ import {
   // Ticket,
   Trophy,
   Users,
-  // Wallet,
+  Wallet,
   // Wrench,
   type LucideIcon,
 } from 'lucide-react';
@@ -69,7 +69,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [
         { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
         { path: '/memberships/mine', label: 'Gói của tôi', icon: IdCard },
-        // { path: '/wallet', label: 'Ví', icon: Wallet },
+        { path: '/wallet', label: 'Ví', icon: Wallet },
         // { path: '/cart', label: 'Giỏ hàng', icon: ShoppingCart },
         // { path: '/orders', label: 'Hóa đơn', icon: Receipt },
       ],
