@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
+import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
 import facilityRouter from '~/routes/facility.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
@@ -25,6 +26,7 @@ rootRouter.get('/health', (_req, res) => {
 rootRouter.use('/audit-logs', auditRouter);
 rootRouter.use('/auth', authRouter);
 rootRouter.use('/coach/specializations', coachSpecializationRouter);
+rootRouter.use('/courses', courseRouter);
 rootRouter.use('/cron', cronRouter);
 rootRouter.use('/facilities', facilityRouter);
 rootRouter.use('/invoices', invoiceRouter);
