@@ -1,11 +1,12 @@
 import type { MembershipPackage } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Alert, Button, Card, Tooltip } from 'antd';
+import { Alert, Button, Card } from 'antd';
 import dayjs from 'dayjs';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { PATHS } from '~/constants/paths';
+import { AddToCartButton } from '~/features/checkout';
 import { formatVND, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { membershipsQueryOptions } from '../hooks/useMemberships';
@@ -49,9 +50,7 @@ interface PlanCardProps {
 
 function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
   const buttonLabel = current ? 'Gia hạn gói này' : locked ? 'Không đổi khi còn gói' : 'Đăng ký gói này';
-  const tooltip = locked
-    ? 'Đang có gói khác còn hiệu lực. Đổi gói sau khi hết hạn hoặc hủy gói.'
-    : 'Đăng ký gói trực tuyến sắp được mở. Liên hệ quầy lễ tân để được hỗ trợ.';
+  const lockedReason = 'Đang có gói khác còn hiệu lực. Đổi gói sau khi hết hạn hoặc hủy gói.';
 
   return (
     <div
@@ -88,18 +87,14 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
           </li>
         ))}
       </ul>
-      <Tooltip title={tooltip}>
-        <span className="block">
-          <Button
-            block
-            disabled
-            type={current ? 'primary' : 'default'}
-            className="!h-[46px] !font-display !text-[17px] !font-extrabold !tracking-[.04em] !uppercase"
-          >
-            {buttonLabel}
-          </Button>
-        </span>
-      </Tooltip>
+      <AddToCartButton
+        block
+        label={buttonLabel}
+        type={current ? 'primary' : 'default'}
+        selection={{ type: 'MEMBERSHIP', packageId: plan.id }}
+        disabledReason={locked ? lockedReason : undefined}
+        className="!h-[46px] !font-display !text-[17px] !font-extrabold !tracking-[.04em] !uppercase"
+      />
     </div>
   );
 }
