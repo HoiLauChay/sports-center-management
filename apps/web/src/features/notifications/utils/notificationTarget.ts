@@ -6,6 +6,7 @@ const TARGETS: Partial<Record<string, (id: string) => NavigateOptions>> = {
   ORDER: (orderId) => ({ to: '/orders/$orderId', params: { orderId } }),
   BOOKING: () => ({ to: '/bookings' }),
   CLASS: (classId) => ({ to: '/classes/$classId', params: { classId } }),
+  SUPPORT_REQUEST: () => ({ to: '/support' }),
 };
 
 export function notificationTarget({ referenceType, referenceId }: AppNotification) {
