@@ -7,7 +7,7 @@ import {
   // BookOpen,
   // CalendarCheck,
   // CalendarDays,
-  // ChartColumn,
+  ChartColumn,
   // ClipboardList,
   // Dumbbell,
   GraduationCap,
@@ -105,7 +105,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Vận hành',
       items: [
-        // { path: '/admin/reports', label: 'Báo cáo', icon: ChartColumn },
+        { path: '/admin/reports', label: 'Báo cáo', icon: ChartColumn },
         { path: '/admin/bank-transactions', label: 'Giao dịch ngân hàng', icon: Landmark },
         { path: '/admin/users', label: 'Người dùng', icon: Users },
         // { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
