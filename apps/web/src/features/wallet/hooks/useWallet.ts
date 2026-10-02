@@ -12,7 +12,17 @@ export function useMyWallet(query: WalletQuery) {
   const { id } = useCurrentUser();
   return useQuery({
     queryKey: [...walletQueryKey(id), query],
-    queryFn: () => walletService.getMine(query),
+    queryFn: () => walletService.getMine(id, query),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Wallet of any member, for staff screens. */
+export function useMemberWallet(memberId: string | undefined, query: WalletQuery) {
+  return useQuery({
+    queryKey: [...walletQueryKey(memberId ?? ''), query],
+    queryFn: () => walletService.getForMember(memberId!, query),
+    enabled: Boolean(memberId),
     placeholderData: keepPreviousData,
   });
 }

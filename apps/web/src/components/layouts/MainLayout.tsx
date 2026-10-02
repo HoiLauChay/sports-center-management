@@ -7,6 +7,7 @@ import { PageLoading } from '~/components/feedback/States';
 import { IconButton } from '~/components/ui/IconButton';
 import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
+import { CartButton } from '~/features/checkout';
 import { NotificationBell } from '~/features/notifications';
 import { AccountMenu } from './AccountMenu';
 import { SidebarNav } from './SidebarNav';
@@ -89,6 +90,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
             </Tooltip>
           )}
           <div className="flex items-center gap-2">
+            {user.role === 'MEMBER' && <CartButton />}
             <NotificationBell compact={isMobile} />
             <AccountMenu user={user} compact={isMobile} />
           </div>
