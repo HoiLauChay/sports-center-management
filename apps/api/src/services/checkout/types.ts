@@ -45,7 +45,7 @@ export type LineResult<Data, Snapshot> =
       subtotal: number;
       membershipDiscount: number;
       snapshot: Snapshot;
-      components?: { key: string; weight: number }[];
+      components?: { key: string; weight: number; refId?: string }[];
       data: Data;
     }
   | { ok: false; error: LineError };
@@ -53,6 +53,7 @@ export type LineResult<Data, Snapshot> =
 export interface PricedLine<Data> {
   lineNumber: number;
   total: number;
+  allocations: { key: string; refId: string; amount: number }[];
   data: Data;
 }
 

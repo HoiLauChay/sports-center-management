@@ -15,6 +15,10 @@ export const paymentCode = {
   generate: () => `HLC${randomCode(8)}`,
 };
 
+export const orderNumber = {
+  generate: (now = new Date()) => `DH${centerDateStamp(now)}${randomCode(6)}`,
+};
+
 export const transactionCode = {
   generate: (now = new Date()) => `GD${centerDateStamp(now)}${randomCode(8)}`,
 };
