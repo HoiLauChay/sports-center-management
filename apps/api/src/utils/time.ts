@@ -52,3 +52,28 @@ export const formatTime = (minutes: number) =>
   `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 
 export const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+
+const centerDateTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
+  timeZone: CENTER_TIMEZONE,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+const part = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes) =>
+  parts.find((item) => item.type === type)?.value ?? '';
+
+export const formatCenterDate = (value: string | Date) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value.split('-').reverse().join('/');
+  const parts = centerDateTimeFormatter.formatToParts(new Date(value));
+  return `${part(parts, 'day')}/${part(parts, 'month')}/${part(parts, 'year')}`;
+};
+
+export const formatCenterDateTime = (value: string | Date) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return formatCenterDate(value);
+  const parts = centerDateTimeFormatter.formatToParts(new Date(value));
+  return `${formatCenterDate(value)} ${part(parts, 'hour')}:${part(parts, 'minute')}`;
+};

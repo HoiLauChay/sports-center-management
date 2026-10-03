@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node", "bun"]
   },
-  "include": ["tests/**/*", "src/type.d.ts"],
+  "include": ["tests/**/*", "src/type.d.ts", "src/assets.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
