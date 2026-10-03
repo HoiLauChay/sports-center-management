@@ -78,3 +78,6 @@ export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
 export const ORDER_ITEM_TYPES = ['MEMBERSHIP', 'FACILITY_BOOKING', 'FACILITY_PACKAGE', 'COURSE_ENROLLMENT'] as const;
 export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
+
+export const ORDER_STATUSES = ['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED'] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
