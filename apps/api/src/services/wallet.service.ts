@@ -6,6 +6,7 @@ import { toWalletTransactionResponse } from '~/mappers/wallet.mapper';
 import accountRepository from '~/repositories/account.repository';
 import walletRepository from '~/repositories/wallet.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import { idempotencyKey } from '~/utils/idempotency';
 import { toPage } from '~/utils/pagination';
 import { transactionCode } from '~/utils/paymentCode';
 
@@ -17,6 +18,14 @@ interface CreditInput {
   bankTransactionId?: string;
   createdById?: string;
   requestHash?: string;
+  description: string;
+}
+
+interface PayInput {
+  accountId: string;
+  orderId: string;
+  amount: number;
+  createdById?: string;
   description: string;
 }
 
@@ -32,6 +41,40 @@ class WalletService {
       });
     }
     return this.load(accountId, query);
+  };
+
+  pay = async (tx: Prisma.TransactionClient, input: PayInput) => {
+    if (input.amount === 0) return null;
+    const key = idempotencyKey.payment(input.orderId);
+    const existing = await walletRepository.findTransactionByKey(key, tx);
+    if (existing) return existing;
+
+    const balance = await walletRepository.readBalance(input.accountId, tx);
+    if (balance < input.amount) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.CONFLICT,
+        code: ERROR_CODE.INSUFFICIENT_BALANCE,
+        message: 'Số dư ví không đủ',
+        meta: { balance, required: input.amount },
+      });
+    }
+
+    const balanceAfter = balance - input.amount;
+    await walletRepository.updateBalance(input.accountId, balanceAfter, tx);
+    return walletRepository.createTransaction(
+      {
+        accountId: input.accountId,
+        transactionCode: transactionCode.generate(),
+        idempotencyKey: key,
+        type: 'PAYMENT',
+        amount: input.amount,
+        balanceAfter,
+        orderId: input.orderId,
+        createdById: input.createdById,
+        description: input.description,
+      },
+      tx,
+    );
   };
 
   credit = async (tx: Prisma.TransactionClient, input: CreditInput) => {
