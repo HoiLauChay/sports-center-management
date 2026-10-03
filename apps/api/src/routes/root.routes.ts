@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
+import checkoutRouter from '~/routes/checkout.routes';
 import cronRouter from '~/routes/cron.routes';
 import facilityRouter from '~/routes/facility.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
@@ -25,6 +26,7 @@ rootRouter.get('/health', (_req, res) => {
 export const apiRoutes: [string, Router][] = [
   ['/audit-logs', auditRouter],
   ['/auth', authRouter],
+  ['/checkout', checkoutRouter],
   ['/coach/specializations', coachSpecializationRouter],
   ['/cron', cronRouter],
   ['/facilities', facilityRouter],
