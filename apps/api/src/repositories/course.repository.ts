@@ -1,7 +1,7 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 
-const courseSelect = {
+export const courseSelect = {
   id: true,
   name: true,
   sportId: true,
