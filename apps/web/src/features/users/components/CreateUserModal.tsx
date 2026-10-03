@@ -65,13 +65,15 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
     mutationFn: (values: CreateUserBody) => usersService.create(toPayload(values)),
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
-      message.success(`Đã tạo tài khoản. Email đặt mật khẩu đã được gửi tới ${created.email}.`);
+      message.success(`Đã tạo tài khoản cho ${created.email}. Người dùng đặt mật khẩu qua mục Quên mật khẩu.`);
       close();
     },
     onError: handleApiError,
   });
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = form.handleSubmit((values) => {
+    if (!mutation.isPending) mutation.mutate(values);
+  });
 
   return (
     <Modal
@@ -82,11 +84,19 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
       width={560}
       mask={{ closable: false }}
       confirmLoading={mutation.isPending}
+      cancelButtonProps={{ disabled: mutation.isPending }}
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
       onOk={() => void onSubmit()}
-      onCancel={close}
+      onCancel={() => {
+        if (!mutation.isPending) close();
+      }}
       destroyOnHidden
     >
-      <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
+      <p className="mt-0 mb-4 text-sm text-sc-muted">
+        Người dùng nhận hướng dẫn qua email và chọn Quên mật khẩu trên trang đăng nhập để đặt mật khẩu lần đầu.
+      </p>
+      <Form layout="vertical" requiredMark={false} disabled={mutation.isPending} onFinish={() => void onSubmit()}>
         <FormRootError message={form.formState.errors.root?.message} />
 
         <FormField
@@ -96,6 +106,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
           render={(field) => (
             <Segmented
               block
+              disabled={mutation.isPending}
               value={field.value}
               onChange={field.onChange}
               options={CREATABLE_ROLES.map((value) => ({ value, label: ROLE_LABEL[value] }))}

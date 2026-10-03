@@ -42,6 +42,13 @@ bun run db:seed
 bun run dev
 ```
 
+### Membership and audit pages
+
+- Manager: `/admin/users`, `/admin/audit-logs`, `/admin/memberships`.
+- Member: `/memberships`, `/memberships/mine`.
+- Catalog, user management and audit log use the API. Registering a package through checkout is deferred to the checkout task.
+- `/memberships/mine` uses `GET /me/memberships` and the auto-renew/cancel endpoints; it needs API task #93 for real data and actions.
+
 ### Test
 
 Create `apps/api/.env.test` from `apps/api/.env.example`, pointing `DATABASE_URL` and `DIRECT_URL` to a database whose name ends with `_test`.
