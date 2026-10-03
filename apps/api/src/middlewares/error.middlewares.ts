@@ -10,10 +10,20 @@ export const notFoundHandler = (_req: Request, res: Response) => {
     .json({ status: false, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy tài nguyên' });
 };
 
+const isJsonParseError = (err: unknown) =>
+  err instanceof SyntaxError && (err as SyntaxError & { type?: string }).type === 'entity.parse.failed';
+
 export const defaultErrorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ErrorWithStatus) {
     const { status, code, message, errors, meta } = err;
     res.status(status).json({ status: false, code, message, ...meta, ...(errors !== undefined && { errors }) });
+    return;
+  }
+
+  if (isJsonParseError(err)) {
+    res
+      .status(HTTP_STATUS.BAD_REQUEST)
+      .json({ status: false, code: ERROR_CODE.INVALID_JSON, message: 'Dữ liệu JSON không hợp lệ' });
     return;
   }
 

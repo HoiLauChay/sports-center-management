@@ -1,0 +1,61 @@
+import { z } from 'zod';
+
+import { phoneSchema } from './account';
+
+const dateSchema = z.iso.date('Ngày không hợp lệ');
+const timeSchema = z.string('Giờ không hợp lệ').regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ phải có dạng HH:mm');
+const facilityIdSchema = z.uuid('Mã cơ sở không hợp lệ');
+
+export const checkoutItemInputSchema = z.discriminatedUnion(
+  'type',
+  [
+    z.object({
+      type: z.literal('FACILITY_BOOKING'),
+      facilityId: facilityIdSchema,
+      date: dateSchema,
+      startTime: timeSchema,
+      endTime: timeSchema,
+    }),
+    z.object({
+      type: z.literal('FACILITY_PACKAGE'),
+      facilityId: facilityIdSchema,
+      startDate: dateSchema,
+      daysOfWeek: z
+        .array(z.int('Thứ không hợp lệ').min(0, 'Thứ không hợp lệ').max(6, 'Thứ không hợp lệ'))
+        .min(1, 'Chọn ít nhất một thứ')
+        .refine((days) => new Set(days).size === days.length, 'Thứ bị trùng'),
+      startTime: timeSchema,
+      endTime: timeSchema,
+      weeks: z.int('Số tuần phải là số nguyên').min(1, 'Số tuần tối thiểu là 1').max(52, 'Số tuần tối đa là 52'),
+    }),
+    z.object({ type: z.literal('COURSE_ENROLLMENT'), classId: z.uuid('Mã lớp không hợp lệ') }),
+    z.object({ type: z.literal('MEMBERSHIP'), packageId: z.uuid('Mã gói không hợp lệ') }),
+  ],
+  'Loại dòng không hợp lệ',
+);
+
+export const checkoutBuyerSchema = z.union(
+  [
+    z.object({ accountId: z.uuid('Mã thành viên không hợp lệ') }),
+    z.object({
+      guest: z.object({
+        name: z.string('Tên khách không được để trống').trim().min(1, 'Tên khách không được để trống').max(255),
+        phone: phoneSchema.refine((phone) => phone !== null, 'Số điện thoại không được để trống'),
+      }),
+    }),
+  ],
+  'Người mua không hợp lệ',
+);
+
+export const checkoutQuoteBodySchema = z.object({
+  buyer: checkoutBuyerSchema.optional(),
+  items: z
+    .array(checkoutItemInputSchema, 'Danh sách dòng không hợp lệ')
+    .min(1, 'Đơn phải có ít nhất một dòng')
+    .max(20, 'Đơn tối đa 20 dòng'),
+  couponCode: z.string().trim().toUpperCase().min(1, 'Mã giảm giá không hợp lệ').max(50).optional(),
+});
+
+export type CheckoutItemInput = z.infer<typeof checkoutItemInputSchema>;
+export type CheckoutBuyer = z.infer<typeof checkoutBuyerSchema>;
+export type CheckoutQuoteBody = z.infer<typeof checkoutQuoteBodySchema>;

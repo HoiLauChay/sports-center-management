@@ -75,3 +75,6 @@ export type InvoicePurpose = (typeof INVOICE_PURPOSES)[number];
 
 export const INVOICE_STATUSES = ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'FAILED'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+
+export const ORDER_ITEM_TYPES = ['MEMBERSHIP', 'FACILITY_BOOKING', 'FACILITY_PACKAGE', 'COURSE_ENROLLMENT'] as const;
+export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
