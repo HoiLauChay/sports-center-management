@@ -81,3 +81,6 @@ export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
 
 export const ORDER_STATUSES = ['PAID', 'PARTIALLY_REFUNDED', 'REFUNDED'] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export const BANK_TRANSACTION_STATUSES = ['MATCHED', 'UNMATCHED', 'RESOLVED', 'IGNORED'] as const;
+export type BankTransactionStatus = (typeof BANK_TRANSACTION_STATUSES)[number];
