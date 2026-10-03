@@ -84,3 +84,16 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const BANK_TRANSACTION_STATUSES = ['MATCHED', 'UNMATCHED', 'RESOLVED', 'IGNORED'] as const;
 export type BankTransactionStatus = (typeof BANK_TRANSACTION_STATUSES)[number];
+
+export const SCHEDULE_CLASH_REASONS = [
+  'CLOSED',
+  'PAST',
+  'OFF_GRID',
+  'MAINTENANCE',
+  'CLASS_SESSION',
+  'BOOKED',
+  'FULL',
+  'COACH_BUSY',
+  'MEMBER_BUSY',
+] as const;
+export type ScheduleClashReason = (typeof SCHEDULE_CLASH_REASONS)[number];
