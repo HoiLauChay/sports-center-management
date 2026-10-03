@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { RECEIPT_ISSUER } from '~/constants/center';
 import type { Prisma } from '~/generated/prisma/client';
 import accountRepository from '~/repositories/account.repository';
 import orderRepository from '~/repositories/order.repository';
@@ -21,7 +22,13 @@ export interface OrderPayment {
 const buyerSnapshot = async (tx: Prisma.TransactionClient, ctx: CheckoutContext) => {
   if (ctx.buyer.kind === 'GUEST') return { guest: { name: ctx.buyer.name, phone: ctx.buyer.phone } };
   const account = (await accountRepository.findById(ctx.buyer.accountId, 'MEMBER', tx))!;
-  return { accountId: account.id, fullName: account.fullName, email: account.email, phone: account.phone };
+  return {
+    accountId: account.id,
+    fullName: account.fullName,
+    email: account.email,
+    phone: account.phone,
+    address: account.address,
+  };
 };
 
 export const commitOrder = async (
@@ -73,9 +80,14 @@ export const commitOrder = async (
         schema_version: SCHEMA_VERSION,
         orderNumber: number,
         issuedAt: ctx.now.toISOString(),
+        issuer: RECEIPT_ISSUER,
         buyer: await buyerSnapshot(tx, ctx),
         createdBy,
         paymentMethod: payment.method,
+        membership:
+          prepared.membershipDiscount > 0 && ctx.benefits?.current
+            ? { packageName: ctx.benefits.current.packageName }
+            : null,
         coupon: null,
       },
       subtotal: prepared.subtotal,

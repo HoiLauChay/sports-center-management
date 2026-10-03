@@ -8,6 +8,7 @@ import facilityRouter from '~/routes/facility.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
+import { myOrderRouter, orderRouter } from '~/routes/order.routes';
 import paymentRouter from '~/routes/payment.routes';
 import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
@@ -33,8 +34,10 @@ export const apiRoutes: [string, Router][] = [
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
   ['/me/wallet', myWalletRouter],
+  ['/orders', orderRouter],
   ['/payments', paymentRouter],
   ['/settings', settingRouter],
   ['/specializations', managerSpecializationRouter],

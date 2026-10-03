@@ -1,11 +1,14 @@
-import type { CheckoutItemInput, ErrorCode, OrderItemType } from '@sports-center/shared';
+import type { CheckoutItemInput, ErrorCode, ItemSnapshotBase, OrderItemType } from '@sports-center/shared';
 
 import type { Prisma, Role } from '~/generated/prisma/client';
 import type { SettingRow } from '~/repositories/setting.repository';
 
 export type Db = Prisma.TransactionClient;
 
+export type LineSnapshot = ItemSnapshotBase & Record<string, unknown>;
+
 export interface BenefitPeriod {
+  packageName: string;
   periodStart: string;
   periodEnd: string;
   gymAccess: boolean;
@@ -57,7 +60,7 @@ export interface PricedLine<Data> {
   data: Data;
 }
 
-export interface LineHandler<Input extends CheckoutItemInput, Data, Snapshot extends Record<string, unknown>> {
+export interface LineHandler<Input extends CheckoutItemInput, Data, Snapshot extends LineSnapshot> {
   type: Input['type'];
   guestAllowed: boolean;
   needsScheduleLock: boolean;
@@ -72,12 +75,12 @@ export interface LineHandler<Input extends CheckoutItemInput, Data, Snapshot ext
   ): Promise<{ refId: string }>;
 }
 
-export type AnyLineHandler = LineHandler<CheckoutItemInput, unknown, Record<string, unknown>>;
+export type AnyLineHandler = LineHandler<CheckoutItemInput, unknown, LineSnapshot>;
 
 export interface PreparedLine {
   lineNumber: number;
   input: CheckoutItemInput;
-  result: LineResult<unknown, Record<string, unknown>>;
+  result: LineResult<unknown, LineSnapshot>;
 }
 
 export interface PreparedOrder {

@@ -2,6 +2,13 @@ import type { OrderItemType, OrderStatus, PaymentMethod } from '../constants/enu
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Person } from './audit';
 
+export interface ItemSnapshotBase {
+  title: string;
+  startAt: string | null;
+  endAt: string | null;
+  discountPct: number;
+}
+
 export interface QuoteLine {
   lineNumber: number;
   type: OrderItemType;
@@ -39,6 +46,15 @@ export interface OrderItem {
   refId: string | null;
 }
 
+export interface OrderRefund {
+  id: string;
+  transactionCode: string;
+  orderItemId: string | null;
+  amount: number;
+  reason: string | null;
+  createdAt: string;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -55,5 +71,6 @@ export interface Order {
   totalAmount: number;
   refundedAmount: number;
   items: OrderItem[];
+  refunds: OrderRefund[];
   paidAt: string;
 }
