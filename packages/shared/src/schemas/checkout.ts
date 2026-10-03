@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 import { MAX_MONEY } from '../constants/money';
 import { phoneSchema } from './account';
+import { timeOfDaySchema as timeSchema } from './time';
 
 const dateSchema = z.iso.date('Ngày không hợp lệ');
-const timeSchema = z.string('Giờ không hợp lệ').regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ phải có dạng HH:mm');
 const facilityIdSchema = z.uuid('Mã cơ sở không hợp lệ');
 
 export const checkoutItemInputSchema = z.discriminatedUnion(

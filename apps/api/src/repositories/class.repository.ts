@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { courseSelect } from '~/repositories/course.repository';
 import { todayInCenter } from '~/utils/time';
 
 const classSelect = {
@@ -19,7 +20,51 @@ const classSelect = {
   deletedAt: true,
 } satisfies Prisma.ClassSelect;
 
+const ref = { select: { id: true, name: true } } as const;
+
+const sessionSelect = {
+  id: true,
+  classId: true,
+  sessionNumber: true,
+  sessionDate: true,
+  startTime: true,
+  endTime: true,
+  facility: ref,
+  status: true,
+  cancelReason: true,
+} satisfies Prisma.ClassSessionSelect;
+
+const classDetailSelect = {
+  id: true,
+  name: true,
+  courseId: true,
+  course: { select: courseSelect },
+  facilityId: true,
+  coachId: true,
+  status: true,
+  startDate: true,
+  endDate: true,
+  weeklySchedule: true,
+  facility: ref,
+  coach: { select: { id: true, fullName: true } },
+  minStudents: true,
+  maxStudents: true,
+  minStudentsOverride: true,
+  cancelReason: true,
+  _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
+  sessions: { select: sessionSelect, orderBy: { sessionNumber: 'asc' } },
+} satisfies Prisma.ClassSelect;
+
+export type ClassDetailRow = Prisma.ClassGetPayload<{ select: typeof classDetailSelect }>;
+export type ClassSessionRow = ClassDetailRow['sessions'][number];
+
 class ClassRepository {
+  findDetail = (id: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.class.findUnique({ where: { id, deletedAt: null }, select: classDetailSelect });
+
+  create = (data: Prisma.ClassUncheckedCreateInput, tx: Prisma.TransactionClient) =>
+    tx.class.create({ data, select: classDetailSelect });
+
   hasInProgressForCoach = async (coachId: string, tx: Prisma.TransactionClient = prisma) => {
     const today = new Date(todayInCenter());
     return (
