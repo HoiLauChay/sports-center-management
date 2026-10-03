@@ -32,7 +32,7 @@ export function MemberSelect({
   const q = useDebounced(term.trim());
   const members = useQuery({
     queryKey: ['users', 'member-select', q],
-    queryFn: () => usersService.list({ q: q || undefined, role: 'MEMBER', page: 1, limit: 20 }),
+    queryFn: () => usersService.list({ q: q || undefined, role: 'MEMBER', status: 'ACTIVE', page: 1, limit: 20 }),
     staleTime: 15_000,
   });
 
