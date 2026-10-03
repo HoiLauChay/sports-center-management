@@ -16,7 +16,7 @@ import {
   IdCard,
   // Landmark,
   LayoutDashboard,
-  // LifeBuoy,
+  LifeBuoy,
   MapPin,
   Receipt,
   // ScanLine,
@@ -74,7 +74,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/orders', label: 'Hóa đơn', icon: Receipt },
       ],
     },
-    // { items: [{ path: '/support', label: 'Hỗ trợ', icon: LifeBuoy }] },
+    { items: [{ path: '/support', label: 'Hỗ trợ', icon: LifeBuoy }] },
   ],
   COACH: [
     {
@@ -97,7 +97,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/reception/members', label: 'Thành viên', icon: Users },
         // { path: '/reception/bookings', label: 'Lịch sân', icon: CalendarCheck },
         { path: '/reception/orders', label: 'Hóa đơn', icon: Receipt },
-        // { path: '/reception/support', label: 'Hỗ trợ', icon: LifeBuoy },
+        { path: '/reception/support', label: 'Hỗ trợ', icon: LifeBuoy },
       ],
     },
   ],
