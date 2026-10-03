@@ -1,15 +1,8 @@
 import type { Facility, SystemSettings } from '@sports-center/shared';
 import { classesDb } from '~/features/classes/mocks/classes';
 import { commerceStore } from '~/lib/mock/commerce';
-import { fromMinutes, isPast, overlaps, parseDate, recurringDates, slotGrid, toMinutes, todayVN } from '~/lib/time';
-import type {
-  Booking,
-  FacilitySchedule,
-  FacilitySlot,
-  PackageConflict,
-  PackagePreview,
-  PackagePreviewRequest,
-} from '../types';
+import { fromMinutes, isPast, overlaps, parseDate, recurringDates, toMinutes, todayVN } from '~/lib/time';
+import type { Booking, PackageConflict, PackagePreview, PackagePreviewRequest } from '../types';
 
 export interface SlotProblem {
   code: 'INVALID_SLOT' | 'PAST_SLOT' | 'TOO_FAR' | 'FACILITY_INACTIVE' | 'SLOT_TAKEN' | 'CLASS_CONFLICT';
@@ -32,33 +25,6 @@ function bookedAt(bookings: Booking[], facilityId: string, date: string, startTi
       booking.date === date &&
       overlaps(startTime, endTime, booking.startTime, booking.endTime),
   ).length;
-}
-
-export function computeSchedule(facility: Facility, settings: SystemSettings, date: string): FacilitySchedule {
-  const bookings = liveBookings();
-  const today = todayVN();
-  const tooFar = parseDate(date).diff(parseDate(today), 'day') > settings.maxAdvanceBookingDays;
-  const slots: FacilitySlot[] = slotGrid(settings.openTime, settings.closeTime, settings.slotDurationMinutes).map(
-    ({ startTime, endTime }) => {
-      const base = { startTime, endTime, capacity: facility.capacityPerSlot };
-      const session = classesDb
-        .sessionsAt(facility.id, date)
-        .find((entry) => overlaps(startTime, endTime, entry.session.startTime, entry.session.endTime));
-      const booked = bookedAt(bookings, facility.id, date, startTime, endTime);
-      if (session) {
-        return {
-          ...base,
-          booked,
-          status: 'CLASS',
-          classSession: { classId: session.session.classId, className: session.className },
-        };
-      }
-      if (!facility.isActive || tooFar || isPast(date, startTime)) return { ...base, booked, status: 'CLOSED' };
-      if (booked >= facility.capacityPerSlot) return { ...base, booked, status: 'FULL' };
-      return { ...base, booked, status: booked > 0 ? 'PARTIAL' : 'AVAILABLE' };
-    },
-  );
-  return { facility: { id: facility.id, name: facility.name, capacityPerSlot: facility.capacityPerSlot }, date, slots };
 }
 
 const onGrid = (settings: SystemSettings, startTime: string, endTime: string) => {

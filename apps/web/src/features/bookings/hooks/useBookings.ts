@@ -1,9 +1,10 @@
+import type { FacilitySchedule } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
 import { bookingsService } from '../services/bookings.service';
-import type { FacilitySchedule, PackagePreviewRequest } from '../types';
+import type { PackagePreviewRequest } from '../types';
 
 export const scheduleQueryKey = (facilityId: string, date: string) => ['facility-schedule', facilityId, date] as const;
 
