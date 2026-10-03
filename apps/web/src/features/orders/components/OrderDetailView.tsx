@@ -88,7 +88,7 @@ function toTotals(order: Order) {
 
 interface OrderDetailViewProps {
   orderId: string;
-  back: { to: '/orders'; label: string };
+  back: { to: '/orders' | '/reception/orders'; label: string };
 }
 
 /**

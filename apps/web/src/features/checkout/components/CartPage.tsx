@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Alert, App, Button, Card, Popconfirm } from 'antd';
-import { ShoppingCart } from 'lucide-react';
+import { Plus, ShoppingCart } from 'lucide-react';
 import { EmptyState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
@@ -67,6 +67,14 @@ export function CartPage() {
             description="Chọn dịch vụ rồi bấm “Thêm vào đơn” để bắt đầu."
             action={
               <div className="flex flex-wrap justify-center gap-2">
+                <Link to="/bookings">
+                  <Button type="primary" icon={<Plus size={16} />}>
+                    Đặt sân
+                  </Button>
+                </Link>
+                <Link to="/classes">
+                  <Button>Đăng ký lớp</Button>
+                </Link>
                 <Link to="/memberships">
                   <Button>Gói thành viên</Button>
                 </Link>
