@@ -29,6 +29,16 @@ interface PayInput {
   description: string;
 }
 
+interface RefundInput {
+  accountId: string;
+  orderId: string;
+  orderItemId: string;
+  amount: number;
+  idempotencyKey: string;
+  createdById?: string;
+  description: string;
+}
+
 class WalletService {
   getMine = (accountId: string, query: WalletQuery) => this.load(accountId, query);
 
@@ -70,6 +80,30 @@ class WalletService {
         amount: input.amount,
         balanceAfter,
         orderId: input.orderId,
+        createdById: input.createdById,
+        description: input.description,
+      },
+      tx,
+    );
+  };
+
+  refund = async (tx: Prisma.TransactionClient, input: RefundInput) => {
+    if (input.amount === 0) return null;
+    const existing = await walletRepository.findTransactionByKey(input.idempotencyKey, tx);
+    if (existing) return existing;
+
+    const balanceAfter = (await walletRepository.readBalance(input.accountId, tx)) + input.amount;
+    await walletRepository.updateBalance(input.accountId, balanceAfter, tx);
+    return walletRepository.createTransaction(
+      {
+        accountId: input.accountId,
+        transactionCode: transactionCode.generate(),
+        idempotencyKey: input.idempotencyKey,
+        type: 'REFUND',
+        amount: input.amount,
+        balanceAfter,
+        orderId: input.orderId,
+        orderItemId: input.orderItemId,
         createdById: input.createdById,
         description: input.description,
       },

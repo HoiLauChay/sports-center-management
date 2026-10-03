@@ -1,7 +1,7 @@
 import type { ListMyOrdersQuery, ListOrdersQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { OrderStatus, Prisma } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 import { toCenterDateTime } from '~/utils/time';
 
@@ -96,6 +96,32 @@ class OrderRepository {
 
   findPageOfAccount = (accountId: string, { from, to, page, limit }: ListMyOrdersQuery) =>
     this.findPage({ accountId, from, to, page, limit });
+
+  findItemForRefund = (id: string, tx: Prisma.TransactionClient) =>
+    tx.orderItem.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        type: true,
+        totalAmount: true,
+        refundedAmount: true,
+        itemSnapshot: true,
+        order: { select: { id: true, orderNumber: true, accountId: true, totalAmount: true, refundedAmount: true } },
+      },
+    });
+
+  addRefund = async (
+    tx: Prisma.TransactionClient,
+    {
+      orderId,
+      orderItemId,
+      amount,
+      status,
+    }: { orderId: string; orderItemId: string; amount: number; status: OrderStatus },
+  ) => {
+    await tx.orderItem.update({ where: { id: orderItemId }, data: { refundedAmount: { increment: amount } } });
+    await tx.order.update({ where: { id: orderId }, data: { refundedAmount: { increment: amount }, status } });
+  };
 
   create = (data: Prisma.OrderUncheckedCreateInput, tx: Prisma.TransactionClient) =>
     tx.order.create({
