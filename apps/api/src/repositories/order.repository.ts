@@ -1,5 +1,9 @@
+import type { ListMyOrdersQuery, ListOrdersQuery } from '@sports-center/shared';
+
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { pageArgs } from '~/utils/pagination';
+import { toCenterDateTime } from '~/utils/time';
 
 const person = { select: { id: true, fullName: true } } as const;
 
@@ -19,7 +23,21 @@ const orderSelect = {
   couponDiscountAmount: true,
   totalAmount: true,
   refundedAmount: true,
+  receiptSnapshot: true,
   createdAt: true,
+  walletTransactions: {
+    where: { type: 'REFUND' },
+    select: {
+      id: true,
+      transactionCode: true,
+      orderItemId: true,
+      amount: true,
+      description: true,
+      createdAt: true,
+      createdBy: person,
+    },
+    orderBy: { createdAt: 'asc' },
+  },
   items: {
     select: {
       id: true,
@@ -42,12 +60,42 @@ const orderSelect = {
 
 export type OrderRow = Prisma.OrderGetPayload<{ select: typeof orderSelect }>;
 
+const dayRange = (from?: string, to?: string): Prisma.DateTimeFilter | undefined =>
+  from || to
+    ? {
+        ...(from && { gte: toCenterDateTime(from, 0) }),
+        ...(to && { lt: toCenterDateTime(to, 24 * 60) }),
+      }
+    : undefined;
+
 class OrderRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.order.findUnique({ where: { id }, select: orderSelect });
 
   findByIdempotencyKey = (idempotencyKey: string, tx: Prisma.TransactionClient = prisma) =>
     tx.order.findUnique({ where: { idempotencyKey }, select: orderSelect });
+
+  findPage = ({ from, to, page, limit, ...filters }: ListOrdersQuery) => {
+    const where: Prisma.OrderWhereInput = {
+      accountId: filters.accountId,
+      guestPhone: filters.guestPhone ?? undefined,
+      status: filters.status,
+      orderNumber: filters.orderNumber,
+      createdAt: dayRange(from, to),
+    };
+    return Promise.all([
+      prisma.order.findMany({
+        where,
+        select: orderSelect,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        ...pageArgs({ page, limit }),
+      }),
+      prisma.order.count({ where }),
+    ]);
+  };
+
+  findPageOfAccount = (accountId: string, { from, to, page, limit }: ListMyOrdersQuery) =>
+    this.findPage({ accountId, from, to, page, limit });
 
   create = (data: Prisma.OrderUncheckedCreateInput, tx: Prisma.TransactionClient) =>
     tx.order.create({

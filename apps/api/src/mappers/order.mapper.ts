@@ -34,5 +34,13 @@ export const toOrderResponse = (row: OrderRow): Order => ({
     refundedAmount: Number(item.refundedAmount),
     refId: refIdOf(item),
   })),
+  refunds: row.walletTransactions.map((refund) => ({
+    id: refund.id,
+    transactionCode: refund.transactionCode,
+    orderItemId: refund.orderItemId,
+    amount: Number(refund.amount),
+    reason: refund.description,
+    createdAt: refund.createdAt.toISOString(),
+  })),
   paidAt: row.createdAt.toISOString(),
 });
