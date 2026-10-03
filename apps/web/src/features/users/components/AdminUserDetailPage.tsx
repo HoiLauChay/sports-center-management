@@ -63,7 +63,8 @@ export function AdminUserDetailPage() {
   const router = useRouter();
   const navigate = routeApi.useNavigate();
   const viewer = useCurrentUser();
-  const [editing, setEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editing = editingId === userId;
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
@@ -77,13 +78,16 @@ export function AdminUserDetailPage() {
       onBack={back}
       actions={(user) => (
         <UserActions
+          key={user.id}
           user={user}
           editing={editing}
           canChangeStatus={user.id !== viewer.id && user.role !== 'MANAGER'}
-          onEdit={() => setEditing(true)}
+          onEdit={() => setEditingId(user.id)}
         />
       )}
-      editor={(user) => (editing ? <AdminUserEditForm user={user} onDone={() => setEditing(false)} /> : null)}
+      editor={(user) =>
+        editing ? <AdminUserEditForm key={user.id} user={user} onDone={() => setEditingId(null)} /> : null
+      }
     />
   );
 }

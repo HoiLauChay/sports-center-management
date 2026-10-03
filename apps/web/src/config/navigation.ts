@@ -2,7 +2,7 @@ import type { Role } from '@sports-center/shared';
 import type { LinkProps } from '@tanstack/react-router';
 import {
   // Award,
-  // BadgeCheck,
+  BadgeCheck,
   Bell,
   // BookOpen,
   // CalendarCheck,
@@ -12,7 +12,8 @@ import {
   // Dumbbell,
   // GraduationCap,
   // HandCoins,
-  // History,
+  History,
+  IdCard,
   // Landmark,
   LayoutDashboard,
   // LifeBuoy,
@@ -66,7 +67,8 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Thanh toán',
       items: [
-        // { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/memberships/mine', label: 'Gói của tôi', icon: IdCard },
         // { path: '/wallet', label: 'Ví', icon: Wallet },
         // { path: '/cart', label: 'Giỏ hàng', icon: ShoppingCart },
         // { path: '/orders', label: 'Hóa đơn', icon: Receipt },
@@ -107,7 +109,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/admin/bank-transactions', label: 'Giao dịch ngân hàng', icon: Landmark },
         { path: '/admin/users', label: 'Người dùng', icon: Users },
         // { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
-        // { path: '/admin/audit-logs', label: 'Nhật ký thao tác', icon: History },
+        { path: '/admin/audit-logs', label: 'Lịch sử thao tác', icon: History },
       ],
     },
     {
@@ -117,7 +119,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/admin/facilities', label: 'Sân & phòng', icon: MapPin },
         // { path: '/admin/courses', label: 'Khóa học', icon: BookOpen },
         // { path: '/admin/classes', label: 'Lớp học', icon: School },
-        // { path: '/admin/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/admin/memberships', label: 'Gói thành viên', icon: BadgeCheck },
         // { path: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
         // { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
       ],
