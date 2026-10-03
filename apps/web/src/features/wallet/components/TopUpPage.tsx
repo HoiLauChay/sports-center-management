@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { MoneyInput } from '~/components/form/MoneyInput';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { INVOICE_STATUS_TAG } from '~/constants/payment';
+import { INVOICE_STATUS_TAG, invoiceStatusOf } from '~/constants/payment';
 import { useSettings } from '~/features/settings';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -26,6 +26,7 @@ export function TopUpPage() {
     queryKey: ['invoices', 'mine', 'pending'],
     queryFn: () => walletService.listInvoices({ page: 1, limit: 5, purpose: 'WALLET_TOP_UP', status: 'PENDING' }),
   });
+  const waiting = pending.data?.items.filter((invoice) => invoiceStatusOf(invoice) === 'PENDING') ?? [];
 
   const create = useMutation({
     mutationFn: (value: number) => walletService.createTopUp({ amount: value }),
@@ -101,9 +102,9 @@ export function TopUpPage() {
           </Form>
         </Card>
         <Card title="Hóa đơn đang chờ" size="small">
-          {pending.data?.items.length ? (
+          {waiting.length ? (
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {pending.data.items.map((invoice) => (
+              {waiting.map((invoice) => (
                 <li key={invoice.id}>
                   <Link
                     to="/invoices/$invoiceId"

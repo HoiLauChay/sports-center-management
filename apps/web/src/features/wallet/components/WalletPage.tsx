@@ -13,7 +13,7 @@ import { DataTable } from '~/components/data/DataTable';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { WalletCard } from '~/components/ui/WalletCard';
-import { INVOICE_STATUS_TAG, WALLET_TX_TAG } from '~/constants/payment';
+import { INVOICE_STATUS_TAG, WALLET_TX_TAG, invoiceStatusOf } from '~/constants/payment';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useMyWallet } from '../hooks/useWallet';
@@ -34,8 +34,8 @@ const invoiceColumns: TableColumnsType<Invoice> = [
   },
   {
     title: 'Trạng thái',
-    dataIndex: 'status',
-    render: (status: Invoice['status']) => <MappedTag value={status} map={INVOICE_STATUS_TAG} />,
+    key: 'status',
+    render: (_, invoice) => <MappedTag value={invoiceStatusOf(invoice)} map={INVOICE_STATUS_TAG} />,
   },
   {
     title: 'Tạo lúc',
@@ -52,13 +52,16 @@ const invoiceColumns: TableColumnsType<Invoice> = [
     title: '',
     key: 'actions',
     align: 'right',
-    render: (_, invoice) => (
-      <Link to="/invoices/$invoiceId" params={{ invoiceId: invoice.id }}>
-        <Button size="small" type={invoice.status === 'PENDING' ? 'primary' : 'default'}>
-          {invoice.status === 'PENDING' ? 'Thanh toán' : 'Chi tiết'}
-        </Button>
-      </Link>
-    ),
+    render: (_, invoice) => {
+      const pending = invoiceStatusOf(invoice) === 'PENDING';
+      return (
+        <Link to="/invoices/$invoiceId" params={{ invoiceId: invoice.id }}>
+          <Button size="small" type={pending ? 'primary' : 'default'}>
+            {pending ? 'Thanh toán' : 'Chi tiết'}
+          </Button>
+        </Link>
+      );
+    },
   },
 ];
 

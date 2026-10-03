@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { INVOICE_STATUS_TAG } from '~/constants/payment';
+import { INVOICE_STATUS_TAG, invoiceStatusOf } from '~/constants/payment';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useInvoice, useRefreshAfterPaid } from '../hooks/useWallet';
@@ -39,7 +39,7 @@ export function InvoicePage() {
         title={`Hóa đơn ${data.paymentCode}`}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
-            <MappedTag value={data.status} map={INVOICE_STATUS_TAG} />
+            <MappedTag value={invoiceStatusOf(data)} map={INVOICE_STATUS_TAG} />
             <span>Tạo lúc {formatDateTime(data.createdAt)}</span>
             {data.paidAt && <span>Thanh toán lúc {formatDateTime(data.paidAt)}</span>}
           </span>
