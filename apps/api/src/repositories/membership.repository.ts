@@ -43,6 +43,7 @@ class MembershipRepository {
         bookingDiscountPct: true,
         classDiscountPct: true,
         freeBookingSlotsPerMonth: true,
+        membership: { select: { package: { select: { name: true } } } },
       },
       orderBy: { periodStart: 'asc' },
     });

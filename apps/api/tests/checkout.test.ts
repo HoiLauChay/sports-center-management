@@ -41,16 +41,25 @@ beforeAll(async () => {
     ok: true,
     subtotal: 500_000,
     membershipDiscount: 0,
-    snapshot: { packageName: 'Gold' },
+    snapshot: { title: 'Gói Gold', startAt: '2026-10-03', endAt: '2026-11-02', discountPct: 0 },
     data: null,
   }));
-  lineHandlers.FACILITY_BOOKING = fakeHandler('FACILITY_BOOKING', true, async (_db, ctx) => ({
-    ok: true,
-    subtotal: bookingPrice,
-    membershipDiscount: percentOf(bookingPrice, ctx.benefits?.current?.bookingDiscountPct ?? 0),
-    snapshot: { facilityName: 'Sân 1' },
-    data: null,
-  }));
+  lineHandlers.FACILITY_BOOKING = fakeHandler('FACILITY_BOOKING', true, async (db, ctx, input) => {
+    const discountPct = ctx.benefits?.current?.bookingDiscountPct ?? 0;
+    const facility = 'facilityId' in input ? await db.facility.findUnique({ where: { id: input.facilityId } }) : null;
+    return {
+      ok: true,
+      subtotal: bookingPrice,
+      membershipDiscount: percentOf(bookingPrice, discountPct),
+      snapshot: {
+        title: facility?.name ?? 'Sân 1',
+        startAt: '2026-10-05T11:00:00.000Z',
+        endAt: '2026-10-05T12:00:00.000Z',
+        discountPct,
+      },
+      data: null,
+    };
+  });
 });
 
 const packageHandler: AnyLineHandler = {
@@ -58,7 +67,7 @@ const packageHandler: AnyLineHandler = {
     ok: true,
     subtotal: 100_000,
     membershipDiscount: 0,
-    snapshot: { facilityName: 'Sân 1', weeks: 1 },
+    snapshot: { title: 'Sân 1 · T2, T4, T6', startAt: '2026-10-05', endAt: '2026-10-10', discountPct: 0 },
     components: ['mon', 'wed', 'fri'].map((key) => ({ key, weight: 1 })),
     data: null,
   })),

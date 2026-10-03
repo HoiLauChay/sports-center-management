@@ -18,11 +18,14 @@ const invalidBuyer = (path: string, message: string) =>
   });
 
 const loadBenefits = async (db: Db, accountId: string, now: Date): Promise<ActiveBenefits> => {
-  const periods: BenefitPeriod[] = (await membershipRepository.findActivePeriods(accountId, db)).map((period) => ({
-    ...period,
-    periodStart: formatDate(period.periodStart),
-    periodEnd: formatDate(period.periodEnd),
-  }));
+  const periods: BenefitPeriod[] = (await membershipRepository.findActivePeriods(accountId, db)).map(
+    ({ membership, ...period }) => ({
+      ...period,
+      packageName: membership.package.name,
+      periodStart: formatDate(period.periodStart),
+      periodEnd: formatDate(period.periodEnd),
+    }),
+  );
   const periodOn = (date: string) =>
     periods.find(({ periodStart, periodEnd }) => periodStart <= date && date < periodEnd) ?? null;
   return { current: periodOn(todayInCenter(now)), periodOn };
