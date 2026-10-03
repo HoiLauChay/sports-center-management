@@ -1,11 +1,25 @@
-import { ERROR_CODE, type ScheduleClash, type ScheduleClashReason } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type FacilitySchedule,
+  type FacilitySlot,
+  type ScheduleClash,
+  type ScheduleClashReason,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import scheduleRepository, { type SessionUsage } from '~/repositories/schedule.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import { formatDate, formatTime, fromDbTime, isOnSlotGrid, overlaps, toCenterDateTime } from '~/utils/time';
+import {
+  formatDate,
+  formatTime,
+  fromDbTime,
+  generateSlots,
+  isOnSlotGrid,
+  overlaps,
+  toCenterDateTime,
+} from '~/utils/time';
 
 export interface TimeRange {
   date: string;
@@ -168,6 +182,50 @@ class ScheduleService {
       personClashes(tx, query),
     ]);
     return [...facility, ...people];
+  };
+
+  facilityDay = async (facilityId: string, date: string, now = new Date()): Promise<FacilitySchedule | null> => {
+    const [[facility, bookings, sessions, maintenances], settings] = await Promise.all([
+      scheduleRepository.findFacilityUsage(facilityId, [date]),
+      settingRepository.get(),
+    ]);
+    if (!facility || facility.deletedAt) return null;
+
+    const bookingTimes = bookings.map((booking) => timed(booking.bookingDate, booking.startTime, booking.endTime));
+    const slots = generateSlots(
+      fromDbTime(settings.openTime),
+      fromDbTime(settings.closeTime),
+      settings.slotDurationMinutes,
+    ).map(({ start, end }): FacilitySlot => {
+      const range = { date, start, end };
+      const base = {
+        startTime: formatTime(start),
+        endTime: formatTime(end),
+        booked: bookingTimes.filter((booking) => sameDayOverlap(range, booking)).length,
+        capacity: facility.capacityPerSlot,
+      };
+      if (!facility.isActive || toCenterDateTime(date, start) < now) return { ...base, status: 'CLOSED' };
+
+      const startAt = toCenterDateTime(date, start);
+      const endAt = toCenterDateTime(date, end);
+      const maintenance = maintenances.find((item) => item.startAt < endAt && startAt < item.endAt);
+      if (maintenance) {
+        return { ...base, status: 'MAINTENANCE', maintenance: { id: maintenance.id, reason: maintenance.reason } };
+      }
+      const session = sessions.find((item) =>
+        sameDayOverlap(range, timed(item.sessionDate, item.startTime, item.endTime)),
+      );
+      if (session) {
+        return { ...base, status: 'CLASS', classSession: { classId: session.class.id, className: session.class.name } };
+      }
+      const status = base.booked < base.capacity ? 'AVAILABLE' : 'FULL';
+      return { ...base, status };
+    });
+    return {
+      facility: { id: facility.id, name: facility.name, capacityPerSlot: facility.capacityPerSlot },
+      date,
+      slots,
+    };
   };
 
   assertAvailable = async (tx: Prisma.TransactionClient, query: ConflictQuery) => {

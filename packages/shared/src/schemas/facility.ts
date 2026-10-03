@@ -44,7 +44,10 @@ export const listFacilitiesQuerySchema = z.object({
 
 export const facilityIdParamsSchema = z.object({ id: z.uuid('Mã cơ sở không hợp lệ') });
 
+export const facilityScheduleQuerySchema = z.object({ date: z.iso.date('Ngày không hợp lệ') });
+
 export type CreateFacilityBody = z.infer<typeof createFacilityBodySchema>;
 export type CreateFacilityInput = z.input<typeof createFacilityBodySchema>;
 export type UpdateFacilityBody = z.infer<typeof updateFacilityBodySchema>;
 export type ListFacilitiesQuery = z.infer<typeof listFacilitiesQuerySchema>;
+export type FacilityScheduleQuery = z.infer<typeof facilityScheduleQuerySchema>;

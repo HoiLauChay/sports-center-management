@@ -1,6 +1,7 @@
 import {
   createFacilityBodySchema,
   facilityIdParamsSchema,
+  facilityScheduleQuerySchema,
   listFacilitiesQuerySchema,
   updateFacilityBodySchema,
 } from '@sports-center/shared';
@@ -14,6 +15,11 @@ const facilityRouter = Router();
 
 facilityRouter.use(auth);
 facilityRouter.get('/', validate({ query: listFacilitiesQuerySchema }), facilityController.list);
+facilityRouter.get(
+  '/:id/schedule',
+  validate({ params: facilityIdParamsSchema, query: facilityScheduleQuerySchema }),
+  facilityController.schedule,
+);
 facilityRouter.post('/', isRole('MANAGER'), validate({ body: createFacilityBodySchema }), facilityController.create);
 facilityRouter.patch(
   '/:id',

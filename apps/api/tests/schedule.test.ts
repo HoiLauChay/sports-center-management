@@ -2,77 +2,14 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
 import scheduleService, { type ConflictQuery } from '~/services/schedule.service';
-import { parseTime, toCenterDateTime, toDbTime } from '~/utils/time';
+import { parseTime, toCenterDateTime } from '~/utils/time';
 import { resetDatabase } from './helpers/db';
 import { createAccount } from './helpers/http';
+import { SEED_DAY, seedBooking, seedFacility, seedSession } from './helpers/schedule';
 
-const DAY = '2026-10-20';
+const DAY = SEED_DAY;
 const NOW = toCenterDateTime('2026-10-19', 12 * 60);
 const at = (start: string, end: string, date = DAY) => ({ date, start: parseTime(start), end: parseTime(end) });
-
-let seq = 0;
-
-const facility = (capacityPerSlot: number, data: Record<string, unknown> = {}) =>
-  prisma.facility.create({
-    data: { name: `Sân ${++seq}`, type: 'COURT', capacityPerSlot, pricePerSlot: 100_000, ...data },
-  });
-
-const booking = async (facilityId: string, start: string, end: string, accountId?: string) => {
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: `DH261020TEST${String(++seq).padStart(2, '0')}`,
-      idempotencyKey: `test:schedule:${seq}`,
-      accountId: accountId ?? null,
-      guestName: accountId ? null : 'Khách',
-      guestPhone: accountId ? null : '0901234567',
-      createdById: accountId ? null : (await createAccount('RECEPTIONIST', `r${seq}@example.com`)).id,
-      receiptSnapshot: { schema_version: 1 },
-      subtotal: 0,
-      totalAmount: 0,
-      paymentMethod: 'CASH',
-      items: {
-        create: {
-          lineNumber: 1,
-          type: 'FACILITY_BOOKING',
-          itemSnapshot: { schema_version: 1 },
-          subtotal: 0,
-          totalAmount: 0,
-        },
-      },
-    },
-    include: { items: true },
-  });
-  return prisma.facilityBooking.create({
-    data: {
-      facilityId,
-      accountId: accountId ?? null,
-      orderItemId: order.items[0]!.id,
-      bookingDate: new Date(DAY),
-      startTime: toDbTime(parseTime(start)),
-      endTime: toDbTime(parseTime(end)),
-      unitPrice: 0,
-    },
-  });
-};
-
-const session = async (facilityId: string, start: string, end: string, extra: { coachId?: string } = {}) => {
-  const sport = await prisma.sport.create({ data: { name: `Môn ${++seq}` } });
-  const course = await prisma.course.create({ data: { name: 'Khóa', sportId: sport.id, totalSessions: 1, price: 0 } });
-  const cls = await prisma.class.create({
-    data: { name: `Lớp ${seq}`, courseId: course.id, facilityId, maxStudents: 10, weeklySchedule: [], ...extra },
-  });
-  return prisma.classSession.create({
-    data: {
-      classId: cls.id,
-      facilityId,
-      sessionNumber: 1,
-      sessionDate: new Date(DAY),
-      startTime: toDbTime(parseTime(start)),
-      endTime: toDbTime(parseTime(end)),
-    },
-    include: { class: true },
-  });
-};
 
 const reasons = async (query: Omit<ConflictQuery, 'now'>) =>
   (await scheduleService.findConflicts(prisma, { ...query, now: NOW })).map(
@@ -86,9 +23,9 @@ beforeEach(async () => {
 
 describe('schedule conflicts', () => {
   test('a facility slot is closed, past, off grid, under maintenance or taken by a class', async () => {
-    const court = await facility(1);
-    const inactive = await facility(1, { isActive: false });
-    await session(court.id, '18:00', '19:00');
+    const court = await seedFacility(1);
+    const inactive = await seedFacility(1, { isActive: false });
+    await seedSession(court.id, '18:00', '19:00');
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const maintenance = await prisma.facilityMaintenance.create({
       data: {
@@ -125,10 +62,10 @@ describe('schedule conflicts', () => {
   });
 
   test('bookings fill capacity per slot; a class session needs the facility to itself', async () => {
-    const gym = await facility(2);
-    await booking(gym.id, '07:00', '08:00');
-    await booking(gym.id, '08:00', '09:00');
-    await booking(gym.id, '08:00', '09:00');
+    const gym = await seedFacility(2);
+    await seedBooking(gym.id, '07:00', '08:00');
+    await seedBooking(gym.id, '08:00', '09:00');
+    await seedBooking(gym.id, '08:00', '09:00');
 
     expect(await reasons({ facility: { id: gym.id, exclusive: false }, ranges: [at('07:00', '09:00')] })).toEqual([
       '08:00 FULL',
@@ -149,15 +86,15 @@ describe('schedule conflicts', () => {
   test('coach and member schedules clash across facilities; a moved session ignores itself', async () => {
     const coach = await createAccount('COACH', 'coach@example.com');
     const member = await createAccount('MEMBER', 'member@example.com');
-    const roomA = await facility(10);
-    const roomB = await facility(10);
-    const taught = await session(roomA.id, '18:00', '19:00', { coachId: coach.id });
-    const attended = await session(roomA.id, '06:00', '07:00');
+    const roomA = await seedFacility(10);
+    const roomB = await seedFacility(10);
+    const taught = await seedSession(roomA.id, '18:00', '19:00', { coachId: coach.id });
+    const attended = await seedSession(roomA.id, '06:00', '07:00');
     await prisma.classEnrollment.create({
       data: {
         classId: attended.classId,
         accountId: member.id,
-        orderItemId: (await booking(roomB.id, '20:00', '21:00', member.id)).orderItemId,
+        orderItemId: (await seedBooking(roomB.id, '20:00', '21:00', { accountId: member.id })).orderItemId,
       },
     });
 
