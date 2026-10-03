@@ -16,7 +16,7 @@ import { computeSchedule, previewPackage } from '../mocks/schedule';
 import type { PackagePreviewRequest } from '../types';
 
 const balanceOfMine = (user: Account) => (accountId: string) =>
-  accountId === user.id ? walletService.balanceOfMine(accountId) : walletService.balanceOfMember(accountId);
+  accountId === user.id ? walletService.balanceOfMine() : walletService.balanceOfMember(accountId);
 
 /**
  * Facility schedule, recurring-package preview, my bookings and cancellation. Mock until #103, #112, #133 and #138

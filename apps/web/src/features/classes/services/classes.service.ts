@@ -61,6 +61,6 @@ export const classesService = {
   cancelEnrollment: (user: Account, id: string) =>
     mockRequest(async () => {
       const { settings } = await seeded();
-      return cancelEnrollment(actorOf(user), id, settings, (accountId) => walletService.balanceOfMine(accountId));
+      return cancelEnrollment(actorOf(user), id, settings, () => walletService.balanceOfMine());
     }, 350),
 };

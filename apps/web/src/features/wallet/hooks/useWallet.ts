@@ -12,7 +12,7 @@ export function useMyWallet(query: WalletQuery) {
   const { id } = useCurrentUser();
   return useQuery({
     queryKey: [...walletQueryKey(id), query],
-    queryFn: () => walletService.getMine(id, query),
+    queryFn: () => walletService.getMine(query),
     placeholderData: keepPreviousData,
   });
 }
