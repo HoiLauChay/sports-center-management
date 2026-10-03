@@ -4,6 +4,7 @@ import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
 import checkoutRouter from '~/routes/checkout.routes';
+import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
 import facilityRouter from '~/routes/facility.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
@@ -31,6 +32,7 @@ export const apiRoutes: [string, Router][] = [
   ['/bank-transactions', bankTransactionRouter],
   ['/checkout', checkoutRouter],
   ['/coach/specializations', coachSpecializationRouter],
+  ['/courses', courseRouter],
   ['/cron', cronRouter],
   ['/facilities', facilityRouter],
   ['/invoices', invoiceRouter],
