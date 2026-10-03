@@ -1,4 +1,4 @@
-import type { ListFacilitiesQuery } from '@sports-center/shared';
+import type { FacilityScheduleQuery, ListFacilitiesQuery } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -11,6 +11,12 @@ class FacilityController {
     const isManager = req.user?.role === 'MANAGER';
     const facilities = await facilityService.list(req.query as unknown as ListFacilitiesQuery, isManager);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: facilities }));
+  };
+
+  schedule = async (req: Request, res: Response) => {
+    const { date } = req.query as unknown as FacilityScheduleQuery;
+    const result = await facilityService.schedule(req.params.id as string, date);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
   create = async (req: Request, res: Response) => {

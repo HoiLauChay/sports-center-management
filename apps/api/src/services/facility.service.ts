@@ -14,6 +14,7 @@ import scheduleRepository from '~/repositories/schedule.repository';
 import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import scheduleService from '~/services/schedule.service';
 import { isUniqueViolation } from '~/utils/dbError';
 import { runTransaction, withScheduleLock } from '~/utils/transaction';
 
@@ -53,6 +54,12 @@ const withNameCheck = async <T>(run: () => Promise<T>) => {
 };
 
 class FacilityService {
+  schedule = async (id: string, date: string) => {
+    const day = await scheduleService.facilityDay(id, date);
+    if (!day) throw notFound();
+    return day;
+  };
+
   list = async (query: ListFacilitiesQuery, isManager: boolean) => {
     const rows = await facilityRepository.findAll({ ...query, isActive: isManager ? query.isActive : true });
     return rows.map(toFacilityResponse);
