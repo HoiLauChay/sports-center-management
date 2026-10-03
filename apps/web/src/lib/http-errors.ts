@@ -41,6 +41,12 @@ export function toApiError(err: unknown, fallback = FALLBACK): ApiError {
   return { code: CLIENT_ERROR_CODE.UNKNOWN, message: err instanceof Error ? err.message : fallback };
 }
 
+/** The most specific text to show in a toast: the first field error when there is one, else the general message. */
+export function describeApiError(err: unknown, fallback?: string): string {
+  const apiError = toApiError(err, fallback);
+  return apiError.errors?.[0]?.message ?? apiError.message;
+}
+
 /** Extra payload an error response carries next to `code`/`message` (e.g. the fresh `quote` of a `PRICE_CHANGED`). */
 export function errorPayload<T>(err: unknown, key: string): T | undefined {
   if (err instanceof MockApiError) return err.body[key] as T | undefined;
