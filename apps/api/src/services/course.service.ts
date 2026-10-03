@@ -24,9 +24,17 @@ const invalidSport = () =>
     errors: [{ path: 'body.sportId', message: 'Bộ môn không tồn tại hoặc đã ngừng hoạt động' }],
   });
 
+const sportLocked = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.CONFLICT,
+    code: ERROR_CODE.HAS_DEPENDENCIES,
+    message: 'Khóa học đã có lớp, không thể đổi bộ môn',
+    errors: [{ path: 'body.sportId', message: 'Khóa học đã có lớp, không thể đổi bộ môn' }],
+  });
+
 class CourseService {
-  list = async () => {
-    const rows = await courseRepository.findAll();
+  list = async (isManager: boolean) => {
+    const rows = await courseRepository.findAll(isManager);
     return rows.map(toCourseResponse);
   };
 
@@ -72,6 +80,10 @@ class CourseService {
         managerId,
         'body.thumbnailUrl',
       );
+
+      if (body.sportId && body.sportId !== current.sportId && (await courseRepository.hasClasses(id, tx))) {
+        throw sportLocked();
+      }
 
       const targetSportId = body.sportId ?? current.sportId;
       if (!(await sportRepository.findActiveIds([targetSportId], tx)).length) {
