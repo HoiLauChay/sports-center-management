@@ -1,4 +1,3 @@
-import { bankDb } from '~/features/bank-transactions/mocks/bankTransactions';
 import type { OrderItemType } from '~/features/checkout/types';
 import { classesDb } from '~/features/classes/mocks/classes';
 import { commerceStore } from '~/lib/mock/commerce';
@@ -126,7 +125,12 @@ export function revenueReport(from: string, to: string, granularity: Granularity
   return { buckets: result };
 }
 
-export function walletReport(from: string, to: string, granularity: Granularity): WalletReport {
+export function walletReport(
+  from: string,
+  to: string,
+  granularity: Granularity,
+  unmatched: WalletReport['unmatched'],
+): WalletReport {
   const buckets: WalletBucket[] = [...bucketize(from, to, granularity)].map(([period, day]) => {
     const payments = day.byPaymentMethod.WALLET;
     const counter = day.topUpCounter.CASH + day.topUpCounter.CARD + day.topUpCounter.TRANSFER;
@@ -139,17 +143,16 @@ export function walletReport(from: string, to: string, granularity: Granularity)
       netChange: day.topUpBank + counter - payments + day.refunds,
     };
   });
-  const unmatched = bankDb.list({ page: 1, limit: 1000, status: 'UNMATCHED' });
   const accounts = new Set(commerceStore.get().orders.flatMap((order) => (order.account ? [order.account.id] : [])));
   const mockDelta = [...accounts].reduce((sum, accountId) => sum + walletLedger.delta(accountId), 0);
   return {
     totalBalance: 48_350_000 + mockDelta,
-    unmatched: { count: unmatched.total, amount: unmatched.items.reduce((sum, entry) => sum + entry.amount, 0) },
+    unmatched,
     buckets,
   };
 }
 
-export function overviewReport(): OverviewReport {
+export function overviewReport(unmatchedBankTransactions: number): OverviewReport {
   const today = todayVN();
   const { orders, bookings } = commerceStore.get();
   const todays = orders.filter((order) => vnDate(order.paidAt) === today);
@@ -161,6 +164,6 @@ export function overviewReport(): OverviewReport {
     bookingsToday: 9 + bookings.filter((booking) => booking.date === today && booking.status === 'CONFIRMED').length,
     ongoingClasses: classesDb.allClasses().filter((item) => item.derivedStatus === 'ONGOING').length + 3,
     activeMemberships: 124,
-    unmatchedBankTransactions: bankDb.countUnmatched(),
+    unmatchedBankTransactions,
   };
 }
