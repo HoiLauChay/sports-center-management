@@ -19,6 +19,8 @@ const schema = z
     SEPAY_BANK_CODE: z.string().optional(),
     SEPAY_ACCOUNT_NAME: z.string().optional(),
     SEPAY_WEBHOOK_API_KEY: z.string().optional(),
+    SEPAY_API_BASE_URL: z.url().optional(),
+    SEPAY_API_TOKEN: z.string().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;
