@@ -1,4 +1,4 @@
-import type { Quote } from '@sports-center/shared';
+import type { Order, Quote } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { Server } from 'node:http';
 
@@ -9,11 +9,16 @@ import { percentOf } from '~/utils/money';
 import { todayInCenter } from '~/utils/time';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
+import { expectOrderConsistent } from './helpers/order';
+import { expectWalletConsistent } from './helpers/wallet';
 
 let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
 
-const unused = () => Promise.reject(new Error('not used by quote'));
+let bookingPrice = 200_000;
+const fulfilledAllocations: { key: string; refId: string; amount: number }[] = [];
+
+const unused = () => Promise.reject(new Error('not used by checkout'));
 
 const fakeHandler = (
   type: AnyLineHandler['type'],
@@ -26,11 +31,12 @@ const fakeHandler = (
   lockTargets: () => ({}),
   prepare: price,
   verify: unused,
-  fulfill: unused,
+  fulfill: async () => ({ refId: crypto.randomUUID() }),
 });
 
 beforeAll(async () => {
   ({ server, request } = await startServer('/checkout'));
+  lineHandlers.FACILITY_PACKAGE = packageHandler;
   lineHandlers.MEMBERSHIP = fakeHandler('MEMBERSHIP', false, async () => ({
     ok: true,
     subtotal: 500_000,
@@ -40,20 +46,37 @@ beforeAll(async () => {
   }));
   lineHandlers.FACILITY_BOOKING = fakeHandler('FACILITY_BOOKING', true, async (_db, ctx) => ({
     ok: true,
-    subtotal: 200_000,
-    membershipDiscount: percentOf(200_000, ctx.benefits?.current?.bookingDiscountPct ?? 0),
+    subtotal: bookingPrice,
+    membershipDiscount: percentOf(bookingPrice, ctx.benefits?.current?.bookingDiscountPct ?? 0),
     snapshot: { facilityName: 'Sân 1' },
     data: null,
   }));
 });
 
+const packageHandler: AnyLineHandler = {
+  ...fakeHandler('FACILITY_PACKAGE', false, async () => ({
+    ok: true,
+    subtotal: 100_000,
+    membershipDiscount: 0,
+    snapshot: { facilityName: 'Sân 1', weeks: 1 },
+    components: ['mon', 'wed', 'fri'].map((key) => ({ key, weight: 1 })),
+    data: null,
+  })),
+  fulfill: async (_tx, _ctx, line) => {
+    fulfilledAllocations.push(...line.allocations);
+    return { refId: crypto.randomUUID() };
+  },
+};
+
 afterAll(() => {
+  delete lineHandlers.FACILITY_PACKAGE;
   delete lineHandlers.MEMBERSHIP;
   delete lineHandlers.FACILITY_BOOKING;
   server.close();
 });
 
 beforeEach(async () => {
+  bookingPrice = 200_000;
   await resetDatabase();
   await prisma.systemSetting.create({ data: {} });
 });
@@ -65,6 +88,16 @@ const booking = {
   date: '2026-10-05',
   startTime: '18:00',
   endTime: '19:00',
+};
+
+const weekly = {
+  type: 'FACILITY_PACKAGE',
+  facilityId: '00000000-0000-4000-8000-000000000002',
+  startDate: '2026-10-05',
+  daysOfWeek: [1, 3, 5],
+  startTime: '18:00',
+  endTime: '19:00',
+  weeks: 1,
 };
 
 const giveActiveMembership = async (accountId: string, bookingDiscountPct: number) => {
@@ -183,5 +216,109 @@ describe('checkout quote', () => {
     ]);
     expect(quote.coupon).toMatchObject({ code: 'WELCOME20', valid: false });
     expect(quote).toMatchObject({ total: 200_000, walletBalance: null, canCheckout: false });
+  });
+});
+
+const seedBalance = async (accountId: string, amount: number) => {
+  await prisma.memberProfile.update({ where: { accountId }, data: { walletBalance: amount } });
+  await prisma.walletTransaction.create({
+    data: {
+      accountId,
+      transactionCode: 'GD261003SEED0001',
+      idempotencyKey: `seed:${accountId}`,
+      type: 'TOP_UP',
+      topUpMethod: 'CASH',
+      amount,
+      balanceAfter: amount,
+    },
+  });
+};
+
+const pay = (key: string, overrides: Record<string, unknown> = {}) => ({
+  items: [booking],
+  paymentMethod: 'WALLET',
+  expectedTotal: 200_000,
+  idempotencyKey: key,
+  ...overrides,
+});
+
+describe('checkout', () => {
+  test('resending the same idempotency key returns the same order and charges once', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await seedBalance(member.id, 400_000);
+    const body = pay('order-key-1', { items: [booking, weekly], expectedTotal: 300_000 });
+
+    const responses = await Promise.all([1, 2, 3].map(() => request('POST', '/', member, body)));
+    expect(responses.map(({ status }) => status)).toEqual([201, 201, 201]);
+    const orders = await Promise.all(responses.map((response) => readResult<Order>(response)));
+    expect(new Set(orders.map(({ id }) => id)).size).toBe(1);
+    expect(orders[0]).toMatchObject({ status: 'PAID', paymentMethod: 'WALLET', totalAmount: 300_000, createdBy: null });
+
+    expect(await prisma.order.count()).toBe(1);
+    expect(await prisma.walletTransaction.count({ where: { type: 'PAYMENT' } })).toBe(1);
+    expect(await expectWalletConsistent(member.id)).toBe(100_000);
+    const order = await expectOrderConsistent(orders[0]!.id);
+    expect(fulfilledAllocations.map(({ key, amount }) => [key, amount])).toEqual([
+      ['mon', 33_334],
+      ['wed', 33_333],
+      ['fri', 33_333],
+    ]);
+    expect(order.items.find(({ type }) => type === 'FACILITY_PACKAGE')?.itemSnapshot).toMatchObject({
+      schema_version: 1,
+      allocations: fulfilledAllocations.map(({ refId, amount }) => ({ refId, amount })),
+    });
+
+    const conflict = await request('POST', '/', member, { ...body, expectedTotal: 280_000 });
+    expect(conflict.status).toBe(409);
+    expect(await readCode(conflict)).toBe('IDEMPOTENCY_CONFLICT');
+  });
+
+  test('a changed price or an insufficient wallet rejects the order and leaves the balance untouched', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await seedBalance(member.id, 100_000);
+
+    const changed = await request('POST', '/', member, pay('order-key-2', { expectedTotal: 150_000 }));
+    expect(changed.status).toBe(409);
+    expect(await changed.json()).toMatchObject({ code: 'PRICE_CHANGED', quote: { total: 200_000 } });
+
+    const poor = await request('POST', '/', member, pay('order-key-3'));
+    expect(poor.status).toBe(409);
+    expect(await readCode(poor)).toBe('INSUFFICIENT_BALANCE');
+
+    expect(await prisma.order.count()).toBe(0);
+    expect(await expectWalletConsistent(member.id)).toBe(100_000);
+  });
+
+  test('a free order succeeds without a wallet transaction; the counter takes cash for guests', async () => {
+    bookingPrice = 0;
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+
+    const free = await request('POST', '/', member, pay('order-key-4', { expectedTotal: 0 }));
+    expect(free.status).toBe(201);
+    expect(await readResult<Order>(free)).toMatchObject({ totalAmount: 0, status: 'PAID' });
+    expect(await prisma.walletTransaction.count()).toBe(0);
+
+    expect(
+      await readCode(
+        await request('POST', '/', member, pay('order-key-5', { paymentMethod: 'CASH', expectedTotal: 0 })),
+      ),
+    ).toBe('VALIDATION_ERROR');
+
+    bookingPrice = 200_000;
+    const counter = await request(
+      'POST',
+      '/',
+      receptionist,
+      pay('order-key-6', { paymentMethod: 'CASH', buyer: { guest: { name: 'Khách A', phone: '0901234567' } } }),
+    );
+    expect(counter.status).toBe(201);
+    expect(await readResult<Order>(counter)).toMatchObject({
+      account: null,
+      guestName: 'Khách A',
+      createdBy: { id: receptionist.id },
+      paymentMethod: 'CASH',
+      totalAmount: 200_000,
+    });
   });
 });
