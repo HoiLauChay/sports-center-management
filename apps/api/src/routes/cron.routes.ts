@@ -7,5 +7,6 @@ const cronRouter = Router();
 
 cronRouter.use(cronAuth);
 cronRouter.post('/cleanup', cronController.cleanup);
+cronRouter.post('/sepay-sync', cronController.sepaySync);
 
 export default cronRouter;

@@ -26,7 +26,8 @@ afterAll(() => server.close());
 beforeEach(resetDatabase);
 
 const payload = (overrides: Record<string, unknown> = {}) => ({
-  id: nextSepayId++,
+  id: nextSepayId,
+  referenceCode: `FT2627${nextSepayId++}`,
   gateway: 'MBBank',
   transactionDate: '2026-10-02 10:15:00',
   accountNumber: '0123456789',
@@ -36,7 +37,6 @@ const payload = (overrides: Record<string, unknown> = {}) => ({
   transferType: 'in',
   transferAmount: 200_000,
   accumulated: 1_000_000,
-  referenceCode: 'FT26275123',
   description: 'BankAPINotify',
   ...overrides,
 });
