@@ -1,7 +1,14 @@
 import type { AuditLog } from '@sports-center/shared';
-import { Descriptions, Drawer, Empty, Table, Tag, type TableColumnsType } from 'antd';
+import { Descriptions, Drawer, Empty, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { useState } from 'react';
 import { formatDateTime } from '~/lib/format';
-import { AUDIT_ACTION_COLOR, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, auditFieldLabel } from '../utils/labels';
+import {
+  AUDIT_ACTION_COLOR,
+  AUDIT_ACTION_LABEL,
+  AUDIT_ENTITY_LABEL,
+  auditFieldLabel,
+  changedFields,
+} from '../utils/labels';
 
 interface Change {
   field: string;
@@ -29,11 +36,22 @@ const columns: TableColumnsType<Change> = [
 ];
 
 export function AuditLogDetailDrawer({ log, onClose }: { log: AuditLog | null; onClose: () => void }) {
-  const fields = [...new Set([...Object.keys(log?.oldValues ?? {}), ...Object.keys(log?.newValues ?? {})])];
+  const [showAll, setShowAll] = useState(false);
+  const allFields = [...new Set([...Object.keys(log?.oldValues ?? {}), ...Object.keys(log?.newValues ?? {})])];
+  const changed = log ? changedFields(log) : [];
+  const fields = showAll ? allFields : changed;
   const changes = fields.map((field) => ({ field, before: log?.oldValues?.[field], after: log?.newValues?.[field] }));
 
   return (
-    <Drawer title="Chi tiết thao tác" open={Boolean(log)} onClose={onClose} size={760}>
+    <Drawer
+      title="Chi tiết thao tác"
+      open={Boolean(log)}
+      onClose={() => {
+        setShowAll(false);
+        onClose();
+      }}
+      size={760}
+    >
       {log && (
         <>
           <Descriptions
@@ -63,7 +81,17 @@ export function AuditLogDetailDrawer({ log, onClose }: { log: AuditLog | null; o
               { key: 'id', label: 'Mã nhật ký', children: <span className="[overflow-wrap:anywhere]">{log.id}</span> },
             ]}
           />
-          <h2 className="mb-3 text-base font-semibold">Các giá trị được ghi nhận</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="m-0 text-base font-semibold">
+              {showAll ? 'Các giá trị được ghi nhận' : 'Các giá trị thay đổi'}
+            </h2>
+            {allFields.length > changed.length && (
+              <label className="flex items-center gap-2 text-[13px] text-sc-muted">
+                <Switch size="small" checked={showAll} onChange={setShowAll} />
+                Hiện cả {allFields.length - changed.length} trường không đổi
+              </label>
+            )}
+          </div>
           <Table<Change>
             rowKey="field"
             columns={columns}
