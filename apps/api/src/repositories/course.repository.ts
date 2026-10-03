@@ -21,9 +21,9 @@ const courseSelect = {
 export type CourseRow = Prisma.CourseGetPayload<{ select: typeof courseSelect }>;
 
 class CourseRepository {
-  findAll = (tx: Prisma.TransactionClient = prisma) =>
-    tx.course.findMany({
-      where: { deletedAt: null },
+  findAll = (includeInactiveSports: boolean) =>
+    prisma.course.findMany({
+      where: { deletedAt: null, ...(!includeInactiveSports && { sport: { isActive: true, deletedAt: null } }) },
       select: courseSelect,
       orderBy: { name: 'asc' },
     });
@@ -33,6 +33,9 @@ class CourseRepository {
       where: { id, deletedAt: null },
       select: courseSelect,
     });
+
+  hasClasses = async (courseId: string, tx: Prisma.TransactionClient = prisma) =>
+    (await tx.class.count({ where: { courseId, deletedAt: null } })) > 0;
 
   create = (data: Prisma.CourseUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.course.create({

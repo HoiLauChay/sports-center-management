@@ -6,8 +6,8 @@ import courseService from '~/services/course.service';
 import { getClientIp } from '~/utils/request';
 
 class CourseController {
-  list = async (_req: Request, res: Response) => {
-    const courses = await courseService.list();
+  list = async (req: Request, res: Response) => {
+    const courses = await courseService.list(req.user!.role === 'MANAGER');
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: courses }));
   };
 
