@@ -54,7 +54,7 @@ describe('facility schedule', () => {
     expect(schedule.facility).toEqual({ id: gym.id, name: gym.name, capacityPerSlot: 2 });
     expect(statuses(schedule)).toEqual({
       '06:00': 'AVAILABLE 0',
-      '07:00': 'PARTIAL 1',
+      '07:00': 'AVAILABLE 1',
       '08:00': 'FULL 2',
       '09:00': 'CLASS 0',
       '10:00': 'MAINTENANCE 0',

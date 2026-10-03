@@ -98,5 +98,5 @@ export const SCHEDULE_CLASH_REASONS = [
 ] as const;
 export type ScheduleClashReason = (typeof SCHEDULE_CLASH_REASONS)[number];
 
-export const FACILITY_SLOT_STATUSES = ['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as const;
+export const FACILITY_SLOT_STATUSES = ['AVAILABLE', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as const;
 export type FacilitySlotStatus = (typeof FACILITY_SLOT_STATUSES)[number];

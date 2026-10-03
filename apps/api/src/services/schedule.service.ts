@@ -218,7 +218,7 @@ class ScheduleService {
       if (session) {
         return { ...base, status: 'CLASS', classSession: { classId: session.class.id, className: session.class.name } };
       }
-      const status = base.booked === 0 ? 'AVAILABLE' : base.booked < base.capacity ? 'PARTIAL' : 'FULL';
+      const status = base.booked < base.capacity ? 'AVAILABLE' : 'FULL';
       return { ...base, status };
     });
     return {
