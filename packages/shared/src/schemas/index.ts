@@ -5,6 +5,7 @@ export * from './checkout';
 export * from './facility';
 export * from './membership';
 export * from './notification';
+export * from './order';
 export * from './pagination';
 export * from './payment';
 export * from './setting';
