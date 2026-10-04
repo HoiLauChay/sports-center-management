@@ -1,4 +1,10 @@
-import type { Person, Ref } from '@sports-center/shared';
+import type {
+  FacilitySchedule as ApiFacilitySchedule,
+  FacilitySlot as ApiFacilitySlot,
+  FacilitySlotStatus,
+  Person,
+  Ref,
+} from '@sports-center/shared';
 
 export type BookingStatus = 'CONFIRMED' | 'CANCELLED';
 export type BookingBenefit = 'NONE' | 'DISCOUNT' | 'GYM_ACCESS' | 'FREE_SLOT';
@@ -35,21 +41,12 @@ export interface FacilityPackage {
   bookings: Booking[];
 }
 
-export type SlotStatus = 'AVAILABLE' | 'PARTIAL' | 'FULL' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
-
-export interface FacilitySlot {
-  startTime: string;
-  endTime: string;
+/** The current API represents partial capacity as AVAILABLE with booked > 0. */
+export type SlotStatus = FacilitySlotStatus | 'PARTIAL';
+export interface FacilitySlot extends Omit<ApiFacilitySlot, 'status'> {
   status: SlotStatus;
-  booked: number;
-  capacity: number;
-  classSession?: { classId: string; className: string };
-  maintenance?: { id: string; reason: string };
 }
-
-export interface FacilitySchedule {
-  facility: { id: string; name: string; capacityPerSlot: number };
-  date: string;
+export interface FacilitySchedule extends Omit<ApiFacilitySchedule, 'slots'> {
   slots: FacilitySlot[];
 }
 

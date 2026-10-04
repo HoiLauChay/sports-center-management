@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Segmented } from 'antd';
+import { Alert, Button, DatePicker, Segmented, Select } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
@@ -13,6 +13,7 @@ import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
 import type { SlotSelection } from '../types';
+import { isValidSelection } from '../utils/slot-selection';
 import { SlotGrid } from './SlotGrid';
 
 const BENEFIT_TEXT: Record<string, string> = {
@@ -34,6 +35,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   const sports = useQuery(sportsQueryOptions);
   const settings = useSettings();
   const [sportChoice, setSportChoice] = useState<string>();
+  const [facilityChoice, setFacilityChoice] = useState<string>();
   const [date, setDate] = useState(todayVN());
   const [selection, setSelection] = useState<SlotSelection | null>(null);
 
@@ -48,10 +50,15 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   );
   const sportId =
     sportChoice && sportOptions.some((sport) => sport.id === sportChoice) ? sportChoice : sportOptions[0]?.id;
-  const rows = useMemo(
+  const sportFacilities = useMemo(
     () => bookable.filter((facility) => facility.sports.some((entry) => entry.id === sportId)),
     [bookable, sportId],
   );
+
+  const facilityId = sportFacilities.some((facility) => facility.id === facilityChoice)
+    ? facilityChoice
+    : sportFacilities[0]?.id;
+  const rows = sportFacilities.filter((facility) => facility.id === facilityId);
 
   const schedule = useFacilitySchedules(
     rows.map((facility) => facility.id),
@@ -63,7 +70,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   const quickDays = Array.from({ length: Math.min(7, maxAdvance + 1) }, (_, offset) => addDays(today, offset));
 
   const selected = useMemo(() => {
-    if (!selection) return null;
+    if (!isValidSelection(selection, schedule.schedules)) return null;
     const slots = schedule.schedules[selection.facilityId]?.slots;
     const first = slots?.[selection.startIndex];
     const last = slots?.[selection.startIndex + selection.count - 1];
@@ -112,6 +119,17 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
           onChange={(value) => {
             setSportChoice(value);
+            setFacilityChoice(undefined);
+            setSelection(null);
+          }}
+        />
+        <Select
+          aria-label="Chọn sân / phòng"
+          className="!min-w-48"
+          value={facilityId}
+          options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
+          onChange={(value) => {
+            setFacilityChoice(value);
             setSelection(null);
           }}
         />
@@ -152,14 +170,14 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           <h3 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-wide uppercase">
             {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
           </h3>
-          {schedule.error && !Object.values(schedule.schedules).some(Boolean) ? (
+          {schedule.error ? (
             <ErrorState message={toApiError(schedule.error).message} onRetry={schedule.refetch} />
           ) : (
             <SlotGrid
               facilities={rows}
               schedules={schedule.schedules}
               loading={schedule.isLoading}
-              selection={selection}
+              selection={selected ? selection : null}
               onSelect={setSelection}
             />
           )}
@@ -198,6 +216,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                   <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.total)}</span>
                 </div>
               </div>
+              {quote.isError && <Alert type="error" showIcon title={toApiError(quote.error).message} />}
               {line && !line.valid && <Alert type="error" showIcon title={line.error?.message} />}
               <Button
                 type="primary"

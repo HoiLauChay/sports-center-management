@@ -2,6 +2,7 @@ import type { Facility } from '@sports-center/shared';
 import { Tooltip } from 'antd';
 import { formatVND } from '~/lib/format';
 import type { FacilitySchedule, FacilitySlot, SlotSelection, SlotStatus } from '../types';
+import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
 
 const STATUS_LABEL: Record<SlotStatus, string> = {
   AVAILABLE: 'Trống',
@@ -30,8 +31,6 @@ const LEGEND_STYLE: Record<SlotStatus, string> = {
   CLOSED: 'bg-sc-paper opacity-70',
 };
 
-const isSelectable = (slot: FacilitySlot) => slot.status === 'AVAILABLE' || slot.status === 'PARTIAL';
-
 function tooltipOf(slot: FacilitySlot) {
   if (slot.status === 'CLASS') return `Lớp ${slot.classSession?.className ?? ''}`.trim();
   if (slot.status === 'MAINTENANCE') return `Bảo trì: ${slot.maintenance?.reason ?? ''}`;
@@ -54,17 +53,9 @@ export function SlotGrid({ facilities, schedules, loading, selection, onSelect, 
   const reference = facilities.map((facility) => schedules[facility.id]).find(Boolean);
   const columns = reference?.slots ?? [];
 
+  const currentSelection = isValidSelection(selection, schedules, maxSlots) ? selection : null;
   const click = (facilityId: string, index: number) => {
-    if (selection?.facilityId === facilityId) {
-      const end = selection.startIndex + selection.count;
-      if (index === selection.startIndex && selection.count === 1) return onSelect(null);
-      if (index === end && selection.count < maxSlots) return onSelect({ ...selection, count: selection.count + 1 });
-      if (index === end - 1 && selection.count > 1) return onSelect({ ...selection, count: selection.count - 1 });
-      if (index === selection.startIndex - 1 && selection.count < maxSlots) {
-        return onSelect({ facilityId, startIndex: index, count: selection.count + 1 });
-      }
-    }
-    onSelect({ facilityId, startIndex: index, count: 1 });
+    onSelect(selectSlot(schedules, currentSelection, facilityId, index, maxSlots));
   };
 
   if (!columns.length) {
@@ -109,12 +100,12 @@ export function SlotGrid({ facilities, schedules, loading, selection, onSelect, 
                   return <div key={column.startTime} className="h-10 animate-pulse rounded-md bg-sc-paper-2" />;
                 }
                 const selected =
-                  selection?.facilityId === facility.id &&
-                  index >= selection.startIndex &&
-                  index < selection.startIndex + selection.count;
-                const selectable = isSelectable(slot);
+                  currentSelection?.facilityId === facility.id &&
+                  index >= currentSelection.startIndex &&
+                  index < currentSelection.startIndex + currentSelection.count;
+                const selectable = isSelectableSlot(slot);
                 const label =
-                  selected && index === selection.startIndex && selection.count > 1
+                  selected && index === currentSelection.startIndex && currentSelection.count > 1
                     ? `${slot.startTime}`
                     : slot.status === 'CLASS'
                       ? 'Lớp'
@@ -128,7 +119,7 @@ export function SlotGrid({ facilities, schedules, loading, selection, onSelect, 
                     <button
                       type="button"
                       role="gridcell"
-                      disabled={!selectable}
+                      disabled={loading || !selectable}
                       aria-pressed={selected}
                       aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[slot.status]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
