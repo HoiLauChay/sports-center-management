@@ -12,7 +12,7 @@ import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
-import type { SlotSelection } from '../types';
+import { useSlotSelection } from '../hooks/useSlotSelection';
 import { isValidSelection } from '../utils/slot-selection';
 import { SlotGrid } from './SlotGrid';
 
@@ -37,7 +37,6 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   const [sportChoice, setSportChoice] = useState<string>();
   const [facilityChoice, setFacilityChoice] = useState<string>();
   const [date, setDate] = useState(todayVN());
-  const [selection, setSelection] = useState<SlotSelection | null>(null);
 
   const bookable = useMemo(() => (facilities.data ?? []).filter((facility) => facility.isActive), [facilities.data]);
   const sportOptions = useMemo(
@@ -64,6 +63,8 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
     rows.map((facility) => facility.id),
     date,
   );
+
+  const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
 
   const maxAdvance = settings.data?.maxAdvanceBookingDays ?? 14;
   const today = todayVN();
@@ -165,25 +166,43 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         </div>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="flex flex-col gap-4">
         <div className="min-w-0 rounded-xl border border-sc-border-soft bg-white p-4">
           <h3 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-wide uppercase">
             {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
           </h3>
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-sc-muted" role="status">
+            <Button onClick={schedule.refetch} loading={schedule.isFetching}>
+              Làm mới lịch
+            </Button>
+            <span>
+              {schedule.updatedAt ? `Cập nhật lúc ${dayjs(schedule.updatedAt).format('HH:mm:ss')}` : 'Chưa tải lịch'}
+            </span>
+            <span>Tự cập nhật mỗi 30 giây</span>
+          </div>
+          {invalidated && (
+            <Alert
+              className="!mb-3"
+              type="warning"
+              showIcon
+              title="Khung giờ đã chọn không còn khả dụng. Vui lòng chọn lại."
+            />
+          )}
           {schedule.error ? (
             <ErrorState message={toApiError(schedule.error).message} onRetry={schedule.refetch} />
           ) : (
             <SlotGrid
+              layout="cards"
               facilities={rows}
               schedules={schedule.schedules}
-              loading={schedule.isLoading}
+              loading={schedule.isLoading || Boolean(schedule.error)}
               selection={selected ? selection : null}
               onSelect={setSelection}
             />
           )}
         </div>
 
-        <aside className="rounded-xl border border-sc-border-soft bg-white p-4 xl:sticky xl:top-20">
+        <aside className="rounded-xl border border-sc-border-soft bg-sc-paper p-4">
           <small className="font-display text-[12px] font-bold tracking-[0.12em] text-sc-muted uppercase">
             Slot đã chọn
           </small>
@@ -221,7 +240,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               <Button
                 type="primary"
                 block
-                disabled={!line?.valid || quote.isFetching}
+                disabled={!line?.valid || quote.isFetching || schedule.isFetching || Boolean(schedule.error)}
                 onClick={() => {
                   onAdd(selected.input);
                   setSelection(null);

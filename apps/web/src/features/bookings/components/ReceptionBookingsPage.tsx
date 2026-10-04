@@ -8,7 +8,7 @@ import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/h
 import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
-import type { SlotSelection } from '../types';
+import { useSlotSelection } from '../hooks/useSlotSelection';
 import { isValidSelection } from '../utils/slot-selection';
 import { SlotGrid } from './SlotGrid';
 
@@ -18,7 +18,6 @@ export function ReceptionBookingsPage() {
   const sports = useQuery(sportsQueryOptions);
   const [date, setDate] = useState(todayVN());
   const [sportId, setSportId] = useState<string>();
-  const [selection, setSelection] = useState<SlotSelection | null>(null);
   const rows = (facilities.data ?? []).filter(
     (facility) => facility.isActive && (!sportId || facility.sports.some((sport) => sport.id === sportId)),
   );
@@ -26,6 +25,8 @@ export function ReceptionBookingsPage() {
     rows.map((facility) => facility.id),
     date,
   );
+  const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
+
   const currentSelection = isValidSelection(selection, schedule.schedules) ? selection : null;
   const selectedSlots = currentSelection
     ? schedule.schedules[currentSelection.facilityId]?.slots.slice(
@@ -81,10 +82,22 @@ export function ReceptionBookingsPage() {
               }
             }}
           />
-          <Button onClick={schedule.refetch} loading={schedule.isLoading}>
+          <Button onClick={schedule.refetch} loading={schedule.isFetching}>
             Làm mới lịch
           </Button>
         </div>
+        <p className="text-xs text-sc-muted" role="status">
+          {schedule.updatedAt ? `Cập nhật lúc ${dayjs(schedule.updatedAt).format('HH:mm:ss')} · ` : ''}Tự cập nhật mỗi
+          30 giây
+        </p>
+        {invalidated && (
+          <Alert
+            className="!mb-3"
+            type="warning"
+            showIcon
+            title="Khung giờ đã chọn không còn khả dụng. Vui lòng chọn lại."
+          />
+        )}
         <h3 className="font-display text-[17px] font-bold uppercase">{formatDayLabel(date)}</h3>
         {!rows.length ? (
           <Alert type="info" showIcon title="Chưa có sân / phòng cho bộ môn này." />
@@ -94,7 +107,7 @@ export function ReceptionBookingsPage() {
             <SlotGrid
               facilities={rows}
               schedules={schedule.schedules}
-              loading={schedule.isLoading}
+              loading={schedule.isLoading || Boolean(schedule.error)}
               selection={currentSelection}
               onSelect={setSelection}
             />

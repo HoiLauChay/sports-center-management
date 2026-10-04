@@ -14,6 +14,8 @@ export function useFacilitySchedules(facilityIds: string[], date: string) {
       queryKey: scheduleQueryKey(facilityId, date),
       queryFn: () => bookingsService.facilitySchedule(facilityId, date),
       staleTime: 10_000,
+      refetchInterval: 30_000,
+      refetchOnWindowFocus: 'always',
     })),
   });
   const schedules: Record<string, FacilitySchedule | undefined> = {};
@@ -23,6 +25,11 @@ export function useFacilitySchedules(facilityIds: string[], date: string) {
   return {
     schedules,
     isLoading: results.some((result) => result.isPending),
+    isFetching: results.some((result) => result.isFetching),
+    updatedAt:
+      results.length && results.every((result) => result.dataUpdatedAt > 0)
+        ? Math.min(...results.map((result) => result.dataUpdatedAt))
+        : null,
     error: results.find((result) => result.error)?.error,
     refetch: () => results.forEach((result) => void result.refetch()),
   };
