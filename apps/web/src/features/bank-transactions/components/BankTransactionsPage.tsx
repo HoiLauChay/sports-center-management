@@ -1,4 +1,10 @@
 import {
+  BANK_TRANSACTION_STATUSES,
+  type BankTransaction,
+  type BankTransactionStatus,
+  type ReconciliationDay,
+} from '@sports-center/shared';
+import {
   Alert,
   Button,
   Card,
@@ -11,7 +17,7 @@ import {
   Tag,
   type TableColumnsType,
 } from 'antd';
-import dayjs, { type Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
@@ -21,16 +27,10 @@ import { toApiError } from '~/lib/http-errors';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { DATE_FORMAT, formatDayLabel, nowVN } from '~/lib/time';
 import { useBankTransactions, useReconciliation } from '../hooks/useBankTransactions';
-import {
-  BANK_TX_STATUSES,
-  BANK_TX_STATUS_TAG,
-  type BankTransaction,
-  type BankTxStatus,
-  type ReconciliationDay,
-} from '../types';
+import { BANK_TX_STATUS_TAG, INVOICE_PURPOSE_LABEL } from '../types';
 import { IgnoreModal, ResolveModal } from './ResolveModals';
 
-type StatusFilter = BankTxStatus | 'ALL';
+type StatusFilter = BankTransactionStatus | 'ALL';
 
 function TransactionsTab() {
   const [page, setPage] = useState(1);
@@ -71,7 +71,7 @@ function TransactionsTab() {
           <span className="[overflow-wrap:anywhere]">{transaction.content}</span>
           <span className="text-xs text-sc-muted-2">
             {transaction.paymentCode ? `Mã ${transaction.paymentCode} · ` : ''}
-            {transaction.referenceCode ?? `SePay #${transaction.sepayId}`}
+            {transaction.referenceCode ?? (transaction.sepayId ? `SePay #${transaction.sepayId}` : '')}
           </span>
         </div>
       ),
@@ -79,7 +79,7 @@ function TransactionsTab() {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (value: BankTxStatus) => (
+      render: (value: BankTransactionStatus) => (
         <Tag color={BANK_TX_STATUS_TAG[value].color} className="!m-0">
           {BANK_TX_STATUS_TAG[value].label}
         </Tag>
@@ -89,11 +89,13 @@ function TransactionsTab() {
       title: 'Thành viên / ghi chú',
       key: 'handled',
       render: (_, transaction) => {
-        const member = transaction.topUp?.account ?? transaction.resolvedAccount;
-        if (!member && !transaction.note) return <span className="text-sc-muted-2">—</span>;
+        const { invoice } = transaction;
+        const member = invoice?.account ?? transaction.resolvedAccount;
+        if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
           <div className="flex max-w-xs flex-col gap-0.5 text-[13px]">
-            {member && <b>{member.fullName}</b>}
+            {member ? <b>{member.fullName}</b> : invoice && <b>Khách vãng lai</b>}
+            {invoice && <span className="text-xs text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
             {transaction.note && <span className="text-sc-muted [overflow-wrap:anywhere]">{transaction.note}</span>}
             {transaction.handledBy && (
               <span className="text-xs text-sc-muted-2">
@@ -135,7 +137,7 @@ function TransactionsTab() {
           options={[
             { value: 'UNMATCHED', label: BANK_TX_STATUS_TAG.UNMATCHED.label },
             { value: 'ALL', label: 'Tất cả' },
-            ...BANK_TX_STATUSES.filter((value) => value !== 'UNMATCHED').map((value) => ({
+            ...BANK_TRANSACTION_STATUSES.filter((value) => value !== 'UNMATCHED').map((value) => ({
               value,
               label: BANK_TX_STATUS_TAG[value].label,
             })),
@@ -150,7 +152,7 @@ function TransactionsTab() {
         />
         <Input.Search
           allowClear
-          placeholder="Nội dung hoặc mã tham chiếu"
+          placeholder="Nội dung, mã thanh toán hoặc mã tham chiếu"
           className="w-full sm:!w-64"
           onSearch={(value) => {
             setQ(value.trim());
@@ -219,7 +221,7 @@ function ReconciliationTab() {
         const count = day.sepay.count - day.system.count;
         return amount || count ? (
           <b className="whitespace-nowrap text-sc-error tabular-nums">
-            {count > 0 ? `+${count} giao dịch · ` : ''}
+            {count ? `${count > 0 ? '+' : ''}${count} giao dịch · ` : ''}
             {amount > 0 ? '+' : ''}
             {formatVND(amount)}
           </b>
@@ -236,9 +238,9 @@ function ReconciliationTab() {
           <Tag color={day.matched ? 'success' : 'error'} className="!m-0">
             {day.matched ? 'Khớp' : 'Lệch'}
           </Tag>
-          {day.missingSepayIds.length > 0 && (
+          {day.missingReferenceCodes.length > 0 && (
             <span className="text-xs text-sc-muted">
-              Chưa ghi nhận: SePay #{day.missingSepayIds.join(', #')} (job đồng bộ sẽ bổ sung)
+              Chưa ghi nhận: {day.missingReferenceCodes.join(', ')} (job đồng bộ sẽ bổ sung)
             </span>
           )}
         </div>
@@ -253,10 +255,10 @@ function ReconciliationTab() {
           allowClear={false}
           format="DD/MM/YYYY"
           value={range}
-          maxDate={dayjs()}
+          maxDate={nowVN()}
           disabledDate={(current, info) => {
-            if (!info.from) return current.isAfter(dayjs(), 'day');
-            return Math.abs(current.diff(info.from, 'day')) >= 31 || current.isAfter(dayjs(), 'day');
+            if (!info.from) return current.isAfter(nowVN(), 'day');
+            return Math.abs(current.diff(info.from, 'day')) >= 31 || current.isAfter(nowVN(), 'day');
           }}
           onChange={(value) => value?.[0] && value[1] && setRange([value[0], value[1]])}
         />
