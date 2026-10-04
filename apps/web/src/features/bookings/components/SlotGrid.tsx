@@ -1,9 +1,15 @@
-import type { Facility } from '@sports-center/shared';
+import type { Facility, FacilitySchedule, FacilitySlot, FacilitySlotStatus } from '@sports-center/shared';
 import { Tooltip } from 'antd';
 import { formatVND } from '~/lib/format';
-import type { FacilitySchedule, FacilitySlot, SlotSelection, SlotStatus } from '../types';
+import type { SlotSelection } from '../types';
 
-const STATUS_LABEL: Record<SlotStatus, string> = {
+/** Slot statuses from the API, plus an available slot that already has bookings shown in its own colour. */
+type SlotTone = FacilitySlotStatus | 'PARTIAL';
+
+const toneOf = (slot: FacilitySlot): SlotTone =>
+  slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status;
+
+const STATUS_LABEL: Record<SlotTone, string> = {
   AVAILABLE: 'Trống',
   PARTIAL: 'Còn chỗ',
   FULL: 'Đã đầy',
@@ -12,7 +18,7 @@ const STATUS_LABEL: Record<SlotStatus, string> = {
   CLOSED: 'Đóng',
 };
 
-const CELL_STYLE: Record<SlotStatus, string> = {
+const CELL_STYLE: Record<SlotTone, string> = {
   AVAILABLE: 'bg-white hover:bg-sc-primary-soft hover:border-sc-primary-border cursor-pointer',
   PARTIAL: 'bg-[#fff7e0] border-[#f3dfa3] hover:bg-[#ffefbd] cursor-pointer text-[#8a6100]',
   FULL: 'bg-sc-paper-2 text-sc-muted-2 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(20,19,15,.06)_5px_6px)]',
@@ -21,7 +27,7 @@ const CELL_STYLE: Record<SlotStatus, string> = {
   CLOSED: 'bg-sc-paper text-sc-muted-2 cursor-not-allowed opacity-70',
 };
 
-const LEGEND_STYLE: Record<SlotStatus, string> = {
+const LEGEND_STYLE: Record<SlotTone, string> = {
   AVAILABLE: 'bg-white',
   PARTIAL: 'bg-[#fff7e0] !border-[#f3dfa3]',
   FULL: 'bg-sc-paper-2',
@@ -30,14 +36,14 @@ const LEGEND_STYLE: Record<SlotStatus, string> = {
   CLOSED: 'bg-sc-paper opacity-70',
 };
 
-const isSelectable = (slot: FacilitySlot) => slot.status === 'AVAILABLE' || slot.status === 'PARTIAL';
+const isSelectable = (slot: FacilitySlot) => slot.status === 'AVAILABLE';
 
 function tooltipOf(slot: FacilitySlot) {
   if (slot.status === 'CLASS') return `Lớp ${slot.classSession?.className ?? ''}`.trim();
   if (slot.status === 'MAINTENANCE') return `Bảo trì: ${slot.maintenance?.reason ?? ''}`;
-  if (slot.status === 'CLOSED') return 'Ngoài giờ nhận đặt';
+  if (slot.status === 'CLOSED') return 'Đã qua giờ hoặc sân tạm ngừng';
   if (slot.capacity > 1) return `${slot.startTime}–${slot.endTime} · ${slot.booked}/${slot.capacity} chỗ`;
-  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[slot.status]}`;
+  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[toneOf(slot)]}`;
 }
 
 interface SlotGridProps {
@@ -130,10 +136,10 @@ export function SlotGrid({ facilities, schedules, loading, selection, onSelect, 
                       role="gridcell"
                       disabled={!selectable}
                       aria-pressed={selected}
-                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[slot.status]}${selected ? ', đang chọn' : ''}`}
+                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
                       className={`h-10 rounded-md border border-sc-border-soft text-[11.5px] font-semibold tabular-nums [transition:background_0.12s,border-color_0.12s] disabled:opacity-100 ${
-                        selected ? '!border-sc-primary !bg-sc-primary !text-sc-lime' : CELL_STYLE[slot.status]
+                        selected ? '!border-sc-primary !bg-sc-primary !text-sc-lime' : CELL_STYLE[toneOf(slot)]
                       }`}
                     >
                       {label}
@@ -145,7 +151,7 @@ export function SlotGrid({ facilities, schedules, loading, selection, onSelect, 
           );
         })}
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-sc-muted">
-          {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotStatus[]).map((status) => (
+          {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotTone[]).map((status) => (
             <span key={status} className="inline-flex items-center gap-1.5">
               <i className={`inline-block size-3.5 rounded-sm border border-sc-border-soft ${LEGEND_STYLE[status]}`} />
               {STATUS_LABEL[status]}

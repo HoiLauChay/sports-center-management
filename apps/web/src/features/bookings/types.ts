@@ -35,24 +35,6 @@ export interface FacilityPackage {
   bookings: Booking[];
 }
 
-export type SlotStatus = 'AVAILABLE' | 'PARTIAL' | 'FULL' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
-
-export interface FacilitySlot {
-  startTime: string;
-  endTime: string;
-  status: SlotStatus;
-  booked: number;
-  capacity: number;
-  classSession?: { classId: string; className: string };
-  maintenance?: { id: string; reason: string };
-}
-
-export interface FacilitySchedule {
-  facility: { id: string; name: string; capacityPerSlot: number };
-  date: string;
-  slots: FacilitySlot[];
-}
-
 export type PackageConflict = 'BOOKED' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
 
 export interface PackagePreviewRequest {
