@@ -1,4 +1,4 @@
-import type { AuditAction, AuditEntityType } from '@sports-center/shared';
+import type { AuditAction, AuditEntityType, AuditLog } from '@sports-center/shared';
 
 export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   CREATE: 'Tạo mới',
@@ -72,6 +72,62 @@ const FIELD_LABEL: Record<string, string> = {
   note: 'Ghi chú',
   reason: 'Lý do',
   amount: 'Số tiền',
+  id: 'Mã',
+  createdAt: 'Thời điểm tạo',
+  updatedAt: 'Thời điểm cập nhật',
+  statusReason: 'Lý do đổi trạng thái',
+  iconUrl: 'Biểu tượng',
+  type: 'Loại',
+  capacityPerSlot: 'Sức chứa / slot',
+  pricePerSlot: 'Giá / slot',
+  sportId: 'Bộ môn',
+  sportIds: 'Bộ môn',
+  totalSessions: 'Số buổi',
+  thumbnailUrl: 'Ảnh khóa học',
+  courseId: 'Khóa học',
+  coachId: 'Huấn luyện viên',
+  facilityId: 'Sân / phòng',
+  minStudents: 'Sĩ số tối thiểu',
+  minStudentsOverride: 'Sĩ số tối thiểu (ghi đè)',
+  maxStudents: 'Sĩ số tối đa',
+  weeklySchedule: 'Lịch hằng tuần',
+  sessions: 'Buổi học',
+  approvedById: 'Người duyệt',
+  approvedAt: 'Thời điểm duyệt',
+  cancelReason: 'Lý do hủy',
+  openTime: 'Giờ mở cửa',
+  closeTime: 'Giờ đóng cửa',
+  slotDurationMinutes: 'Thời lượng slot (phút)',
+  maxAdvanceBookingDays: 'Đặt trước tối đa (ngày)',
+  bookingCancelDeadlineHours: 'Hạn hủy đặt sân (giờ)',
+  courseCancelDeadlineDays: 'Hạn hủy lớp (ngày)',
+  membershipExpiryWarningDays: 'Báo trước hết hạn gói (ngày)',
+  topUpMinAmount: 'Nạp ví tối thiểu',
+  invoiceExpiryMinutes: 'Hạn hóa đơn (phút)',
+  updatedById: 'Người cập nhật',
+  reviewNote: 'Ghi chú duyệt',
+  reviewedById: 'Người duyệt',
+  reviewedAt: 'Thời điểm duyệt',
+  resolvedAccountId: 'Thành viên được gán',
+  handledById: 'Người xử lý',
+  handledAt: 'Thời điểm xử lý',
+  paymentCode: 'Mã thanh toán',
+  referenceCode: 'Mã tham chiếu',
 };
 
 export const auditFieldLabel = (field: string) => FIELD_LABEL[field] ?? field;
+
+const SUMMARY_SKIPPED = new Set(['updatedAt']);
+
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/** Fields an entry touched: for an update only those whose value changed, since services log whole rows. */
+export function changedFields(log: Pick<AuditLog, 'oldValues' | 'newValues'>) {
+  const { oldValues, newValues } = log;
+  const fields = [...new Set([...Object.keys(oldValues ?? {}), ...Object.keys(newValues ?? {})])];
+  if (!oldValues || !newValues) return fields;
+  return fields.filter((field) => !sameValue(oldValues[field], newValues[field]));
+}
+
+export const summaryFields = (log: Pick<AuditLog, 'oldValues' | 'newValues'>) =>
+  changedFields(log).filter((field) => !SUMMARY_SKIPPED.has(field));

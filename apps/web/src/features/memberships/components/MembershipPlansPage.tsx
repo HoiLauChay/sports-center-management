@@ -23,8 +23,16 @@ function benefitRows(plan: MembershipPackage): BenefitRow[] {
       label: plan.gymAccess ? 'Vào gym miễn phí (đặt slot, không trừ tiền)' : 'Không bao gồm gym',
       highlight: plan.gymAccess,
     },
-    { label: `Giảm ${plan.bookingDiscountPct}% đặt sân / phòng`, highlight: plan.bookingDiscountPct > 0 },
-    { label: `Giảm ${plan.classDiscountPct}% học phí lớp`, highlight: plan.classDiscountPct > 0 },
+    {
+      label: plan.bookingDiscountPct
+        ? `Giảm ${plan.bookingDiscountPct}% đặt sân / phòng`
+        : 'Không giảm giá đặt sân / phòng',
+      highlight: plan.bookingDiscountPct > 0,
+    },
+    {
+      label: plan.classDiscountPct ? `Giảm ${plan.classDiscountPct}% học phí lớp` : 'Không giảm học phí lớp',
+      highlight: plan.classDiscountPct > 0,
+    },
     {
       label: plan.freeBookingSlotsPerMonth
         ? `${plan.freeBookingSlotsPerMonth} slot sân miễn phí mỗi tháng`
@@ -102,7 +110,9 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
 export function MembershipPlansPage() {
   const packages = useQuery(membershipsQueryOptions);
   const mine = useMyMemberships().query.data?.current;
-  const plans = packages.data?.filter((membership) => membership.isActive);
+  const plans = packages.data
+    ?.filter((membership) => membership.isActive)
+    .sort((a, b) => a.durationDays - b.durationDays || a.price - b.price);
   const today = dayjs().tz(VN_TIMEZONE).format('YYYY-MM-DD');
   const ownedPlan = mine && mine.status === 'ACTIVE' && today < mine.endDate ? mine : null;
   const daysLeft = ownedPlan ? Math.max(0, dayjs(ownedPlan.endDate).diff(dayjs(today), 'day')) : 0;
