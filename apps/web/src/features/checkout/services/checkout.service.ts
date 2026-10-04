@@ -17,11 +17,11 @@ export function actorOf(user: Pick<Account, 'id' | 'role' | 'fullName'>): Actor 
   return { id: user.id, role: user.role, fullName: user.fullName };
 }
 
-/** Wallet balance of the buyer as the wallet endpoints report it (real balance plus the mock ledger). */
+/** Wallet balance of the buyer as the wallet endpoints report it. */
 function balanceReader(actor: Actor) {
   return (accountId: string) =>
     actor.role === 'MEMBER' && accountId === actor.id
-      ? walletService.balanceOfMine(accountId)
+      ? walletService.balanceOfMine()
       : walletService.balanceOfMember(accountId);
 }
 

@@ -12,22 +12,6 @@ import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { walletLedger } from '~/lib/mock/ledger';
 
-/** Adds the mock ledger (payments / refunds / counter top-ups) to a wallet loaded from the real API. */
-function withLedger(accountId: string, wallet: Wallet, query: WalletQuery): Wallet {
-  const extra = walletLedger.entries(accountId, query.type);
-  const delta = walletLedger.delta(accountId);
-  if (!extra.length && !delta) return wallet;
-  const { transactions } = wallet;
-  return {
-    balance: wallet.balance + delta,
-    transactions: {
-      ...transactions,
-      total: transactions.total + extra.length,
-      items: transactions.page === 1 ? [...extra, ...transactions.items] : transactions.items,
-    },
-  };
-}
-
 export interface CounterTopUpInput {
   amount: number;
   method: 'CASH' | 'CARD';
@@ -36,20 +20,19 @@ export interface CounterTopUpInput {
 }
 
 export const walletService = {
-  getMine: async (accountId: string, query: WalletQuery): Promise<Wallet> => {
+  getMine: async (query: WalletQuery) => {
     const { data } = await privateApi.get<ApiResponse<Wallet>>('/me/wallet', { params: query });
-    return withLedger(accountId, data.result, query);
+    return data.result;
   },
 
-  getForMember: async (memberId: string, query: WalletQuery): Promise<Wallet> => {
+  getForMember: async (memberId: string, query: WalletQuery) => {
     const { data } = await privateApi.get<ApiResponse<Wallet>>(`/users/${encodeURIComponent(memberId)}/wallet`, {
       params: query,
     });
-    return withLedger(memberId, data.result, query);
+    return data.result;
   },
 
-  /** Balance of the signed-in member (real balance + mock ledger). */
-  balanceOfMine: async (accountId: string) => (await walletService.getMine(accountId, { page: 1, limit: 1 })).balance,
+  balanceOfMine: async () => (await walletService.getMine({ page: 1, limit: 1 })).balance,
 
   balanceOfMember: async (memberId: string) =>
     (await walletService.getForMember(memberId, { page: 1, limit: 1 })).balance,
