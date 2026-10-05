@@ -16,6 +16,7 @@ const LOCK_ORDER = [
   ['orderItems', 'order_items', 'id'],
   ['invoices', 'invoices', 'id'],
   ['bankTransactions', 'bank_transactions', 'id'],
+  ['supportRequests', 'support_requests', 'id'],
 ] as const;
 
 export type LockTargets = { systemSettings?: 'share' | 'update' } & {

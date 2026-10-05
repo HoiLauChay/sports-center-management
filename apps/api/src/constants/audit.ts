@@ -19,6 +19,7 @@ import type {
   Membership,
   ReceptionistProfile,
   Sport,
+  SupportRequest,
   SystemSetting,
 } from '~/generated/prisma/client';
 
@@ -116,5 +117,13 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'invoiceExpiryMinutes',
   ),
   BANK_TRANSACTION: fields<BankTransaction>()('amount', 'paymentCode', 'status', 'resolvedAccountId', 'note'),
+  SUPPORT_REQUEST: fields<SupportRequest>()(
+    'category',
+    'subject',
+    'description',
+    'status',
+    'resolutionNote',
+    'resolvedAt',
+  ),
   INVOICE: fields<Invoice>()('purpose', 'accountId', 'amount', 'status', 'bankTransactionId', 'orderId'),
 };
