@@ -69,6 +69,24 @@ describe('membership crud', () => {
     expect(await prisma.auditLog.count({ where: { entityType: 'MEMBERSHIP' } })).toBe(3);
   });
 
+  test('renaming a package keeps its benefits', async () => {
+    const manager = await createAccount('MANAGER', 'mgr@example.com');
+    const pkg = await readResult<PkgResult>(await req('POST', '/', manager, validBody));
+
+    const res = await req('PATCH', `/${pkg.id}`, manager, { name: 'Gói Tháng Mới' });
+    expect(res.status).toBe(200);
+    const expected = {
+      name: 'Gói Tháng Mới',
+      gymAccess: true,
+      bookingDiscountPct: 10,
+      classDiscountPct: 5,
+      freeBookingSlotsPerMonth: 4,
+      isActive: true,
+    };
+    expect(await readResult<PkgResult>(res)).toMatchObject(expected);
+    expect(await prisma.membership.findUniqueOrThrow({ where: { id: pkg.id } })).toMatchObject(expected);
+  });
+
   test('invalid discount pct returns 422', async () => {
     const manager = await createAccount('MANAGER', 'mgr@example.com');
     const res = await req('POST', '/', manager, { ...validBody, bookingDiscountPct: 101 });
