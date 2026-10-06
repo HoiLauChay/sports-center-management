@@ -100,3 +100,9 @@ export type ScheduleClashReason = (typeof SCHEDULE_CLASH_REASONS)[number];
 
 export const FACILITY_SLOT_STATUSES = ['AVAILABLE', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as const;
 export type FacilitySlotStatus = (typeof FACILITY_SLOT_STATUSES)[number];
+
+export const CLASS_STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'OPEN', 'CANCELLED'] as const;
+export type ClassStatus = (typeof CLASS_STATUSES)[number];
+
+export const CLASS_DERIVED_STATUSES = ['UPCOMING', 'ONGOING', 'COMPLETED'] as const;
+export type ClassDerivedStatus = (typeof CLASS_DERIVED_STATUSES)[number];
