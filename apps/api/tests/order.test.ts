@@ -16,6 +16,7 @@ let request: Awaited<ReturnType<typeof startServer>>['request'];
 let checkout: ReturnType<typeof buildFetcher>;
 
 const unused = () => Promise.reject(new Error('not used'));
+const realBookingHandler = lineHandlers.FACILITY_BOOKING;
 
 beforeAll(async () => {
   ({ server, request } = await startServer('/orders'));
@@ -46,7 +47,7 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  delete lineHandlers.FACILITY_BOOKING;
+  lineHandlers.FACILITY_BOOKING = realBookingHandler;
   server.close();
 });
 
