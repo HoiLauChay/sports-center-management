@@ -1,15 +1,24 @@
-import { ERROR_CODE, type CreateClassBody, type ListClassesQuery, type UpdateClassBody } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type CreateClassBody,
+  type ListClassesQuery,
+  type ReviewClassBody,
+  type UpdateClassBody,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import type { Prisma } from '~/generated/prisma/client';
 import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
-import classRepository, { type ClassViewer } from '~/repositories/class.repository';
+import classRepository, { type ClassDetailRow, type ClassViewer } from '~/repositories/class.repository';
 import courseRepository from '~/repositories/course.repository';
 import facilityRepository from '~/repositories/facility.repository';
+import specializationRepository from '~/repositories/specialization.repository';
 import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import scheduleService, { type TimeRange } from '~/services/schedule.service';
+import { toPage } from '~/utils/pagination';
 import { formatDate, parseTime, toDbTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
@@ -49,10 +58,31 @@ const notFound = () =>
 const conflict = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.CONFLICT, message });
 
+const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.TransactionClient) => {
+  if (!current.coachId) throw conflict('Lớp chưa có huấn luyện viên');
+  if (!(await specializationRepository.isQualified(current.coachId, current.course.sportId, tx))) {
+    throw conflict('Huấn luyện viên không hoạt động hoặc chưa được duyệt bộ môn');
+  }
+  if (
+    !current.startDate ||
+    formatDate(current.startDate) <= todayInCenter() ||
+    !current.sessions.some(({ status }) => status === 'SCHEDULED')
+  ) {
+    throw conflict('Lớp phải có lịch học hợp lệ và chưa đến ngày bắt đầu');
+  }
+  if (!(await sportRepository.findActiveIds([current.course.sportId], tx)).length) {
+    throw conflict('Bộ môn của khóa học đã ngừng hoạt động');
+  }
+};
+
 class ClassService {
   list = async (viewer: ClassViewer, query: ListClassesQuery) => {
     const [rows, total] = await classRepository.findPage(viewer, query);
-    return { items: rows.map((row) => toClassSummaryResponse(row)), total, page: query.page, limit: query.limit };
+    return toPage(
+      rows.map((row) => toClassSummaryResponse(row)),
+      total,
+      query,
+    );
   };
 
   get = async (viewer: ClassViewer, id: string) => {
@@ -63,17 +93,18 @@ class ClassService {
 
   update = async (managerId: string, id: string, body: UpdateClassBody, ip?: string) => {
     const row = await runTransaction(async (tx) => {
-      await withScheduleLock(tx);
       await lockRows(tx, { classes: [id] });
       const current = await classRepository.findDetail(id, tx);
       if (!current) throw notFound();
       if (current.status === 'CANCELLED' || !current.startDate || formatDate(current.startDate) <= todayInCenter()) {
         throw conflict('Chỉ được sửa lớp trước ngày bắt đầu và khi lớp chưa bị hủy');
       }
-      const min = body.minStudents ?? current.minStudents;
-      const max = body.maxStudents ?? current.maxStudents;
-      if (min > max) throw invalid('maxStudents', 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu');
-      if (max < current._count.enrollments) throw conflict('Sĩ số tối đa không được nhỏ hơn số học viên đã đăng ký');
+      if ((body.minStudents ?? current.minStudents) > (body.maxStudents ?? current.maxStudents)) {
+        throw invalid('maxStudents', 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu');
+      }
+      if ((body.maxStudents ?? current.maxStudents) < current._count.enrollments) {
+        throw conflict('Sĩ số tối đa không được nhỏ hơn số học viên đã đăng ký');
+      }
       const updated = await classRepository.update(id, body, tx);
       await auditService.record(
         {
@@ -92,43 +123,25 @@ class ClassService {
     return toClassDetailResponse(row);
   };
 
-  approve = (managerId: string, id: string, ip?: string) => this.review(managerId, id, true, ip);
-  reject = (managerId: string, id: string, ip?: string) => this.review(managerId, id, false, ip);
+  approve = (managerId: string, id: string, body: ReviewClassBody, ip?: string) =>
+    this.review(managerId, id, true, body, ip);
 
-  private review = async (managerId: string, id: string, approve: boolean, ip?: string) => {
+  reject = (managerId: string, id: string, body: ReviewClassBody, ip?: string) =>
+    this.review(managerId, id, false, body, ip);
+
+  private review = async (managerId: string, id: string, approve: boolean, { note }: ReviewClassBody, ip?: string) => {
     const { row, notifications } = await runTransaction(async (tx) => {
-      await withScheduleLock(tx);
       await lockRows(tx, { classes: [id] });
       const current = await classRepository.findDetail(id, tx);
       if (!current) throw notFound();
       if (current.status !== 'PENDING_APPROVAL') throw conflict('Chỉ có thể duyệt hoặc từ chối lớp đang chờ duyệt');
-      if (approve) {
-        if (!current.coachId) throw conflict('Lớp chưa có huấn luyện viên');
-        if (!(await classRepository.hasApprovedCoach(current.coachId, current.course.sportId, tx))) {
-          throw conflict('Huấn luyện viên không hoạt động hoặc chưa được duyệt bộ môn');
-        }
-        if (
-          !current.startDate ||
-          !current.endDate ||
-          formatDate(current.startDate) <= todayInCenter() ||
-          !current.sessions.some((session) => session.status === 'SCHEDULED')
-        ) {
-          throw conflict('Lớp phải có lịch học hợp lệ và chưa đến ngày bắt đầu');
-        }
-        if (
-          !(await courseRepository.findById(current.courseId, tx)) ||
-          !(await sportRepository.findActiveIds([current.course.sportId], tx)).length
-        ) {
-          throw conflict('Khóa học hoặc bộ môn đã ngừng hoạt động');
-        }
-      }
+      if (approve) await assertReadyToOpen(current, tx);
+
       const row = await classRepository.update(
         id,
-        {
-          status: approve ? 'OPEN' : 'DRAFT',
-          approvedById: approve ? managerId : null,
-          approvedAt: approve ? new Date() : null,
-        },
+        approve
+          ? { status: 'OPEN', approvedById: managerId, approvedAt: new Date() }
+          : { status: 'DRAFT', coachId: null, approvedById: null, approvedAt: null },
         tx,
       );
       await auditService.record(
@@ -143,6 +156,7 @@ class ClassService {
         },
         tx,
       );
+      const outcome = approve ? 'đã được mở để nhận đăng ký' : 'bị từ chối, lớp trở về trạng thái nháp';
       const notifications = current.coachId
         ? await notificationService.create(
             [
@@ -150,7 +164,7 @@ class ClassService {
                 accountId: current.coachId,
                 type: 'CLASS',
                 title: approve ? 'Lớp học đã được duyệt' : 'Lớp học bị từ chối',
-                message: `Lớp "${current.name}" ${approve ? 'đã được mở để nhận đăng ký' : 'đã trở về trạng thái nháp'}.`,
+                message: `Lớp "${current.name}" ${outcome}.${note ? ` Ghi chú: ${note}` : ''}`,
                 referenceType: 'CLASS',
                 referenceId: id,
                 sendEmail: true,

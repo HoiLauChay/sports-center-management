@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { CLASS_DERIVED_STATUSES, CLASS_STATUSES } from '../constants/enums';
 import { pageQuerySchema } from './pagination';
 import { timeOfDaySchema } from './time';
 
@@ -56,13 +57,14 @@ export type CreateClassBody = z.infer<typeof createClassBodySchema>;
 export const classIdParamsSchema = z.object({ id: z.uuid('Mã lớp không hợp lệ') });
 
 export const listClassesQuerySchema = pageQuerySchema.extend({
-  q: z.string().trim().max(100).optional(),
-  sportId: z.uuid().optional(),
-  courseId: z.uuid().optional(),
-  coachId: z.uuid().optional(),
-  facilityId: z.uuid().optional(),
-  status: z.enum(['DRAFT', 'PENDING_APPROVAL', 'OPEN', 'CANCELLED']).optional(),
-  derivedStatus: z.enum(['UPCOMING', 'ONGOING', 'COMPLETED']).optional(),
+  q: z.string().trim().min(1).max(100, 'Từ khóa tối đa 100 ký tự').optional(),
+  status: z.enum(CLASS_STATUSES, 'Trạng thái không hợp lệ').optional(),
+  derivedStatus: z.enum(CLASS_DERIVED_STATUSES, 'Trạng thái không hợp lệ').optional(),
+  sportId: z.uuid('Mã bộ môn không hợp lệ').optional(),
+  courseId: z.uuid('Mã khóa học không hợp lệ').optional(),
+  coachId: z.uuid('Mã huấn luyện viên không hợp lệ').optional(),
+  facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+  openForEnrollment: z.stringbool('Bộ lọc nhận đăng ký không hợp lệ').optional(),
 });
 
 export const updateClassBodySchema = z
@@ -70,17 +72,18 @@ export const updateClassBodySchema = z
     name: createClassBodySchema.shape.name.optional(),
     minStudents: studentsSchema.optional(),
     maxStudents: studentsSchema.optional(),
-    minStudentsOverride: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((value) => value !== undefined), 'Cần ít nhất một trường để cập nhật')
   .refine(
     ({ minStudents, maxStudents }) =>
       minStudents === undefined || maxStudents === undefined || minStudents <= maxStudents,
-    {
-      path: ['maxStudents'],
-      message: 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu',
-    },
+    { path: ['maxStudents'], message: 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu' },
   );
+
+export const reviewClassBodySchema = z.object({
+  note: z.string().trim().min(1).max(500, 'Ghi chú tối đa 500 ký tự').optional(),
+});
 
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
+export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;

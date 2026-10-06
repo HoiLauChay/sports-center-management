@@ -2,6 +2,7 @@ import {
   classIdParamsSchema,
   createClassBodySchema,
   listClassesQuerySchema,
+  reviewClassBodySchema,
   updateClassBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
@@ -22,7 +23,17 @@ classRouter.patch(
   validate({ params: classIdParamsSchema, body: updateClassBodySchema }),
   classController.update,
 );
-classRouter.post('/:id/approve', isRole('MANAGER'), validate({ params: classIdParamsSchema }), classController.approve);
-classRouter.post('/:id/reject', isRole('MANAGER'), validate({ params: classIdParamsSchema }), classController.reject);
+classRouter.post(
+  '/:id/approve',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: reviewClassBodySchema }),
+  classController.approve,
+);
+classRouter.post(
+  '/:id/reject',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: reviewClassBodySchema }),
+  classController.reject,
+);
 
 export default classRouter;

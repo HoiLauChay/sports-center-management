@@ -23,12 +23,12 @@ class ClassController {
   };
 
   approve = async (req: Request, res: Response) => {
-    const result = await classService.approve(req.user!.id, req.params.id as string, getClientIp(req));
+    const result = await classService.approve(req.user!.id, req.params.id as string, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã duyệt lớp học', result }));
   };
 
   reject = async (req: Request, res: Response) => {
-    const result = await classService.reject(req.user!.id, req.params.id as string, getClientIp(req));
+    const result = await classService.reject(req.user!.id, req.params.id as string, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã từ chối lớp học', result }));
   };
 
