@@ -42,7 +42,7 @@ export interface OrderItem {
   membershipDiscount: number;
   couponDiscount: number;
   totalAmount: number;
-  refundedAmount: number;
+  refundedAt: string | null;
   refId: string | null;
 }
 
@@ -69,7 +69,6 @@ export interface Order {
   membershipDiscount: number;
   couponDiscount: number;
   totalAmount: number;
-  refundedAmount: number;
   items: OrderItem[];
   refunds: OrderRefund[];
   paidAt: string;

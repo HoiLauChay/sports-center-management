@@ -5,8 +5,6 @@ export interface SystemSettings {
   closeTime: string;
   slotDurationMinutes: number;
   maxAdvanceBookingDays: number;
-  bookingCancelDeadlineHours: number;
-  courseCancelDeadlineDays: number;
   membershipExpiryWarningDays: number;
   topUpMinAmount: number;
   invoiceExpiryMinutes: number;

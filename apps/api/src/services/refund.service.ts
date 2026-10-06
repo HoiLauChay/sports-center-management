@@ -1,55 +1,40 @@
 import type { ItemSnapshotBase } from '@sports-center/shared';
 
-import type { OrderStatus, Prisma } from '~/generated/prisma/client';
+import type { Prisma } from '~/generated/prisma/client';
 import orderRepository from '~/repositories/order.repository';
-import walletRepository from '~/repositories/wallet.repository';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
 import walletService from '~/services/wallet.service';
+import { idempotencyKey } from '~/utils/idempotency';
 
-export interface RefundComponentInput {
+export interface RefundItemInput {
   orderItemId: string;
-  key: string;
-  amount: number;
   reason: string;
   createdById?: string;
 }
 
-const statusAfter = (total: number, refunded: number): OrderStatus =>
-  refunded === 0 ? 'PAID' : refunded < total ? 'PARTIALLY_REFUNDED' : 'REFUNDED';
-
 const skipped = { refunded: 0, notifications: [] as CreatedNotification[] };
 
 class RefundService {
-  refundComponent = async (tx: Prisma.TransactionClient, input: RefundComponentInput) => {
+  refundItem = async (tx: Prisma.TransactionClient, input: RefundItemInput) => {
     const item = await orderRepository.findItemForRefund(input.orderItemId, tx);
     if (!item) throw new Error(`Order item ${input.orderItemId} not found`);
 
     const { order } = item;
     const accountId = order.accountId;
-    const lineTotal = Number(item.totalAmount);
-    if (!accountId || item.type === 'MEMBERSHIP' || lineTotal === 0) return skipped;
-    if (await walletRepository.findTransactionByKey(input.key, tx)) return skipped;
-
-    const amount = Math.min(input.amount, lineTotal - Number(item.refundedAmount));
-    if (amount <= 0) return skipped;
+    const amount = Number(item.totalAmount);
+    if (!accountId || item.type === 'MEMBERSHIP' || amount === 0 || item.refundedAt) return skipped;
 
     const ledger = await walletService.refund(tx, {
       accountId,
       orderId: order.id,
       orderItemId: item.id,
       amount,
-      idempotencyKey: input.key,
+      idempotencyKey: idempotencyKey.refund(item.id),
       createdById: input.createdById,
       description: input.reason,
     });
 
-    const orderRefunded = Number(order.refundedAmount) + amount;
-    await orderRepository.addRefund(tx, {
-      orderId: order.id,
-      orderItemId: item.id,
-      amount,
-      status: statusAfter(Number(order.totalAmount), orderRefunded),
-    });
+    await orderRepository.markRefunded(tx, item.id, ledger!.createdAt);
 
     const { title } = item.itemSnapshot as unknown as ItemSnapshotBase;
     const notifications = await notificationService.create(

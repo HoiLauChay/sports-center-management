@@ -264,14 +264,6 @@ enum PaymentMethod {
   @@map("payment_method")
 }
 
-enum OrderStatus {
-  PAID
-  PARTIALLY_REFUNDED
-  REFUNDED
-
-  @@map("order_status")
-}
-
 enum DiscountType {
   PERCENT
   FIXED
@@ -427,7 +419,6 @@ model Class {
   facility            Facility    @relation(fields: [facilityId], references: [id], onDelete: Restrict)
   name                String      @db.VarChar(100)
   minStudents         Int         @default(1) @map("min_students")
-  minStudentsOverride Boolean     @default(false) @map("min_students_override")
   maxStudents         Int         @map("max_students")
   startDate           DateTime?   @map("start_date") @db.Date
   endDate             DateTime?   @map("end_date") @db.Date
@@ -529,11 +520,9 @@ model Order {
   membershipDiscountAmount Decimal       @default(0) @map("membership_discount_amount") @db.Decimal(12, 0)
   couponDiscountAmount     Decimal       @default(0) @map("coupon_discount_amount") @db.Decimal(12, 0)
   totalAmount              Decimal       @map("total_amount") @db.Decimal(12, 0)
-  refundedAmount           Decimal       @default(0) @map("refunded_amount") @db.Decimal(12, 0)
   couponId                 String?       @map("coupon_id") @db.Uuid
   coupon                   Coupon?       @relation(fields: [couponId], references: [id], onDelete: Restrict)
   paymentMethod            PaymentMethod @map("payment_method")
-  status                   OrderStatus   @default(PAID)
   guestName                String?       @map("guest_name") @db.VarChar(255)
   guestPhone               String?       @map("guest_phone") @db.VarChar(20)
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
@@ -544,7 +533,7 @@ model Order {
   invoice            Invoice?
 
   @@index([accountId], map: "idx_orders_account")
-  @@index([createdAt, status], map: "idx_orders_date_status")
+  @@index([createdAt], map: "idx_orders_date")
   @@index([couponId, accountId], map: "idx_orders_coupon_account")
   @@index([guestPhone], map: "idx_orders_guest_phone")
   @@map("orders")
@@ -561,7 +550,7 @@ model OrderItem {
   membershipDiscountAmount Decimal       @default(0) @map("membership_discount_amount") @db.Decimal(12, 0)
   couponDiscountAmount     Decimal       @default(0) @map("coupon_discount_amount") @db.Decimal(12, 0)
   totalAmount              Decimal       @map("total_amount") @db.Decimal(12, 0)
-  refundedAmount           Decimal       @default(0) @map("refunded_amount") @db.Decimal(12, 0)
+  refundedAt               DateTime?     @map("refunded_at") @db.Timestamptz()
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -729,6 +718,7 @@ model WalletTransaction {
   @@index([type, createdAt], map: "idx_wtx_type_date")
   @@index([orderId], map: "idx_wtx_order")
   @@index([orderItemId], map: "idx_wtx_order_item")
+  @@unique([orderItemId], map: "uq_wtx_refund_item", where: raw("type = 'REFUND'"))
   @@map("wallet_transactions")
 }
 
@@ -886,8 +876,6 @@ model SystemSetting {
   closeTime                   DateTime @default(dbgenerated("'22:00:00'::time without time zone")) @map("close_time") @db.Time()
   slotDurationMinutes         Int      @default(60) @map("slot_duration_minutes")
   maxAdvanceBookingDays       Int      @default(7) @map("max_advance_booking_days")
-  bookingCancelDeadlineHours  Int      @default(24) @map("booking_cancel_deadline_hours")
-  courseCancelDeadlineDays    Int      @default(3) @map("course_cancel_deadline_days")
   membershipExpiryWarningDays Int      @default(7) @map("membership_expiry_warning_days")
   topUpMinAmount              Decimal  @default(10000) @map("top_up_min_amount") @db.Decimal(12, 0)
   invoiceExpiryMinutes        Int      @default(15) @map("invoice_expiry_minutes")

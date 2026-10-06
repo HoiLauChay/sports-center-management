@@ -20,7 +20,7 @@ export function BookingsPage() {
         title="Đặt sân / phòng"
         description={
           rules
-            ? `Chọn sân, ngày và slot ${rules.slotDurationMinutes} phút. Đặt trước tối đa ${rules.maxAdvanceBookingDays} ngày; hủy trước ${rules.bookingCancelDeadlineHours} giờ được hoàn 100% về ví.`
+            ? `Chọn sân, ngày và slot ${rules.slotDurationMinutes} phút. Đặt trước tối đa ${rules.maxAdvanceBookingDays} ngày. Lượt đã đặt không hủy được.`
             : 'Chọn sân, ngày và slot rồi thêm vào đơn để thanh toán.'
         }
       />

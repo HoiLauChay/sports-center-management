@@ -11,10 +11,5 @@ export const expectOrderConsistent = async (orderId: string) => {
   expect(Number(order.membershipDiscountAmount)).toBe(sum((item) => item.membershipDiscountAmount));
   expect(Number(order.couponDiscountAmount)).toBe(sum((item) => item.couponDiscountAmount));
   expect(Number(order.totalAmount)).toBe(sum((item) => item.totalAmount));
-  for (const item of order.items) {
-    const allocations = (item.itemSnapshot as { allocations?: { amount: number }[] }).allocations;
-    if (allocations)
-      expect(allocations.reduce((total, { amount }) => total + amount, 0)).toBe(Number(item.totalAmount));
-  }
   return order;
 };
