@@ -5,6 +5,7 @@ import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
 import { toQuoteResponse } from '~/mappers/checkout.mapper';
 import { toOrderResponse } from '~/mappers/order.mapper';
+import couponRepository from '~/repositories/coupon.repository';
 import orderRepository from '~/repositories/order.repository';
 import walletRepository from '~/repositories/wallet.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -31,6 +32,8 @@ const lockCheckout = async (tx: Prisma.TransactionClient, actor: Actor, body: Ch
   const handlers = body.items.map((input) => ({ input, handler: lineHandlers[input.type] }));
   const targets = handlers.map(({ input, handler }) => handler?.lockTargets(input) ?? {});
 
+  const coupon = body.couponCode ? await couponRepository.findByCode(body.couponCode, tx) : null;
+
   if (handlers.some(({ handler }) => handler?.needsScheduleLock)) await withScheduleLock(tx);
   await lockRows(tx, {
     systemSettings: 'share',
@@ -39,6 +42,7 @@ const lockCheckout = async (tx: Prisma.TransactionClient, actor: Actor, body: Ch
     classes: unique(targets.flatMap((target) => target.classes ?? [])),
     facilities: unique(targets.flatMap((target) => target.facilities ?? [])),
     memberMemberships: unique(targets.flatMap((target) => target.memberMemberships ?? [])),
+    coupons: unique([coupon?.id]),
   });
 };
 
