@@ -1,144 +1,221 @@
+import dayjs from 'dayjs';
+import logoMark from '~/assets/brand/logo-mark.svg';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
-import { ORDER_ITEM_TYPE_LABEL, type Order } from '~/features/checkout/types';
+import {
+  ORDER_ITEM_TYPE_LABEL,
+  ORDER_ITEM_TYPES,
+  type Order,
+  type OrderItem,
+  type OrderItemType,
+} from '~/features/checkout/types';
 import { describeLine } from '~/features/checkout/utils';
-import { formatDateTime, formatVND } from '~/lib/format';
+import { formatDate, formatVND, VN_TIMEZONE } from '~/lib/format';
 
-const STATUS_STAMP = {
-  PAID: 'ĐÃ THANH TOÁN',
-  PARTIALLY_REFUNDED: 'ĐÃ HOÀN MỘT PHẦN',
-  REFUNDED: 'ĐÃ HOÀN TOÀN BỘ',
+/** The issuing company printed on every invoice. */
+const ISSUER = [
+  'Công ty TNHH Trung tâm Thể thao Sports Center',
+  '123 Đường Thể Thao, P. Hiệp Phú, TP. Thủ Đức',
+  'TP. Hồ Chí Minh, 700000',
+  'MST: 0312 345 678',
+];
+
+const STATUS_TEXT = {
+  PAID: 'Đã thanh toán',
+  PARTIALLY_REFUNDED: 'Đã hoàn một phần',
+  REFUNDED: 'Đã hoàn toàn bộ',
 } as const;
 
+const asText = (value: unknown) => (typeof value === 'string' || typeof value === 'number' ? String(value) : '');
+
+/** `14/09 18:00` for a date with a time, `14/09/2026` for a bare date. */
+function when(date: unknown, time?: unknown) {
+  const day = asText(date);
+  if (!day) return '—';
+  const clock = asText(time);
+  return clock ? `${dayjs(day).format('DD/MM')} ${clock}` : formatDate(day);
+}
+
+/** The slot count and the start / end of a line, read from its frozen snapshot. */
+function timing(type: OrderItemType, snapshot: Record<string, unknown>) {
+  switch (type) {
+    case 'FACILITY_BOOKING':
+      return {
+        slots: asText(snapshot.slots) || '1',
+        start: when(snapshot.date, snapshot.startTime),
+        end: when(snapshot.date, snapshot.endTime),
+      };
+    case 'FACILITY_PACKAGE':
+      return {
+        slots: asText(snapshot.sessions) || '—',
+        start: when(snapshot.startDate, snapshot.startTime),
+        end: when(snapshot.endDate, snapshot.endTime),
+      };
+    case 'COURSE_ENROLLMENT':
+      return {
+        slots: asText(snapshot.totalSessions) || '—',
+        start: when(snapshot.startDate),
+        end: when(snapshot.endDate),
+      };
+    case 'MEMBERSHIP':
+      return { slots: '1', start: when(snapshot.periodStart), end: when(snapshot.periodEnd) };
+  }
+}
+
+function money(amount: number, sign: '' | '−' = '') {
+  return `${sign}${formatVND(amount)}`;
+}
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
+      <p className="m-0 mb-2 text-[12.5px] font-bold text-[#3d3b35]">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function Line({ children }: { children: React.ReactNode }) {
+  return <p className="m-0 text-[12.5px] text-[#3d3b35]">{children}</p>;
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 text-[12.5px] text-[#3d3b35]">
+      <span>{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between border-0 border-b border-solid border-[#e2ddd2] py-3 text-[13px] text-[#3d3b35]">
+      <span>{label}</span>
+      <span className="tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+/** Notes that explain how a line's price came about, e.g. `giá gốc 240.000 ₫, ưu đãi gói −60.000 ₫`. */
+function priceNote(item: OrderItem) {
+  const parts = [`giá gốc ${formatVND(item.subtotal)}`];
+  if (item.membershipDiscount > 0) parts.push(`ưu đãi gói −${formatVND(item.membershipDiscount)}`);
+  if (item.couponDiscount > 0) parts.push(`mã giảm −${formatVND(item.couponDiscount)}`);
+  if (item.refundedAmount > 0) parts.push(`đã hoàn ${formatVND(item.refundedAmount)}`);
+  return parts.join(', ');
+}
+
 /**
- * The printable invoice / receipt, built only from the order's frozen snapshot (BR_3.4). It is invisible on screen
- * and is what the browser prints (or saves as PDF) from the "In" / "Tải PDF" buttons.
+ * The printable A4 invoice, built only from the order's frozen snapshot (BR_3.4) and laid out like the design. It is
+ * invisible on screen and is what the browser prints (or saves as PDF) from the "In" / "Tải PDF" buttons.
  */
 export function InvoiceSheet({ order }: { order: Order }) {
   const buyerName = order.account?.fullName ?? order.guestName ?? '—';
+  const paidAt = dayjs(order.paidAt).tz(VN_TIMEZONE);
+  const groups = ORDER_ITEM_TYPES.map((type) => ({
+    type,
+    items: order.items.filter((item) => item.type === type),
+  })).filter((group) => group.items.length > 0);
+
   return (
-    <div className="print-sheet hidden bg-white p-8 text-[13px] text-black print:block">
-      <div className="flex items-start justify-between gap-6 border-b-2 border-black pb-4">
-        <div>
-          <div className="text-[22px] font-extrabold tracking-wide uppercase">Sports Center</div>
-          <div className="text-[12px]">Hệ thống quản lý trung tâm thể thao</div>
-        </div>
-        <div className="text-right">
-          <div className="text-[18px] font-extrabold uppercase">Hóa đơn</div>
-          <div className="font-mono text-[14px] font-bold">{order.orderNumber}</div>
-          <div>{formatDateTime(order.paidAt)}</div>
-          <div className="mt-1 inline-block border border-black px-2 py-0.5 text-[11px] font-bold">
-            {STATUS_STAMP[order.status]}
-          </div>
-        </div>
+    <div className="print-sheet hidden bg-white px-14 pt-14 pb-12 font-body text-[#14130f] print:block">
+      <div className="flex items-center gap-2.5">
+        <img src={logoMark} alt="" className="size-[34px]" />
+        <span className="font-display text-[26px] font-extrabold tracking-[0.02em] text-[#0f4d34] uppercase">
+          Sports Center
+        </span>
+      </div>
+      <p className="m-0 mt-[22px] text-[18px]">Hóa đơn thanh toán đơn hàng ngày {formatDate(order.paidAt)}</p>
+
+      <div className="mt-[34px] flex gap-10">
+        <Block title="Đơn vị phát hành">
+          {ISSUER.map((line) => (
+            <Line key={line}>{line}</Line>
+          ))}
+        </Block>
+        <Block title="Thông tin hóa đơn">
+          <InfoRow label="Số hóa đơn:" value={order.orderNumber} />
+          <InfoRow label="Ngày phát hành:" value={formatDate(order.paidAt)} />
+          <InfoRow
+            label="Thanh toán:"
+            value={`${PAYMENT_METHOD_LABEL[order.paymentMethod]} · ${paidAt.format('DD/MM/YYYY HH:mm')}`}
+          />
+          <InfoRow label="Trạng thái:" value={STATUS_TEXT[order.status]} />
+        </Block>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-1">
-        <div>
-          <span className="text-neutral-600">Người mua: </span>
-          <b>{buyerName}</b>
-        </div>
-        <div>
-          <span className="text-neutral-600">Hình thức thanh toán: </span>
-          <b>{PAYMENT_METHOD_LABEL[order.paymentMethod]}</b>
-        </div>
-        {order.guestPhone && (
-          <div>
-            <span className="text-neutral-600">Số điện thoại: </span>
-            <b>{order.guestPhone}</b>
-          </div>
-        )}
-        {order.createdBy && (
-          <div>
-            <span className="text-neutral-600">Người lập: </span>
-            <b>{order.createdBy.fullName}</b>
-          </div>
-        )}
-        {order.coupon && (
-          <div>
-            <span className="text-neutral-600">Mã giảm giá: </span>
-            <b>{order.coupon.code}</b>
-          </div>
-        )}
+      <div className="mt-9 flex gap-10">
+        <Block title="Thông tin người mua">
+          <Line>{buyerName}</Line>
+          {order.guestPhone && <Line>{order.guestPhone}</Line>}
+          {!order.account && <Line>Khách vãng lai</Line>}
+          {order.createdBy && order.createdBy.id !== order.account?.id && (
+            <Line>Lập bởi {order.createdBy.fullName}</Line>
+          )}
+        </Block>
+        <Block title={order.account ? 'Mã thành viên' : 'Loại khách'}>
+          <Line>
+            {order.account ? `sc:member:${order.account.id}` : 'Khách vãng lai, không có quyền lợi thành viên'}
+          </Line>
+        </Block>
       </div>
 
-      <table className="mt-4 w-full border-collapse">
-        <thead>
-          <tr className="border-y border-black bg-neutral-100 text-left">
-            <th className="w-10 px-2 py-1.5 text-center">STT</th>
-            <th className="px-2 py-1.5">Dịch vụ</th>
-            <th className="px-2 py-1.5 text-right">Giá gốc</th>
-            <th className="px-2 py-1.5 text-right">Ưu đãi gói</th>
-            <th className="px-2 py-1.5 text-right">Mã giảm</th>
-            <th className="px-2 py-1.5 text-right">Thành tiền</th>
-          </tr>
-        </thead>
-        <tbody>
-          {order.items.map((item) => {
+      <p className="m-0 mt-10 text-[19px]">Tổng hợp</p>
+      <div className="mt-3 h-px bg-[#14130f]" />
+      <SummaryRow label="Tổng giá gốc dịch vụ" value={money(order.subtotal)} />
+      <SummaryRow label="Ưu đãi gói thành viên" value={money(order.membershipDiscount, '−')} />
+      <SummaryRow
+        label={order.coupon ? `Coupon ${order.coupon.code}` : 'Coupon'}
+        value={money(order.couponDiscount, '−')}
+      />
+      <div className="flex items-center justify-between border-0 border-y border-solid border-[#14130f] py-4 text-[20px] font-bold">
+        <span>Tổng thanh toán</span>
+        <span className="tabular-nums">{formatVND(order.totalAmount)}</span>
+      </div>
+      {order.refundedAmount > 0 && (
+        <>
+          <SummaryRow label="Đã hoàn về ví" value={money(order.refundedAmount, '−')} />
+          <SummaryRow label="Thực thu" value={money(order.totalAmount - order.refundedAmount)} />
+        </>
+      )}
+
+      <p className="m-0 mt-11 text-[19px]">Chi tiết dịch vụ</p>
+      <p className="m-0 mt-1.5 text-[12px] text-[#7a776f] italic">
+        Chi tiết đặt chỗ, lớp học và gói có thể xem lại trong mục Hóa đơn hoặc Lịch tập của tài khoản.
+      </p>
+
+      {groups.map((group) => (
+        <div key={group.type} className="mt-[26px]">
+          <div className="flex border-0 border-b border-solid border-[#14130f] pt-2 pb-2.5 text-[12.5px] font-bold">
+            <span className="w-[300px]">{ORDER_ITEM_TYPE_LABEL[group.type]}</span>
+            <span className="w-[60px]">Slot</span>
+            <span className="w-[110px]">Bắt đầu</span>
+            <span className="w-[110px]">Kết thúc</span>
+            <span className="flex-1 text-right tabular-nums">
+              {formatVND(group.items.reduce((sum, item) => sum + item.totalAmount, 0))}
+            </span>
+          </div>
+          {group.items.map((item) => {
             const { title, detail } = describeLine(item.type, item.snapshot);
+            const slot = timing(item.type, item.snapshot);
             return (
-              <tr key={item.id} className="border-b border-neutral-300 align-top">
-                <td className="px-2 py-1.5 text-center">{item.lineNumber}</td>
-                <td className="px-2 py-1.5">
-                  <b>{title}</b>
-                  <div className="text-[12px] text-neutral-600">
-                    {ORDER_ITEM_TYPE_LABEL[item.type]}
-                    {detail && ` · ${detail}`}
-                    {item.refundedAmount > 0 && ` · đã hoàn ${formatVND(item.refundedAmount)}`}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatVND(item.subtotal)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  {item.membershipDiscount ? `−${formatVND(item.membershipDiscount)}` : '—'}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
-                  {item.couponDiscount ? `−${formatVND(item.couponDiscount)}` : '—'}
-                </td>
-                <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{formatVND(item.totalAmount)}</td>
-              </tr>
+              <div
+                key={item.id}
+                className="flex border-0 border-b border-solid border-[#e2ddd2] py-3 text-[12.5px] text-[#3d3b35]"
+              >
+                <span className="w-[300px] pr-3">
+                  {title}
+                  {detail && group.type !== 'FACILITY_BOOKING' ? ` · ${detail}` : ''} ({priceNote(item)})
+                </span>
+                <span className="w-[60px]">{slot.slots}</span>
+                <span className="w-[110px]">{slot.start}</span>
+                <span className="w-[110px]">{slot.end}</span>
+                <span className="flex-1 text-right tabular-nums">{formatVND(item.totalAmount)}</span>
+              </div>
             );
           })}
-        </tbody>
-      </table>
-
-      <div className="mt-3 ml-auto w-72">
-        <div className="flex justify-between py-0.5">
-          <span>Tạm tính</span>
-          <span className="tabular-nums">{formatVND(order.subtotal)}</span>
         </div>
-        <div className="flex justify-between py-0.5">
-          <span>Ưu đãi gói thành viên</span>
-          <span className="tabular-nums">−{formatVND(order.membershipDiscount)}</span>
-        </div>
-        <div className="flex justify-between py-0.5">
-          <span>Mã giảm giá</span>
-          <span className="tabular-nums">−{formatVND(order.couponDiscount)}</span>
-        </div>
-        <div className="mt-1 flex justify-between border-t-2 border-black py-1.5 text-[16px] font-extrabold">
-          <span>Tổng thanh toán</span>
-          <span className="tabular-nums">{formatVND(order.totalAmount)}</span>
-        </div>
-        {order.refundedAmount > 0 && (
-          <div className="flex justify-between py-0.5">
-            <span>Đã hoàn</span>
-            <span className="tabular-nums">−{formatVND(order.refundedAmount)}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 text-[11.5px] leading-relaxed text-neutral-600">
-        Hóa đơn được dựng từ thông tin chốt tại thời điểm thanh toán và không thay đổi; hoàn tiền được ghi nhận riêng
-        từng dịch vụ. Gói thành viên không hoàn tiền.
-      </div>
-      <div className="mt-10 grid grid-cols-2 text-center">
-        <div>
-          <b>Người mua</b>
-          <div className="mt-12">{buyerName}</div>
-        </div>
-        <div>
-          <b>Người lập</b>
-          <div className="mt-12">{order.createdBy?.fullName ?? 'Hệ thống'}</div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }

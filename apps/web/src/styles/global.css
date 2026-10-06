@@ -93,3 +93,62 @@ a {
     display: none !important;
   }
 }
+
+/* Figma tables: warm header with condensed uppercase labels, soft row lines. */
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: #f7f5f0;
+  color: var(--sc-muted);
+  font-family: var(--sc-font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--sc-border-soft);
+}
+.ant-table-wrapper .ant-table-thead > tr > th::before {
+  display: none;
+}
+
+/* Figma status pills: borderless, 6px radius, 11px semibold. */
+html .ant-tag {
+  height: 22px;
+  padding: 0 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 22px;
+  background: #f3f1ec;
+  color: var(--sc-ink-2);
+}
+html .ant-tag.ant-tag-success {
+  background: #f6ffed !important;
+  color: #389e0d !important;
+}
+html .ant-tag.ant-tag-processing,
+html .ant-tag.ant-tag-blue {
+  background: #e6f4ff !important;
+  color: #0958d9 !important;
+}
+html .ant-tag.ant-tag-warning,
+html .ant-tag.ant-tag-gold {
+  background: #fffbe6 !important;
+  color: #d48806 !important;
+}
+html .ant-tag.ant-tag-orange {
+  background: #fff7e6 !important;
+  color: #d46b08 !important;
+}
+html .ant-tag.ant-tag-error,
+html .ant-tag.ant-tag-red {
+  background: #fff1f0 !important;
+  color: #cf1322 !important;
+}
+html .ant-tag.ant-tag-purple {
+  background: #f9f0ff !important;
+  color: #531dab !important;
+}
+html .ant-tag.ant-tag-green {
+  background: #f6ffed !important;
+  color: #389e0d !important;
+}
