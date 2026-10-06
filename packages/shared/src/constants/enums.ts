@@ -100,3 +100,9 @@ export type ScheduleClashReason = (typeof SCHEDULE_CLASH_REASONS)[number];
 
 export const FACILITY_SLOT_STATUSES = ['AVAILABLE', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as const;
 export type FacilitySlotStatus = (typeof FACILITY_SLOT_STATUSES)[number];
+
+export const SUPPORT_CATEGORIES = ['ACCOUNT', 'MEMBERSHIP', 'BOOKING', 'CLASS', 'PAYMENT', 'OTHER'] as const;
+export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
+
+export const SUPPORT_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
