@@ -61,24 +61,6 @@ export interface PackagePreview {
   basePrice: number;
 }
 
-export type RefundReason = 'FULL' | 'PAST_DEADLINE' | 'GUEST' | 'FREE_ITEM';
-
-export interface Refund {
-  amount: number;
-  reason: RefundReason;
-}
-
-export interface CancelBookingResult {
-  booking: Booking;
-  refund: Refund;
-}
-
-export interface CancelPackageResult {
-  package: FacilityPackage;
-  cancelledBookings: number;
-  refundTotal: number;
-}
-
 /** A range of consecutive slots picked on the grid. */
 export interface SlotSelection {
   facilityId: string;

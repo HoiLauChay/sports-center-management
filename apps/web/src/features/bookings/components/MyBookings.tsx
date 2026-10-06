@@ -1,13 +1,10 @@
-import { Alert, Button, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Alert, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
-import { bookingRefund, describeRefund } from '~/features/checkout/refundPolicy';
-import { useSettings } from '~/features/settings';
-import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { DAY_SHORT, WEEK_ORDER, formatDayLabel, isPast } from '~/lib/time';
-import { useCancelBooking, useCancelPackage, useMyBookings, useMyPackages } from '../hooks/useBookings';
+import { DAY_SHORT, WEEK_ORDER, formatDayLabel } from '~/lib/time';
+import { useMyBookings, useMyPackages } from '../hooks/useBookings';
 import type { Booking, FacilityPackage } from '../types';
 
 const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
@@ -18,32 +15,9 @@ const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
 };
 
 function BookingsTab() {
-  const settings = useSettings();
-  const confirm = useConfirm();
-  const cancel = useCancelBooking();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<Booking['status'] | undefined>();
   const bookings = useMyBookings({ page, limit: 8, status });
-
-  const askCancel = (booking: Booking) => {
-    if (!settings.data) return;
-    const refund = bookingRefund(booking, settings.data);
-    confirm({
-      title: `Hủy lượt đặt ${booking.facility.name}?`,
-      content: (
-        <div className="flex flex-col gap-2">
-          <span>
-            {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
-          </span>
-          <b className={refund.amount > 0 ? 'text-sc-success' : 'text-sc-error'}>
-            {describeRefund(refund, settings.data, 'booking')}
-          </b>
-        </div>
-      ),
-      okText: refund.amount > 0 ? `Hủy và nhận ${formatVND(refund.amount)}` : 'Vẫn hủy, không hoàn tiền',
-      onOk: () => cancel.mutateAsync(booking.id).catch(() => undefined),
-    });
-  };
 
   const columns: TableColumnsType<Booking> = [
     {
@@ -86,27 +60,8 @@ function BookingsTab() {
           <Tag color={booking.status === 'CONFIRMED' ? 'success' : 'default'} className="!m-0">
             {booking.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Đã hủy'}
           </Tag>
-          {booking.refundedAmount > 0 && (
-            <span className="text-xs text-sc-error">Đã hoàn {formatVND(booking.refundedAmount)}</span>
-          )}
         </div>
       ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      align: 'right',
-      render: (_, booking) =>
-        booking.status === 'CONFIRMED' && !booking.packageId && !isPast(booking.date, booking.startTime) ? (
-          <Button
-            size="small"
-            danger
-            loading={cancel.isPending && cancel.variables === booking.id}
-            onClick={() => askCancel(booking)}
-          >
-            Hủy lượt
-          </Button>
-        ) : null,
     },
   ];
 
@@ -147,33 +102,7 @@ function BookingsTab() {
 }
 
 function PackagesTab() {
-  const settings = useSettings();
-  const confirm = useConfirm();
-  const cancel = useCancelPackage();
   const packages = useMyPackages();
-
-  const askCancel = (item: FacilityPackage) => {
-    if (!settings.data) return;
-    const future = item.bookings.filter(
-      (booking) => booking.status === 'CONFIRMED' && !isPast(booking.date, booking.startTime),
-    );
-    const refundable = future.reduce((sum, booking) => sum + bookingRefund(booking, settings.data!).amount, 0);
-    confirm({
-      title: `Hủy cả gói ${item.facility.name}?`,
-      content: (
-        <div className="flex flex-col gap-2">
-          <span>{future.length} buổi chưa diễn ra sẽ bị hủy.</span>
-          <b className={refundable > 0 ? 'text-sc-success' : 'text-sc-error'}>
-            {refundable > 0
-              ? `Bạn sẽ được hoàn ${formatVND(refundable)} về ví (các buổi còn đủ hạn hủy ${settings.data.bookingCancelDeadlineHours} giờ).`
-              : 'Không có buổi nào còn đủ hạn hủy, nên sẽ KHÔNG được hoàn tiền.'}
-          </b>
-        </div>
-      ),
-      okText: refundable > 0 ? `Hủy gói và nhận ${formatVND(refundable)}` : 'Vẫn hủy, không hoàn tiền',
-      onOk: () => cancel.mutateAsync(item.id).catch(() => undefined),
-    });
-  };
 
   const columns: TableColumnsType<FacilityPackage> = [
     { title: 'Sân / phòng', key: 'facility', render: (_, item) => <b>{item.facility.name}</b> },
@@ -212,22 +141,6 @@ function PackagesTab() {
           {value === 'ACTIVE' ? 'Đang hiệu lực' : 'Đã hủy'}
         </Tag>
       ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      align: 'right',
-      render: (_, item) =>
-        item.status === 'ACTIVE' ? (
-          <Button
-            size="small"
-            danger
-            loading={cancel.isPending && cancel.variables === item.id}
-            onClick={() => askCancel(item)}
-          >
-            Hủy gói
-          </Button>
-        ) : null,
     },
   ];
 

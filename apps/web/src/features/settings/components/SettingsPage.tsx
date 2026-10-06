@@ -177,26 +177,10 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
               </Col>
             </Row>
 
-            <SectionTitle>Đặt sân & khóa học</SectionTitle>
+            <SectionTitle>Đặt sân</SectionTitle>
             <Row gutter={16}>
               <Col xs={24} md={8}>
                 <NumberInputField control={control} name="maxAdvanceBookingDays" label="Đặt trước tối đa" unit="ngày" />
-              </Col>
-              <Col xs={12} md={8}>
-                <NumberInputField
-                  control={control}
-                  name="bookingCancelDeadlineHours"
-                  label="Hạn hủy booking"
-                  unit="giờ"
-                />
-              </Col>
-              <Col xs={12} md={8}>
-                <NumberInputField
-                  control={control}
-                  name="courseCancelDeadlineDays"
-                  label="Hạn hủy khóa học"
-                  unit="ngày"
-                />
               </Col>
             </Row>
 
