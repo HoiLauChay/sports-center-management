@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { RECEIPT_ISSUER } from '~/constants/center';
 import type { Prisma } from '~/generated/prisma/client';
 import accountRepository from '~/repositories/account.repository';
@@ -8,7 +6,6 @@ import { lineHandlers } from '~/services/checkout/lines';
 import type { CheckoutContext, PreparedOrder } from '~/services/checkout/types';
 import notificationService from '~/services/notification.service';
 import walletService from '~/services/wallet.service';
-import { allocate } from '~/utils/money';
 import { orderNumber } from '~/utils/paymentCode';
 
 const SCHEMA_VERSION = 1;
@@ -46,25 +43,7 @@ export const commitOrder = async (
 
   const lines = prepared.lines.map(({ lineNumber, input, result }) => {
     if (!result.ok) throw new Error(`commitOrder called with invalid line ${lineNumber}`);
-    const total = result.subtotal - result.membershipDiscount;
-    const components = result.components ?? [];
-    const amounts = components.length
-      ? allocate(
-          total,
-          components.map(({ weight }) => weight),
-        )
-      : [];
-    return {
-      lineNumber,
-      input,
-      result,
-      total,
-      allocations: components.map(({ key, refId }, index) => ({
-        key,
-        refId: refId ?? randomUUID(),
-        amount: amounts[index]!,
-      })),
-    };
+    return { lineNumber, input, result, total: result.subtotal - result.membershipDiscount };
   });
 
   const order = await orderRepository.create(
@@ -96,14 +75,10 @@ export const commitOrder = async (
       totalAmount: prepared.total,
       paymentMethod: payment.method,
       items: {
-        create: lines.map(({ lineNumber, input, result, total, allocations }) => ({
+        create: lines.map(({ lineNumber, input, result, total }) => ({
           lineNumber,
           type: input.type,
-          itemSnapshot: {
-            schema_version: SCHEMA_VERSION,
-            ...result.snapshot,
-            ...(allocations.length && { allocations: allocations.map(({ refId, amount }) => ({ refId, amount })) }),
-          } as Prisma.InputJsonObject,
+          itemSnapshot: { schema_version: SCHEMA_VERSION, ...result.snapshot } as Prisma.InputJsonObject,
           subtotal: result.subtotal,
           membershipDiscountAmount: result.membershipDiscount,
           totalAmount: total,
@@ -113,9 +88,9 @@ export const commitOrder = async (
     tx,
   );
 
-  for (const { lineNumber, input, result, total, allocations } of lines) {
+  for (const { lineNumber, input, result, total } of lines) {
     const itemId = order.items.find((item) => item.lineNumber === lineNumber)!.id;
-    await lineHandlers[input.type]!.fulfill(tx, ctx, { lineNumber, total, allocations, data: result.data }, itemId);
+    await lineHandlers[input.type]!.fulfill(tx, ctx, { lineNumber, total, data: result.data }, itemId);
   }
 
   if (payment.method === 'WALLET' && memberId) {

@@ -9,7 +9,7 @@ import { formatDateTime, initialsOf, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useAuditActors } from '../hooks/useAuditActors';
 import { useAuditLogs, type AuditLogFilters } from '../hooks/useAuditLogs';
-import { AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, auditFieldLabel } from '../utils/labels';
+import { AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, auditFieldLabel, summaryFields } from '../utils/labels';
 import { AuditLogDetailDrawer } from './AuditLogDetailDrawer';
 
 interface FilterForm {
@@ -29,7 +29,7 @@ const rangeOf = (filters: AuditLogFilters): [Dayjs, Dayjs] => [dayjs(filters.fro
 const SUMMARY_FIELDS = 3;
 
 function summarize(log: AuditLog) {
-  const fields = [...new Set([...Object.keys(log.oldValues ?? {}), ...Object.keys(log.newValues ?? {})])];
+  const fields = summaryFields(log);
   const verb = AUDIT_ACTION_LABEL[log.action];
   if (!fields.length) return verb;
   const shown = fields.slice(0, SUMMARY_FIELDS).map(auditFieldLabel).join(', ');

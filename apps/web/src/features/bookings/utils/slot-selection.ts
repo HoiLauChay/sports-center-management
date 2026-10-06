@@ -1,9 +1,9 @@
-import type { FacilitySchedule, FacilitySlot, SlotSelection } from '../types';
+import type { FacilitySchedule, FacilitySlot } from '@sports-center/shared';
+import type { SlotSelection } from '../types';
 
 type Schedules = Record<string, FacilitySchedule | undefined>;
 
-export const isSelectableSlot = (slot: FacilitySlot) =>
-  (slot.status === 'AVAILABLE' || slot.status === 'PARTIAL') && slot.booked < slot.capacity;
+export const isSelectableSlot = (slot: FacilitySlot) => slot.status === 'AVAILABLE';
 
 export function isValidSelection(
   selection: SlotSelection | null,

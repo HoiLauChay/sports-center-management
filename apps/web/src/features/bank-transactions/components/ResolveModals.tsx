@@ -1,9 +1,9 @@
+import type { BankTransaction } from '@sports-center/shared';
 import { Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { useIgnoreBankTransaction, useResolveBankTransaction } from '../hooks/useBankTransactions';
-import type { BankTransaction } from '../types';
 
 function Summary({ transaction }: { transaction: BankTransaction }) {
   return (
@@ -72,6 +72,7 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
             value={note}
             maxLength={500}
             showCount
+            className="!mb-5"
             autoSize={{ minRows: 3, maxRows: 6 }}
             status={noteError ? 'error' : undefined}
             onChange={(event) => setNote(event.target.value)}
@@ -129,6 +130,7 @@ export function IgnoreModal({ transaction, onClose }: ModalProps) {
             value={note}
             maxLength={500}
             showCount
+            className="!mb-5"
             autoSize={{ minRows: 3, maxRows: 6 }}
             status={noteError ? 'error' : undefined}
             onChange={(event) => setNote(event.target.value)}

@@ -34,7 +34,6 @@ export interface ClassSummary {
   minStudents: number;
   maxStudents: number;
   enrolledCount: number;
-  minStudentsOverride: boolean;
   cancelReason: string | null;
 }
 

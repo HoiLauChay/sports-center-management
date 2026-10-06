@@ -1,10 +1,15 @@
-import type { Facility } from '@sports-center/shared';
+import type { Facility, FacilitySchedule, FacilitySlot, FacilitySlotStatus } from '@sports-center/shared';
 import { Tooltip } from 'antd';
 import { formatVND } from '~/lib/format';
-import type { FacilitySchedule, FacilitySlot, SlotSelection, SlotStatus } from '../types';
+import type { SlotSelection } from '../types';
 import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
 
-const STATUS_LABEL: Record<SlotStatus, string> = {
+type SlotTone = FacilitySlotStatus | 'PARTIAL';
+
+const toneOf = (slot: FacilitySlot): SlotTone =>
+  slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status;
+
+const STATUS_LABEL: Record<SlotTone, string> = {
   AVAILABLE: 'Trống',
   PARTIAL: 'Còn chỗ',
   FULL: 'Đã đầy',
@@ -13,7 +18,7 @@ const STATUS_LABEL: Record<SlotStatus, string> = {
   CLOSED: 'Đóng',
 };
 
-const CELL_STYLE: Record<SlotStatus, string> = {
+const CELL_STYLE: Record<SlotTone, string> = {
   AVAILABLE: 'bg-white hover:bg-sc-primary-soft hover:border-sc-primary-border cursor-pointer',
   PARTIAL: 'bg-[#fff7e0] border-[#f3dfa3] hover:bg-[#ffefbd] cursor-pointer text-[#8a6100]',
   FULL: 'bg-sc-paper-2 text-sc-muted-2 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(20,19,15,.06)_5px_6px)]',
@@ -22,7 +27,7 @@ const CELL_STYLE: Record<SlotStatus, string> = {
   CLOSED: 'bg-sc-paper text-sc-muted-2 cursor-not-allowed opacity-70',
 };
 
-const LEGEND_STYLE: Record<SlotStatus, string> = {
+const LEGEND_STYLE: Record<SlotTone, string> = {
   AVAILABLE: 'bg-white',
   PARTIAL: 'bg-[#fff7e0] !border-[#f3dfa3]',
   FULL: 'bg-sc-paper-2',
@@ -37,15 +42,15 @@ function tooltipOf(slot: FacilitySlot) {
   if (slot.status === 'CLOSED') return 'Sân đóng hoặc khung giờ đã bắt đầu';
   if (slot.capacity > 1)
     return `${slot.startTime}–${slot.endTime} · Đã đặt ${slot.booked}/${slot.capacity}, còn ${Math.max(0, slot.capacity - slot.booked)} chỗ`;
-  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[slot.status]}`;
+  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[toneOf(slot)]}`;
 }
 
 interface SlotGridProps {
   facilities: Facility[];
   schedules: Record<string, FacilitySchedule | undefined>;
   loading?: boolean;
-  selection: SlotSelection | null;
-  onSelect: (selection: SlotSelection | null) => void;
+  selection?: SlotSelection | null;
+  onSelect?: (selection: SlotSelection | null) => void;
   maxSlots?: number;
   layout?: 'table' | 'cards';
 }
@@ -55,7 +60,7 @@ export function SlotGrid({
   facilities,
   schedules,
   loading,
-  selection,
+  selection = null,
   onSelect,
   maxSlots = 3,
   layout = 'table',
@@ -65,7 +70,7 @@ export function SlotGrid({
 
   const currentSelection = isValidSelection(selection, schedules, maxSlots) ? selection : null;
   const click = (facilityId: string, index: number) => {
-    onSelect(selectSlot(schedules, currentSelection, facilityId, index, maxSlots));
+    onSelect?.(selectSlot(schedules, currentSelection, facilityId, index, maxSlots));
   };
 
   if (!columns.length) {
@@ -98,16 +103,16 @@ export function SlotGrid({
                   <Tooltip key={slot.startTime} title={tooltipOf(slot)}>
                     <button
                       type="button"
-                      disabled={loading || !available}
+                      disabled={loading || !onSelect || !available}
                       aria-pressed={selected}
-                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[slot.status]}${selected ? ', đang chọn' : ''}`}
+                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-xl border border-sc-border-soft px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[slot.status]}`}
+                      className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-xl border border-sc-border-soft px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot)]}`}
                     >
                       <span className="block text-sm font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
-                      <span className="block text-xs">{selected ? '✓ Đang chọn' : STATUS_LABEL[slot.status]}</span>
+                      <span className="block text-xs">{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot)]}</span>
                       {available && (
                         <span className="block text-xs">
                           Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
@@ -186,17 +191,17 @@ export function SlotGrid({
                       <button
                         type="button"
                         role="gridcell"
-                        disabled={loading || !selectable}
+                        disabled={loading || !onSelect || !selectable}
                         aria-pressed={selected}
-                        aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[slot.status]}${selected ? ', đang chọn' : ''}`}
+                        aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
                         onClick={() => click(facility.id, index)}
                         className={`h-10 rounded-md border border-sc-border-soft text-[11.5px] font-semibold tabular-nums [transition:background_0.12s,border-color_0.12s] disabled:opacity-100 ${
-                          selected ? '!border-sc-primary !bg-sc-primary !text-sc-lime' : CELL_STYLE[slot.status]
+                          selected ? '!border-sc-primary !bg-sc-primary !text-sc-lime' : CELL_STYLE[toneOf(slot)]
                         }`}
                       >
                         <span>{slot.startTime}</span>
                         <span className="text-[10px]">
-                          {selected ? '✓ Đang chọn' : label || STATUS_LABEL[slot.status]}
+                          {selected ? '✓ Đang chọn' : label || STATUS_LABEL[toneOf(slot)]}
                         </span>
                       </button>
                     </Tooltip>
@@ -208,17 +213,21 @@ export function SlotGrid({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-sc-muted">
-        {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotStatus[]).map((status) => (
+        {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotTone[]).map((status) => (
           <span key={status} className="inline-flex items-center gap-1.5">
             <i className={`inline-block size-3.5 rounded-sm border border-sc-border-soft ${LEGEND_STYLE[status]}`} />
             {STATUS_LABEL[status]}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5">
-          <i className="inline-block size-3.5 rounded-sm bg-sc-primary" />
-          Đang chọn
-        </span>
-        <span className="text-sc-muted-2">Bấm ô kề bên để kéo dài, tối đa {maxSlots} slot.</span>
+        {onSelect && (
+          <>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block size-3.5 rounded-sm bg-sc-primary" />
+              Đang chọn
+            </span>
+            <span className="text-sc-muted-2">Bấm ô kề bên để kéo dài, tối đa {maxSlots} slot.</span>
+          </>
+        )}
       </div>
     </div>
   );

@@ -14,8 +14,6 @@ export const updateSettingsBodySchema = z
     closeTime: timeSchema('Giờ đóng cửa'),
     slotDurationMinutes: count('Thời lượng slot', 1),
     maxAdvanceBookingDays: count('Số ngày đặt trước', 0),
-    bookingCancelDeadlineHours: count('Hạn hủy booking', 0),
-    courseCancelDeadlineDays: count('Hạn hủy khóa học', 0),
     membershipExpiryWarningDays: count('Số ngày nhắc gói hết hạn', 0),
     topUpMinAmount: z
       .int('Số tiền nạp tối thiểu phải là số nguyên')

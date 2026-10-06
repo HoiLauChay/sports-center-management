@@ -9,15 +9,19 @@ export function MembershipBenefits({ benefits }: { benefits: Benefits }) {
     },
     {
       enabled: benefits.bookingDiscountPct > 0,
-      label: `Giảm ${benefits.bookingDiscountPct}% phí đặt sân / phòng`,
+      label: benefits.bookingDiscountPct
+        ? `Giảm ${benefits.bookingDiscountPct}% phí đặt sân / phòng`
+        : 'Không giảm phí đặt sân / phòng',
     },
     {
       enabled: benefits.classDiscountPct > 0,
-      label: `Giảm ${benefits.classDiscountPct}% học phí lớp`,
+      label: benefits.classDiscountPct ? `Giảm ${benefits.classDiscountPct}% học phí lớp` : 'Không giảm học phí lớp',
     },
     {
       enabled: benefits.freeBookingSlotsPerMonth > 0,
-      label: `${benefits.freeBookingSlotsPerMonth} slot sân miễn phí mỗi tháng`,
+      label: benefits.freeBookingSlotsPerMonth
+        ? `${benefits.freeBookingSlotsPerMonth} slot sân miễn phí mỗi tháng`
+        : 'Không có slot sân miễn phí',
     },
   ];
 

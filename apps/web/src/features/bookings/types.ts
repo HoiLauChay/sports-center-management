@@ -1,10 +1,4 @@
-import type {
-  FacilitySchedule as ApiFacilitySchedule,
-  FacilitySlot as ApiFacilitySlot,
-  FacilitySlotStatus,
-  Person,
-  Ref,
-} from '@sports-center/shared';
+import type { Person, Ref } from '@sports-center/shared';
 
 export type BookingStatus = 'CONFIRMED' | 'CANCELLED';
 export type BookingBenefit = 'NONE' | 'DISCOUNT' | 'GYM_ACCESS' | 'FREE_SLOT';
@@ -41,15 +35,6 @@ export interface FacilityPackage {
   bookings: Booking[];
 }
 
-/** The current API represents partial capacity as AVAILABLE with booked > 0. */
-export type SlotStatus = FacilitySlotStatus | 'PARTIAL';
-export interface FacilitySlot extends Omit<ApiFacilitySlot, 'status'> {
-  status: SlotStatus;
-}
-export interface FacilitySchedule extends Omit<ApiFacilitySchedule, 'slots'> {
-  slots: FacilitySlot[];
-}
-
 export type PackageConflict = 'BOOKED' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
 
 export interface PackagePreviewRequest {
@@ -74,24 +59,6 @@ export interface PackagePreview {
   isValid: boolean;
   unitPrice: number;
   basePrice: number;
-}
-
-export type RefundReason = 'FULL' | 'PAST_DEADLINE' | 'GUEST' | 'FREE_ITEM';
-
-export interface Refund {
-  amount: number;
-  reason: RefundReason;
-}
-
-export interface CancelBookingResult {
-  booking: Booking;
-  refund: Refund;
-}
-
-export interface CancelPackageResult {
-  package: FacilityPackage;
-  cancelledBookings: number;
-  refundTotal: number;
 }
 
 /** A range of consecutive slots picked on the grid. */

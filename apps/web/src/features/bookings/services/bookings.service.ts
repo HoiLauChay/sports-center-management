@@ -1,42 +1,25 @@
-import type { Account, FacilitySchedule as ApiFacilitySchedule, ApiResponse } from '@sports-center/shared';
+import type { Account, ApiResponse, FacilitySchedule } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
 import { actorOf } from '~/features/checkout/services/checkout.service';
 import { ensureClassSeed } from '~/features/classes/mocks/classes';
-import { walletService } from '~/features/wallet/services/wallet.service';
 import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
-import {
-  cancelBooking,
-  cancelPackage,
-  listMyBookings,
-  listMyPackages,
-  type ListBookingsQuery,
-} from '../mocks/bookings';
+import { listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
 import { previewPackage } from '../mocks/schedule';
-import type { FacilitySchedule, PackagePreviewRequest } from '../types';
-
-const balanceOfMine = (user: Account) => (accountId: string) =>
-  accountId === user.id ? walletService.balanceOfMine(accountId) : walletService.balanceOfMember(accountId);
+import type { PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedules use the real API (#103). Package preview, bookings and cancellation
- * remain mocked until their respective endpoints ship.
+ * Facility schedule, recurring-package preview and my bookings. The facility schedule comes from the API; the rest is mock until
+ * #112, #133 and #138 ship (see `../mocks`); the facilities, settings and membership data they rely on come from the real API.
  */
 export const bookingsService = {
-  /** `GET /facilities/{id}/schedule?date=` */
-  facilitySchedule: async (facilityId: string, date: string): Promise<FacilitySchedule> => {
-    const { data } = await privateApi.get<ApiResponse<ApiFacilitySchedule>>(
+  facilitySchedule: async (facilityId: string, date: string) => {
+    const { data } = await privateApi.get<ApiResponse<FacilitySchedule>>(
       `/facilities/${encodeURIComponent(facilityId)}/schedule`,
       { params: { date } },
     );
-    return {
-      ...data.result,
-      slots: data.result.slots.map((slot) => ({
-        ...slot,
-        status: slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status,
-      })),
-    };
+    return data.result;
   },
 
   /** `POST /facility-packages/preview` */
@@ -56,16 +39,4 @@ export const bookingsService = {
   listMine: (user: Account, query: ListBookingsQuery) => mockRequest(() => listMyBookings(actorOf(user), query)),
 
   listMyPackages: (user: Account) => mockRequest(() => listMyPackages(actorOf(user))),
-
-  cancel: (user: Account, id: string) =>
-    mockRequest(async () => {
-      const { settings } = await loadCatalog();
-      return cancelBooking(actorOf(user), id, settings, balanceOfMine(user));
-    }, 350),
-
-  cancelPackage: (user: Account, id: string) =>
-    mockRequest(async () => {
-      const { settings } = await loadCatalog();
-      return cancelPackage(actorOf(user), id, settings, balanceOfMine(user));
-    }, 350),
 };

@@ -1,7 +1,7 @@
-import type { ListMyOrdersQuery, ListOrdersQuery } from '@sports-center/shared';
+import type { ListMyOrdersQuery, ListOrdersQuery, OrderStatus } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { OrderStatus, Prisma } from '~/generated/prisma/client';
+import type { Prisma } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 import { toCenterDateTime } from '~/utils/time';
 
@@ -15,14 +15,12 @@ const orderSelect = {
   guestName: true,
   guestPhone: true,
   createdBy: person,
-  status: true,
   paymentMethod: true,
   coupon: { select: { code: true } },
   subtotal: true,
   membershipDiscountAmount: true,
   couponDiscountAmount: true,
   totalAmount: true,
-  refundedAmount: true,
   receiptSnapshot: true,
   createdAt: true,
   walletTransactions: {
@@ -48,7 +46,7 @@ const orderSelect = {
       membershipDiscountAmount: true,
       couponDiscountAmount: true,
       totalAmount: true,
-      refundedAmount: true,
+      refundedAt: true,
       bookings: { select: { id: true }, where: { packageId: null }, take: 1 },
       facilityPackage: { select: { id: true } },
       enrollment: { select: { id: true } },
@@ -68,6 +66,15 @@ const dayRange = (from?: string, to?: string): Prisma.DateTimeFilter | undefined
       }
     : undefined;
 
+const refunded = { refundedAt: { not: null } } satisfies Prisma.OrderItemWhereInput;
+const refundable = { totalAmount: { gt: 0 }, refundedAt: null } satisfies Prisma.OrderItemWhereInput;
+
+const statusFilter: Record<OrderStatus, Prisma.OrderWhereInput> = {
+  PAID: { items: { none: refunded } },
+  PARTIALLY_REFUNDED: { AND: [{ items: { some: refunded } }, { items: { some: refundable } }] },
+  REFUNDED: { AND: [{ items: { some: refunded } }, { items: { none: refundable } }] },
+};
+
 class OrderRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.order.findUnique({ where: { id }, select: orderSelect });
@@ -79,7 +86,7 @@ class OrderRepository {
     const where: Prisma.OrderWhereInput = {
       accountId: filters.accountId,
       guestPhone: filters.guestPhone ?? undefined,
-      status: filters.status,
+      ...(filters.status && statusFilter[filters.status]),
       orderNumber: filters.orderNumber,
       createdAt: dayRange(from, to),
     };
@@ -104,24 +111,14 @@ class OrderRepository {
         id: true,
         type: true,
         totalAmount: true,
-        refundedAmount: true,
+        refundedAt: true,
         itemSnapshot: true,
-        order: { select: { id: true, orderNumber: true, accountId: true, totalAmount: true, refundedAmount: true } },
+        order: { select: { id: true, orderNumber: true, accountId: true } },
       },
     });
 
-  addRefund = async (
-    tx: Prisma.TransactionClient,
-    {
-      orderId,
-      orderItemId,
-      amount,
-      status,
-    }: { orderId: string; orderItemId: string; amount: number; status: OrderStatus },
-  ) => {
-    await tx.orderItem.update({ where: { id: orderItemId }, data: { refundedAmount: { increment: amount } } });
-    await tx.order.update({ where: { id: orderId }, data: { refundedAmount: { increment: amount }, status } });
-  };
+  markRefunded = (tx: Prisma.TransactionClient, orderItemId: string, refundedAt: Date) =>
+    tx.orderItem.update({ where: { id: orderItemId }, data: { refundedAt } });
 
   create = (data: Prisma.OrderUncheckedCreateInput, tx: Prisma.TransactionClient) =>
     tx.order.create({
