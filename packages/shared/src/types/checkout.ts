@@ -20,6 +20,17 @@ export type FacilityBookingSnapshot = ItemSnapshotBase & {
   benefit: BookingBenefit;
 };
 
+export type CourseEnrollmentSnapshot = ItemSnapshotBase & {
+  className: string;
+  courseName: string;
+  sportName: string;
+  coachName: string;
+  facilityName: string;
+  sessions: number;
+  startDate: string;
+  endDate: string;
+};
+
 export interface QuoteLine {
   lineNumber: number;
   type: OrderItemType;
