@@ -36,7 +36,6 @@ export const toClassDetailResponse = (row: ClassDetailRow, now = new Date()): Cl
   minStudents: row.minStudents,
   maxStudents: row.maxStudents,
   enrolledCount: row._count.enrollments,
-  minStudentsOverride: row.minStudentsOverride,
   cancelReason: row.cancelReason,
   sessions: row.sessions.map(toSessionResponse),
 });

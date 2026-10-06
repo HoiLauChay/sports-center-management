@@ -8,8 +8,6 @@ const settingSelect = {
   closeTime: true,
   slotDurationMinutes: true,
   maxAdvanceBookingDays: true,
-  bookingCancelDeadlineHours: true,
-  courseCancelDeadlineDays: true,
   membershipExpiryWarningDays: true,
   topUpMinAmount: true,
   invoiceExpiryMinutes: true,
