@@ -140,7 +140,7 @@ describe('checkout quote', () => {
     expect(quote.total).toBe(quote.items.reduce((sum, { total }) => sum + total, 0));
   });
 
-  test('receptionist must name the buyer; guests, unsupported lines and coupons are rejected per line', async () => {
+  test('receptionist must name the buyer; guests get only bookings and no coupon', async () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
 
     expect(await readCode(await request('POST', '/quote', receptionist, { items: [booking] }))).toBe(
@@ -158,7 +158,7 @@ describe('checkout quote', () => {
     expect(quote.items.map(({ valid, error }) => (valid ? null : error?.code))).toEqual([
       null,
       'GUEST_NOT_ALLOWED',
-      'LINE_TYPE_UNSUPPORTED',
+      'GUEST_NOT_ALLOWED',
     ]);
     expect(quote.coupon).toMatchObject({ code: 'WELCOME20', valid: false });
     expect(quote).toMatchObject({ total: 200_000, walletBalance: null, canCheckout: false });
