@@ -6,16 +6,17 @@ import { prisma } from '~/configs/db';
 import { lineHandlers } from '~/services/checkout/lines';
 import type { AnyLineHandler } from '~/services/checkout/types';
 import { percentOf } from '~/utils/money';
-import { todayInCenter } from '~/utils/time';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
+import { giveActiveMembership } from './helpers/membership';
 import { expectOrderConsistent } from './helpers/order';
-import { expectWalletConsistent } from './helpers/wallet';
+import { expectWalletConsistent, seedBalance } from './helpers/wallet';
 
 let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
 
 let bookingPrice = 200_000;
+const realBookingHandler = lineHandlers.FACILITY_BOOKING;
 
 const unused = () => Promise.reject(new Error('not used by checkout'));
 
@@ -72,7 +73,7 @@ const packageHandler = fakeHandler('FACILITY_PACKAGE', false, async () => ({
 afterAll(() => {
   delete lineHandlers.FACILITY_PACKAGE;
   delete lineHandlers.MEMBERSHIP;
-  delete lineHandlers.FACILITY_BOOKING;
+  lineHandlers.FACILITY_BOOKING = realBookingHandler;
   server.close();
 });
 
@@ -101,62 +102,6 @@ const weekly = {
   weeks: 1,
 };
 
-const giveActiveMembership = async (accountId: string, bookingDiscountPct: number) => {
-  const today = new Date(`${todayInCenter()}T00:00:00Z`);
-  const end = new Date(today.getTime() + 30 * 86_400_000);
-  const gold = await prisma.membership.create({
-    data: {
-      name: 'Gold',
-      price: 500_000,
-      durationDays: 30,
-      gymAccess: true,
-      bookingDiscountPct,
-      classDiscountPct: 10,
-      freeBookingSlotsPerMonth: 4,
-    },
-  });
-  const order = await prisma.order.create({
-    data: {
-      orderNumber: 'DH260901TEST01',
-      idempotencyKey: `test:${accountId}`,
-      accountId,
-      receiptSnapshot: { schema_version: 1 },
-      subtotal: 500_000,
-      totalAmount: 500_000,
-      paymentMethod: 'WALLET',
-      items: {
-        create: {
-          lineNumber: 1,
-          type: 'MEMBERSHIP',
-          itemSnapshot: { schema_version: 1 },
-          subtotal: 500_000,
-          totalAmount: 500_000,
-        },
-      },
-    },
-    include: { items: true },
-  });
-  await prisma.memberMembership.create({
-    data: {
-      accountId,
-      packageId: gold.id,
-      startDate: today,
-      endDate: end,
-      periods: {
-        create: {
-          orderItemId: order.items[0]!.id,
-          periodStart: today,
-          periodEnd: end,
-          gymAccess: true,
-          bookingDiscountPct,
-          classDiscountPct: 10,
-          freeBookingSlotsPerMonth: 4,
-        },
-      },
-    },
-  });
-};
-
 describe('checkout quote', () => {
   test('a membership bought in the same order does not discount the other lines', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
@@ -180,7 +125,7 @@ describe('checkout quote', () => {
 
   test('totals add up the valid lines only and any invalid line blocks checkout', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
-    await giveActiveMembership(member.id, 20);
+    await giveActiveMembership(member.id, { bookingDiscountPct: 20 });
 
     const quote = await readResult<Quote>(
       await request('POST', '/quote', member, { items: [booking, membership, membership] }),
@@ -195,7 +140,7 @@ describe('checkout quote', () => {
     expect(quote.total).toBe(quote.items.reduce((sum, { total }) => sum + total, 0));
   });
 
-  test('receptionist must name the buyer; guests, unsupported lines and coupons are rejected per line', async () => {
+  test('receptionist must name the buyer; guests get only bookings and no coupon', async () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
 
     expect(await readCode(await request('POST', '/quote', receptionist, { items: [booking] }))).toBe(
@@ -213,27 +158,12 @@ describe('checkout quote', () => {
     expect(quote.items.map(({ valid, error }) => (valid ? null : error?.code))).toEqual([
       null,
       'GUEST_NOT_ALLOWED',
-      'LINE_TYPE_UNSUPPORTED',
+      'GUEST_NOT_ALLOWED',
     ]);
     expect(quote.coupon).toMatchObject({ code: 'WELCOME20', valid: false });
     expect(quote).toMatchObject({ total: 200_000, walletBalance: null, canCheckout: false });
   });
 });
-
-const seedBalance = async (accountId: string, amount: number) => {
-  await prisma.memberProfile.update({ where: { accountId }, data: { walletBalance: amount } });
-  await prisma.walletTransaction.create({
-    data: {
-      accountId,
-      transactionCode: 'GD261003SEED0001',
-      idempotencyKey: `seed:${accountId}`,
-      type: 'TOP_UP',
-      topUpMethod: 'CASH',
-      amount,
-      balanceAfter: amount,
-    },
-  });
-};
 
 const pay = (key: string, overrides: Record<string, unknown> = {}) => ({
   items: [booking],

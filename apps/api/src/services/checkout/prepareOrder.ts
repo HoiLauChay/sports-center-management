@@ -1,5 +1,6 @@
 import { ERROR_CODE, type CheckoutItemInput } from '@sports-center/shared';
 
+import { applyCoupon } from '~/services/checkout/coupon';
 import { lineHandlers } from '~/services/checkout/lines';
 import type { CheckoutContext, Db, LineError, PreparedLine, PreparedOrder } from '~/services/checkout/types';
 
@@ -27,24 +28,25 @@ export const prepareOrder = async (
     const lineNumber = index + 1;
     const error = precheck(ctx, input, inputs.slice(0, index));
     const result = error ? { ok: false as const, error } : await lineHandlers[input.type]!.prepare(db, ctx, input);
-    if (result.ok) ctx.planned.push({ lineNumber, type: input.type, data: result.data });
-    lines.push({ lineNumber, input, result });
+    if (result.ok) ctx.planned.push({ lineNumber, type: input.type, data: result.data, uses: result.uses ?? [] });
+    lines.push({ lineNumber, input, result, couponDiscount: 0 });
   }
 
-  const coupon = couponCode
-    ? { code: couponCode, valid: false, discount: 0, error: 'Mã giảm giá chưa được hỗ trợ' }
-    : null;
+  const applied = couponCode ? await applyCoupon(db, ctx, lines, couponCode) : null;
+  for (const line of lines) line.couponDiscount = applied?.discounts.get(line.lineNumber) ?? 0;
+
   const priced = lines.map(({ result }) => result).filter((result) => result.ok);
   const subtotal = priced.reduce((sum, result) => sum + result.subtotal, 0);
   const membershipDiscount = priced.reduce((sum, result) => sum + result.membershipDiscount, 0);
+  const couponDiscount = applied?.coupon.discount ?? 0;
 
   return {
     lines,
-    coupon,
+    coupon: applied?.coupon ?? null,
     subtotal,
     membershipDiscount,
-    couponDiscount: 0,
-    total: subtotal - membershipDiscount,
-    valid: priced.length === lines.length && coupon === null,
+    couponDiscount,
+    total: subtotal - membershipDiscount - couponDiscount,
+    valid: priced.length === lines.length && (applied?.coupon.valid ?? true),
   };
 };

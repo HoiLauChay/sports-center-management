@@ -1,13 +1,37 @@
-import type { OrderItemType, OrderStatus, PaymentMethod } from '../constants/enums';
+import type { BookingBenefit, OrderItemType, OrderStatus, PaymentMethod } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Person } from './audit';
 
-export interface ItemSnapshotBase {
+export type ItemSnapshotBase = {
   title: string;
   startAt: string | null;
   endAt: string | null;
   discountPct: number;
-}
+};
+
+export type FacilityBookingSnapshot = ItemSnapshotBase & {
+  facilityName: string;
+  sportNames: string[];
+  date: string;
+  startTime: string;
+  endTime: string;
+  slots: number;
+  pricePerSlot: number;
+  benefit: BookingBenefit;
+};
+
+export type CourseEnrollmentSnapshot = ItemSnapshotBase & {
+  className: string;
+  courseName: string;
+  sportName: string;
+  coachName: string;
+  facilityName: string;
+  sessions: number;
+  startDate: string;
+  endDate: string;
+};
+
+export type ItemSnapshot = FacilityBookingSnapshot | CourseEnrollmentSnapshot;
 
 export interface QuoteLine {
   lineNumber: number;

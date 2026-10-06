@@ -3,8 +3,8 @@ import type { Quote } from '@sports-center/shared';
 import type { PreparedOrder } from '~/services/checkout/types';
 
 export const toQuoteResponse = (prepared: PreparedOrder, walletBalance: number | null): Quote => ({
-  items: prepared.lines.map(({ lineNumber, input, result }) => {
-    const base = { lineNumber, type: input.type, selection: input, couponDiscount: 0 };
+  items: prepared.lines.map(({ lineNumber, input, result, couponDiscount }) => {
+    const base = { lineNumber, type: input.type, selection: input, couponDiscount };
     if (!result.ok) {
       return {
         ...base,
@@ -22,10 +22,15 @@ export const toQuoteResponse = (prepared: PreparedOrder, walletBalance: number |
       snapshot: result.snapshot,
       subtotal: result.subtotal,
       membershipDiscount: result.membershipDiscount,
-      total: result.subtotal - result.membershipDiscount,
+      total: result.subtotal - result.membershipDiscount - couponDiscount,
     };
   }),
-  coupon: prepared.coupon,
+  coupon: prepared.coupon && {
+    code: prepared.coupon.code,
+    valid: prepared.coupon.valid,
+    discount: prepared.coupon.discount,
+    ...(prepared.coupon.error && { error: prepared.coupon.error }),
+  },
   subtotal: prepared.subtotal,
   membershipDiscount: prepared.membershipDiscount,
   couponDiscount: prepared.couponDiscount,
