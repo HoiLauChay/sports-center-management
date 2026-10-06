@@ -1,10 +1,10 @@
-import type { ClassDetail, ClassSession, WeeklySlot } from '@sports-center/shared';
+import type { ClassDetail, ClassSession, ClassSummary, WeeklySlot } from '@sports-center/shared';
 
 import { toCourseResponse } from '~/mappers/course.mapper';
-import type { ClassDetailRow, ClassSessionRow } from '~/repositories/class.repository';
+import type { ClassDetailRow, ClassSessionRow, ClassSummaryRow } from '~/repositories/class.repository';
 import { formatDate, formatTime, fromDbTime, todayInCenter } from '~/utils/time';
 
-const derivedStatus = (row: ClassDetailRow, today: string): ClassDetail['derivedStatus'] => {
+const derivedStatus = (row: ClassSummaryRow, today: string): ClassDetail['derivedStatus'] => {
   if (row.status !== 'OPEN' || !row.startDate || !row.endDate) return null;
   if (today < formatDate(row.startDate)) return 'UPCOMING';
   return today > formatDate(row.endDate) ? 'COMPLETED' : 'ONGOING';
@@ -22,7 +22,7 @@ export const toSessionResponse = (row: ClassSessionRow): ClassSession => ({
   cancelReason: row.cancelReason,
 });
 
-export const toClassDetailResponse = (row: ClassDetailRow, now = new Date()): ClassDetail => ({
+export const toClassSummaryResponse = (row: ClassSummaryRow, now = new Date()): ClassSummary => ({
   id: row.id,
   name: row.name,
   course: toCourseResponse(row.course),
@@ -37,5 +37,9 @@ export const toClassDetailResponse = (row: ClassDetailRow, now = new Date()): Cl
   maxStudents: row.maxStudents,
   enrolledCount: row._count.enrollments,
   cancelReason: row.cancelReason,
+});
+
+export const toClassDetailResponse = (row: ClassDetailRow, now = new Date()): ClassDetail => ({
+  ...toClassSummaryResponse(row, now),
   sessions: row.sessions.map(toSessionResponse),
 });

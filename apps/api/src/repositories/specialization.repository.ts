@@ -57,6 +57,11 @@ class SpecializationRepository {
       select: { id: true },
     });
 
+  isQualified = async (coachId: string, sportId: string, tx: Prisma.TransactionClient = prisma) =>
+    (await tx.coachSpecialization.count({
+      where: { coachId, sportId, status: 'APPROVED', coach: { role: 'COACH', status: 'ACTIVE' } },
+    })) > 0;
+
   create = (coachId: string, sportId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.coachSpecialization.create({
       data: { coachId, sportId },

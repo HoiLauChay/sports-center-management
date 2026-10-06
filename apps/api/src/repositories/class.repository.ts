@@ -1,6 +1,9 @@
+import type { ClassDerivedStatus, ListClassesQuery, Role } from '@sports-center/shared';
+
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 import { courseSelect } from '~/repositories/course.repository';
+import { pageArgs } from '~/utils/pagination';
 import { todayInCenter } from '~/utils/time';
 
 const classSelect = {
@@ -33,7 +36,7 @@ const sessionSelect = {
   cancelReason: true,
 } satisfies Prisma.ClassSessionSelect;
 
-const classDetailSelect = {
+const classSummarySelect = {
   id: true,
   name: true,
   courseId: true,
@@ -50,13 +53,82 @@ const classDetailSelect = {
   maxStudents: true,
   cancelReason: true,
   _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
+} satisfies Prisma.ClassSelect;
+
+const classDetailSelect = {
+  ...classSummarySelect,
   sessions: { select: sessionSelect, orderBy: { sessionNumber: 'asc' } },
 } satisfies Prisma.ClassSelect;
+
+export type ClassSummaryRow = Prisma.ClassGetPayload<{ select: typeof classSummarySelect }>;
+export type ClassViewer = { id: string; role: Role };
 
 export type ClassDetailRow = Prisma.ClassGetPayload<{ select: typeof classDetailSelect }>;
 export type ClassSessionRow = ClassDetailRow['sessions'][number];
 
+const catalog = (today: Date): Prisma.ClassWhereInput => ({
+  status: 'OPEN',
+  startDate: { gt: today },
+  coachId: { not: null },
+  sessions: { some: { status: 'SCHEDULED' } },
+});
+
+const visibleTo = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => {
+  if (viewer.role === 'MANAGER') return {};
+  if (viewer.role !== 'MEMBER') return { status: { not: 'DRAFT' } };
+  return { OR: [catalog(today), { enrollments: { some: { accountId: viewer.id } } }] };
+};
+
+const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhereInput => ({
+  status: 'OPEN',
+  startDate: status === 'UPCOMING' ? { gt: today } : { lte: today },
+  endDate: status === 'COMPLETED' ? { lt: today } : { gte: today },
+});
+
 class ClassRepository {
+  findPage = (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
+    const today = new Date(todayInCenter());
+    const where: Prisma.ClassWhereInput = {
+      deletedAt: null,
+      courseId: query.courseId,
+      coachId: query.coachId,
+      facilityId: query.facilityId,
+      status: query.status,
+      ...(query.sportId && { course: { sportId: query.sportId } }),
+      AND: [
+        visibleTo(viewer, today),
+        query.openForEnrollment ? catalog(today) : {},
+        query.derivedStatus ? derivedFilter(query.derivedStatus, today) : {},
+        query.q
+          ? {
+              OR: [
+                { name: { contains: query.q, mode: 'insensitive' } },
+                { coach: { fullName: { contains: query.q, mode: 'insensitive' } } },
+              ],
+            }
+          : {},
+      ],
+    };
+    return Promise.all([
+      prisma.class.findMany({
+        where,
+        select: classSummarySelect,
+        orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+        ...pageArgs({ page, limit }),
+      }),
+      prisma.class.count({ where }),
+    ]);
+  };
+
+  findVisibleDetail = (id: string, viewer: ClassViewer) =>
+    prisma.class.findFirst({
+      where: { id, deletedAt: null, AND: [visibleTo(viewer, new Date(todayInCenter()))] },
+      select: classDetailSelect,
+    });
+
+  update = (id: string, data: Prisma.ClassUncheckedUpdateInput, tx: Prisma.TransactionClient) =>
+    tx.class.update({ where: { id }, data, select: classDetailSelect });
+
   findDetail = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.class.findUnique({ where: { id, deletedAt: null }, select: classDetailSelect });
 

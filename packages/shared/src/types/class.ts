@@ -1,3 +1,4 @@
+import type { ClassDerivedStatus, ClassStatus } from '../constants/enums';
 import type { Ref } from './api';
 import type { Person } from './audit';
 import type { Course } from './course';
@@ -24,8 +25,8 @@ export interface ClassSummary {
   id: string;
   name: string;
   course: Course;
-  status: 'DRAFT' | 'PENDING_APPROVAL' | 'OPEN' | 'CANCELLED';
-  derivedStatus: 'UPCOMING' | 'ONGOING' | 'COMPLETED' | null;
+  status: ClassStatus;
+  derivedStatus: ClassDerivedStatus | null;
   startDate: string | null;
   endDate: string | null;
   weeklySchedule: WeeklySlot[];
