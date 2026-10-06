@@ -95,7 +95,6 @@ export function ensureClassSeed(facilities: Facility[], settings: SystemSettings
         coach: COACHES[index % COACHES.length]!,
         minStudents: 3,
         maxStudents: 10,
-        minStudentsOverride: false,
         cancelReason: null,
         baseEnrolled: 2 + index,
       });

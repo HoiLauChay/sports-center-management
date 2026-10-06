@@ -2,8 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { describeRefund, enrollmentRefund } from '~/features/checkout/refundPolicy';
-import { useSettings } from '~/features/settings';
+import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refundPolicy';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -16,31 +15,27 @@ const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string
   CANCELLED: { label: 'Đã hủy' },
 };
 
-/** `/enrollments`: classes I enrolled in, with cancel and a confirmation that states the refund. */
+/** `/enrollments`: classes I enrolled in; before the class starts one can leave it and get the line refunded. */
 export function EnrollmentsPage() {
-  const settings = useSettings();
   const confirm = useConfirm();
   const enrollments = useMyEnrollments();
   const cancel = useCancelEnrollment();
 
   const askCancel = (enrollment: MyEnrollment) => {
-    if (!settings.data) return;
-    const refund = enrollmentRefund(enrollment, enrollment.class.startDate, settings.data);
+    const refund = enrollmentRefund(enrollment);
     confirm({
       title: `Hủy đăng ký lớp ${enrollment.class.name}?`,
       content: (
         <div className="flex flex-col gap-2">
-          <span>
-            {enrollment.class.startDate
-              ? `Buổi học đầu tiên: ${formatDate(enrollment.class.startDate)}.`
-              : 'Lớp chưa có lịch học.'}
-          </span>
-          <b className={refund.amount > 0 ? 'text-sc-success' : 'text-sc-error'}>
-            {describeRefund(refund, settings.data, 'enrollment')}
+          <span>Khai giảng {formatDate(enrollment.class.startDate!)}.</span>
+          <b className="text-sc-success">
+            {refund > 0
+              ? `Bạn sẽ được hoàn ${formatVND(refund)} về ví.`
+              : 'Lớp này không có khoản thanh toán nên không có tiền hoàn.'}
           </b>
         </div>
       ),
-      okText: refund.amount > 0 ? `Hủy và nhận ${formatVND(refund.amount)}` : 'Vẫn hủy, không hoàn tiền',
+      okText: refund > 0 ? `Hủy và nhận ${formatVND(refund)}` : 'Hủy đăng ký',
       onOk: () => cancel.mutateAsync(enrollment.id).catch(() => undefined),
     });
   };
@@ -97,7 +92,7 @@ export function EnrollmentsPage() {
       key: 'actions',
       align: 'right',
       render: (_, enrollment) =>
-        enrollment.status === 'ENROLLED' ? (
+        enrollment.status === 'ENROLLED' && canCancelEnrollment(enrollment.class.startDate) ? (
           <Button
             size="small"
             danger
@@ -112,7 +107,10 @@ export function EnrollmentsPage() {
 
   return (
     <>
-      <PageHeader title="Lớp đã đăng ký" description="Danh sách lớp bạn đã mua. Hủy trước hạn được hoàn tiền về ví." />
+      <PageHeader
+        title="Lớp đã đăng ký"
+        description="Danh sách lớp bạn đã mua. Có thể hủy trước ngày khai giảng và được hoàn toàn bộ học phí về ví."
+      />
       <Card>
         {enrollments.isError && !enrollments.data ? (
           <ErrorState message={toApiError(enrollments.error).message} onRetry={() => void enrollments.refetch()} />

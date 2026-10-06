@@ -36,7 +36,6 @@ export const toClassSummaryResponse = (row: ClassSummaryRow, now = new Date()): 
   minStudents: row.minStudents,
   maxStudents: row.maxStudents,
   enrolledCount: row._count.enrollments,
-  minStudentsOverride: row.minStudentsOverride,
   cancelReason: row.cancelReason,
 });
 

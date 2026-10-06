@@ -13,7 +13,6 @@ const classSelect = {
   coachId: true,
   facilityId: true,
   minStudents: true,
-  minStudentsOverride: true,
   maxStudents: true,
   startDate: true,
   endDate: true,
@@ -52,7 +51,6 @@ const classSummarySelect = {
   coach: { select: { id: true, fullName: true } },
   minStudents: true,
   maxStudents: true,
-  minStudentsOverride: true,
   cancelReason: true,
   _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
 } satisfies Prisma.ClassSelect;

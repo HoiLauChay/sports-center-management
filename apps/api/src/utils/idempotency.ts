@@ -15,9 +15,7 @@ export const idempotencyKey = {
   payment: (orderId: string) => `payment:${orderId}`,
   sepay: (bankTransactionId: string) => `sepay:${bankTransactionId}`,
   cash: (receptionistId: string, clientKey: string) => `cash:${receptionistId}:${clientKey}`,
-  refundBooking: (bookingId: string) => `refund:booking:${bookingId}`,
-  refundSession: (sessionId: string, enrollmentId: string) => `refund:session:${sessionId}:${enrollmentId}`,
-  refundEnrollment: (enrollmentId: string) => `refund:enrollment:${enrollmentId}`,
+  refund: (orderItemId: string) => `refund:${orderItemId}`,
 };
 
 export const hashRequest = (payload: unknown) => createHash('sha256').update(JSON.stringify(payload)).digest('hex');

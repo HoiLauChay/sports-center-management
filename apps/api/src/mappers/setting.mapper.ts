@@ -9,8 +9,6 @@ export const toSettingResponse = (setting: SettingRow): SystemSettings => ({
   closeTime: formatTime(fromDbTime(setting.closeTime)),
   slotDurationMinutes: setting.slotDurationMinutes,
   maxAdvanceBookingDays: setting.maxAdvanceBookingDays,
-  bookingCancelDeadlineHours: setting.bookingCancelDeadlineHours,
-  courseCancelDeadlineDays: setting.courseCancelDeadlineDays,
   membershipExpiryWarningDays: setting.membershipExpiryWarningDays,
   topUpMinAmount: roundMoney(setting.topUpMinAmount),
   invoiceExpiryMinutes: setting.invoiceExpiryMinutes,
