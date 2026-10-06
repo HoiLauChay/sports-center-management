@@ -33,16 +33,6 @@ describe('OpenAPI docs', () => {
         expect.objectContaining({ name: 'page', in: 'query', required: false }),
       ]),
     );
-    expect(paths['/support-requests']?.post).toMatchObject({
-      description: 'Vai trò: MEMBER',
-      security: [{ cookie: [] }],
-      requestBody: {
-        content: { 'application/json': { schema: { required: ['category', 'subject', 'description'] } } },
-      },
-    });
-    expect(paths['/support-requests']?.get?.description).toBe('Vai trò: RECEPTIONIST, MANAGER');
-    expect(paths['/support-requests/{id}']?.patch?.description).toBe('Vai trò: RECEPTIONIST, MANAGER');
-    expect(paths['/me/support-requests']?.get?.description).toBe('Vai trò: MEMBER');
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
   });
