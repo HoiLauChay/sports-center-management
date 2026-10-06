@@ -22,8 +22,8 @@ const supportSelect = {
 export type SupportRow = Prisma.SupportRequestGetPayload<{ select: typeof supportSelect }>;
 
 class SupportRepository {
-  create = (data: Prisma.SupportRequestUncheckedCreateInput, tx: Prisma.TransactionClient) =>
-    tx.supportRequest.create({ data, select: supportSelect });
+  create = (data: Prisma.SupportRequestUncheckedCreateInput) =>
+    prisma.supportRequest.create({ data, select: supportSelect });
 
   findMine = (accountId: string) =>
     prisma.supportRequest.findMany({
@@ -32,9 +32,10 @@ class SupportRepository {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
-  findPage = ({ page, limit, status, category, q }: ListSupportQuery) => {
+  findPage = ({ page, limit, accountId, status, category, q }: ListSupportQuery) => {
     const where: Prisma.SupportRequestWhereInput = {
       deletedAt: null,
+      accountId,
       status,
       category,
       ...(q && {
