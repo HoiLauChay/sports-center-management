@@ -1,6 +1,7 @@
 import { Alert, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
+import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { DAY_SHORT, WEEK_ORDER, formatDayLabel } from '~/lib/time';
@@ -17,7 +18,8 @@ const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
 function BookingsTab() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<Booking['status'] | undefined>();
-  const bookings = useMyBookings({ page, limit: 8, status });
+  const [range, setRange] = useState<DateRange>({});
+  const bookings = useMyBookings({ page, limit: 8, status, from: range.from, to: range.to });
 
   const columns: TableColumnsType<Booking> = [
     {
@@ -67,19 +69,27 @@ function BookingsTab() {
 
   return (
     <>
-      <Segmented
-        className="mb-4"
-        value={status ?? 'ALL'}
-        onChange={(value) => {
-          setStatus(value === 'ALL' ? undefined : (value as Booking['status']));
-          setPage(1);
-        }}
-        options={[
-          { value: 'ALL', label: 'Tất cả' },
-          { value: 'CONFIRMED', label: 'Đã xác nhận' },
-          { value: 'CANCELLED', label: 'Đã hủy' },
-        ]}
-      />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Segmented
+          value={status ?? 'ALL'}
+          onChange={(value) => {
+            setStatus(value === 'ALL' ? undefined : (value as Booking['status']));
+            setPage(1);
+          }}
+          options={[
+            { value: 'ALL', label: 'Tất cả' },
+            { value: 'CONFIRMED', label: 'Đã xác nhận' },
+            { value: 'CANCELLED', label: 'Đã hủy' },
+          ]}
+        />
+        <DateRangeFilter
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setPage(1);
+          }}
+        />
+      </div>
       {bookings.error && !bookings.data && <Alert type="error" showIcon title={toApiError(bookings.error).message} />}
       <Table<Booking>
         rowKey="id"

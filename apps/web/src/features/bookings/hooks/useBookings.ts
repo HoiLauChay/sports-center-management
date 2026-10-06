@@ -1,6 +1,7 @@
 import type { FacilitySchedule } from '@sports-center/shared';
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '~/features/auth';
+import type { ListBookingsQuery } from '../mocks/bookings';
 import { bookingsService } from '../services/bookings.service';
 import type { PackagePreviewRequest } from '../types';
 
@@ -44,7 +45,7 @@ export function usePackagePreview(request: PackagePreviewRequest | null) {
   });
 }
 
-export function useMyBookings(query: { page: number; limit: number; status?: 'CONFIRMED' | 'CANCELLED' }) {
+export function useMyBookings(query: ListBookingsQuery) {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['bookings', 'mine', user.id, query],
@@ -58,5 +59,14 @@ export function useMyPackages() {
   return useQuery({
     queryKey: ['bookings', 'packages', user.id],
     queryFn: () => bookingsService.listMyPackages(user),
+  });
+}
+
+/** Confirmed bookings of one day for the reception desk. */
+export function useBookingsOn(date: string) {
+  return useQuery({
+    queryKey: ['bookings', 'on', date],
+    queryFn: () => bookingsService.listOn(date),
+    refetchInterval: 30_000,
   });
 }
