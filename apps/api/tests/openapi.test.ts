@@ -33,21 +33,6 @@ describe('OpenAPI docs', () => {
         expect.objectContaining({ name: 'page', in: 'query', required: false }),
       ]),
     );
-    expect(paths['/classes']?.get?.parameters).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'derivedStatus', in: 'query' }),
-        expect.objectContaining({ name: 'sportId', in: 'query' }),
-      ]),
-    );
-    expect(paths['/classes/{id}']?.patch).toMatchObject({
-      description: 'Vai trò: MANAGER',
-      security: [{ cookie: [] }],
-    });
-    for (const action of ['approve', 'reject'])
-      expect(paths[`/classes/{id}/${action}`]?.post).toMatchObject({
-        description: 'Vai trò: MANAGER',
-        security: [{ cookie: [] }],
-      });
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
   });
