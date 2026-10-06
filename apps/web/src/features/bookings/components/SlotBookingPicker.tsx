@@ -13,7 +13,6 @@ import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
 import { useSlotSelection } from '../hooks/useSlotSelection';
-import { isValidSelection } from '../utils/slot-selection';
 import { SlotGrid } from './SlotGrid';
 
 const BENEFIT_TEXT: Record<string, string> = {
@@ -71,7 +70,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   const quickDays = Array.from({ length: Math.min(7, maxAdvance + 1) }, (_, offset) => addDays(today, offset));
 
   const selected = useMemo(() => {
-    if (!isValidSelection(selection, schedule.schedules)) return null;
+    if (!selection) return null;
     const slots = schedule.schedules[selection.facilityId]?.slots;
     const first = slots?.[selection.startIndex];
     const last = slots?.[selection.startIndex + selection.count - 1];
@@ -195,8 +194,8 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               layout="cards"
               facilities={rows}
               schedules={schedule.schedules}
-              loading={schedule.isLoading || Boolean(schedule.error)}
-              selection={selected ? selection : null}
+              loading={schedule.isLoading}
+              selection={selection}
               onSelect={setSelection}
             />
           )}
@@ -240,7 +239,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               <Button
                 type="primary"
                 block
-                disabled={!line?.valid || quote.isFetching || schedule.isFetching || Boolean(schedule.error)}
+                disabled={!line?.valid || quote.isFetching || Boolean(schedule.error)}
                 onClick={() => {
                   onAdd(selected.input);
                   setSelection(null);
