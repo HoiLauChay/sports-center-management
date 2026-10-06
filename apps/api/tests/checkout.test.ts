@@ -16,7 +16,6 @@ let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
 
 let bookingPrice = 200_000;
-const fulfilledAllocations: { key: string; refId: string; amount: number }[] = [];
 
 const unused = () => Promise.reject(new Error('not used by checkout'));
 
@@ -62,20 +61,13 @@ beforeAll(async () => {
   });
 });
 
-const packageHandler: AnyLineHandler = {
-  ...fakeHandler('FACILITY_PACKAGE', false, async () => ({
-    ok: true,
-    subtotal: 100_000,
-    membershipDiscount: 0,
-    snapshot: { title: 'Sân 1 · T2, T4, T6', startAt: '2026-10-05', endAt: '2026-10-10', discountPct: 0 },
-    components: ['mon', 'wed', 'fri'].map((key) => ({ key, weight: 1 })),
-    data: null,
-  })),
-  fulfill: async (_tx, _ctx, line) => {
-    fulfilledAllocations.push(...line.allocations);
-    return { refId: crypto.randomUUID() };
-  },
-};
+const packageHandler = fakeHandler('FACILITY_PACKAGE', false, async () => ({
+  ok: true,
+  subtotal: 100_000,
+  membershipDiscount: 0,
+  snapshot: { title: 'Sân 1 · T2, T4, T6', startAt: '2026-10-05', endAt: '2026-10-10', discountPct: 0 },
+  data: null,
+}));
 
 afterAll(() => {
   delete lineHandlers.FACILITY_PACKAGE;
@@ -266,16 +258,7 @@ describe('checkout', () => {
     expect(await prisma.order.count()).toBe(1);
     expect(await prisma.walletTransaction.count({ where: { type: 'PAYMENT' } })).toBe(1);
     expect(await expectWalletConsistent(member.id)).toBe(100_000);
-    const order = await expectOrderConsistent(orders[0]!.id);
-    expect(fulfilledAllocations.map(({ key, amount }) => [key, amount])).toEqual([
-      ['mon', 33_334],
-      ['wed', 33_333],
-      ['fri', 33_333],
-    ]);
-    expect(order.items.find(({ type }) => type === 'FACILITY_PACKAGE')?.itemSnapshot).toMatchObject({
-      schema_version: 1,
-      allocations: fulfilledAllocations.map(({ refId, amount }) => ({ refId, amount })),
-    });
+    await expectOrderConsistent(orders[0]!.id);
 
     const conflict = await request('POST', '/', member, { ...body, expectedTotal: 280_000 });
     expect(conflict.status).toBe(409);

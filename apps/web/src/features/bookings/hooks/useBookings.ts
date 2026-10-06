@@ -1,8 +1,6 @@
 import type { FacilitySchedule } from '@sports-center/shared';
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App } from 'antd';
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '~/features/auth';
-import { toApiError } from '~/lib/http-errors';
 import { bookingsService } from '../services/bookings.service';
 import type { PackagePreviewRequest } from '../types';
 
@@ -53,46 +51,5 @@ export function useMyPackages() {
   return useQuery({
     queryKey: ['bookings', 'packages', user.id],
     queryFn: () => bookingsService.listMyPackages(user),
-  });
-}
-
-/** Cancelling refunds into the wallet, so every view that shows money or availability is refreshed. */
-function useRefreshAfterCancel() {
-  const queryClient = useQueryClient();
-  return () => {
-    void queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
-    void queryClient.invalidateQueries({ queryKey: ['wallet'] });
-    void queryClient.invalidateQueries({ queryKey: ['orders'] });
-    void queryClient.invalidateQueries({ queryKey: ['facility-schedule'] });
-    void queryClient.invalidateQueries({ queryKey: ['classes'] });
-  };
-}
-
-export function useCancelBooking() {
-  const user = useCurrentUser();
-  const { message } = App.useApp();
-  const refresh = useRefreshAfterCancel();
-  return useMutation({
-    mutationFn: (id: string) => bookingsService.cancel(user, id),
-    onSuccess: ({ refund }) => {
-      refresh();
-      message.success(refund.amount > 0 ? 'Đã hủy lượt đặt, tiền đã được hoàn về ví.' : 'Đã hủy lượt đặt.');
-    },
-    onError: (error) => message.error(toApiError(error).message),
-  });
-}
-
-export function useCancelPackage() {
-  const user = useCurrentUser();
-  const { message } = App.useApp();
-  const refresh = useRefreshAfterCancel();
-  return useMutation({
-    mutationFn: (id: string) => bookingsService.cancelPackage(user, id),
-    onSuccess: ({ cancelledBookings, refundTotal }) => {
-      refresh();
-      message.success(`Đã hủy ${cancelledBookings} buổi${refundTotal > 0 ? ' và hoàn tiền về ví' : ''}.`);
-    },
-    onError: (error) => message.error(toApiError(error).message),
   });
 }

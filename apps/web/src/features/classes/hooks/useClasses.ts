@@ -39,7 +39,7 @@ export function useCancelEnrollment() {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
-      message.success(refund.amount > 0 ? 'Đã hủy đăng ký, tiền đã được hoàn về ví.' : 'Đã hủy đăng ký lớp.');
+      message.success(refund > 0 ? 'Đã hủy đăng ký, tiền đã được hoàn về ví.' : 'Đã hủy đăng ký lớp.');
     },
     onError: (error) => message.error(toApiError(error).message),
   });

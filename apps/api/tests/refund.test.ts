@@ -1,8 +1,11 @@
+import type { OrderStatus } from '@sports-center/shared';
 import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { prisma } from '~/configs/db';
 import type { OrderItemType } from '~/generated/prisma/client';
-import refundService, { type RefundComponentInput } from '~/services/refund.service';
+import { toOrderResponse } from '~/mappers/order.mapper';
+import orderRepository from '~/repositories/order.repository';
+import refundService, { type RefundItemInput } from '~/services/refund.service';
 import { lockRows, runTransaction } from '~/utils/transaction';
 import { resetDatabase } from './helpers/db';
 import { createAccount } from './helpers/http';
@@ -45,79 +48,58 @@ const createOrder = async (
   });
 };
 
-const refund = (accountId: string | null, orderId: string, input: RefundComponentInput) =>
+const refund = (accountId: string | null, orderId: string, input: RefundItemInput) =>
   runTransaction(async (tx) => {
     const owner = accountId ? [accountId] : [];
     await lockRows(tx, { accounts: owner, memberProfiles: owner, orders: [orderId], orderItems: [input.orderItemId] });
-    return refundService.refundComponent(tx, input);
+    return refundService.refundItem(tx, input);
   });
 
-const orderState = (id: string) =>
-  prisma.order.findUniqueOrThrow({
-    where: { id },
-    select: {
-      status: true,
-      refundedAmount: true,
-      items: { select: { refundedAmount: true }, orderBy: { lineNumber: 'asc' } },
-    },
-  });
+const orderState = async (id: string) => toOrderResponse((await orderRepository.findById(id))!);
 
-describe('refund a component', () => {
-  test('the same component refunded twice is credited once, and never above what the line paid', async () => {
+const ordersWithStatus = async (status: OrderStatus) =>
+  (await orderRepository.findPage({ page: 1, limit: 20, status }))[0].map(({ orderNumber }) => orderNumber);
+
+describe('refund an order line', () => {
+  test('a line is refunded in full and only once, even when asked again at the same time', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
-    const order = await createOrder(member.id, [{ type: 'FACILITY_PACKAGE', total: 300_000 }]);
-    const line = order.items[0]!;
-    const input = { orderItemId: line.id, key: 'refund:booking:b1', amount: 100_000, reason: 'Hủy booking đúng hạn' };
+    const order = await createOrder(member.id, [{ type: 'COURSE_ENROLLMENT', total: 300_000 }]);
+    const input = { orderItemId: order.items[0]!.id, reason: 'Lớp bị hủy' };
 
     const results = await Promise.all([1, 2, 3].map(() => refund(member.id, order.id, input)));
-    expect(results.map(({ refunded }) => refunded).sort()).toEqual([0, 0, 100_000]);
-
-    const more = await refund(member.id, order.id, { ...input, key: 'refund:booking:b2', amount: 250_000 });
-    expect(more.refunded).toBe(200_000);
-    expect((await refund(member.id, order.id, { ...input, key: 'refund:booking:b3' })).refunded).toBe(0);
+    expect(results.map(({ refunded }) => refunded).sort()).toEqual([0, 0, 300_000]);
+    expect((await refund(member.id, order.id, input)).refunded).toBe(0);
 
     const state = await orderState(order.id);
-    expect([state.status, Number(state.refundedAmount)]).toEqual(['REFUNDED', 300_000]);
-    expect(await prisma.walletTransaction.count({ where: { type: 'REFUND' } })).toBe(2);
-    expect(await prisma.notification.count({ where: { accountId: member.id, sendEmail: true } })).toBe(2);
+    expect(state.status).toBe('REFUNDED');
+    expect(state.items[0]!.refundedAt).toBe(state.refunds[0]!.createdAt);
+    expect(state.refunds.map(({ amount }) => amount)).toEqual([300_000]);
+    expect(await ordersWithStatus('REFUNDED')).toEqual([order.orderNumber]);
+    expect(await ordersWithStatus('PAID')).toEqual([]);
+    expect(await prisma.notification.count({ where: { accountId: member.id, sendEmail: true } })).toBe(1);
     expect(await expectWalletConsistent(member.id)).toBe(300_000);
   });
 
-  test('refunds of different lines at the same time keep the order totals right', async () => {
+  test('refunding some lines leaves the order partially refunded; membership lines are never refunded', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
     const order = await createOrder(member.id, [
       { type: 'FACILITY_BOOKING', total: 200_000 },
-      { type: 'FACILITY_BOOKING', total: 100_000 },
+      { type: 'COURSE_ENROLLMENT', total: 100_000 },
       { type: 'MEMBERSHIP', total: 500_000 },
     ]);
-    const [first, second, membership] = order.items;
+    const [booking, enrollment, membership] = order.items;
 
-    const results = await Promise.all([
-      refund(member.id, order.id, {
-        orderItemId: first!.id,
-        key: 'refund:booking:a',
-        amount: 200_000,
-        reason: 'Bảo trì',
-      }),
-      refund(member.id, order.id, {
-        orderItemId: second!.id,
-        key: 'refund:booking:b',
-        amount: 100_000,
-        reason: 'Bảo trì',
-      }),
-      refund(member.id, order.id, {
-        orderItemId: membership!.id,
-        key: 'refund:membership',
-        amount: 500_000,
-        reason: 'x',
-      }),
-    ]);
+    const results = await Promise.all(
+      [booking!, enrollment!, membership!].map(({ id }) =>
+        refund(member.id, order.id, { orderItemId: id, reason: 'x' }),
+      ),
+    );
     expect(results.map(({ refunded }) => refunded)).toEqual([200_000, 100_000, 0]);
 
     const state = await orderState(order.id);
     expect(state.status).toBe('PARTIALLY_REFUNDED');
-    expect(state.items.map(({ refundedAmount }) => Number(refundedAmount))).toEqual([200_000, 100_000, 0]);
-    expect(Number(state.refundedAmount)).toBe(300_000);
+    expect(state.items.map(({ refundedAt }) => refundedAt !== null)).toEqual([true, true, false]);
+    expect(await ordersWithStatus('PARTIALLY_REFUNDED')).toEqual([order.orderNumber]);
     expect(await expectWalletConsistent(member.id)).toBe(300_000);
   });
 
@@ -127,21 +109,12 @@ describe('refund a component', () => {
     const guestOrder = await createOrder(null, [{ type: 'FACILITY_BOOKING', total: 200_000 }], receptionist.id);
     const freeOrder = await createOrder(member.id, [{ type: 'FACILITY_BOOKING', total: 0 }]);
 
-    const guest = await refund(null, guestOrder.id, {
-      orderItemId: guestOrder.items[0]!.id,
-      key: 'refund:booking:guest',
-      amount: 200_000,
-      reason: 'Bảo trì',
-    });
-    const free = await refund(member.id, freeOrder.id, {
-      orderItemId: freeOrder.items[0]!.id,
-      key: 'refund:booking:free',
-      amount: 0,
-      reason: 'Hủy',
-    });
+    const guest = await refund(null, guestOrder.id, { orderItemId: guestOrder.items[0]!.id, reason: 'Bảo trì' });
+    const free = await refund(member.id, freeOrder.id, { orderItemId: freeOrder.items[0]!.id, reason: 'Hủy' });
 
     expect([guest.refunded, free.refunded]).toEqual([0, 0]);
     expect(await prisma.walletTransaction.count()).toBe(0);
     expect((await orderState(guestOrder.id)).status).toBe('PAID');
+    expect((await ordersWithStatus('PAID')).sort()).toEqual([guestOrder.orderNumber, freeOrder.orderNumber].sort());
   });
 });
