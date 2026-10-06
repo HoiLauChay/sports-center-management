@@ -8,8 +8,6 @@ import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/h
 import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
-import { useSlotSelection } from '../hooks/useSlotSelection';
-import { isValidSelection } from '../utils/slot-selection';
 import { SlotGrid } from './SlotGrid';
 
 /** Daily facility schedule for the reception desk; counter checkout lives at /reception/order. */
@@ -25,15 +23,6 @@ export function ReceptionBookingsPage() {
     rows.map((facility) => facility.id),
     date,
   );
-  const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
-
-  const currentSelection = isValidSelection(selection, schedule.schedules) ? selection : null;
-  const selectedSlots = currentSelection
-    ? schedule.schedules[currentSelection.facilityId]?.slots.slice(
-        currentSelection.startIndex,
-        currentSelection.startIndex + currentSelection.count,
-      )
-    : undefined;
 
   if (facilities.isPending || sports.isPending) return <PageLoading />;
   if (facilities.isError || sports.isError) {
@@ -65,10 +54,7 @@ export function ReceptionBookingsPage() {
             options={(sports.data ?? [])
               .filter((sport) => sport.isActive)
               .map((sport) => ({ value: sport.id, label: sport.name }))}
-            onChange={(value) => {
-              setSportId(value);
-              setSelection(null);
-            }}
+            onChange={setSportId}
           />
           <DatePicker
             aria-label="Ngày xem lịch"
@@ -76,10 +62,7 @@ export function ReceptionBookingsPage() {
             allowClear={false}
             format="DD/MM/YYYY"
             onChange={(value) => {
-              if (value) {
-                setDate(value.format(DATE_FORMAT));
-                setSelection(null);
-              }
+              if (value) setDate(value.format(DATE_FORMAT));
             }}
           />
           <Button onClick={schedule.refetch} loading={schedule.isFetching}>
@@ -90,34 +73,14 @@ export function ReceptionBookingsPage() {
           {schedule.updatedAt ? `Cập nhật lúc ${dayjs(schedule.updatedAt).format('HH:mm:ss')} · ` : ''}Tự cập nhật mỗi
           30 giây
         </p>
-        {invalidated && (
-          <Alert
-            className="!mb-3"
-            type="warning"
-            showIcon
-            title="Khung giờ đã chọn không còn khả dụng. Vui lòng chọn lại."
-          />
-        )}
         <h3 className="font-display text-[17px] font-bold uppercase">{formatDayLabel(date)}</h3>
         {!rows.length ? (
           <Alert type="info" showIcon title="Chưa có sân / phòng cho bộ môn này." />
         ) : (
           <>
             {schedule.error && <ErrorState message={toApiError(schedule.error).message} onRetry={schedule.refetch} />}
-            <SlotGrid
-              facilities={rows}
-              schedules={schedule.schedules}
-              loading={schedule.isLoading || Boolean(schedule.error)}
-              selection={currentSelection}
-              onSelect={setSelection}
-            />
+            <SlotGrid facilities={rows} schedules={schedule.schedules} loading={schedule.isLoading} />
           </>
-        )}
-        {currentSelection && selectedSlots?.length && (
-          <p className="mt-4 mb-0 text-sc-primary" role="status">
-            {rows.find((facility) => facility.id === currentSelection.facilityId)?.name} · {selectedSlots[0]?.startTime}
-            –{selectedSlots.at(-1)?.endTime} · {currentSelection.count} slot
-          </p>
         )}
       </Card>
     </>
