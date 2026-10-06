@@ -1,4 +1,4 @@
-import type { ClassDerivedStatus, ClassStatus } from '../constants/enums';
+import type { ClassDerivedStatus, ClassStatus, EnrollmentStatus } from '../constants/enums';
 import type { Ref } from './api';
 import type { Person } from './audit';
 import type { Course } from './course';
@@ -40,4 +40,20 @@ export interface ClassSummary {
 
 export interface ClassDetail extends ClassSummary {
   sessions: ClassSession[];
+}
+
+export interface Enrollment {
+  id: string;
+  class: Ref;
+  account: Person;
+  status: EnrollmentStatus;
+  paidAmount: number;
+  refundedAt: string | null;
+  orderItemId: string;
+  enrolledAt: string;
+}
+
+export interface CancelEnrollmentResult {
+  enrollment: Enrollment;
+  refund: number;
 }
