@@ -3,25 +3,16 @@ import {
   type BookingBenefit,
   type CheckoutItemInput,
   type FacilityBookingSnapshot,
-  type ScheduleClashReason,
 } from '@sports-center/shared';
 
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import scheduleRepository from '~/repositories/schedule.repository';
-import type { CheckoutContext, Db, LineError, LineHandler } from '~/services/checkout/types';
-import scheduleService, { type PlannedUse, type TimeRange } from '~/services/schedule.service';
+import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
+import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
+import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { percentOf } from '~/utils/money';
-import {
-  addDays,
-  formatDate,
-  fromDbTime,
-  overlaps,
-  parseTime,
-  toCenterDateTime,
-  todayInCenter,
-  toDbTime,
-} from '~/utils/time';
+import { addDays, formatDate, fromDbTime, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
 
 type BookingInput = Extract<CheckoutItemInput, { type: 'FACILITY_BOOKING' }>;
 
@@ -34,20 +25,6 @@ interface BookingData {
   unitPrice: number;
   benefit: BookingBenefit;
 }
-
-const CLASH_MESSAGE: Record<ScheduleClashReason, string> = {
-  CLOSED: 'Cơ sở đang tạm ngừng hoạt động',
-  PAST: 'Khung giờ đã qua',
-  OFF_GRID: 'Khung giờ không khớp lưới slot',
-  MAINTENANCE: 'Cơ sở bảo trì trong khung giờ này',
-  CLASS_SESSION: 'Khung giờ đã có lớp học',
-  BOOKED: 'Khung giờ đã hết chỗ',
-  FULL: 'Khung giờ đã hết chỗ',
-  COACH_BUSY: 'Huấn luyện viên đã có lịch trùng giờ',
-  MEMBER_BUSY: 'Người mua đã có lịch khác trùng giờ',
-};
-
-const lineError = (code: LineError['code'], message: string) => ({ ok: false as const, error: { code, message } });
 
 const monthOf = (date: string) => {
   const [year, month] = date.split('-').map(Number);
@@ -89,10 +66,6 @@ const benefitOf = async (
   return pct > 0 ? { benefit: 'DISCOUNT', discountPct: pct } : { benefit: 'NONE', discountPct: 0 };
 };
 
-const memberBusy = (ctx: CheckoutContext, range: TimeRange) =>
-  ctx.buyer.kind === 'MEMBER' &&
-  ctx.planned.some(({ uses }) => uses.some((use) => use.date === range.date && overlaps(use, range)));
-
 export const facilityBookingHandler: LineHandler<BookingInput, BookingData, FacilityBookingSnapshot> = {
   type: 'FACILITY_BOOKING',
   guestAllowed: true,
@@ -109,7 +82,7 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
     if (input.date > lastDay) {
       return lineError(ERROR_CODE.VALIDATION, `Chỉ được đặt trước tối đa ${ctx.settings.maxAdvanceBookingDays} ngày`);
     }
-    if (memberBusy(ctx, range)) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE.MEMBER_BUSY);
+    if (busyInOrder(ctx, [range])) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE.MEMBER_BUSY);
 
     const [clash] = await scheduleService.findConflicts(db, {
       ranges: [range],
