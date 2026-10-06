@@ -17,3 +17,18 @@ export const expectWalletConsistent = async (accountId: string) => {
   expect(Number(transactions.at(-1)?.balanceAfter ?? 0)).toBe(balance);
   return balance;
 };
+
+export const seedBalance = async (accountId: string, amount: number) => {
+  await prisma.memberProfile.update({ where: { accountId }, data: { walletBalance: amount } });
+  await prisma.walletTransaction.create({
+    data: {
+      accountId,
+      transactionCode: `GD261003S${accountId.slice(0, 7).toUpperCase()}`,
+      idempotencyKey: `seed:${accountId}`,
+      type: 'TOP_UP',
+      topUpMethod: 'CASH',
+      amount,
+      balanceAfter: amount,
+    },
+  });
+};

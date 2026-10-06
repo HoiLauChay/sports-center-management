@@ -2,6 +2,7 @@ import type { CheckoutItemInput, ErrorCode, ItemSnapshotBase, OrderItemType } fr
 
 import type { Prisma, Role } from '~/generated/prisma/client';
 import type { SettingRow } from '~/repositories/setting.repository';
+import type { PlannedUse } from '~/services/schedule.service';
 
 export type Db = Prisma.TransactionClient;
 
@@ -26,6 +27,7 @@ export interface PlannedLine {
   lineNumber: number;
   type: OrderItemType;
   data: unknown;
+  uses: PlannedUse[];
 }
 
 export interface CheckoutContext {
@@ -49,6 +51,7 @@ export type LineResult<Data, Snapshot> =
       membershipDiscount: number;
       snapshot: Snapshot;
       data: Data;
+      uses?: PlannedUse[];
     }
   | { ok: false; error: LineError };
 

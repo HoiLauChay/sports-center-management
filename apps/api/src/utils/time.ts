@@ -53,6 +53,9 @@ export const formatTime = (minutes: number) =>
 
 export const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 
+export const addDays = (date: string, days: number) =>
+  formatDate(new Date(Date.parse(`${date}T00:00:00Z`) + days * 24 * 60 * MINUTE));
+
 const centerDateTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: CENTER_TIMEZONE,
   day: '2-digit',
