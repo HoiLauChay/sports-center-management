@@ -41,10 +41,17 @@ export const commitOrder = async (
       ? null
       : { id: ctx.actor.id, fullName: (await accountRepository.findById(ctx.actor.id, undefined, tx))!.fullName };
 
-  const lines = prepared.lines.map(({ lineNumber, input, result }) => {
+  const lines = prepared.lines.map(({ lineNumber, input, result, couponDiscount }) => {
     if (!result.ok) throw new Error(`commitOrder called with invalid line ${lineNumber}`);
-    return { lineNumber, input, result, total: result.subtotal - result.membershipDiscount };
+    return {
+      lineNumber,
+      input,
+      result,
+      couponDiscount,
+      total: result.subtotal - result.membershipDiscount - couponDiscount,
+    };
   });
+  const coupon = prepared.coupon?.valid ? prepared.coupon : null;
 
   const order = await orderRepository.create(
     {
@@ -55,6 +62,7 @@ export const commitOrder = async (
       guestName: ctx.buyer.kind === 'GUEST' ? ctx.buyer.name : null,
       guestPhone: ctx.buyer.kind === 'GUEST' ? ctx.buyer.phone : null,
       createdById: createdBy?.id,
+      couponId: coupon?.id,
       receiptSnapshot: {
         schema_version: SCHEMA_VERSION,
         orderNumber: number,
@@ -67,7 +75,7 @@ export const commitOrder = async (
           prepared.membershipDiscount > 0 && ctx.benefits?.current
             ? { packageName: ctx.benefits.current.packageName }
             : null,
-        coupon: null,
+        coupon: coupon && { code: coupon.code, name: coupon.name, discount: coupon.discount },
       },
       subtotal: prepared.subtotal,
       membershipDiscountAmount: prepared.membershipDiscount,
@@ -75,12 +83,13 @@ export const commitOrder = async (
       totalAmount: prepared.total,
       paymentMethod: payment.method,
       items: {
-        create: lines.map(({ lineNumber, input, result, total }) => ({
+        create: lines.map(({ lineNumber, input, result, couponDiscount, total }) => ({
           lineNumber,
           type: input.type,
           itemSnapshot: { schema_version: SCHEMA_VERSION, ...result.snapshot } as Prisma.InputJsonObject,
           subtotal: result.subtotal,
           membershipDiscountAmount: result.membershipDiscount,
+          couponDiscountAmount: couponDiscount,
           totalAmount: total,
         })),
       },

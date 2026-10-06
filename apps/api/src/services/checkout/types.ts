@@ -82,11 +82,21 @@ export interface PreparedLine {
   lineNumber: number;
   input: CheckoutItemInput;
   result: LineResult<unknown, LineSnapshot>;
+  couponDiscount: number;
+}
+
+export interface AppliedCoupon {
+  id: string | null;
+  code: string;
+  name: string | null;
+  valid: boolean;
+  discount: number;
+  error?: string;
 }
 
 export interface PreparedOrder {
   lines: PreparedLine[];
-  coupon: { code: string; valid: boolean; discount: number; error?: string } | null;
+  coupon: AppliedCoupon | null;
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;
