@@ -3,7 +3,9 @@ import express, { type ErrorRequestHandler } from 'express';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
+import * as shared from '@sports-center/shared';
 import { pageQuerySchema } from '@sports-center/shared';
+import { ZodObject } from 'zod';
 import { ErrorWithStatus } from '~/rules/error';
 import { validate } from '~/utils/validation';
 
@@ -42,5 +44,24 @@ describe('validate query', () => {
     const body = (await res.json()) as { code: string; errors: { path: string }[] };
     expect(body.code).toBe('VALIDATION_ERROR');
     expect(body.errors.map(({ path }) => path)).toEqual(['query.limit']);
+  });
+});
+
+describe('update body schemas', () => {
+  const updateSchemas = Object.entries(shared as Record<string, unknown>).filter(
+    (entry): entry is [string, ZodObject] => /^update.*Schema$/.test(entry[0]) && entry[1] instanceof ZodObject,
+  );
+
+  test('never fill in omitted fields, so a partial update cannot overwrite stored values', () => {
+    expect(updateSchemas.length).toBeGreaterThan(0);
+    const filled = updateSchemas.flatMap(([name, schema]) =>
+      Object.entries(schema.shape)
+        .filter(([, field]) => {
+          const parsed = field.safeParse(undefined);
+          return parsed.success && parsed.data !== undefined;
+        })
+        .map(([key]) => `${name}.${key}`),
+    );
+    expect(filled).toEqual([]);
   });
 });
