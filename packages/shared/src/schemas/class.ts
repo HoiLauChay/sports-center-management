@@ -56,6 +56,8 @@ export type CreateClassBody = z.infer<typeof createClassBodySchema>;
 
 export const classIdParamsSchema = z.object({ id: z.uuid('Mã lớp không hợp lệ') });
 
+export const enrollmentIdParamsSchema = z.object({ id: z.uuid('Mã đăng ký không hợp lệ') });
+
 export const listClassesQuerySchema = pageQuerySchema.extend({
   q: z.string().trim().min(1).max(100, 'Từ khóa tối đa 100 ký tự').optional(),
   status: z.enum(CLASS_STATUSES, 'Trạng thái không hợp lệ').optional(),

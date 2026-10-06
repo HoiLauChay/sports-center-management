@@ -8,6 +8,7 @@ import classRouter from '~/routes/class.routes';
 import couponRouter from '~/routes/coupon.routes';
 import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
+import enrollmentRouter from '~/routes/enrollment.routes';
 import facilityRouter from '~/routes/facility.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
 import membershipRouter from '~/routes/membership.routes';
@@ -39,6 +40,7 @@ export const apiRoutes: [string, Router][] = [
   ['/coupons', couponRouter],
   ['/courses', courseRouter],
   ['/cron', cronRouter],
+  ['/enrollments', enrollmentRouter],
   ['/facilities', facilityRouter],
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],

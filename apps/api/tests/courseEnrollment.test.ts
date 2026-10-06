@@ -3,7 +3,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
-import { addDays, parseTime, todayInCenter, toDbTime } from '~/utils/time';
+import { addDays, todayInCenter } from '~/utils/time';
+import { seedOpenClass } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
 import { giveActiveMembership } from './helpers/membership';
@@ -17,38 +18,6 @@ let request: Awaited<ReturnType<typeof startServer>>['request'];
 const today = todayInCenter();
 const firstDay = addDays(today, 3);
 const secondDay = addDays(today, 10);
-let seq = 0;
-
-const seedOpenClass = async ({ maxStudents = 10, startDate = firstDay } = {}) => {
-  const coach = await createAccount('COACH', `coach${++seq}@example.com`);
-  const sport = await prisma.sport.create({ data: { name: `Boxing ${seq}` } });
-  const course = await prisma.course.create({
-    data: { name: `Boxing cơ bản ${seq}`, sportId: sport.id, price: 300_000, totalSessions: 2 },
-  });
-  const room = await seedFacility(1, { type: 'ROOM' });
-  const session = (sessionNumber: number, date: string) => ({
-    facilityId: room.id,
-    sessionNumber,
-    sessionDate: new Date(date),
-    startTime: toDbTime(parseTime('18:00')),
-    endTime: toDbTime(parseTime('19:30')),
-  });
-  return prisma.class.create({
-    data: {
-      courseId: course.id,
-      facilityId: room.id,
-      coachId: coach.id,
-      name: `Lớp ${seq}`,
-      weeklySchedule: [],
-      maxStudents,
-      startDate: new Date(startDate),
-      endDate: new Date(secondDay),
-      status: 'OPEN',
-      sessions: { create: [session(1, startDate), session(2, secondDay)] },
-    },
-  });
-};
-
 const enrollment = (classId: string) => ({ type: 'COURSE_ENROLLMENT', classId });
 
 const pay = (items: unknown[], expectedTotal: number, idempotencyKey: string) => ({
