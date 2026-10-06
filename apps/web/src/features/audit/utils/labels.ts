@@ -40,7 +40,6 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   SYSTEM_SETTING: 'Cấu hình hệ thống',
   BANK_TRANSACTION: 'Giao dịch ngân hàng',
   INVOICE: 'Hóa đơn',
-  SUPPORT_REQUEST: 'Yêu cầu hỗ trợ',
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -111,10 +110,6 @@ const FIELD_LABEL: Record<string, string> = {
   handledAt: 'Thời điểm xử lý',
   paymentCode: 'Mã thanh toán',
   referenceCode: 'Mã tham chiếu',
-  category: 'Loại yêu cầu',
-  subject: 'Tiêu đề',
-  resolutionNote: 'Phản hồi',
-  resolvedAt: 'Thời điểm giải quyết',
 };
 
 export const auditFieldLabel = (field: string) => FIELD_LABEL[field] ?? field;

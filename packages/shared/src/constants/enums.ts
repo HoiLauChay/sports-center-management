@@ -41,7 +41,6 @@ export const AUDIT_ENTITY_TYPES = [
   'SYSTEM_SETTING',
   'BANK_TRANSACTION',
   'INVOICE',
-  'SUPPORT_REQUEST',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
