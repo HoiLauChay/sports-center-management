@@ -106,3 +106,9 @@ export type ClassStatus = (typeof CLASS_STATUSES)[number];
 
 export const CLASS_DERIVED_STATUSES = ['UPCOMING', 'ONGOING', 'COMPLETED'] as const;
 export type ClassDerivedStatus = (typeof CLASS_DERIVED_STATUSES)[number];
+
+export const SUPPORT_CATEGORIES = ['ACCOUNT', 'MEMBERSHIP', 'BOOKING', 'CLASS', 'PAYMENT', 'OTHER'] as const;
+export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
+
+export const SUPPORT_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+export type SupportStatus = (typeof SUPPORT_STATUSES)[number];

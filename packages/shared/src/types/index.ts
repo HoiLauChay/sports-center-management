@@ -12,4 +12,5 @@ export * from './schedule';
 export * from './setting';
 export * from './specialization';
 export * from './sport';
+export * from './support';
 export * from './wallet';
