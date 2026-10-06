@@ -27,7 +27,7 @@ export const prepareOrder = async (
     const lineNumber = index + 1;
     const error = precheck(ctx, input, inputs.slice(0, index));
     const result = error ? { ok: false as const, error } : await lineHandlers[input.type]!.prepare(db, ctx, input);
-    if (result.ok) ctx.planned.push({ lineNumber, type: input.type, data: result.data });
+    if (result.ok) ctx.planned.push({ lineNumber, type: input.type, data: result.data, uses: result.uses ?? [] });
     lines.push({ lineNumber, input, result });
   }
 
