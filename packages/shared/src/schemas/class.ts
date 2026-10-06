@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { pageQuerySchema } from './pagination';
 import { timeOfDaySchema } from './time';
 
 const weeklySlotSchema = z
@@ -51,3 +52,35 @@ export const createClassBodySchema = z
   });
 
 export type CreateClassBody = z.infer<typeof createClassBodySchema>;
+
+export const classIdParamsSchema = z.object({ id: z.uuid('Mã lớp không hợp lệ') });
+
+export const listClassesQuerySchema = pageQuerySchema.extend({
+  q: z.string().trim().max(100).optional(),
+  sportId: z.uuid().optional(),
+  courseId: z.uuid().optional(),
+  coachId: z.uuid().optional(),
+  facilityId: z.uuid().optional(),
+  status: z.enum(['DRAFT', 'PENDING_APPROVAL', 'OPEN', 'CANCELLED']).optional(),
+  derivedStatus: z.enum(['UPCOMING', 'ONGOING', 'COMPLETED']).optional(),
+});
+
+export const updateClassBodySchema = z
+  .strictObject({
+    name: createClassBodySchema.shape.name.optional(),
+    minStudents: studentsSchema.optional(),
+    maxStudents: studentsSchema.optional(),
+    minStudentsOverride: z.boolean().optional(),
+  })
+  .refine((body) => Object.values(body).some((value) => value !== undefined), 'Cần ít nhất một trường để cập nhật')
+  .refine(
+    ({ minStudents, maxStudents }) =>
+      minStudents === undefined || maxStudents === undefined || minStudents <= maxStudents,
+    {
+      path: ['maxStudents'],
+      message: 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu',
+    },
+  );
+
+export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
+export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;

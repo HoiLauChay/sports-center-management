@@ -1,16 +1,17 @@
-import { ERROR_CODE, type CreateClassBody } from '@sports-center/shared';
+import { ERROR_CODE, type CreateClassBody, type ListClassesQuery, type UpdateClassBody } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import { toClassDetailResponse } from '~/mappers/class.mapper';
-import classRepository from '~/repositories/class.repository';
+import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
+import classRepository, { type ClassViewer } from '~/repositories/class.repository';
 import courseRepository from '~/repositories/course.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import notificationService from '~/services/notification.service';
 import scheduleService, { type TimeRange } from '~/services/schedule.service';
-import { parseTime, toDbTime } from '~/utils/time';
-import { runTransaction, withScheduleLock } from '~/utils/transaction';
+import { formatDate, parseTime, toDbTime, todayInCenter } from '~/utils/time';
+import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -43,7 +44,127 @@ const generateSessions = (
   return sessions;
 };
 
+const notFound = () =>
+  new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy lớp học' });
+const conflict = (message: string) =>
+  new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.CONFLICT, message });
+
 class ClassService {
+  list = async (viewer: ClassViewer, query: ListClassesQuery) => {
+    const [rows, total] = await classRepository.findPage(viewer, query);
+    return { items: rows.map((row) => toClassSummaryResponse(row)), total, page: query.page, limit: query.limit };
+  };
+
+  get = async (viewer: ClassViewer, id: string) => {
+    const row = await classRepository.findVisibleDetail(id, viewer);
+    if (!row) throw notFound();
+    return toClassDetailResponse(row);
+  };
+
+  update = async (managerId: string, id: string, body: UpdateClassBody, ip?: string) => {
+    const row = await runTransaction(async (tx) => {
+      await withScheduleLock(tx);
+      await lockRows(tx, { classes: [id] });
+      const current = await classRepository.findDetail(id, tx);
+      if (!current) throw notFound();
+      if (current.status === 'CANCELLED' || !current.startDate || formatDate(current.startDate) <= todayInCenter()) {
+        throw conflict('Chỉ được sửa lớp trước ngày bắt đầu và khi lớp chưa bị hủy');
+      }
+      const min = body.minStudents ?? current.minStudents;
+      const max = body.maxStudents ?? current.maxStudents;
+      if (min > max) throw invalid('maxStudents', 'Sĩ số tối đa phải không nhỏ hơn sĩ số tối thiểu');
+      if (max < current._count.enrollments) throw conflict('Sĩ số tối đa không được nhỏ hơn số học viên đã đăng ký');
+      const updated = await classRepository.update(id, body, tx);
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'CLASS',
+          entityId: id,
+          oldValues: current,
+          newValues: updated,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      return updated;
+    });
+    return toClassDetailResponse(row);
+  };
+
+  approve = (managerId: string, id: string, ip?: string) => this.review(managerId, id, true, ip);
+  reject = (managerId: string, id: string, ip?: string) => this.review(managerId, id, false, ip);
+
+  private review = async (managerId: string, id: string, approve: boolean, ip?: string) => {
+    const { row, notifications } = await runTransaction(async (tx) => {
+      await withScheduleLock(tx);
+      await lockRows(tx, { classes: [id] });
+      const current = await classRepository.findDetail(id, tx);
+      if (!current) throw notFound();
+      if (current.status !== 'PENDING_APPROVAL') throw conflict('Chỉ có thể duyệt hoặc từ chối lớp đang chờ duyệt');
+      if (approve) {
+        if (!current.coachId) throw conflict('Lớp chưa có huấn luyện viên');
+        if (!(await classRepository.hasApprovedCoach(current.coachId, current.course.sportId, tx))) {
+          throw conflict('Huấn luyện viên không hoạt động hoặc chưa được duyệt bộ môn');
+        }
+        if (
+          !current.startDate ||
+          !current.endDate ||
+          formatDate(current.startDate) <= todayInCenter() ||
+          !current.sessions.some((session) => session.status === 'SCHEDULED')
+        ) {
+          throw conflict('Lớp phải có lịch học hợp lệ và chưa đến ngày bắt đầu');
+        }
+        if (
+          !(await courseRepository.findById(current.courseId, tx)) ||
+          !(await sportRepository.findActiveIds([current.course.sportId], tx)).length
+        ) {
+          throw conflict('Khóa học hoặc bộ môn đã ngừng hoạt động');
+        }
+      }
+      const row = await classRepository.update(
+        id,
+        {
+          status: approve ? 'OPEN' : 'DRAFT',
+          approvedById: approve ? managerId : null,
+          approvedAt: approve ? new Date() : null,
+        },
+        tx,
+      );
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: approve ? 'APPROVE' : 'REJECT',
+          entityType: 'CLASS',
+          entityId: id,
+          oldValues: current,
+          newValues: row,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      const notifications = current.coachId
+        ? await notificationService.create(
+            [
+              {
+                accountId: current.coachId,
+                type: 'CLASS',
+                title: approve ? 'Lớp học đã được duyệt' : 'Lớp học bị từ chối',
+                message: `Lớp "${current.name}" ${approve ? 'đã được mở để nhận đăng ký' : 'đã trở về trạng thái nháp'}.`,
+                referenceType: 'CLASS',
+                referenceId: id,
+                sendEmail: true,
+              },
+            ],
+            tx,
+          )
+        : [];
+      return { row, notifications };
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toClassDetailResponse(row);
+  };
+
   create = async (managerId: string, body: CreateClassBody, ip?: string) => {
     const row = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
