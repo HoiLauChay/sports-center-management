@@ -6,10 +6,10 @@ import {
   Bell,
   // BookOpen,
   CalendarCheck,
-  // CalendarDays,
+  CalendarDays,
   ChartColumn,
   // ClipboardList,
-  // Dumbbell,
+  Dumbbell,
   GraduationCap,
   HandCoins,
   History,
@@ -19,7 +19,7 @@ import {
   LifeBuoy,
   MapPin,
   Receipt,
-  // ScanLine,
+  ScanLine,
   School,
   Settings,
   ShoppingCart,
@@ -28,7 +28,7 @@ import {
   Trophy,
   Users,
   Wallet,
-  // Wrench,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -59,9 +59,9 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [
         { path: '/bookings', label: 'Đặt sân', icon: MapPin },
         { path: '/classes', label: 'Lớp học', icon: School },
-        // { path: '/schedule', label: 'Lịch của tôi', icon: CalendarDays },
+        { path: '/schedule', label: 'Lịch của tôi', icon: CalendarDays },
         { path: '/enrollments', label: 'Lớp đã đăng ký', icon: GraduationCap },
-        // { path: '/training', label: 'Kết quả tập luyện', icon: Dumbbell },
+        { path: '/training', label: 'Kết quả tập luyện', icon: Dumbbell },
       ],
     },
     {
@@ -81,7 +81,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       title: 'Giảng dạy',
       items: [
         // { path: '/coach/classes', label: 'Lớp đang dạy', icon: School },
-        // { path: '/coach/schedule', label: 'Lịch dạy', icon: CalendarDays },
+        { path: '/coach/schedule', label: 'Lịch dạy', icon: CalendarDays },
         // { path: '/coach/open-classes', label: 'Lớp cần HLV', icon: ClipboardList },
         // { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },
       ],
@@ -91,7 +91,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Quầy lễ tân',
       items: [
-        // { path: '/reception/checkin', label: 'Check-in', icon: ScanLine },
+        { path: '/reception/checkin', label: 'Check-in', icon: ScanLine },
         { path: '/reception/order', label: 'Bán tại quầy', icon: Store },
         { path: '/reception/top-up', label: 'Nạp ví', icon: HandCoins },
         { path: '/reception/members', label: 'Thành viên', icon: Users },
@@ -121,7 +121,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/admin/classes', label: 'Lớp học', icon: School },
         { path: '/admin/memberships', label: 'Gói thành viên', icon: BadgeCheck },
         { path: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
-        // { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
+        { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
       ],
     },
     { items: [{ path: '/admin/settings', label: 'Cấu hình', icon: Settings }] },

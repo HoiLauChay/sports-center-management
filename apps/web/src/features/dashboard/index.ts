@@ -1,1 +1,1 @@
-export { DashboardPlaceholderPage } from './components/DashboardPlaceholderPage';
+export { DashboardPage } from './components/DashboardPage';

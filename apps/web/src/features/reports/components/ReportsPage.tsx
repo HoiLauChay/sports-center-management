@@ -8,38 +8,20 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { StatCard } from '~/components/ui/StatCard';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
-import { ORDER_ITEM_TYPES, ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
+import { ORDER_ITEM_TYPE_LABEL, ORDER_ITEM_TYPES } from '~/features/checkout/types';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { parseDate } from '~/lib/time';
 import { useOverviewReport, useRevenueReport, useWalletReport } from '../hooks/useReports';
 import type { Granularity, ReportRange, RevenueBucket, WalletBucket } from '../types';
-import { defaultRange } from '../utils';
+import { defaultRange, periodLabel, REVENUE_SERIES } from '../utils';
 import { ReportToolbar } from './ReportToolbar';
-
-function periodLabel(period: string, granularity: Granularity) {
-  if (granularity === 'month') return parseDate(`${period}-01`).format('MM/YYYY');
-  const date = parseDate(period).format('DD/MM');
-  return granularity === 'week' ? `Tuần ${date}` : date;
-}
 
 function periodText(period: string, granularity: Granularity) {
   if (granularity === 'month') return `Tháng ${parseDate(`${period}-01`).format('MM/YYYY')}`;
   if (granularity === 'week') return `Tuần từ ${formatDate(period)}`;
   return formatDate(period);
 }
-
-const TYPE_COLOR = {
-  MEMBERSHIP: '#9333ea',
-  FACILITY_BOOKING: '#0f4d34',
-  FACILITY_PACKAGE: '#06b6d4',
-  COURSE_ENROLLMENT: '#c94a1e',
-} as const;
-const REVENUE_SERIES: ChartSeries[] = ORDER_ITEM_TYPES.map((type) => ({
-  key: type,
-  label: ORDER_ITEM_TYPE_LABEL[type],
-  color: TYPE_COLOR[type],
-}));
 
 const WALLET_SERIES: ChartSeries[] = [
   { key: 'topUpBank', label: 'Nạp chuyển khoản', color: '#16a34a' },
@@ -48,7 +30,7 @@ const WALLET_SERIES: ChartSeries[] = [
   { key: 'refunds', label: 'Hoàn tiền', color: '#d97706' },
 ];
 
-function OverviewTab() {
+export function OverviewTab() {
   const overview = useOverviewReport();
   const data = overview.data;
   if (overview.isError && !data) {
