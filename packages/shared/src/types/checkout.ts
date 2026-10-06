@@ -31,6 +31,8 @@ export type CourseEnrollmentSnapshot = ItemSnapshotBase & {
   endDate: string;
 };
 
+export type ItemSnapshot = FacilityBookingSnapshot | CourseEnrollmentSnapshot;
+
 export interface QuoteLine {
   lineNumber: number;
   type: OrderItemType;
