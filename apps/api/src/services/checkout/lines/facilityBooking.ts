@@ -8,7 +8,7 @@ import {
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import scheduleRepository from '~/repositories/schedule.repository';
-import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
+import { busyInOrder, CLASH_MESSAGE, lineError, plannedFor } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
 import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { percentOf } from '~/utils/money';
@@ -38,7 +38,7 @@ const freeSlotsUsed = async (db: Db, ctx: CheckoutContext, accountId: string, da
     (sum, { startTime, endTime }) => sum + (fromDbTime(endTime) - fromDbTime(startTime)) / slotMinutes,
     0,
   );
-  const planned = ctx.planned
+  const planned = plannedFor(ctx, accountId)
     .filter(({ type }) => type === 'FACILITY_BOOKING')
     .map(({ data }) => data as BookingData)
     .filter(({ benefit, date: day }) => benefit === 'FREE_SLOT' && from <= day && day < to)
