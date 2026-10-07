@@ -45,7 +45,6 @@ export interface GymClass {
   minStudents: number;
   maxStudents: number;
   enrolledCount: number;
-  minStudentsOverride: boolean;
   cancelReason: string | null;
 }
 

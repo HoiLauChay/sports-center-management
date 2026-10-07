@@ -112,7 +112,6 @@ function seedOpenClasses(facilities: Facility[], settings: SystemSettings) {
         coach: MOCK_COACHES[index % MOCK_COACHES.length]!,
         minStudents: 3,
         maxStudents: 10,
-        minStudentsOverride: false,
         cancelReason: null,
         baseEnrolled: 2 + index,
       });
@@ -251,7 +250,6 @@ function seedAdminClasses(facilities: Facility[], settings: SystemSettings) {
         coach: seed.coach === null ? null : MOCK_COACHES[seed.coach]!,
         minStudents: 4,
         maxStudents: 12,
-        minStudentsOverride: false,
         cancelReason: seed.cancelReason ?? null,
         baseEnrolled: seed.enrolled,
       });
@@ -303,7 +301,6 @@ export function toClass(stored: StoredClass, sessions: ClassSession[]): GymClass
   const { baseEnrolled, ...rest } = stored;
   return {
     ...rest,
-    minStudentsOverride: stored.minStudentsOverride ?? false,
     startDate,
     endDate,
     enrolledCount: baseEnrolled + enrolled,

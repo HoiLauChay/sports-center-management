@@ -29,16 +29,6 @@ export function useClassRefundPreview(id: string, enabled: boolean) {
   });
 }
 
-export function useSessionRefundPreview(sessionId: string | undefined) {
-  return useQuery({
-    queryKey: ['classes', 'session-refund-preview', sessionId],
-    queryFn: () => classAdminService.sessionRefundPreview(sessionId!),
-    enabled: Boolean(sessionId),
-    gcTime: 0,
-    retry: false,
-  });
-}
-
 /** Runs a class-management action, refreshes everything the class touches and reports the outcome. */
 function useClassAction<V, R>(
   classId: string,
@@ -69,14 +59,6 @@ export function useUpdateClass(classId: string) {
   );
 }
 
-export function useSetMinStudentsOverride(classId: string) {
-  return useClassAction(
-    classId,
-    (override: boolean) => classAdminService.setMinStudentsOverride(classId, override),
-    'Đã cập nhật kiểm tra sĩ số.',
-  );
-}
-
 export function useApproveClass(classId: string) {
   return useClassAction(classId, () => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
 }
@@ -98,7 +80,7 @@ export function useCancelClass(classId: string) {
   return useClassAction(
     classId,
     (reason: string) => classAdminService.cancel(user, classId, reason),
-    (result) => `Đã hủy lớp, hoàn ${formatVND(result.refundTotal)} về ví học viên.`,
+    (result) => `Đã hủy lớp, hoàn trọn ${formatVND(result.refundTotal)} về ví học viên.`,
   );
 }
 
@@ -108,18 +90,5 @@ export function useUpdateSession(classId: string) {
     (input: { sessionId: string; patch: SessionPatch }) =>
       classAdminService.updateSession(input.sessionId, input.patch),
     'Đã cập nhật buổi học.',
-  );
-}
-
-export function useCancelSession(classId: string) {
-  const user = useCurrentUser();
-  return useClassAction(
-    classId,
-    (input: { sessionId: string; reason: string }) =>
-      classAdminService.cancelSession(user, input.sessionId, input.reason),
-    (result) =>
-      result.refundTotal > 0
-        ? `Đã hủy buổi học, hoàn ${formatVND(result.refundTotal)} về ví học viên.`
-        : 'Đã hủy buổi học.',
   );
 }

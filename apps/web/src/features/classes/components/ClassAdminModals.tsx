@@ -9,10 +9,8 @@ import { DATE_FORMAT, formatDayLabel, slotGrid, todayVN } from '~/lib/time';
 import {
   useAssignCoach,
   useCancelClass,
-  useCancelSession,
   useClassRefundPreview,
   useCoachPool,
-  useSessionRefundPreview,
   useUpdateClass,
   useUpdateSession,
 } from '../hooks/useClassAdmin';
@@ -227,48 +225,6 @@ export function EditSessionModal({ open, item, session, onClose }: SessionModalP
           <Select loading={facilities.isPending} options={facilityOptions} />
         </Form.Item>
       </Form>
-    </Modal>
-  );
-}
-
-export function CancelSessionModal({ open, item, session, onClose }: SessionModalProps) {
-  const [form] = Form.useForm<{ reason: string }>();
-  const preview = useSessionRefundPreview(open ? session?.id : undefined);
-  const cancel = useCancelSession(item.id);
-
-  useEffect(() => {
-    if (open) form.resetFields();
-  }, [open, form]);
-
-  return (
-    <Modal
-      title={session ? `Hủy buổi ${session.sessionNumber} · ${formatDayLabel(session.date)}?` : 'Hủy buổi học'}
-      open={open}
-      centered
-      destroyOnHidden
-      okText="Hủy buổi"
-      cancelText="Đóng"
-      okButtonProps={{ danger: true }}
-      confirmLoading={cancel.isPending}
-      onCancel={onClose}
-      onOk={() => form.submit()}
-    >
-      <div className="flex flex-col gap-3">
-        <RefundNote loading={preview.isPending} students={preview.data?.students} amount={preview.data?.amount} />
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={({ reason }) => session && cancel.mutate({ sessionId: session.id, reason }, { onSuccess: onClose })}
-        >
-          <Form.Item
-            name="reason"
-            label="Lý do hủy buổi"
-            rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập lý do' }]}
-          >
-            <Input.TextArea rows={3} maxLength={300} showCount />
-          </Form.Item>
-        </Form>
-      </div>
     </Modal>
   );
 }

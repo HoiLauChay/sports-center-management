@@ -7,14 +7,11 @@ import {
   approveClass,
   assignCoach,
   cancelClass,
-  cancelSession,
   classOverview,
   classRefundPreview,
   coachPool,
   getAdminDetail,
   rejectClass,
-  sessionRefundPreview,
-  setMinStudentsOverride,
   updateClass,
   updateSession,
 } from '../mocks/classAdmin';
@@ -29,7 +26,7 @@ async function seeded() {
 
 /**
  * Manager class management (`GET /classes/{id}`, `PATCH /classes/{id}`, approve / reject / cancel, `assign-coach`,
- * `PATCH /sessions/{id}`, `POST /sessions/{id}/cancel`). Mock until #164 and #171 ship; the shapes follow
+ * `PATCH /sessions/{id}`). Mock until #171 ships, since the page also needs coach registrations and enrollments; the shapes follow
  * `api.design.md`, so each body becomes a `privateApi` call.
  */
 export const classAdminService = {
@@ -56,12 +53,6 @@ export const classAdminService = {
       await seeded();
       return updateClass(id, patch);
     }, 250),
-
-  setMinStudentsOverride: (id: string, override: boolean) =>
-    mockRequest(async () => {
-      await seeded();
-      return setMinStudentsOverride(id, override);
-    }, 200),
 
   approve: (id: string) =>
     mockRequest(async () => {
@@ -98,16 +89,4 @@ export const classAdminService = {
       const { facilities } = await seeded();
       return updateSession(sessionId, patch, facilities);
     }, 250),
-
-  sessionRefundPreview: (sessionId: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return sessionRefundPreview(sessionId);
-    }, 100),
-
-  cancelSession: (user: Account, sessionId: string, reason: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return cancelSession(actorOf(user), sessionId, reason, walletService.balanceOfMember);
-    }, 400),
 };

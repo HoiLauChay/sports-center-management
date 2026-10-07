@@ -1,7 +1,8 @@
 import type { Facility, Person } from '@sports-center/shared';
-import { refundEnrollment } from '~/features/bookings/mocks/bookings';
+import { refundEnrollmentLine } from '~/features/bookings/mocks/bookings';
 import type { BalanceOf } from '~/features/checkout/mocks/checkout';
 import type { Actor } from '~/features/checkout/mocks/pricing';
+import { enrollmentRefund } from '~/features/checkout/refundPolicy';
 import { rosterOf } from '~/features/training/mocks/training';
 import { formatDate } from '~/lib/format';
 import { commerceStore } from '~/lib/mock/commerce';
@@ -112,17 +113,6 @@ export function updateClass(id: string, patch: ClassPatch) {
   return requireView(id);
 }
 
-export function setMinStudentsOverride(id: string, override: boolean) {
-  const view = requireView(id);
-  if (view.status === 'CANCELLED' || hasStarted(view)) {
-    throw mockErrors.conflict('INVALID_STATE', 'Chỉ đổi được trước ngày bắt đầu');
-  }
-  classesStore.update((state) => {
-    state.classes.find((entry) => entry.id === id)!.minStudentsOverride = override;
-  });
-  return requireView(id);
-}
-
 export function approveClass(id: string) {
   const view = requireView(id);
   if (view.status !== 'PENDING_APPROVAL')
@@ -218,23 +208,11 @@ export function assignCoach(id: string, input: { registrationId: string } | { co
   return requireView(id);
 }
 
-/** Per-student price of one session (BR_2.23: the allocation of the session, whatever the member paid). */
-const perSession = (paid: number, totalSessions: number) => Math.floor(paid / Math.max(1, totalSessions));
-
 export function classRefundPreview(id: string): RefundPreview {
   const view = requireView(id);
-  const left = classesDb
-    .sessionsOf(id)
-    .filter((session) => session.status === 'SCHEDULED' && sessionIsFuture(session)).length;
-  const started = hasStarted(view);
-  const total = view.course.totalSessions;
   const real = enrolledOf(id);
-  const realAmount = real.reduce((sum, entry) => {
-    const pending = entry.paidAmount - entry.refundedAmount;
-    return sum + (started ? Math.min(pending, perSession(entry.paidAmount, total) * left) : pending);
-  }, 0);
-  const base = view.enrolledCount - real.length;
-  const baseAmount = base * (started ? perSession(view.course.price, total) * left : view.course.price);
+  const realAmount = real.reduce((sum, entry) => sum + enrollmentRefund(entry), 0);
+  const baseAmount = (view.enrolledCount - real.length) * view.course.price;
   return { students: view.enrolledCount, amount: realAmount + baseAmount };
 }
 
@@ -245,16 +223,9 @@ export async function cancelClass(actor: Actor, id: string, reason: string, bala
   if (!cleaned) throw mockErrors.invalid('body.reason', 'Vui lòng nhập lý do hủy lớp');
 
   // The list and the amounts are fixed before the status changes (BR_2.7b).
-  const started = hasStarted(view);
-  const total = view.course.totalSessions;
-  const left = classesDb
-    .sessionsOf(id)
-    .filter((session) => session.status === 'SCHEDULED' && sessionIsFuture(session)).length;
   const refundTotal = classRefundPreview(id).amount;
   for (const entry of enrolledOf(id)) {
-    const pending = entry.paidAmount - entry.refundedAmount;
-    const amount = started ? Math.min(pending, perSession(entry.paidAmount, total) * left) : pending;
-    await refundEnrollment(actor, entry.id, amount, `Hoàn tiền lớp ${view.name} bị hủy`, balanceOf, { cancel: true });
+    await refundEnrollmentLine(actor, entry.id, `Hoàn tiền lớp ${view.name} bị hủy`, balanceOf);
   }
 
   classesStore.update((state) => {
@@ -334,45 +305,6 @@ export function updateSession(sessionId: string, patch: SessionPatch, facilities
     Object.assign(stored, { date, startTime, endTime, facility });
   });
   return classesStore.get().sessions.find((entry) => entry.id === sessionId)!;
-}
-
-export function sessionRefundPreview(sessionId: string): RefundPreview {
-  const { session, owner } = requireEditableSession(sessionId);
-  const total = owner.course.totalSessions;
-  const real = enrolledOf(session.classId);
-  const realAmount = real.reduce(
-    (sum, entry) => sum + Math.min(entry.paidAmount - entry.refundedAmount, perSession(entry.paidAmount, total)),
-    0,
-  );
-  const base = owner.enrolledCount - real.length;
-  return { students: owner.enrolledCount, amount: realAmount + base * perSession(owner.course.price, total) };
-}
-
-export async function cancelSession(actor: Actor, sessionId: string, reason: string, balanceOf: BalanceOf) {
-  const { session, owner } = requireEditableSession(sessionId);
-  const cleaned = reason.trim();
-  if (!cleaned) throw mockErrors.invalid('body.reason', 'Vui lòng nhập lý do hủy buổi');
-  const remaining = classesDb.sessionsOf(session.classId).filter((entry) => entry.status === 'SCHEDULED');
-  if (remaining.length <= 1) {
-    throw mockErrors.conflict('INVALID_STATE', 'Đây là buổi cuối cùng còn lại, hãy dùng chức năng hủy lớp');
-  }
-  const refundTotal = sessionRefundPreview(sessionId).amount;
-  const total = owner.course.totalSessions;
-  for (const entry of enrolledOf(session.classId)) {
-    await refundEnrollment(
-      actor,
-      entry.id,
-      perSession(entry.paidAmount, total),
-      `Hoàn tiền buổi ${session.sessionNumber} lớp ${owner.name} bị hủy`,
-      balanceOf,
-    );
-  }
-  classesStore.update((state) => {
-    const stored = state.sessions.find((entry) => entry.id === sessionId)!;
-    stored.status = 'CANCELLED';
-    stored.cancelReason = cleaned;
-  });
-  return { session: classesStore.get().sessions.find((entry) => entry.id === sessionId)!, refundTotal };
 }
 
 /**

@@ -1,17 +1,6 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import { Alert, Button, Card, Switch, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
-import {
-  Ban,
-  Banknote,
-  CalendarClock,
-  CalendarDays,
-  Check,
-  Pencil,
-  TriangleAlert,
-  UserCheck,
-  Users,
-  X,
-} from 'lucide-react';
+import { Alert, Button, Card, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Banknote, CalendarClock, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -21,27 +10,14 @@ import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, WEEK_ORDER } from '~/lib/time';
-import {
-  useApproveClass,
-  useAssignCoach,
-  useClassAdmin,
-  useRejectClass,
-  useSetMinStudentsOverride,
-} from '../hooks/useClassAdmin';
+import { useApproveClass, useAssignCoach, useClassAdmin, useRejectClass } from '../hooks/useClassAdmin';
 import type { ClassAdminDetail, ClassSession, ClassStudent, CoachRegistration } from '../types';
 import { classAdminActions, classStatusTag, REGISTRATION_TAG } from '../utils';
-import {
-  AssignCoachModal,
-  CancelClassModal,
-  CancelSessionModal,
-  EditClassModal,
-  EditSessionModal,
-} from './ClassAdminModals';
+import { AssignCoachModal, CancelClassModal, EditClassModal, EditSessionModal } from './ClassAdminModals';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/$classId');
 
-type ModalState =
-  null | 'edit' | 'cancel' | 'assign' | { kind: 'edit-session' | 'cancel-session'; session: ClassSession };
+type ModalState = null | 'edit' | 'cancel' | 'assign' | { kind: 'edit-session'; session: ClassSession };
 
 const SOURCE_LABEL: Record<CoachRegistration['source'], string> = {
   COACH_REGISTERED: 'HLV đăng ký',
@@ -81,7 +57,6 @@ export function ClassAdminDetailPage() {
   const approve = useApproveClass(classId);
   const reject = useRejectClass(classId);
   const assign = useAssignCoach(classId);
-  const override = useSetMinStudentsOverride(classId);
   const [modal, setModal] = useState<ModalState>(null);
   const [tab, setTab] = useState<string>();
 
@@ -250,28 +225,14 @@ export function ClassAdminDetailPage() {
       align: 'right',
       render: (_, session) => {
         if (!can.sessions || session.status !== 'SCHEDULED' || isPast(session.date, session.startTime)) return null;
-        const last = liveSessions.length <= 1;
         return (
-          <div className="flex justify-end gap-1.5">
-            <Button
-              size="small"
-              icon={<CalendarClock size={14} />}
-              onClick={() => setModal({ kind: 'edit-session', session })}
-            >
-              Sửa / dời
-            </Button>
-            <Tooltip title={last ? 'Buổi cuối cùng còn lại, hãy hủy cả lớp' : undefined}>
-              <Button
-                size="small"
-                danger
-                disabled={last}
-                icon={<Ban size={14} />}
-                onClick={() => setModal({ kind: 'cancel-session', session })}
-              >
-                Hủy buổi
-              </Button>
-            </Tooltip>
-          </div>
+          <Button
+            size="small"
+            icon={<CalendarClock size={14} />}
+            onClick={() => setModal({ kind: 'edit-session', session })}
+          >
+            Sửa / dời / đổi phòng
+          </Button>
         );
       },
     },
@@ -403,16 +364,6 @@ export function ClassAdminDetailPage() {
             <Row label="Sĩ số">
               {item.minStudents} – {item.maxStudents}
             </Row>
-            <Row label="Override sĩ số tối thiểu">
-              <Switch
-                size="small"
-                checked={item.minStudentsOverride}
-                disabled={!can.override}
-                loading={override.isPending}
-                onChange={(checked) => override.mutate(checked)}
-              />
-              <span className="text-[12px] text-sc-muted-2">bật để không tự hủy khi thiếu sĩ số</span>
-            </Row>
           </div>
         </Card>
       </div>
@@ -494,12 +445,6 @@ export function ClassAdminDetailPage() {
       <AssignCoachModal open={modal === 'assign'} item={item} onClose={closeModal} />
       <EditSessionModal
         open={sessionModal?.kind === 'edit-session'}
-        item={item}
-        session={sessionModal?.session ?? null}
-        onClose={closeModal}
-      />
-      <CancelSessionModal
-        open={sessionModal?.kind === 'cancel-session'}
         item={item}
         session={sessionModal?.session ?? null}
         onClose={closeModal}
