@@ -2,19 +2,44 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Plugin } from 'vite';
 
 const DEMO_SPORTS = [
-  { id: 'sport-badminton', name: 'Cầu lông', description: 'Sân cầu lông tiêu chuẩn thi đấu', isActive: true },
-  { id: 'sport-swim', name: 'Bơi lội', description: 'Bơi tự do, bơi ếch cho mọi lứa tuổi', isActive: true },
-  { id: 'sport-football', name: 'Bóng đá', description: 'Bóng đá sân 5 và sân 7', isActive: true },
-  { id: 'sport-yoga', name: 'Yoga', description: 'Yoga cơ bản và nâng cao', isActive: true },
-  { id: 'sport-gym', name: 'Gym', description: 'Tập tạ và máy tập thể hình', isActive: true },
-  { id: 'sport-tennis', name: 'Tennis', description: 'Sân tennis tiêu chuẩn', isActive: true },
-  { id: 'sport-tabletennis', name: 'Bóng bàn', description: 'Bàn bóng bàn thi đấu', isActive: true },
-  { id: 'sport-pickleball', name: 'Pickleball', description: 'Sân pickleball ngoài trời', isActive: true },
+  {
+    id: '0cb8793b-920e-50f4-8700-1a63c1d15733',
+    name: 'Cầu lông',
+    description: 'Sân cầu lông tiêu chuẩn thi đấu',
+    isActive: true,
+  },
+  {
+    id: 'c6a76f20-03e6-5431-adff-4ad6d179a55e',
+    name: 'Bơi lội',
+    description: 'Bơi tự do, bơi ếch cho mọi lứa tuổi',
+    isActive: true,
+  },
+  {
+    id: '8424b6d8-a30b-55ef-b008-d3c5f7aba1eb',
+    name: 'Bóng đá',
+    description: 'Bóng đá sân 5 và sân 7',
+    isActive: true,
+  },
+  { id: '01593531-48dd-58b8-a175-162892bcbb90', name: 'Yoga', description: 'Yoga cơ bản và nâng cao', isActive: true },
+  {
+    id: '8e5ff72e-9e65-5904-ab22-e889fab633f5',
+    name: 'Gym',
+    description: 'Tập tạ và máy tập thể hình',
+    isActive: true,
+  },
+  { id: '21566cda-6a5f-562e-a0c0-cfb83191839b', name: 'Tennis', description: 'Sân tennis tiêu chuẩn', isActive: true },
+  { id: '5346c9d0-efd4-5c88-970a-351e9706f3dc', name: 'Bóng bàn', description: 'Bàn bóng bàn thi đấu', isActive: true },
+  {
+    id: '5b53631e-38b9-5942-8d15-93abaf728e95',
+    name: 'Pickleball',
+    description: 'Sân pickleball ngoài trời',
+    isActive: true,
+  },
 ];
 
 const DEMO_FACILITIES = [
   {
-    id: 'fac-badminton-1',
+    id: '8fc9f787-bfb3-5003-83da-ef199d809c9a',
     name: 'Sân cầu lông 1',
     type: 'COURT',
     capacityPerSlot: 4,
@@ -23,7 +48,7 @@ const DEMO_FACILITIES = [
     sports: [DEMO_SPORTS[0]!],
   },
   {
-    id: 'fac-badminton-2',
+    id: '40bda030-4a32-5fd9-a0db-7307d30e97a8',
     name: 'Sân cầu lông 2',
     type: 'COURT',
     capacityPerSlot: 4,
@@ -32,7 +57,7 @@ const DEMO_FACILITIES = [
     sports: [DEMO_SPORTS[0]!],
   },
   {
-    id: 'fac-swim-1',
+    id: 'b293d70b-2575-549f-9edc-8c8c2652dde6',
     name: 'Hồ bơi trong nhà',
     type: 'ROOM',
     capacityPerSlot: 30,
@@ -41,7 +66,7 @@ const DEMO_FACILITIES = [
     sports: [DEMO_SPORTS[1]!],
   },
   {
-    id: 'fac-football-1',
+    id: 'db88039d-b83d-56f0-9932-dab41f4e7591',
     name: 'Sân bóng đá mini',
     type: 'FIELD',
     capacityPerSlot: 14,
@@ -50,7 +75,7 @@ const DEMO_FACILITIES = [
     sports: [DEMO_SPORTS[2]!],
   },
   {
-    id: 'fac-yoga-1',
+    id: 'de57570e-9deb-5102-b62e-3515919e7d0f',
     name: 'Phòng Yoga',
     type: 'ROOM',
     capacityPerSlot: 20,
@@ -59,7 +84,7 @@ const DEMO_FACILITIES = [
     sports: [DEMO_SPORTS[3]!],
   },
   {
-    id: 'fac-gym-1',
+    id: 'da61d2d2-a9aa-553c-a9e2-29a638f6d4bb',
     name: 'Phòng Gym',
     type: 'GYM',
     capacityPerSlot: 40,
@@ -82,7 +107,7 @@ const DEMO_SETTINGS = {
 
 const DEMO_MEMBERSHIPS = [
   {
-    id: 'mem-1',
+    id: '42f9b3a3-7297-5514-8b8c-d65e9f7c65ef',
     name: 'Gói Cơ bản 1 tháng',
     description: 'Vào phòng gym không giới hạn trong 30 ngày',
     price: 300000,
@@ -94,7 +119,7 @@ const DEMO_MEMBERSHIPS = [
     isActive: true,
   },
   {
-    id: 'mem-2',
+    id: '8cec7dac-51ee-5f9e-83be-1a9b68f66e4f',
     name: 'Gói Tiêu chuẩn 3 tháng',
     description: 'Vào phòng gym, giảm 10% đặt sân và 5% khóa học',
     price: 800000,
@@ -106,7 +131,7 @@ const DEMO_MEMBERSHIPS = [
     isActive: true,
   },
   {
-    id: 'mem-3',
+    id: '249fd62a-4f82-5f9f-95e1-3fa7bf818347',
     name: 'Gói Cao cấp 12 tháng',
     description: 'Vào phòng gym, giảm 20% đặt sân và 15% khóa học',
     price: 2800000,
@@ -131,7 +156,7 @@ interface MockCourse {
 
 const DEMO_COURSES: MockCourse[] = [
   {
-    id: 'course-badminton-basic',
+    id: 'c0b144a6-9ed1-517f-a391-4232d997fee7',
     name: 'Cầu lông cơ bản',
     description: 'Kỹ thuật nền tảng, thể lực và đánh đôi cơ bản',
     sport: DEMO_SPORTS[0]!,
@@ -140,7 +165,7 @@ const DEMO_COURSES: MockCourse[] = [
     thumbnailUrl: null,
   },
   {
-    id: 'course-badminton-adv',
+    id: 'bc3efbef-681b-52aa-9ba4-fecbca08172e',
     name: 'Cầu lông nâng cao',
     description: 'Kỹ thuật đập cầu, điều cầu và chiến thuật thi đấu',
     sport: DEMO_SPORTS[0]!,
@@ -149,7 +174,7 @@ const DEMO_COURSES: MockCourse[] = [
     thumbnailUrl: null,
   },
   {
-    id: 'course-swim-basic',
+    id: '1ffa0a48-b4cd-5937-b49e-576f1640982d',
     name: 'Bơi ếch cơ bản',
     description: 'Học thở nước, nổi và bơi ếch thành thạo',
     sport: DEMO_SPORTS[1]!,
@@ -158,7 +183,7 @@ const DEMO_COURSES: MockCourse[] = [
     thumbnailUrl: null,
   },
   {
-    id: 'course-yoga-flow',
+    id: '141220fc-b059-5bfb-99c3-8a050d6e15f7',
     name: 'Vinyasa Yoga',
     description: 'Thư giãn cơ bắp, cân bằng hơi thở và dẻo dai',
     sport: DEMO_SPORTS[3]!,
@@ -268,6 +293,10 @@ function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   });
 }
 
+/**
+ * In-process stand-in for the parts of the API the web app needs to boot without a backend. It answers before the
+ * `/api` proxy, so it is only registered when `VITE_MOCK_API=true` (see `vite.config.ts`).
+ */
 export function devApiPlugin(): Plugin {
   return {
     name: 'dev-api-mock',
@@ -380,7 +409,7 @@ export function devApiPlugin(): Plugin {
           const body = await parseBody(req);
           const sport = DEMO_SPORTS.find((s) => s.id === body.sportId) ?? DEMO_SPORTS[0]!;
           const newCourse = {
-            id: `course-${Date.now()}`,
+            id: crypto.randomUUID(),
             name: String(body.name || 'Khóa học mới'),
             description: body.description ? String(body.description) : null,
             sport,
