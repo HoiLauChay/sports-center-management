@@ -16,7 +16,7 @@ let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
 
 let bookingPrice = 200_000;
-const realBookingHandler = lineHandlers.FACILITY_BOOKING;
+const realHandlers = { ...lineHandlers };
 
 const unused = () => Promise.reject(new Error('not used by checkout'));
 
@@ -71,9 +71,8 @@ const packageHandler = fakeHandler('FACILITY_PACKAGE', false, async () => ({
 }));
 
 afterAll(() => {
-  delete lineHandlers.FACILITY_PACKAGE;
-  delete lineHandlers.MEMBERSHIP;
-  lineHandlers.FACILITY_BOOKING = realBookingHandler;
+  for (const type of Object.keys(lineHandlers) as (keyof typeof lineHandlers)[]) delete lineHandlers[type];
+  Object.assign(lineHandlers, realHandlers);
   server.close();
 });
 

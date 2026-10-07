@@ -15,6 +15,9 @@ class BookingRepository {
 
   create = (data: Prisma.FacilityBookingUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.facilityBooking.create({ data, select: { id: true } });
+
+  createPackage = (data: Prisma.FacilityPackageUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
+    tx.facilityPackage.create({ data, select: { id: true } });
 }
 
 export default new BookingRepository();

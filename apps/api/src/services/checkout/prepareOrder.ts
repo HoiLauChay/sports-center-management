@@ -24,7 +24,7 @@ const precheck = (ctx: CheckoutContext, input: CheckoutItemInput, earlier: Check
   return null;
 };
 
-const loadHeldLines = async (db: Db, ctx: CheckoutContext) => {
+export const loadHeldLines = async (db: Db, ctx: CheckoutContext) => {
   for (const invoice of await invoiceRepository.findHeldOrders(ctx.now, db)) {
     const { prepared } = invoice.requestPayload as unknown as CounterOrderPayload;
     for (const { lineNumber, input, result } of prepared.lines) {
