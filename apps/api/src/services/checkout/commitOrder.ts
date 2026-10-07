@@ -71,10 +71,7 @@ export const commitOrder = async (
         buyer: await buyerSnapshot(tx, ctx),
         createdBy,
         paymentMethod: payment.method,
-        membership:
-          prepared.membershipDiscount > 0 && ctx.benefits?.current
-            ? { packageName: ctx.benefits.current.packageName }
-            : null,
+        membership: prepared.membershipName ? { packageName: prepared.membershipName } : null,
         coupon: coupon && { code: coupon.code, name: coupon.name, discount: coupon.discount },
       },
       subtotal: prepared.subtotal,
