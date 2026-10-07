@@ -69,6 +69,58 @@ export function LoginPage() {
         <Button type="primary" htmlType="submit" block loading={isSubmitting}>
           Đăng nhập
         </Button>
+
+        {import.meta.env.DEV && (
+          <div className="mt-4 rounded-xl border border-dashed border-sc-primary-border bg-orange-50/50 p-3 text-xs">
+            <div className="mb-2 font-bold text-sc-ink">Đăng nhập nhanh (Chế độ phát triển & kiểm thử):</div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                size="small"
+                className="!text-xs"
+                onClick={() => {
+                  form.setValue('email', 'member1@sportscenter.local');
+                  form.setValue('password', 'Demo@1234');
+                  void onSubmit();
+                }}
+              >
+                👤 Học viên (Member)
+              </Button>
+              <Button
+                size="small"
+                className="!text-xs"
+                onClick={() => {
+                  form.setValue('email', 'coach1@sportscenter.local');
+                  form.setValue('password', 'Demo@1234');
+                  void onSubmit();
+                }}
+              >
+                🏋️ HLV (Coach)
+              </Button>
+              <Button
+                size="small"
+                className="!text-xs"
+                onClick={() => {
+                  form.setValue('email', 'manager@sportscenter.local');
+                  form.setValue('password', 'Demo@1234');
+                  void onSubmit();
+                }}
+              >
+                🏢 Quản lý (Manager)
+              </Button>
+              <Button
+                size="small"
+                className="!text-xs"
+                onClick={() => {
+                  form.setValue('email', 'reception1@sportscenter.local');
+                  form.setValue('password', 'Demo@1234');
+                  void onSubmit();
+                }}
+              >
+                🛎️ Lễ tân (Receptionist)
+              </Button>
+            </div>
+          </div>
+        )}
       </Form>
 
       <AuthAlt>

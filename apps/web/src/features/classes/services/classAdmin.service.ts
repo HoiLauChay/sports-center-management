@@ -1,6 +1,7 @@
 import type { Account } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
 import { actorOf } from '~/features/checkout/services/checkout.service';
+import { coursesService } from '~/features/courses/services/courses.service';
 import { walletService } from '~/features/wallet/services/wallet.service';
 import { mockRequest } from '~/lib/mock/errors';
 import {
@@ -10,13 +11,17 @@ import {
   classOverview,
   classRefundPreview,
   coachPool,
+  createClass,
   getAdminDetail,
   rejectClass,
   updateClass,
   updateSession,
+  type ScheduleClash,
 } from '../mocks/classAdmin';
-import { ensureClassSeed } from '../mocks/classes';
-import type { ClassPatch, SessionPatch } from '../types';
+import { classesDb, ensureClassSeed } from '../mocks/classes';
+import type { ClassPatch, SessionPatch, WeeklySlot } from '../types';
+
+export type { ScheduleClash };
 
 async function seeded() {
   const catalog = await loadCatalog();
@@ -30,6 +35,27 @@ async function seeded() {
  * `api.design.md`, so each body becomes a `privateApi` call.
  */
 export const classAdminService = {
+  listAll: () =>
+    mockRequest(async () => {
+      await seeded();
+      return classesDb.allClasses().sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''));
+    }, 150),
+
+  create: (input: {
+    courseId: string;
+    name: string;
+    facilityId: string;
+    startDate: string;
+    weeklySchedule: WeeklySlot[];
+    minStudents: number;
+    maxStudents: number;
+  }) =>
+    mockRequest(async () => {
+      const { facilities } = await seeded();
+      const courses = await coursesService.list();
+      return createClass(input, facilities, courses);
+    }, 300),
+
   get: (id: string) =>
     mockRequest(async () => {
       await seeded();

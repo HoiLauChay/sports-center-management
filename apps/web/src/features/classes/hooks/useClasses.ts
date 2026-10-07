@@ -2,7 +2,15 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
+import { classAdminService } from '../services/classAdmin.service';
 import { classesService, type ListClassesQuery } from '../services/classes.service';
+
+export function useCoaches() {
+  return useQuery({
+    queryKey: ['classes', 'coaches'],
+    queryFn: () => classAdminService.coaches(),
+  });
+}
 
 export function useClasses(query: ListClassesQuery) {
   return useQuery({

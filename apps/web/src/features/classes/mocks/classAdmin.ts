@@ -15,11 +15,13 @@ import type {
   ClassSession,
   ClassStudent,
   CoachRegistration,
+  Course,
   GymClass,
   RefundPreview,
   SessionPatch,
+  WeeklySlot,
 } from '../types';
-import { classesDb, classesStore, MOCK_COACHES } from './classes';
+import { classesDb, classesStore, generateSessions, MOCK_COACHES } from './classes';
 
 /** Coaches a manager may assign directly (the real list comes from the users API once the class API ships). */
 export const coachPool = (): Person[] => {
@@ -42,7 +44,7 @@ const sessionIsFuture = (session: ClassSession) => !isPast(session.date, session
 const enrolledOf = (classId: string) =>
   commerceStore.get().enrollments.filter((entry) => entry.class.id === classId && entry.status === 'ENROLLED');
 
-export function getAdminDetail(id: string): ClassAdminDetail {
+export function getClassStudents(id: string): ClassStudent[] {
   const found = classesDb.findDetail(id);
   if (!found) throw mockErrors.notFound('Không tìm thấy lớp học');
 
@@ -68,7 +70,14 @@ export function getAdminDetail(id: string): ClassAdminDetail {
       paidAmount: found.course.price,
       refundedAmount: cancelled ? found.course.price : 0,
     }));
-  const students = [...real, ...base];
+  return [...real, ...base];
+}
+
+export function getAdminDetail(id: string): ClassAdminDetail {
+  const found = classesDb.findDetail(id);
+  if (!found) throw mockErrors.notFound('Không tìm thấy lớp học');
+
+  const students = getClassStudents(id);
 
   const classes = classesDb.allClasses();
   const coachRegistrations = classesDb.registrationsOf(id).map((entry) => ({
@@ -140,7 +149,7 @@ export function rejectClass(id: string) {
 }
 
 /** A coach cannot teach two sessions at the same time (BR_2.12); returns a readable clash, or `null`. */
-function coachClash(coachId: string, classId: string, sessions: ClassSession[]): string | null {
+export function coachClash(coachId: string, classId: string, sessions: ClassSession[]): string | null {
   const { classes, sessions: all } = classesStore.get();
   const busy = all.filter((session) => {
     if (session.classId === classId || session.status !== 'SCHEDULED') return false;
@@ -206,6 +215,83 @@ export function assignCoach(id: string, input: { registrationId: string } | { co
     stored.status = 'PENDING_APPROVAL';
   });
   return requireView(id);
+}
+
+export function registerCoachForClass(classId: string, coach: Person, approvedSportIds: string[]) {
+  const found = classesDb.findClass(classId);
+  if (!found) throw mockErrors.notFound('Không tìm thấy lớp học');
+
+  // Acceptance criteria: Chỉ cho phép đăng ký lớp thuộc bộ môn đã duyệt
+  if (!approvedSportIds.includes(found.course.sport.id)) {
+    throw mockErrors.conflict(
+      'FORBIDDEN_SPORT',
+      `HLV chưa được duyệt chuyên môn cho bộ môn ${found.course.sport.name}`,
+    );
+  }
+
+  // Cannot register if already assigned as coach of this class
+  if (found.coach && found.coach.id === coach.id) {
+    throw mockErrors.conflict('ALREADY_ASSIGNED', 'Bạn đã được phân công đảm nhiệm lớp này');
+  }
+
+  // Check schedule conflict
+  const sessions = classesDb.sessionsOf(classId).filter((s) => s.status === 'SCHEDULED');
+  const clash = coachClash(coach.id, classId, sessions);
+  if (clash) {
+    throw mockErrors.conflict('SCHEDULE_CONFLICT', `Bạn bị ${clash}`);
+  }
+
+  classesStore.update((state) => {
+    const list = (state.registrations ??= []);
+    const existing = list.find((r) => r.classId === classId && r.coach.id === coach.id);
+    if (existing) {
+      if (existing.status === 'PENDING') {
+        throw mockErrors.conflict('ALREADY_REGISTERED', 'Bạn đã đăng ký lớp này và đang chờ duyệt');
+      }
+      existing.status = 'PENDING';
+      existing.createdAt = nowIso();
+    } else {
+      list.push({
+        id: newId(),
+        classId,
+        coach,
+        status: 'PENDING',
+        source: 'COACH_REGISTERED',
+        createdAt: nowIso(),
+      });
+    }
+  });
+
+  return { success: true };
+}
+
+export function getOpenClassesForCoach(coachId: string, approvedSportIds: string[]) {
+  const allClasses = classesDb.allClasses();
+  const registrations = classesStore.get().registrations ?? [];
+
+  return allClasses
+    .filter((c) => {
+      // Acceptance criteria: Chỉ hiện lớp thuộc bộ môn đã duyệt
+      if (!approvedSportIds.includes(c.course.sport.id)) return false;
+      // Not cancelled and not completed
+      if (c.status === 'CANCELLED' || c.derivedStatus === 'COMPLETED') return false;
+      // Class needs a coach or hasn't had another coach approved
+      if (c.coach && c.coach.id !== coachId) return false;
+      return true;
+    })
+    .map((c) => {
+      const reg = registrations.find((r) => r.classId === c.id && r.coach.id === coachId);
+      return {
+        ...c,
+        hasApplied: Boolean(reg && reg.status === 'PENDING'),
+        registrationStatus: reg?.status,
+      };
+    });
+}
+
+export function getClassesTaughtByCoach(coachId: string) {
+  const allClasses = classesDb.allClasses();
+  return allClasses.filter((c) => c.coach?.id === coachId);
 }
 
 export function classRefundPreview(id: string): RefundPreview {
@@ -333,4 +419,90 @@ export function classOverview() {
       .filter((item) => item.status === 'OPEN' && item.derivedStatus !== 'COMPLETED')
       .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')),
   };
+}
+
+export interface ScheduleClash {
+  date: string;
+  startTime: string;
+  endTime: string;
+  reason: 'CLASS_SESSION' | 'BOOKED' | 'MAINTENANCE';
+  classSession?: { id: string; classId: string; className: string };
+  bookingId?: string;
+  maintenance?: { id: string; reason: string };
+}
+
+export function createClass(
+  input: {
+    courseId: string;
+    name: string;
+    facilityId: string;
+    startDate: string;
+    weeklySchedule: WeeklySlot[];
+    minStudents: number;
+    maxStudents: number;
+  },
+  facilities: Facility[],
+  courses: Course[],
+) {
+  const course = courses.find((c) => c.id === input.courseId);
+  if (!course) throw mockErrors.invalid('body.courseId', 'Khóa học không tồn tại');
+
+  const facility = facilities.find((f) => f.id === input.facilityId);
+  if (!facility) throw mockErrors.invalid('body.facilityId', 'Cơ sở không tồn tại');
+
+  if (!facility.sports.some((s) => s.id === course.sport.id)) {
+    throw mockErrors.invalid('body.facilityId', `Cơ sở ${facility.name} không hỗ trợ bộ môn ${course.sport.name}`);
+  }
+
+  const id = newId();
+  const ref = { id: facility.id, name: facility.name };
+  const sessions = generateSessions(id, ref, input.startDate, input.weeklySchedule, course.totalSessions);
+
+  // Acceptance criteria: Lỗi trùng lịch hiển thị buổi bị trùng
+  const conflicts: ScheduleClash[] = [];
+  for (const session of sessions) {
+    const existing = classesDb.sessionsAt(facility.id, session.date);
+    for (const { session: other, className } of existing) {
+      if (overlaps(session.startTime, session.endTime, other.startTime, other.endTime)) {
+        conflicts.push({
+          date: session.date,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          reason: 'CLASS_SESSION',
+          classSession: { id: other.id, classId: other.classId, className },
+        });
+      }
+    }
+  }
+
+  if (conflicts.length > 0) {
+    const err = new Error('Lịch học bị trùng với lịch hiện có tại cơ sở') as Error & {
+      status?: number;
+      code?: string;
+      conflicts?: ScheduleClash[];
+    };
+    err.status = 409;
+    err.code = 'SCHEDULE_CONFLICT';
+    err.conflicts = conflicts;
+    throw err;
+  }
+
+  classesStore.update((state) => {
+    state.classes.push({
+      id,
+      name: input.name.trim(),
+      course,
+      status: 'DRAFT',
+      weeklySchedule: input.weeklySchedule,
+      facility: ref,
+      coach: null,
+      minStudents: input.minStudents,
+      maxStudents: input.maxStudents,
+      cancelReason: null,
+      baseEnrolled: 0,
+    });
+    state.sessions.push(...sessions);
+  });
+
+  return requireView(id);
 }

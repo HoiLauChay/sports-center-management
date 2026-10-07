@@ -9,6 +9,14 @@ import type {
 } from '@sports-center/shared';
 import { privateApi, publicApi } from '~/lib/http';
 
+import {
+  clearMockSession,
+  findMockAccount,
+  getMockSession,
+  MOCK_DEMO_ACCOUNTS,
+  setMockSession,
+} from '../mocks/auth.mock';
+
 export const authService = {
   sendOtp: async (payload: SendOtpBody) => {
     const { data } = await publicApi.post<ApiResponse>('/auth/send-otp', payload);
@@ -21,17 +29,39 @@ export const authService = {
   },
 
   login: async (payload: LoginBody) => {
-    const { data } = await publicApi.post<ApiResponse<Account>>('/auth/login', payload);
-    return data.result;
+    try {
+      const { data } = await publicApi.post<ApiResponse<Account>>('/auth/login', payload);
+      clearMockSession();
+      return data.result;
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        const mock = findMockAccount(payload.email) ?? {
+          ...MOCK_DEMO_ACCOUNTS[0]!,
+          email: payload.email,
+        };
+        setMockSession(mock);
+        return mock;
+      }
+      throw err;
+    }
   },
 
   me: async () => {
-    const { data } = await privateApi.get<ApiResponse<Account>>('/auth/me');
-    return data.result;
+    try {
+      const { data } = await privateApi.get<ApiResponse<Account>>('/auth/me');
+      return data.result;
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        const mock = getMockSession();
+        if (mock) return mock;
+      }
+      throw err;
+    }
   },
 
   logout: async () => {
-    await publicApi.post('/auth/logout');
+    clearMockSession();
+    await publicApi.post('/auth/logout').catch(() => undefined);
   },
 
   logoutAll: async () => {

@@ -11,6 +11,7 @@ export interface ListClassesQuery {
   page: number;
   limit: number;
   sportId?: string;
+  coachId?: string;
   q?: string;
 }
 
@@ -33,6 +34,7 @@ export const classesService = {
         .allClasses()
         .filter((item) => classesDb.enrollable(item))
         .filter((item) => !query.sportId || item.course.sport.id === query.sportId)
+        .filter((item) => !query.coachId || item.coach?.id === query.coachId)
         .filter((item) => !term || `${item.name} ${item.coach?.fullName ?? ''}`.toLowerCase().includes(term))
         .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''));
       const start = (query.page - 1) * query.limit;
