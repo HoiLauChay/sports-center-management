@@ -1,5 +1,6 @@
 import {
   ERROR_CODE,
+  type CancelClassBody,
   type CreateClassBody,
   type ListClassesQuery,
   type ReviewClassBody,
@@ -19,7 +20,7 @@ import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import scheduleService, { type TimeRange } from '~/services/schedule.service';
 import { toPage } from '~/utils/pagination';
-import { formatDate, parseTime, toDbTime, todayInCenter } from '~/utils/time';
+import { formatDate, fromDbTime, parseTime, toCenterDateTime, toDbTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -76,6 +77,74 @@ const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.Transaction
 };
 
 class ClassService {
+  cancel = async (managerId: string, id: string, { reason }: CancelClassBody, ip?: string) => {
+    const { row, notifications } = await runTransaction(async (tx) => {
+      await withScheduleLock(tx);
+      await lockRows(tx, { classes: [id] });
+      const current = await classRepository.findDetail(id, tx);
+      if (!current) throw notFound();
+      if (current.status === 'CANCELLED') throw conflict('Lớp học đã bị hủy');
+
+      // Snapshot recipients before changing the class; refund integration belongs to #132.
+      const enrollments = await classRepository.findActiveEnrollments(id, tx);
+      const now = new Date();
+      const remaining = current.sessions.filter(
+        (session) =>
+          session.status === 'SCHEDULED' &&
+          toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.endTime)) > now,
+      );
+      await classRepository.cancelSessions(
+        remaining.map(({ id }) => id),
+        reason,
+        tx,
+      );
+      const row = await classRepository.update(id, { status: 'CANCELLED', cancelReason: reason }, tx);
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'CLASS',
+          entityId: id,
+          oldValues: current,
+          newValues: row,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      for (const session of remaining) {
+        await auditService.record(
+          {
+            accountId: managerId,
+            action: 'UPDATE',
+            entityType: 'CLASS_SESSION',
+            entityId: session.id,
+            oldValues: session,
+            newValues: { ...session, status: 'CANCELLED', cancelReason: reason },
+            ipAddress: ip,
+          },
+          tx,
+        );
+      }
+      const recipients = new Set(enrollments.map(({ accountId }) => accountId));
+      if (current.coachId) recipients.add(current.coachId);
+      const notifications = await notificationService.create(
+        [...recipients].map((accountId) => ({
+          accountId,
+          type: 'CLASS',
+          title: 'Lớp học đã bị hủy',
+          message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}`,
+          referenceType: 'CLASS',
+          referenceId: id,
+          sendEmail: true,
+        })),
+        tx,
+      );
+      return { row, notifications };
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toClassDetailResponse(row);
+  };
+
   list = async (viewer: ClassViewer, query: ListClassesQuery) => {
     const [rows, total] = await classRepository.findPage(viewer, query);
     return toPage(

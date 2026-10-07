@@ -7,6 +7,11 @@ import classService from '~/services/class.service';
 import { getClientIp } from '~/utils/request';
 
 class ClassController {
+  cancel = async (req: Request, res: Response) => {
+    const result = await classService.cancel(req.user!.id, req.params.id as string, req.body, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã hủy lớp học', result }));
+  };
+
   list = async (req: Request, res: Response) => {
     const result = await classService.list(req.user!, req.query as unknown as ListClassesQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));

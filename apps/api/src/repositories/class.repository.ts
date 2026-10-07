@@ -86,6 +86,18 @@ const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhe
 });
 
 class ClassRepository {
+  findActiveEnrollments = (classId: string, tx: Prisma.TransactionClient) =>
+    tx.classEnrollment.findMany({
+      where: { classId, status: 'ENROLLED' },
+      select: { id: true, accountId: true, orderItemId: true },
+    });
+
+  cancelSessions = (ids: string[], reason: string, tx: Prisma.TransactionClient) =>
+    tx.classSession.updateMany({
+      where: { id: { in: ids }, status: 'SCHEDULED' },
+      data: { status: 'CANCELLED', cancelReason: reason },
+    });
+
   findPage = (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
     const today = new Date(todayInCenter());
     const where: Prisma.ClassWhereInput = {
