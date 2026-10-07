@@ -1,3 +1,4 @@
+import { formatDate } from '~/lib/format';
 import { DAY_SHORT, WEEK_ORDER, todayVN } from '~/lib/time';
 import type { ClassDerivedStatus, ClassStatus, CoachRegistrationStatus, GymClass, WeeklySlot } from './types';
 
@@ -8,6 +9,24 @@ export function weeklyText(schedule: WeeklySlot[]) {
     .map((day) => DAY_SHORT[day])
     .join('/');
   return `${days} · ${first.startTime}–${first.endTime}`;
+}
+
+/** Weekly slots grouped by time, Monday first: ["T2·T4·T6 18:00–19:00", "T7 08:00–10:00"]. */
+export function weeklyLines(schedule: WeeklySlot[]) {
+  const groups = new Map<string, number[]>();
+  for (const day of WEEK_ORDER) {
+    for (const slot of schedule.filter((entry) => entry.dayOfWeek === day)) {
+      const time = `${slot.startTime}–${slot.endTime}`;
+      groups.set(time, [...(groups.get(time) ?? []), day]);
+    }
+  }
+  return [...groups].map(([time, days]) => `${days.map((day) => DAY_SHORT[day]).join('·')} ${time}`);
+}
+
+/** "05/10 → 27/11/2026", or a dash for a class without sessions. */
+export function classDateRange(item: Pick<GymClass, 'startDate' | 'endDate'>) {
+  if (!item.startDate || !item.endDate) return '—';
+  return `${formatDate(item.startDate).slice(0, 5)} → ${formatDate(item.endDate)}`;
 }
 
 export const CLASS_STATUS_TAG: Record<ClassStatus, { label: string; color?: string }> = {

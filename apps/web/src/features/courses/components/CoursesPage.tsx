@@ -1,101 +1,100 @@
 import type { Course } from '@sports-center/shared';
-import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Input, Popconfirm, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
-import { Edit2, Plus, Trash2 } from 'lucide-react';
+import { Button, Card, Popconfirm, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { useManagerClasses } from '~/features/classes/hooks/useClassAdmin';
+import type { GymClass } from '~/features/classes/types';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useCourses, useDeleteCourse } from '../hooks/useCourses';
 import { CourseFormModal } from './CourseFormModal';
 
+/** `/admin/courses` (UC_2.11, BR_2.8): course templates (sport, sessions, fee); each course opens many classes. */
 export function CoursesPage() {
-  const sports = useQuery(sportsQueryOptions);
   const courses = useCourses();
+  const classes = useManagerClasses();
   const deleteMutation = useDeleteCourse();
-
-  const [sportId, setSportId] = useState<string | undefined>();
-  const [q, setQ] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
 
-  const filtered = useMemo(() => {
-    const list = courses.data ?? [];
-    const term = q.trim().toLowerCase();
-    return list
-      .filter((c) => !sportId || c.sport.id === sportId)
-      .filter(
-        (c) => !term || c.name.toLowerCase().includes(term) || (c.description ?? '').toLowerCase().includes(term),
-      );
-  }, [courses.data, sportId, q]);
+  /** Live classes of each course, shown next to it; an OPEN one blocks deleting the course. */
+  const classesOf = useMemo(() => {
+    const map = new Map<string, GymClass[]>();
+    for (const item of classes.data ?? []) {
+      if (item.status === 'CANCELLED') continue;
+      map.set(item.course.id, [...(map.get(item.course.id) ?? []), item]);
+    }
+    return map;
+  }, [classes.data]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
-  };
-
-  const openEdit = (course: Course) => {
+  const openModal = (course: Course | null) => {
     setEditing(course);
     setModalOpen(true);
   };
 
   const columns: TableColumnsType<Course> = [
     {
-      title: 'Tên khóa học',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name: string, record) => (
-        <div>
-          <div className="font-semibold text-sc-ink">{name}</div>
-          {record.description && <div className="line-clamp-1 text-xs text-sc-muted">{record.description}</div>}
+      title: 'Khóa học',
+      render: (_, record) => (
+        <div className="max-w-md">
+          <div className="font-semibold text-sc-ink">{record.name}</div>
+          {record.description && <div className="line-clamp-2 text-xs text-sc-muted">{record.description}</div>}
         </div>
       ),
     },
-    {
-      title: 'Bộ môn',
-      dataIndex: ['sport', 'name'],
-      key: 'sport',
-      width: 140,
-      render: (sportName: string) => <Tag color="blue">{sportName}</Tag>,
-    },
-    {
-      title: 'Số buổi',
-      dataIndex: 'totalSessions',
-      key: 'totalSessions',
-      width: 100,
-      align: 'center',
-      render: (sessions: number) => <span className="font-medium">{sessions} buổi</span>,
-    },
+    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.sport.name}</Tag> },
+    { title: 'Số buổi', dataIndex: 'totalSessions', align: 'center' },
     {
       title: 'Học phí',
       dataIndex: 'price',
-      key: 'price',
-      width: 150,
       align: 'right',
-      render: (price: number) => <span className="font-bold text-sc-primary">{formatVND(price)}</span>,
+      render: (price: number) => <span className="whitespace-nowrap font-semibold">{formatVND(price)}</span>,
     },
     {
-      title: 'Thao tác',
+      title: 'Lớp',
+      render: (_, record) => {
+        const list = classesOf.get(record.id) ?? [];
+        if (!list.length) return <span className="text-sc-muted">—</span>;
+        return (
+          <Space wrap size={[4, 4]} className="max-w-xs">
+            {list.map((item) => (
+              <Tag key={item.id} className="!m-0">
+                {item.name}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
       key: 'actions',
-      width: 130,
-      align: 'center',
-      render: (_, record) => (
-        <Space size="small">
-          <Button type="text" size="small" icon={<Edit2 size={15} />} onClick={() => openEdit(record)} />
-          <Popconfirm
-            title="Xóa khóa học?"
-            description={`Bạn có chắc muốn xóa "${record.name}"?`}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
-            onConfirm={() => deleteMutation.mutate(record.id)}
-          >
-            <Button type="text" danger size="small" icon={<Trash2 size={15} />} />
-          </Popconfirm>
-        </Space>
-      ),
+      align: 'right',
+      render: (_, record) => {
+        const hasOpenClass = (classesOf.get(record.id) ?? []).some((item) => item.status === 'OPEN');
+        return (
+          <Space>
+            <Button size="small" onClick={() => openModal(record)}>
+              Sửa
+            </Button>
+            <Popconfirm
+              title="Xóa khóa học?"
+              description="Lớp đã tạo và hóa đơn vẫn tham chiếu được khóa học này."
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
+              onConfirm={() => deleteMutation.mutate(record.id)}
+            >
+              <Tooltip title={hasOpenClass ? 'Khóa học còn lớp đang mở' : undefined}>
+                <Button size="small" danger disabled={hasOpenClass}>
+                  Xóa
+                </Button>
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -103,66 +102,35 @@ export function CoursesPage() {
     <>
       <PageHeader
         title="Khóa học"
-        description="Quản lý danh mục các khóa đào tạo, số buổi và học phí áp dụng cho lớp học."
+        description="Template khóa học: bộ môn, số buổi, học phí. Mỗi khóa mở được nhiều lớp."
         extra={
-          <Button type="primary" icon={<Plus size={16} />} onClick={openCreate}>
+          <Button type="primary" icon={<Plus size={16} />} onClick={() => openModal(null)}>
             Tạo khóa học
           </Button>
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <Input.Search
-          allowClear
-          placeholder="Tìm tên khóa học..."
-          className="w-full sm:!w-72"
-          onSearch={(v) => setQ(v.trim())}
-          onChange={(e) => !e.target.value && setQ('')}
-        />
-        <Select
-          allowClear
-          placeholder="Mọi bộ môn"
-          className="w-full sm:!w-56"
-          loading={sports.isPending}
-          value={sportId}
-          onChange={(val: string | undefined) => setSportId(val)}
-          options={(sports.data ?? []).filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name }))}
-        />
-      </div>
-
-      {courses.isError ? (
-        <Card>
+      <Card styles={{ body: { padding: 0 } }}>
+        {courses.isError ? (
           <ErrorState message={toApiError(courses.error).message} onRetry={() => void courses.refetch()} />
-        </Card>
-      ) : (
-        <Card styles={{ body: { padding: 0 } }}>
+        ) : (
           <Table<Course>
             rowKey="id"
             columns={columns}
-            dataSource={filtered}
+            dataSource={courses.data}
             loading={courses.isPending}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
-              hideOnSinglePage: true,
-            }}
+            scroll={{ x: 900 }}
+            pagination={{ pageSize: 10, showSizeChanger: false, hideOnSinglePage: true }}
             locale={{
               emptyText: (
                 <EmptyState title="Chưa có khóa học nào" description="Bấm 'Tạo khóa học' để thêm khóa học đầu tiên." />
               ),
             }}
           />
-        </Card>
-      )}
+        )}
+      </Card>
 
-      <CourseFormModal
-        open={modalOpen}
-        editing={editing}
-        onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-        }}
-      />
+      <CourseFormModal open={modalOpen} editing={editing} onClose={() => setModalOpen(false)} />
     </>
   );
 }

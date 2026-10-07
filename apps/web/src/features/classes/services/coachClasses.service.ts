@@ -1,5 +1,4 @@
-import type { ApiResponse, Specialization } from '@sports-center/shared';
-import { authService } from '~/features/auth/services/auth.service';
+import type { ApiResponse, Person, Specialization } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
 import { privateApi } from '~/lib/http';
 import { mockRequest } from '~/lib/mock/errors';
@@ -8,93 +7,62 @@ import {
   getClassesTaughtByCoach,
   getOpenClassesForCoach,
   registerCoachForClass,
+  withdrawCoachRegistration,
 } from '../mocks/classAdmin';
 import { ensureClassSeed } from '../mocks/classes';
-import type { ClassStudent, GymClass } from '../types';
 
-export interface OpenClassItem extends GymClass {
-  hasApplied: boolean;
-  registrationStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+export type { CoachClassItem, OpenClassItem } from '../mocks/classAdmin';
+
+async function seeded() {
+  const catalog = await loadCatalog();
+  ensureClassSeed(catalog.facilities, catalog.settings);
 }
 
+/** Sport ids the coach may teach: their APPROVED specializations (BR_2.14). */
+const approvedSportIds = async () =>
+  (await coachClassesService.approvedSpecializations()).map((specialization) => specialization.sport.id);
+
+/**
+ * Coach-side class pages. Specializations come from the real `GET /coach/specializations`; the class lists and
+ * registrations stay mock until #171 ships the class API.
+ */
 export const coachClassesService = {
-  getApprovedSpecializations: async (): Promise<Specialization[]> => {
-    try {
-      const { data } = await privateApi.get<ApiResponse<Specialization[]>>('/specializations');
-      return (data.result ?? []).filter((s) => s.status === 'APPROVED');
-    } catch {
-      return [
-        {
-          id: 'spec-1',
-          coach: { id: 'mock-coach-minh', fullName: 'Nguyễn Văn Minh' },
-          sport: { id: 'sport-badminton', name: 'Cầu lông' },
-          status: 'APPROVED',
-          reviewNote: null,
-          reviewedAt: '2026-01-01T00:00:00.000Z',
-          createdAt: '2026-01-01T00:00:00.000Z',
-        },
-        {
-          id: 'spec-2',
-          coach: { id: 'mock-coach-minh', fullName: 'Nguyễn Văn Minh' },
-          sport: { id: 'sport-swimming', name: 'Bơi lội' },
-          status: 'APPROVED',
-          reviewNote: null,
-          reviewedAt: '2026-01-01T00:00:00.000Z',
-          createdAt: '2026-01-01T00:00:00.000Z',
-        },
-      ];
-    }
+  approvedSpecializations: async (): Promise<Specialization[]> => {
+    const { data } = await privateApi.get<ApiResponse<Specialization[]>>('/coach/specializations');
+    return data.result.filter((specialization) => specialization.status === 'APPROVED');
   },
 
-  listOpenClasses: async (): Promise<OpenClassItem[]> => {
-    const catalog = await loadCatalog();
-    ensureClassSeed(catalog.facilities, catalog.settings);
-
-    let me;
-    try {
-      me = await authService.me();
-    } catch {
-      me = { id: 'mock-coach-minh', fullName: 'Nguyễn Văn Minh' };
-    }
-
-    const specializations = await coachClassesService.getApprovedSpecializations();
-    const approvedSportIds = specializations.map((s) => s.sport.id);
-
-    return mockRequest(() => getOpenClassesForCoach(me.id, approvedSportIds), 150);
+  listOpenClasses: async (coach: Person) => {
+    const sportIds = await approvedSportIds();
+    return mockRequest(async () => {
+      await seeded();
+      return getOpenClassesForCoach(coach.id, sportIds);
+    }, 150);
   },
 
-  registerToTeach: async (classId: string) => {
-    let me;
-    try {
-      me = await authService.me();
-    } catch {
-      me = { id: 'mock-coach-minh', fullName: 'Nguyễn Văn Minh' };
-    }
-
-    const specializations = await coachClassesService.getApprovedSpecializations();
-    const approvedSportIds = specializations.map((s) => s.sport.id);
-
-    return mockRequest(
-      () => registerCoachForClass(classId, { id: me.id, fullName: me.fullName }, approvedSportIds),
-      300,
-    );
+  registerToTeach: async (coach: Person, classId: string) => {
+    const sportIds = await approvedSportIds();
+    return mockRequest(async () => {
+      await seeded();
+      return registerCoachForClass(classId, { id: coach.id, fullName: coach.fullName }, sportIds);
+    }, 300);
   },
 
-  listMyClasses: async (): Promise<GymClass[]> => {
-    const catalog = await loadCatalog();
-    ensureClassSeed(catalog.facilities, catalog.settings);
+  withdraw: (coach: Person, classId: string) =>
+    mockRequest(async () => {
+      await seeded();
+      return withdrawCoachRegistration(classId, coach.id);
+    }, 250),
 
-    let me;
-    try {
-      me = await authService.me();
-    } catch {
-      me = { id: 'mock-coach-minh', fullName: 'Nguyễn Văn Minh' };
-    }
+  listMyClasses: (coach: Person) =>
+    mockRequest(async () => {
+      await seeded();
+      return getClassesTaughtByCoach(coach.id);
+    }, 150),
 
-    return mockRequest(() => getClassesTaughtByCoach(me.id), 150);
-  },
-
-  getClassStudents: async (classId: string): Promise<ClassStudent[]> => {
-    return mockRequest(() => getClassStudents(classId), 150);
-  },
+  classStudents: (classId: string) =>
+    mockRequest(async () => {
+      await seeded();
+      return getClassStudents(classId);
+    }, 150),
 };

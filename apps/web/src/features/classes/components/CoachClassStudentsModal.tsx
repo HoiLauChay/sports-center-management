@@ -1,27 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
 import { Input, Modal, Table, Tag, type TableColumnsType } from 'antd';
 import { Search, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { formatDate } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { coachClassesService } from '../services/coachClasses.service';
+import { useClassStudents } from '../hooks/useCoachClasses';
 import type { ClassStudent, GymClass } from '../types';
 
 interface CoachClassStudentsModalProps {
-  open: boolean;
-  onClose: () => void;
+  /** The class whose students are shown; `null` keeps the modal closed. */
   gymClass: GymClass | null;
+  onClose: () => void;
 }
 
-export function CoachClassStudentsModal({ open, onClose, gymClass }: CoachClassStudentsModalProps) {
+/** UC_2.21: the students of a class the coach teaches. */
+export function CoachClassStudentsModal({ gymClass, onClose }: CoachClassStudentsModalProps) {
   const [q, setQ] = useState('');
-
-  const studentsQuery = useQuery({
-    queryKey: ['coach', 'class-students', gymClass?.id],
-    queryFn: () => coachClassesService.getClassStudents(gymClass!.id),
-    enabled: open && Boolean(gymClass?.id),
-  });
+  const studentsQuery = useClassStudents(gymClass?.id);
 
   const filteredStudents = useMemo(() => {
     const list = studentsQuery.data ?? [];
@@ -66,8 +61,9 @@ export function CoachClassStudentsModal({ open, onClose, gymClass }: CoachClassS
 
   return (
     <Modal
-      open={open}
+      open={gymClass !== null}
       onCancel={onClose}
+      afterClose={() => setQ('')}
       footer={null}
       width={720}
       title={

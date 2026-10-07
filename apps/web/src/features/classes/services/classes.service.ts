@@ -12,6 +12,8 @@ export interface ListClassesQuery {
   limit: number;
   sportId?: string;
   coachId?: string;
+  /** 0 = Sunday … 6 = Saturday: classes with a session on that weekday. */
+  dayOfWeek?: number;
   q?: string;
 }
 
@@ -35,6 +37,10 @@ export const classesService = {
         .filter((item) => classesDb.enrollable(item))
         .filter((item) => !query.sportId || item.course.sport.id === query.sportId)
         .filter((item) => !query.coachId || item.coach?.id === query.coachId)
+        .filter(
+          (item) =>
+            query.dayOfWeek === undefined || item.weeklySchedule.some((slot) => slot.dayOfWeek === query.dayOfWeek),
+        )
         .filter((item) => !term || `${item.name} ${item.coach?.fullName ?? ''}`.toLowerCase().includes(term))
         .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''));
       const start = (query.page - 1) * query.limit;

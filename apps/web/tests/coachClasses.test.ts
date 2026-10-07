@@ -1,4 +1,4 @@
-import { describe, expect, it, spyOn } from 'bun:test';
+import { beforeEach, describe, expect, it, spyOn } from 'bun:test';
 
 if (typeof localStorage === 'undefined') {
   const store = new Map<string, string>();
@@ -12,159 +12,172 @@ if (typeof localStorage === 'undefined') {
   } as unknown as Storage;
 }
 
-import type { Facility, SystemSettings } from '@sports-center/shared';
-import * as pricing from '../src/features/checkout/mocks/pricing';
+import type { Person } from '@sports-center/shared';
+import {
+  getClassesTaughtByCoach,
+  getClassStudents,
+  getOpenClassesForCoach,
+  registerCoachForClass,
+  withdrawCoachRegistration,
+} from '../src/features/classes/mocks/classAdmin';
+import { classesStore, generateSessions } from '../src/features/classes/mocks/classes';
+import { coachClassesService } from '../src/features/classes/services/coachClasses.service';
+import type { ClassStatus, WeeklySlot } from '../src/features/classes/types';
+import { privateApi } from '../src/lib/http';
+import { MockApiError } from '../src/lib/mock/errors';
+import { addDays, todayVN } from '../src/lib/time';
 
-const mockFacilities: Facility[] = [
-  {
-    id: 'fac-1',
-    name: 'Sân cầu lông 1',
-    isActive: true,
-    sports: [{ id: 'sport-badminton', name: 'Cầu lông' }],
-    slotCapacity: 1,
-  } as unknown as Facility,
-  {
-    id: 'fac-2',
-    name: 'Hồ bơi trung tâm',
-    isActive: true,
-    sports: [{ id: 'sport-swimming', name: 'Bơi lội' }],
-    slotCapacity: 1,
-  } as unknown as Facility,
-  {
-    id: 'fac-3',
-    name: 'Sân tennis 1',
-    isActive: true,
-    sports: [{ id: 'sport-tennis', name: 'Tennis' }],
-    slotCapacity: 1,
-  } as unknown as Facility,
-];
+const ME: Person = { id: 'coach-me', fullName: 'Lê Văn An' };
+const OTHER: Person = { id: 'coach-other', fullName: 'Phạm Thu Hà' };
+const GYM = { id: 'sport-gym', name: 'Gym' };
+const TENNIS = { id: 'sport-tennis', name: 'Tennis' };
+const APPROVED = [GYM.id];
+const ROOM = { id: 'fac-gym', name: 'Phòng Gym A' };
 
-spyOn(pricing, 'loadCatalog').mockResolvedValue({
-  facilities: mockFacilities,
-  settings: {
-    openTime: '06:00',
-    closeTime: '22:00',
-    slotDurationMinutes: 60,
-  } as unknown as SystemSettings,
-  packages: [],
+/** Puts one class (with its sessions) straight into the mock store. */
+function addClass(input: {
+  sport?: typeof GYM;
+  status?: ClassStatus;
+  coach?: Person | null;
+  slot?: WeeklySlot;
+  start?: number;
+}) {
+  const id = crypto.randomUUID();
+  const slot = input.slot ?? { dayOfWeek: 2, startTime: '18:00', endTime: '19:00' };
+  const sport = input.sport ?? GYM;
+  classesStore.update((state) => {
+    state.classes.push({
+      id,
+      name: `${sport.name} ${id.slice(0, 4)}`,
+      course: {
+        id: crypto.randomUUID(),
+        name: `${sport.name} cơ bản`,
+        description: null,
+        sport,
+        totalSessions: 4,
+        price: 1,
+        thumbnailUrl: null,
+      },
+      status: input.status ?? 'DRAFT',
+      weeklySchedule: [slot],
+      facility: ROOM,
+      coach: input.coach ?? null,
+      minStudents: 1,
+      maxStudents: 10,
+      cancelReason: null,
+      baseEnrolled: 0,
+    });
+    state.sessions.push(...generateSessions(id, ROOM, addDays(todayVN(), input.start ?? 7), [slot], 4));
+  });
+  return id;
+}
+
+async function rejects(run: () => unknown, code: string) {
+  try {
+    await run();
+  } catch (err) {
+    expect(err).toBeInstanceOf(MockApiError);
+    expect((err as MockApiError).code).toBe(code);
+    return;
+  }
+  throw new Error(`expected ${code}`);
+}
+
+beforeEach(() => {
+  classesStore.update((state) => {
+    state.classes = [];
+    state.sessions = [];
+    state.registrations = [];
+    state.seeded = true;
+    state.adminSeeded = true;
+  });
 });
 
-import { authService } from '../src/features/auth/services/auth.service';
-import { classesDb, classesStore } from '../src/features/classes/mocks/classes';
-import { coachClassesService } from '../src/features/classes/services/coachClasses.service';
-import { MockApiError } from '../src/lib/mock/errors';
+describe('Issue #174: Lớp cần HLV', () => {
+  it('acceptance criteria: only classes of approved sports', () => {
+    const gym = addClass({});
+    addClass({ sport: TENNIS });
 
-import type { Account } from '@sports-center/shared';
-
-const mockCoach = {
-  id: 'mock-coach-minh',
-  fullName: 'Nguyễn Văn Minh',
-  role: 'COACH',
-  status: 'ACTIVE',
-};
-
-spyOn(authService, 'me').mockResolvedValue(mockCoach as unknown as Account);
-
-describe('Issue #174: Coach Classes & Open Classes', () => {
-  describe('Acceptance Criteria: Chỉ hiện lớp thuộc bộ môn đã duyệt', () => {
-    it('open-classes only includes classes whose sport is in approved specializations', async () => {
-      // Coach Minh has approved specializations: Cầu lông (sport-badminton) and Bơi lội (sport-swimming)
-      const approvedSpecs = await coachClassesService.getApprovedSpecializations();
-      expect(approvedSpecs.length).toBeGreaterThan(0);
-      const approvedSportIds = approvedSpecs.map((s) => s.sport.id);
-      expect(approvedSportIds).toContain('sport-badminton');
-
-      const openClasses = await coachClassesService.listOpenClasses();
-      expect(openClasses.length).toBeGreaterThan(0);
-
-      // Every single class must belong to an approved sport
-      for (const item of openClasses) {
-        expect(approvedSportIds).toContain(item.course.sport.id);
-        // Should not have tennis or other non-approved sports
-        expect(item.course.sport.id).not.toBe('sport-tennis');
-      }
-    });
-
-    it('rejects registration for a class outside approved specializations', async () => {
-      // Find or seed a class with non-approved sport (tennis)
-      const all = classesDb.allClasses();
-      const tennisClass = all.find((c) => c.course.sport.id === 'sport-tennis');
-
-      if (tennisClass) {
-        try {
-          await coachClassesService.registerToTeach(tennisClass.id);
-          expect(false).toBe(true);
-        } catch (err: unknown) {
-          expect(err instanceof MockApiError).toBe(true);
-          const mockErr = err as MockApiError;
-          expect(mockErr.code).toBe('FORBIDDEN_SPORT');
-        }
-      }
-    });
+    expect(getOpenClassesForCoach(ME.id, APPROVED).map((item) => item.id)).toEqual([gym]);
   });
 
-  describe('Coach registration & clash detection', () => {
-    it('allows coach to register to teach an open class in approved sport', async () => {
-      const openClasses = await coachClassesService.listOpenClasses();
-      const target = openClasses.find((c) => !c.hasApplied && c.coach === null);
-      if (!target) return;
+  it('only drafts / pending approval without another coach', () => {
+    const draft = addClass({ status: 'DRAFT' });
+    const pending = addClass({ status: 'PENDING_APPROVAL' });
+    addClass({ status: 'OPEN' });
+    addClass({ status: 'PENDING_APPROVAL', coach: OTHER });
 
-      const res = await coachClassesService.registerToTeach(target.id);
-      expect(res.success).toBe(true);
-
-      // Subsequent list should show hasApplied = true
-      const updatedList = await coachClassesService.listOpenClasses();
-      const updatedItem = updatedList.find((c) => c.id === target.id);
-      expect(updatedItem?.hasApplied).toBe(true);
-      expect(updatedItem?.registrationStatus).toBe('PENDING');
-    });
-
-    it('prevents registering twice for the same class', async () => {
-      const openClasses = await coachClassesService.listOpenClasses();
-      const target = openClasses.find((c) => c.hasApplied);
-      if (!target) return;
-
-      try {
-        await coachClassesService.registerToTeach(target.id);
-        expect(false).toBe(true);
-      } catch (err: unknown) {
-        expect(err instanceof MockApiError).toBe(true);
-        const mockErr = err as MockApiError;
-        expect(mockErr.code).toBe('ALREADY_REGISTERED');
-      }
-    });
+    expect(
+      getOpenClassesForCoach(ME.id, APPROVED)
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual([draft, pending].sort());
   });
 
-  describe('UC_2.21: Xem danh sách học viên', () => {
-    it('returns classes taught by this coach', async () => {
-      const myClasses = await coachClassesService.listMyClasses();
-      // If none assigned yet, assign mockCoach to one class
-      if (myClasses.length === 0) {
-        const first = classesDb.allClasses()[0]!;
-        classesStore.update((state) => {
-          const stored = state.classes.find((c) => c.id === first.id);
-          if (stored) {
-            stored.coach = { id: mockCoach.id, fullName: mockCoach.fullName };
-          }
-        });
-      }
+  it('registering moves a draft to pending approval and shows the registration', () => {
+    const id = addClass({ status: 'DRAFT' });
 
-      const refreshed = await coachClassesService.listMyClasses();
-      expect(refreshed.length).toBeGreaterThan(0);
-      expect(refreshed.every((c) => c.coach?.id === mockCoach.id)).toBe(true);
+    expect(registerCoachForClass(id, ME, APPROVED).status).toBe('PENDING_APPROVAL');
+    const item = getOpenClassesForCoach(ME.id, APPROVED)[0]!;
+    expect(item.registration?.status).toBe('PENDING');
+    expect(item.pendingRegistrations).toBe(1);
+  });
+
+  it('refuses a second registration and a sport that is not approved', async () => {
+    const id = addClass({});
+    registerCoachForClass(id, ME, APPROVED);
+
+    await rejects(() => registerCoachForClass(id, ME, APPROVED), 'ALREADY_REGISTERED');
+    await rejects(() => registerCoachForClass(addClass({ sport: TENNIS }), ME, APPROVED), 'FORBIDDEN_SPORT');
+  });
+
+  it('shows and refuses a clash with a class the coach already teaches', async () => {
+    addClass({ status: 'OPEN', coach: ME });
+    const id = addClass({});
+
+    expect(getOpenClassesForCoach(ME.id, APPROVED).find((item) => item.id === id)?.clash).toContain('trùng lịch');
+    await rejects(() => registerCoachForClass(id, ME, APPROVED), 'SCHEDULE_CONFLICT');
+  });
+
+  it('a pending registration can be withdrawn once', async () => {
+    const id = addClass({});
+    registerCoachForClass(id, ME, APPROVED);
+
+    withdrawCoachRegistration(id, ME.id);
+    expect(getOpenClassesForCoach(ME.id, APPROVED)[0]!.registration).toBeNull();
+    await rejects(() => withdrawCoachRegistration(id, ME.id), 'INVALID_STATE');
+  });
+
+  it('reads approved specializations from GET /coach/specializations', async () => {
+    const get = spyOn(privateApi, 'get').mockResolvedValue({
+      data: {
+        result: [
+          { id: 's1', sport: GYM, status: 'APPROVED' },
+          { id: 's2', sport: TENNIS, status: 'PENDING' },
+        ],
+      },
     });
 
-    it('returns roster of students for a class (UC_2.21)', async () => {
-      const myClasses = await coachClassesService.listMyClasses();
-      expect(myClasses.length).toBeGreaterThan(0);
-      const target = myClasses[0]!;
+    const approved = await coachClassesService.approvedSpecializations();
 
-      const students = await coachClassesService.getClassStudents(target.id);
-      expect(Array.isArray(students)).toBe(true);
-      if (students.length > 0) {
-        expect(students[0]!.fullName).toBeDefined();
-        expect(students[0]!.status).toBe('ENROLLED');
-      }
-    });
+    expect(get).toHaveBeenCalledWith('/coach/specializations');
+    expect(approved.map((item) => item.sport.id)).toEqual([GYM.id]);
+    get.mockRestore();
+  });
+});
+
+describe('Issue #174 / UC_2.21: Lớp phụ trách', () => {
+  it('lists only the classes this coach teaches, with the session to take attendance for', () => {
+    const mine = addClass({ status: 'OPEN', coach: ME, start: -3 });
+    addClass({ status: 'OPEN', coach: OTHER });
+
+    const list = getClassesTaughtByCoach(ME.id);
+    expect(list.map((item) => item.id)).toEqual([mine]);
+    expect(list[0]!.attendanceSessionId).not.toBeNull();
+  });
+
+  it('returns the students of a class', () => {
+    const id = addClass({ status: 'OPEN', coach: ME });
+    expect(Array.isArray(getClassStudents(id))).toBe(true);
   });
 });

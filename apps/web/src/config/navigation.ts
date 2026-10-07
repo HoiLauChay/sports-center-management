@@ -80,7 +80,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Giảng dạy',
       items: [
-        { path: '/coach/classes', label: 'Lớp đang dạy', icon: School },
+        { path: '/coach/classes', label: 'Lớp phụ trách', icon: School },
         { path: '/coach/schedule', label: 'Lịch dạy', icon: CalendarDays },
         { path: '/coach/open-classes', label: 'Lớp cần HLV', icon: ClipboardList },
         // { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },

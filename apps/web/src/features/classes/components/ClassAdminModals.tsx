@@ -14,7 +14,7 @@ import {
   useUpdateClass,
   useUpdateSession,
 } from '../hooks/useClassAdmin';
-import type { ClassAdminDetail, ClassSession } from '../types';
+import type { ClassAdminDetail, ClassSession, GymClass } from '../types';
 
 interface ModalProps {
   open: boolean;
@@ -103,7 +103,12 @@ function RefundNote({ loading, students, amount }: { loading: boolean; students?
   );
 }
 
-export function CancelClassModal({ open, item, onClose }: ModalProps) {
+/** Also opened from the class list, so it only needs the class's id and name. */
+export function CancelClassModal({
+  open,
+  item,
+  onClose,
+}: Omit<ModalProps, 'item'> & { item: Pick<GymClass, 'id' | 'name'> }) {
   const [form] = Form.useForm<{ reason: string }>();
   const preview = useClassRefundPreview(item.id, open);
   const cancel = useCancelClass(item.id);

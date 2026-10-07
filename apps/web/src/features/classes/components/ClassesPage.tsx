@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/State
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { toApiError } from '~/lib/http-errors';
+import { DAY_LABEL, WEEK_ORDER } from '~/lib/time';
 import { useClasses, useCoaches } from '../hooks/useClasses';
 import { ClassCard } from './ClassCard';
 
@@ -17,8 +18,9 @@ export function ClassesPage() {
   const [page, setPage] = useState(1);
   const [sportId, setSportId] = useState<string | undefined>();
   const [coachId, setCoachId] = useState<string | undefined>();
+  const [dayOfWeek, setDayOfWeek] = useState<number | undefined>();
   const [q, setQ] = useState('');
-  const classes = useClasses({ page, limit: LIMIT, sportId, coachId, q: q || undefined });
+  const classes = useClasses({ page, limit: LIMIT, sportId, coachId, dayOfWeek, q: q || undefined });
 
   return (
     <>
@@ -61,6 +63,17 @@ export function ClassesPage() {
             value: coach.id,
             label: coach.fullName,
           }))}
+        />
+        <Select
+          allowClear
+          placeholder="Ngày"
+          className="w-full sm:!w-36"
+          value={dayOfWeek}
+          onChange={(value: number | undefined) => {
+            setDayOfWeek(value);
+            setPage(1);
+          }}
+          options={WEEK_ORDER.map((day) => ({ value: day, label: DAY_LABEL[day] }))}
         />
       </div>
       {classes.isPending ? (

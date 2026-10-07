@@ -12,182 +12,131 @@ if (typeof localStorage === 'undefined') {
   } as unknown as Storage;
 }
 
-import { createCourseBodySchema, type Facility, type SystemSettings } from '@sports-center/shared';
+import {
+  createCourseBodySchema,
+  type CreateClassBody,
+  type Facility,
+  type ScheduleClash,
+  type SystemSettings,
+} from '@sports-center/shared';
 import * as pricing from '../src/features/checkout/mocks/pricing';
 
-const mockFacilities: Facility[] = [
-  {
-    id: 'fac-1',
-    name: 'Sân cầu lông 1',
-    isActive: true,
-    sports: [{ id: 'sport-badminton', name: 'Cầu lông' }],
-    slotCapacity: 1,
-  } as unknown as Facility,
-  {
-    id: 'fac-2',
-    name: 'Sân tennis 1',
-    isActive: true,
-    sports: [{ id: 'sport-tennis', name: 'Tennis' }],
-    slotCapacity: 1,
-  } as unknown as Facility,
-];
+const BADMINTON = { id: crypto.randomUUID(), name: 'Cầu lông' };
+const TENNIS = { id: crypto.randomUUID(), name: 'Tennis' };
+const COURT = { id: crypto.randomUUID(), name: 'Sân cầu lông 1', isActive: true, sports: [BADMINTON] };
+const TENNIS_COURT = { id: crypto.randomUUID(), name: 'Sân tennis 1', isActive: true, sports: [TENNIS] };
 
 spyOn(pricing, 'loadCatalog').mockResolvedValue({
-  facilities: mockFacilities,
-  settings: {
-    openTime: '06:00',
-    closeTime: '22:00',
-    slotDurationMinutes: 60,
-  } as unknown as SystemSettings,
+  facilities: [COURT, TENNIS_COURT] as unknown as Facility[],
+  settings: { openTime: '06:00', closeTime: '22:00', slotDurationMinutes: 60 } as unknown as SystemSettings,
   packages: [],
 });
 
 import { classesDb } from '../src/features/classes/mocks/classes';
 import { classAdminService } from '../src/features/classes/services/classAdmin.service';
 import { coursesService } from '../src/features/courses/services/courses.service';
+import { errorPayload } from '../src/lib/http-errors';
+import { MockApiError } from '../src/lib/mock/errors';
 
-const mockCourses = [
-  {
-    id: 'course-badminton-basic',
-    name: 'Cầu lông cơ bản',
-    description: 'Kỹ thuật nền tảng',
-    sport: { id: 'sport-badminton', name: 'Cầu lông' },
-    totalSessions: 8,
-    price: 1200000,
-    thumbnailUrl: null,
-  },
-  {
-    id: 'course-tennis-basic',
-    name: 'Tennis cơ bản',
-    description: 'Kỹ thuật giao bóng',
-    sport: { id: 'sport-tennis', name: 'Tennis' },
-    totalSessions: 10,
-    price: 2000000,
-    thumbnailUrl: null,
-  },
-];
+const BADMINTON_COURSE = {
+  id: crypto.randomUUID(),
+  name: 'Cầu lông cơ bản',
+  description: 'Kỹ thuật nền tảng',
+  sport: BADMINTON,
+  totalSessions: 8,
+  price: 1_200_000,
+  thumbnailUrl: null,
+};
 
-spyOn(coursesService, 'list').mockResolvedValue(mockCourses);
+spyOn(coursesService, 'list').mockResolvedValue([BADMINTON_COURSE]);
 
-describe('Issue #168: Manager Courses & Classes', () => {
-  describe('classAdminService: acceptance criteria - Lỗi trùng lịch hiển thị buổi bị trùng', () => {
-    it('can list all classes for manager regardless of status', async () => {
-      const list = await classAdminService.listAll();
-      expect(list.length).toBeGreaterThan(0);
-      const statuses = new Set(list.map((c) => c.status));
-      expect(statuses.has('OPEN') || statuses.has('DRAFT')).toBe(true);
-    });
+const body = (overrides: Partial<CreateClassBody> = {}): CreateClassBody => ({
+  courseId: BADMINTON_COURSE.id,
+  name: 'Cầu lông cơ bản K1',
+  facilityId: COURT.id,
+  startDate: '2027-03-06',
+  weeklySchedule: [{ dayOfWeek: 6, startTime: '19:00', endTime: '20:00' }],
+  minStudents: 4,
+  maxStudents: 12,
+  ...overrides,
+});
 
-    it('detects schedule conflict when facility is already booked at that slot', async () => {
-      const existingClasses = await classAdminService.listAll();
-      const existing = existingClasses[0]!;
-      const sessions = classesDb.sessionsOf(existing.id);
-      const existingSession = sessions[0]!;
+async function createError(input: CreateClassBody): Promise<MockApiError> {
+  try {
+    await classAdminService.create(input);
+  } catch (err) {
+    expect(err).toBeInstanceOf(MockApiError);
+    return err as MockApiError;
+  }
+  throw new Error('expected create to fail');
+}
 
-      // Ensure course is in mockCourses
-      if (!mockCourses.some((c) => c.id === existing.course.id)) {
-        mockCourses.push({
-          id: existing.course.id,
-          name: existing.course.name,
-          description: existing.course.description,
-          sport: existing.course.sport,
-          totalSessions: existing.course.totalSessions,
-          price: existing.course.price,
-          thumbnailUrl: null,
-        });
-      }
+describe('Issue #168: tạo lớp học (Manager)', () => {
+  it('creates a DRAFT class with every session of the course', async () => {
+    const created = await classAdminService.create(body());
 
-      const dateObj = new Date(existingSession.date);
-      const dayOfWeek = dateObj.getDay();
+    expect(created.status).toBe('DRAFT');
+    expect(created.coach).toBeNull();
+    expect(classesDb.sessionsOf(created.id)).toHaveLength(BADMINTON_COURSE.totalSessions);
+  });
 
-      try {
-        await classAdminService.create({
-          courseId: existing.course.id,
-          name: 'Lớp mới kiểm tra trùng lịch',
-          facilityId: existingSession.facility.id,
-          startDate: existingSession.date,
-          weeklySchedule: [
-            {
-              dayOfWeek,
-              startTime: existingSession.startTime,
-              endTime: existingSession.endTime,
-            },
-          ],
-          minStudents: 4,
-          maxStudents: 10,
-        });
-        // Should have thrown
-        expect(false).toBe(true);
-      } catch (err: unknown) {
-        const errorObj = err as { code?: string; conflicts?: unknown[] };
-        expect(errorObj.code).toBe('SCHEDULE_CONFLICT');
-        expect(Array.isArray(errorObj.conflicts)).toBe(true);
-        expect(errorObj.conflicts!.length).toBeGreaterThan(0);
+  it('acceptance criteria: a clash lists every colliding session', async () => {
+    const first = await classAdminService.create(body({ name: 'Lớp A', weeklySchedule: [slot(2, '07:00', '08:00')] }));
+    const firstSessions = classesDb.sessionsOf(first.id);
 
-        const firstConflict = errorObj.conflicts![0] as {
-          date: string;
-          startTime: string;
-          endTime: string;
-          classSession: { className: string };
-        };
-        expect(firstConflict.date).toBe(existingSession.date);
-        expect(firstConflict.classSession.className).toBe(existing.name);
-      }
-    });
+    const err = await createError(
+      body({ name: 'Lớp B', startDate: firstSessions[0]!.date, weeklySchedule: [slot(2, '07:00', '08:00')] }),
+    );
 
-    it('successfully creates class when no schedule conflict exists', async () => {
-      const created = await classAdminService.create({
-        courseId: 'course-badminton-basic',
-        name: 'Lớp Cầu Lông Sáng Thứ Bảy',
-        facilityId: 'fac-1',
-        startDate: '2026-12-05',
-        weeklySchedule: [
-          {
-            dayOfWeek: 6, // Saturday
-            startTime: '10:00',
-            endTime: '11:30',
-          },
-        ],
-        minStudents: 4,
-        maxStudents: 12,
-      });
-
-      expect(created.id).toBeDefined();
-      expect(created.status).toBe('DRAFT');
-      expect(created.maxStudents).toBe(12);
-      expect(classesDb.sessionsOf(created.id).length).toBe(8);
+    expect(err.code).toBe('SCHEDULE_CONFLICT');
+    const conflicts = errorPayload<ScheduleClash[]>(err, 'conflicts')!;
+    expect(conflicts).toHaveLength(firstSessions.length);
+    expect(conflicts[0]).toMatchObject({
+      date: firstSessions[0]!.date,
+      reason: 'CLASS_SESSION',
+      classSession: { classId: first.id, className: 'Lớp A' },
     });
   });
 
-  describe('createCourseBodySchema validation', () => {
-    it('successfully validates course with string sportId like sport-badminton', () => {
-      const validPayload = {
-        name: 'Cầu lông phong trào',
-        description: 'Khóa học cơ bản',
-        sportId: 'sport-badminton',
-        totalSessions: 10,
-        price: 1500000,
-        thumbnailUrl: null,
-      };
+  it('rejects an empty weekly schedule', async () => {
+    const err = await createError(body({ weeklySchedule: [] }));
+    expect(err.code).toBe('VALIDATION_ERROR');
+    expect(err.errors?.[0]?.path).toBe('body.weeklySchedule');
+  });
 
-      const parsed = createCourseBodySchema.safeParse(validPayload);
-      expect(parsed.success).toBe(true);
-    });
+  it('rejects min students above max students', async () => {
+    const err = await createError(body({ minStudents: 20, maxStudents: 5 }));
+    expect(err.errors?.[0]?.path).toBe('body.maxStudents');
+  });
 
-    it('rejects empty sportId', () => {
-      const invalidPayload = {
-        name: 'Cầu lông phong trào',
-        sportId: '',
-        totalSessions: 10,
-        price: 1500000,
-      };
+  it('rejects a facility that does not support the course sport', async () => {
+    const err = await createError(body({ facilityId: TENNIS_COURT.id }));
+    expect(err.errors?.[0]?.path).toBe('body.facilityId');
+  });
 
-      const parsed = createCourseBodySchema.safeParse(invalidPayload);
-      expect(parsed.success).toBe(false);
-      if (!parsed.success) {
-        const sportError = parsed.error.issues.find((i) => i.path.includes('sportId'));
-        expect(sportError?.message).toBe('Mã bộ môn không hợp lệ');
-      }
-    });
+  it('lists classes with their pending registrations and session count', async () => {
+    const created = await classAdminService.create(
+      body({ name: 'Lớp C', weeklySchedule: [slot(4, '09:00', '10:00')] }),
+    );
+    const item = (await classAdminService.list()).find((entry) => entry.id === created.id)!;
+
+    expect(item.pendingRegistrations).toBe(0);
+    expect(item.sessionCount).toBe(BADMINTON_COURSE.totalSessions);
   });
 });
+
+describe('createCourseBodySchema', () => {
+  it('still requires a uuid sport id (shared with the API)', () => {
+    const parsed = createCourseBodySchema.safeParse({
+      name: 'Cầu lông phong trào',
+      sportId: 'sport-badminton',
+      totalSessions: 10,
+      price: 1_500_000,
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+function slot(dayOfWeek: number, startTime: string, endTime: string) {
+  return { dayOfWeek, startTime, endTime };
+}

@@ -142,6 +142,16 @@ describe('Issue #172: Member Classes & Acceptance Criteria', () => {
       }
     });
 
+    it('lọc theo ngày trong tuần (dayOfWeek)', async () => {
+      const all = await classesService.list({ page: 1, limit: 20 });
+      const day = all.items[0]!.weeklySchedule[0]!.dayOfWeek;
+      const filtered = await classesService.list({ page: 1, limit: 20, dayOfWeek: day });
+      expect(filtered.items.length).toBeGreaterThan(0);
+      for (const item of filtered.items) {
+        expect(item.weeklySchedule.some((slot) => slot.dayOfWeek === day)).toBe(true);
+      }
+    });
+
     it('tìm kiếm theo từ khóa (q)', async () => {
       const all = await classesService.list({ page: 1, limit: 20 });
       const first = all.items[0];

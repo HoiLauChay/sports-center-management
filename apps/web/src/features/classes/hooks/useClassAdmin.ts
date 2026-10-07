@@ -12,6 +12,10 @@ export function useClassAdmin(id: string) {
   return useQuery({ queryKey: adminKey(id), queryFn: () => classAdminService.get(id), retry: false });
 }
 
+export function useManagerClasses() {
+  return useQuery({ queryKey: ['classes', 'manager-list'], queryFn: () => classAdminService.list() });
+}
+
 export function useClassOverview() {
   return useQuery({ queryKey: ['classes', 'overview'], queryFn: () => classAdminService.overview() });
 }
@@ -91,4 +95,26 @@ export function useUpdateSession(classId: string) {
       classAdminService.updateSession(input.sessionId, input.patch),
     'Đã cập nhật buổi học.',
   );
+}
+
+/** Approve / reject straight from the class list, where the class is known per row. */
+function useClassListAction(run: (classId: string) => Promise<unknown>, success: string) {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      message.success(success);
+    },
+    onError: (error) => message.error(describeApiError(error)),
+  });
+}
+
+export function useApproveClassFromList() {
+  return useClassListAction((classId) => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
+}
+
+export function useRejectClassFromList() {
+  return useClassListAction((classId) => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
 }

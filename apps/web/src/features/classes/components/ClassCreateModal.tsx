@@ -1,286 +1,282 @@
-import type { Course, Facility, WeeklySlot } from '@sports-center/shared';
+import {
+  createClassBodySchema,
+  type CreateClassBody,
+  type ScheduleClash,
+  type SystemSettings,
+} from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select, TimePicker, Typography } from 'antd';
+import { useNavigate } from '@tanstack/react-router';
+import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select, TimePicker } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses';
-import { formatDate } from '~/lib/format';
-import { toApiError } from '~/lib/http-errors';
-import { DAY_LABEL, WEEK_ORDER } from '~/lib/time';
-import { classAdminService, type ScheduleClash } from '../services/classAdmin.service';
-
-const { Text } = Typography;
+import { useSettings } from '~/features/settings';
+import { formatDate, formatVND } from '~/lib/format';
+import { errorPayload, toApiError } from '~/lib/http-errors';
+import { DATE_FORMAT, DAY_LABEL, toMinutes, WEEK_ORDER } from '~/lib/time';
+import { classAdminService } from '../services/classAdmin.service';
 
 interface ClassCreateModalProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+}
+
+interface SlotValues {
+  dayOfWeek: number;
+  time?: [Dayjs, Dayjs];
 }
 
 interface FormValues {
   courseId: string;
   name: string;
   facilityId: string;
-  startDate: Dayjs | null;
-  weeklySchedule: WeeklySlot[];
+  startDate: Dayjs;
   minStudents: number;
   maxStudents: number;
+  schedule: SlotValues[];
 }
 
-export function ClassCreateModal({ open, onClose, onSuccess }: ClassCreateModalProps) {
+const INITIAL_VALUES: Partial<FormValues> = {
+  minStudents: 4,
+  maxStudents: 12,
+  schedule: [{ dayOfWeek: 1 }],
+};
+
+/** Why a weekly slot does not fit the centre's slot grid (opening hours, slot length), or `null` when it does. */
+function offGrid(settings: SystemSettings | undefined, start: string, end: string): string | null {
+  if (!settings) return null;
+  const { openTime, closeTime, slotDurationMinutes: slot } = settings;
+  if (toMinutes(start) < toMinutes(openTime) || toMinutes(end) > toMinutes(closeTime)) {
+    return `Giờ học phải trong khung ${openTime}–${closeTime}`;
+  }
+  if ((toMinutes(start) - toMinutes(openTime)) % slot !== 0 || (toMinutes(end) - toMinutes(start)) % slot !== 0) {
+    return `Giờ học phải khớp lưới slot ${slot} phút tính từ ${openTime}`;
+  }
+  return null;
+}
+
+function clashText(clash: ScheduleClash) {
+  if (clash.classSession) return `trùng buổi học của lớp "${clash.classSession.className}"`;
+  if (clash.reason === 'MAINTENANCE') return 'facility đang bảo trì';
+  if (clash.reason === 'BOOKED') return 'đã có lượt đặt sân';
+  return 'facility không trống';
+}
+
+/**
+ * Creates a class as a DRAFT section of a course (UC_2.12): every session is generated from the weekly schedule and
+ * holds its facility slot right away, so a clash lists each session that collides (BR_2.3).
+ */
+export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const courses = useCourses();
   const facilities = useQuery(facilitiesQueryOptions);
-
+  const settings = useSettings();
   const [form] = Form.useForm<FormValues>();
-  const watchedCourseId = Form.useWatch('courseId', form);
-  const selectedCourseId = watchedCourseId ?? courses.data?.[0]?.id;
-  const [conflicts, setConflicts] = useState<ScheduleClash[] | null>(null);
-  const [generalError, setGeneralError] = useState<string | null>(null);
+  const courseId = Form.useWatch('courseId', form);
+  const startDate = Form.useWatch('startDate', form);
+  const [conflicts, setConflicts] = useState<ScheduleClash[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedCourse: Course | undefined = useMemo(
-    () => courses.data?.find((c) => c.id === selectedCourseId),
-    [courses.data, selectedCourseId],
-  );
+  const course = courses.data?.find((item) => item.id === courseId);
+  const facilityOptions = (facilities.data ?? [])
+    .filter((facility) => facility.isActive && course && facility.sports.some((sport) => sport.id === course.sport.id))
+    .map((facility) => ({ value: facility.id, label: facility.name }));
 
-  // Lọc chỉ cơ sở hỗ trợ bộ môn của khóa học được chọn
-  const validFacilities: Facility[] = useMemo(() => {
-    if (!selectedCourse) return facilities.data ?? [];
-    return (facilities.data ?? []).filter((f) => f.isActive && f.sports.some((s) => s.id === selectedCourse.sport.id));
-  }, [facilities.data, selectedCourse]);
-
-  const handleClose = () => {
-    setConflicts(null);
-    setGeneralError(null);
+  const close = () => {
+    setConflicts([]);
+    setError(null);
     onClose();
   };
 
-  const createMutation = useMutation({
-    mutationFn: (values: FormValues) => {
-      setConflicts(null);
-      setGeneralError(null);
-      return classAdminService.create({
-        courseId: values.courseId,
-        name: values.name.trim(),
-        facilityId: values.facilityId,
-        startDate: values.startDate!.format('YYYY-MM-DD'),
-        weeklySchedule: values.weeklySchedule,
-        minStudents: values.minStudents,
-        maxStudents: values.maxStudents,
-      });
-    },
-    onSuccess: () => {
+  const create = useMutation({
+    mutationFn: (body: CreateClassBody) => classAdminService.create(body),
+    onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
-      onClose();
-      onSuccess?.();
+      close();
+      void navigate({ to: '/admin/classes/$classId', params: { classId: created.id } });
     },
-    onError: (err: unknown) => {
-      const errorObj = err as { code?: string; conflicts?: ScheduleClash[]; message?: string };
-      if (errorObj.code === 'SCHEDULE_CONFLICT' && Array.isArray(errorObj.conflicts)) {
-        setConflicts(errorObj.conflicts);
-      } else {
-        setGeneralError(toApiError(err).message);
-      }
+    onError: (err) => {
+      const clashes = errorPayload<ScheduleClash[]>(err, 'conflicts');
+      if (clashes?.length) setConflicts(clashes);
+      else setError(toApiError(err).message);
     },
   });
 
-  const handleFinish = (values: FormValues) => {
-    createMutation.mutate(values);
+  useEffect(() => {
+    if (!open) return;
+    form.resetFields();
+    form.setFieldValue('startDate', dayjs().add(7, 'day'));
+  }, [open, form]);
+
+  const submit = (values: FormValues) => {
+    setConflicts([]);
+    setError(null);
+    const parsed = createClassBodySchema.safeParse({
+      courseId: values.courseId,
+      name: values.name,
+      facilityId: values.facilityId,
+      startDate: values.startDate.format(DATE_FORMAT),
+      minStudents: values.minStudents,
+      maxStudents: values.maxStudents,
+      weeklySchedule: values.schedule.map((slot) => ({
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.time![0].format('HH:mm'),
+        endTime: slot.time![1].format('HH:mm'),
+      })),
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]!.message);
+      return;
+    }
+    create.mutate(parsed.data);
   };
 
   return (
     <Modal
       open={open}
-      title="Tạo lớp học mới"
-      okText="Tạo lớp"
+      title="Tạo lớp học (chia lớp cho khóa)"
+      okText="Tạo lớp DRAFT"
       cancelText="Hủy"
-      width={680}
-      confirmLoading={createMutation.isPending}
-      onOk={() => void form.submit()}
-      onCancel={handleClose}
-      destroyOnClose
+      width={720}
+      destroyOnHidden
+      confirmLoading={create.isPending}
+      onOk={() => form.submit()}
+      onCancel={close}
     >
-      {/* Acceptance criteria: Lỗi trùng lịch hiển thị chi tiết các buổi bị trùng */}
-      {conflicts && conflicts.length > 0 && (
+      {conflicts.length > 0 && (
         <Alert
           type="error"
           showIcon
-          className="!mb-4 !mt-2"
-          message={<span className="font-bold text-red-700">Lịch học bị trùng tại cơ sở đã chọn:</span>}
+          className="!mb-4"
+          title="Lịch học bị trùng tại facility đã chọn"
           description={
-            <div className="mt-2 text-xs">
-              <p className="mb-2 text-sc-ink-2">
-                Không thể tạo lớp do các buổi học sau bị trùng khung giờ với lịch hiện có:
-              </p>
-              <ul className="m-0 list-disc space-y-1 pl-4 text-red-600">
-                {conflicts.map((clash, idx) => (
-                  <li key={idx}>
-                    <strong>{formatDate(clash.date)}</strong> ({clash.startTime} – {clash.endTime}):{' '}
-                    {clash.classSession ? (
-                      <span>
-                        Trùng với buổi học của lớp <strong>&quot;{clash.classSession.className}&quot;</strong>
-                      </span>
-                    ) : (
-                      <span>Đã có lượt đặt sân hoặc bảo trì trong khung giờ này</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 mb-0 text-sc-muted">
-                Gợi ý: Hãy đổi cơ sở, chọn ngày bắt đầu khác hoặc đổi khung giờ trong lịch tuần.
-              </p>
-            </div>
+            <ul className="m-0 list-disc pl-4 text-xs">
+              {conflicts.map((clash) => (
+                <li key={`${clash.date}-${clash.startTime}-${clash.classSession?.id ?? clash.reason}`}>
+                  <strong>{formatDate(clash.date)}</strong> {clash.startTime}–{clash.endTime}: {clashText(clash)}
+                </li>
+              ))}
+            </ul>
           }
         />
       )}
+      {error && <Alert type="error" showIcon className="!mb-4" title={error} />}
 
-      {generalError && <Alert type="error" showIcon message={generalError} className="!mb-4 !mt-2" />}
+      <Form form={form} layout="vertical" initialValues={INITIAL_VALUES} onFinish={submit}>
+        <Form.Item name="courseId" label="Khóa học" rules={[{ required: true, message: 'Chọn khóa học' }]}>
+          <Select
+            showSearch
+            optionFilterProp="label"
+            placeholder="Chọn khóa học"
+            loading={courses.isPending}
+            onChange={() => form.setFieldValue('facilityId', undefined)}
+            options={(courses.data ?? []).map((item) => ({
+              value: item.id,
+              label: `${item.name} · ${item.sport.name} · ${item.totalSessions} buổi · ${formatVND(item.price)}`,
+            }))}
+          />
+        </Form.Item>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleFinish}
-        className="!mt-3"
-        initialValues={{
-          minStudents: 4,
-          maxStudents: 12,
-        }}
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Form.Item name="courseId" label="Khóa học" rules={[{ required: true, message: 'Vui lòng chọn khóa học' }]}>
-            <Select
-              placeholder="Chọn khóa học"
-              loading={courses.isPending}
-              onChange={(val: string) => {
-                const c = courses.data?.find((item) => item.id === val);
-                if (c) {
-                  form.setFieldValue('name', `${c.name} · Lớp mới`);
-                  form.setFieldValue('facilityId', undefined); // Reset facility
-                }
-              }}
-              options={(courses.data ?? []).map((c) => ({
-                value: c.id,
-                label: `${c.name} (${c.sport.name} · ${c.totalSessions} buổi)`,
-              }))}
-            />
+        <Form.Item name="name" label="Tên lớp" rules={[{ required: true, whitespace: true, message: 'Nhập tên lớp' }]}>
+          <Input maxLength={100} placeholder={course ? `${course.name} K…` : 'VD: Gym cơ bản K15'} />
+        </Form.Item>
+
+        <Form.Item name="facilityId" label="Facility mặc định" rules={[{ required: true, message: 'Chọn facility' }]}>
+          <Select
+            disabled={!course}
+            loading={facilities.isPending}
+            placeholder={course ? 'Chọn facility hỗ trợ bộ môn' : 'Chọn khóa học trước'}
+            options={facilityOptions}
+          />
+        </Form.Item>
+
+        <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[2fr_1fr_1fr]">
+          <Form.Item name="startDate" label="Ngày bắt đầu" rules={[{ required: true, message: 'Chọn ngày bắt đầu' }]}>
+            <DatePicker className="w-full" format="DD/MM/YYYY" minDate={dayjs()} />
           </Form.Item>
-
-          <Form.Item name="name" label="Tên lớp học" rules={[{ required: true, message: 'Vui lòng nhập tên lớp học' }]}>
-            <Input placeholder="VD: Cầu lông cơ bản · Lớp K1" />
+          <Form.Item name="minStudents" label="Sĩ số tối thiểu" rules={[{ required: true, message: 'Nhập sĩ số' }]}>
+            <InputNumber className="!w-full" min={1} max={1000} precision={0} />
           </Form.Item>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Form.Item
-            name="facilityId"
-            label={`Cơ sở học ${selectedCourse ? `(Bộ môn ${selectedCourse.sport.name})` : ''}`}
-            rules={[{ required: true, message: 'Vui lòng chọn cơ sở' }]}
+            name="maxStudents"
+            label="Sĩ số tối đa"
+            dependencies={['minStudents']}
+            rules={[
+              { required: true, message: 'Nhập sĩ số' },
+              ({ getFieldValue }) => ({
+                validator: (_, value: number | null) =>
+                  value == null || value >= (getFieldValue('minStudents') as number)
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('Phải không nhỏ hơn sĩ số tối thiểu')),
+              }),
+            ]}
           >
-            <Select
-              placeholder={validFacilities.length ? 'Chọn cơ sở' : 'Không có cơ sở phù hợp bộ môn'}
-              loading={facilities.isPending}
-              disabled={!validFacilities.length}
-              options={validFacilities.map((f) => ({
-                value: f.id,
-                label: f.name,
-              }))}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="startDate"
-            label="Ngày khai giảng (bắt đầu)"
-            rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
-          >
-            <DatePicker
-              className="w-full"
-              format="DD/MM/YYYY"
-              placeholder="Chọn ngày bắt đầu"
-              disabledDate={(current) => current && current < dayjs().startOf('day')}
-            />
+            <InputNumber className="!w-full" min={1} max={1000} precision={0} />
           </Form.Item>
         </div>
 
-        <div className="mb-2">
-          <Text strong>Lịch học hàng tuần</Text>
-          <p className="mt-0 text-xs text-sc-muted">
-            Hệ thống sẽ tự động sinh đủ {selectedCourse?.totalSessions ?? 8} buổi học theo các khung giờ này.
-          </p>
-        </div>
-
-        <Form.List name="weeklySchedule">
-          {(fields, { add, remove }) => (
-            <div className="mb-4 flex flex-col gap-2 rounded-lg border border-dashed border-sc-border p-3">
-              {fields.map(({ key, name, ...restField }) => (
-                <div key={key} className="flex items-center gap-2">
+        <div className="mb-2 font-medium">Lịch tuần (sinh buổi học)</div>
+        <Form.List
+          name="schedule"
+          rules={[
+            {
+              validator: (_, slots: SlotValues[] | undefined) =>
+                slots?.length ? Promise.resolve() : Promise.reject(new Error('Cần ít nhất một khung giờ trong tuần')),
+            },
+          ]}
+        >
+          {(fields, { add, remove }, { errors }) => (
+            <>
+              {fields.map((field) => (
+                <div key={field.key} className="flex items-start gap-2">
                   <Form.Item
-                    {...restField}
-                    name={[name, 'dayOfWeek']}
-                    className="!mb-0 w-36"
+                    name={[field.name, 'dayOfWeek']}
+                    className="w-36"
                     rules={[{ required: true, message: 'Chọn thứ' }]}
                   >
-                    <Select
-                      options={WEEK_ORDER.map((dayNum) => ({
-                        value: dayNum,
-                        label: DAY_LABEL[dayNum],
-                      }))}
-                    />
+                    <Select options={WEEK_ORDER.map((day) => ({ value: day, label: DAY_LABEL[day] }))} />
                   </Form.Item>
-
                   <Form.Item
-                    {...restField}
-                    name={[name, 'startTime']}
-                    className="!mb-0 w-28"
-                    rules={[{ required: true, message: 'Bắt đầu' }]}
+                    name={[field.name, 'time']}
+                    className="flex-1"
+                    rules={[
+                      { required: true, message: 'Chọn giờ học' },
+                      {
+                        validator: (_, range: [Dayjs, Dayjs] | undefined) => {
+                          if (!range) return Promise.resolve();
+                          const [start, end] = range.map((value) => value.format('HH:mm'));
+                          if (start! >= end!) return Promise.reject(new Error('Giờ kết thúc phải sau giờ bắt đầu'));
+                          const reason = offGrid(settings.data, start!, end!);
+                          return reason ? Promise.reject(new Error(reason)) : Promise.resolve();
+                        },
+                      },
+                    ]}
                   >
-                    <TimePicker format="HH:mm" minuteStep={15} placeholder="Bắt đầu" />
+                    <TimePicker.RangePicker className="w-full" format="HH:mm" minuteStep={15} order />
                   </Form.Item>
-
-                  <span>đến</span>
-
-                  <Form.Item
-                    {...restField}
-                    name={[name, 'endTime']}
-                    className="!mb-0 w-28"
-                    rules={[{ required: true, message: 'Kết thúc' }]}
-                  >
-                    <TimePicker format="HH:mm" minuteStep={15} placeholder="Kết thúc" />
-                  </Form.Item>
-
-                  {fields.length > 1 && (
-                    <Button type="text" danger icon={<Trash2 size={16} />} onClick={() => remove(name)} />
-                  )}
+                  <Button
+                    icon={<Trash2 size={16} />}
+                    disabled={fields.length === 1}
+                    onClick={() => remove(field.name)}
+                  />
                 </div>
               ))}
-
-              <Button
-                type="dashed"
-                onClick={() => add({ dayOfWeek: 1, startTime: '18:00', endTime: '19:30' })}
-                icon={<Plus size={14} />}
-                className="mt-2"
-                block
-              >
-                Thêm buổi trong tuần
+              <Button type="dashed" size="small" icon={<Plus size={14} />} onClick={() => add({ dayOfWeek: 1 })}>
+                Thêm khung giờ
               </Button>
-            </div>
+              <Form.ErrorList errors={errors} />
+            </>
           )}
         </Form.List>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Form.Item
-            name="minStudents"
-            label="Sĩ số tối thiểu"
-            rules={[{ required: true, message: 'Nhập sĩ số tối thiểu' }]}
-          >
-            <InputNumber min={1} max={50} className="w-full" />
-          </Form.Item>
-
-          <Form.Item name="maxStudents" label="Sĩ số tối đa" rules={[{ required: true, message: 'Nhập sĩ số tối đa' }]}>
-            <InputNumber min={1} max={100} className="w-full" />
-          </Form.Item>
-        </div>
+        <p className="mt-3 mb-0 text-xs text-sc-muted">
+          Tạo lớp giữ slot facility ngay từ DRAFT
+          {course && ` (${course.totalSessions} buổi từ ${startDate?.format('DD/MM/YYYY') ?? '…'})`}. Lớp cần HLV đăng
+          ký / được phân công rồi Quản lý duyệt mới OPEN.
+        </p>
       </Form>
     </Modal>
   );
