@@ -18,6 +18,7 @@ import bankTransactionRepository from '~/repositories/bankTransaction.repository
 import invoiceRepository from '~/repositories/invoice.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import checkoutService from '~/services/checkout/checkout.service';
 import invoiceService from '~/services/invoice.service';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
 import walletService from '~/services/wallet.service';
@@ -42,10 +43,11 @@ export interface IncomingBankTransaction {
 export type InvoiceSettler = (
   tx: Prisma.TransactionClient,
   input: { invoice: { id: string; accountId: string | null }; bankTransactionId: string },
-) => Promise<CreatedNotification[] | null>;
+) => Promise<{ matched: boolean; notifications: CreatedNotification[]; note?: string } | null>;
 
 const settlers: Partial<Record<InvoicePurpose, InvoiceSettler>> = {
   WALLET_TOP_UP: invoiceService.settleTopUp,
+  COUNTER_ORDER: checkoutService.settleCounterOrder,
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -102,27 +104,29 @@ class BankTransactionService {
         const invoice = paymentCode ? await invoiceRepository.findByPaymentCode(paymentCode, tx) : null;
         const settle = invoice && Number(invoice.amount) === input.amount ? settlers[invoice.purpose] : undefined;
         const settled = settle ? await settle(tx, { invoice: invoice!, bankTransactionId: id }) : null;
-        if (settled) {
+        if (settled?.matched) {
           await bankTransactionRepository.updateStatus(id, 'MATCHED', tx);
-          return { status: 'MATCHED' as const, notifications: settled };
+          return { status: 'MATCHED' as const, notifications: settled.notifications };
         }
+        if (settled?.note) await bankTransactionRepository.updateStatus(id, 'UNMATCHED', tx, settled.note);
 
         const managerIds = await accountRepository.findActiveManagerIds(tx);
         const amount = input.amount.toLocaleString('vi-VN');
+        const managerNotifications = await notificationService.create(
+          managerIds.map((accountId) => ({
+            accountId,
+            type: 'PAYMENT' as const,
+            title: 'Giao dịch ngân hàng chưa khớp',
+            message: `Giao dịch ${amount}đ với nội dung "${input.content}" ${settled?.note ? `chưa khớp (${settled.note})` : 'chưa khớp hóa đơn nào'}, cần đối soát.`,
+            referenceType: 'BANK_TRANSACTION',
+            referenceId: id,
+            dedupKey: `bank-unmatched:${id}:${accountId}`,
+          })),
+          tx,
+        );
         return {
           status: 'UNMATCHED' as const,
-          notifications: await notificationService.create(
-            managerIds.map((accountId) => ({
-              accountId,
-              type: 'PAYMENT' as const,
-              title: 'Giao dịch ngân hàng chưa khớp',
-              message: `Giao dịch ${amount}đ với nội dung "${input.content}" chưa khớp hóa đơn nào, cần đối soát.`,
-              referenceType: 'BANK_TRANSACTION',
-              referenceId: id,
-              dedupKey: `bank-unmatched:${id}:${accountId}`,
-            })),
-            tx,
-          ),
+          notifications: [...(settled?.notifications ?? []), ...managerNotifications],
         };
       }),
     );

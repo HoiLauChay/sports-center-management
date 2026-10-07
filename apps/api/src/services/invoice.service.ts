@@ -95,7 +95,7 @@ class InvoiceService {
     });
     await invoiceRepository.markPaid(invoice.id, bankTransactionId, tx);
 
-    return notificationService.create(
+    const notifications = await notificationService.create(
       [
         {
           accountId,
@@ -110,6 +110,24 @@ class InvoiceService {
       ],
       tx,
     );
+    return { matched: true, notifications };
+  };
+
+  cancel = async (id: string) => {
+    const invoice = await runTransaction(async (tx) => {
+      await lockRows(tx, { invoices: [id] });
+      const current = await invoiceRepository.findById(id, tx);
+      if (!current) throw notFound();
+      if (current.purpose !== 'COUNTER_ORDER' || current.status !== 'PENDING') {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.CONFLICT,
+          code: ERROR_CODE.CONFLICT,
+          message: 'Chỉ hủy được hóa đơn quầy đang chờ thanh toán',
+        });
+      }
+      return invoiceRepository.cancel(id, tx);
+    });
+    return toInvoiceResponse(invoice);
   };
 
   get = async (viewer: Actor, id: string) => {

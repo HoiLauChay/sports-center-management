@@ -50,8 +50,8 @@ class BankTransactionRepository {
       .findFirst({ where: { accountNumber, amount, transactionDate, content }, select: { id: true } })
       .then(Boolean);
 
-  updateStatus = (id: string, status: BankTransactionStatus, tx: Prisma.TransactionClient) =>
-    tx.bankTransaction.update({ where: { id }, data: { status }, select: { id: true } });
+  updateStatus = (id: string, status: BankTransactionStatus, tx: Prisma.TransactionClient, note?: string) =>
+    tx.bankTransaction.update({ where: { id }, data: { status, note }, select: { id: true } });
 
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.bankTransaction.findUnique({ where: { id }, select: bankTransactionSelect });
