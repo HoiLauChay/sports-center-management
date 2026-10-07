@@ -1,4 +1,5 @@
 import {
+  counterTopUpBodySchema,
   createUserBodySchema,
   listUsersQuerySchema,
   updateUserBodySchema,
@@ -28,6 +29,12 @@ userRouter.get(
   isRole('MANAGER', 'RECEPTIONIST'),
   validate({ params: userIdParamsSchema, query: walletQuerySchema }),
   walletController.getForMember,
+);
+userRouter.post(
+  '/:id/wallet/top-ups',
+  isRole('RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, body: counterTopUpBodySchema }),
+  walletController.topUpAtCounter,
 );
 userRouter.post('/', isRole('MANAGER'), validate({ body: createUserBodySchema }), userController.create);
 userRouter.patch(

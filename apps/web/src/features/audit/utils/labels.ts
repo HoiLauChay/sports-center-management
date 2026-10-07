@@ -40,6 +40,7 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   SYSTEM_SETTING: 'Cấu hình hệ thống',
   BANK_TRANSACTION: 'Giao dịch ngân hàng',
   INVOICE: 'Hóa đơn',
+  WALLET_TRANSACTION: 'Giao dịch ví',
 };
 
 const FIELD_LABEL: Record<string, string> = {
