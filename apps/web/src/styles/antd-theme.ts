@@ -80,6 +80,14 @@ export const antdTheme: ThemeConfig = {
   },
   components: {
     Button: { primaryShadow: 'none', fontWeight: 600 },
+    Table: {
+      headerBg: '#f7f5f0',
+      headerColor: BRAND.muted,
+      borderColor: BRAND.borderSoft,
+      headerSplitColor: 'transparent',
+      rowHoverBg: '#faf8f3',
+    },
+    Card: { colorBorderSecondary: BRAND.borderSoft },
     Input: { activeShadow: '0 0 0 3px rgba(15,77,52,.12)' },
     Layout: {
       siderBg: BRAND.ink,

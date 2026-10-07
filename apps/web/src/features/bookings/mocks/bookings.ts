@@ -1,4 +1,4 @@
-import type { Paginated } from '@sports-center/shared';
+import type { Paginated, Ref } from '@sports-center/shared';
 import { addRefundToItem, type BalanceOf } from '~/features/checkout/mocks/checkout';
 import type { Actor } from '~/features/checkout/mocks/pricing';
 import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refundPolicy';
@@ -101,6 +101,43 @@ function orderIdOf(state: CommerceState, orderItemId: string) {
   return state.orders.find((order) => order.items.some((item) => item.id === orderItemId))?.id ?? '';
 }
 
+/** Moves a booking to another facility at the same time because its facility goes into maintenance (BR_2.19). */
+export function moveBookingForMaintenance(bookingId: string, facility: Ref) {
+  commerceStore.update((state) => {
+    const booking = state.bookings.find((entry) => entry.id === bookingId);
+    if (booking?.status === 'CONFIRMED') booking.facility = facility;
+  });
+}
+
+/** Refunds the whole enrollment line and cancels the enrollment when a manager cancels the class (BR_2.7b). */
+export async function refundEnrollmentLine(
+  actor: Actor,
+  enrollmentId: string,
+  description: string,
+  balanceOf: BalanceOf,
+) {
+  const found = commerceStore.get().enrollments.find((entry) => entry.id === enrollmentId);
+  if (!found) return 0;
+  const refund = enrollmentRefund(found);
+
+  const orderId = commerceStore.update((state) => {
+    const enrollment = state.enrollments.find((entry) => entry.id === enrollmentId)!;
+    enrollment.refundedAmount += refund;
+    enrollment.status = 'CANCELLED';
+    if (refund > 0) addRefundToItem(state, enrollment.orderItemId, refund);
+    return orderIdOf(state, enrollment.orderItemId);
+  });
+  await creditRefund(
+    actor,
+    found.account.id,
+    refund,
+    { orderId, orderItemId: found.orderItemId, description },
+    balanceOf,
+    `refund:enrollment:${found.id}`,
+  );
+  return refund;
+}
+
 export async function cancelEnrollment(
   actor: Actor,
   id: string,
@@ -131,4 +168,12 @@ export async function cancelEnrollment(
     `refund:enrollment:${enrollment.id}`,
   );
   return { enrollment, refund };
+}
+
+/** `GET /bookings?date=` for the reception desk: every confirmed booking of a day, in time order. */
+export function listBookingsOn(date: string): Booking[] {
+  return commerceStore
+    .get()
+    .bookings.filter((booking) => booking.date === date && booking.status === 'CONFIRMED')
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }

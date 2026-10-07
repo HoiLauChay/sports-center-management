@@ -5,7 +5,7 @@ import { ensureClassSeed } from '~/features/classes/mocks/classes';
 import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
-import { listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
+import { listBookingsOn, listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
 import { previewPackage } from '../mocks/schedule';
 import type { PackagePreviewRequest } from '../types';
 
@@ -39,4 +39,7 @@ export const bookingsService = {
   listMine: (user: Account, query: ListBookingsQuery) => mockRequest(() => listMyBookings(actorOf(user), query)),
 
   listMyPackages: (user: Account) => mockRequest(() => listMyPackages(actorOf(user))),
+
+  /** Reception desk: every confirmed booking of one day. */
+  listOn: (date: string) => mockRequest(() => listBookingsOn(date)),
 };

@@ -1,11 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Segmented, Table, Tag, type TableColumnsType } from 'antd';
+import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refundPolicy';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
+import { vnDate } from '~/lib/time';
 import { useCancelEnrollment, useMyEnrollments } from '../hooks/useClasses';
 import type { MyEnrollment } from '../types';
 import { weeklyText } from '../utils';
@@ -20,6 +23,22 @@ export function EnrollmentsPage() {
   const confirm = useConfirm();
   const enrollments = useMyEnrollments();
   const cancel = useCancelEnrollment();
+  const [status, setStatus] = useState<MyEnrollment['status'] | 'ALL'>('ALL');
+  const [range, setRange] = useState<DateRange>({});
+
+  // `GET /me/enrollments` has no filters, so the list is narrowed here by status and registration date.
+  const rows = useMemo(
+    () =>
+      (enrollments.data ?? []).filter((enrollment) => {
+        if (status !== 'ALL' && enrollment.status !== status) return false;
+        const enrolledOn = vnDate(enrollment.enrolledAt);
+        if (range.from && enrolledOn < range.from) return false;
+        if (range.to && enrolledOn > range.to) return false;
+        return true;
+      }),
+    [enrollments.data, status, range],
+  );
+  const filtered = status !== 'ALL' || Boolean(range.from || range.to);
 
   const askCancel = (enrollment: MyEnrollment) => {
     const refund = enrollmentRefund(enrollment);
@@ -112,19 +131,33 @@ export function EnrollmentsPage() {
         description="Danh sách lớp bạn đã mua. Có thể hủy trước ngày khai giảng và được hoàn toàn bộ học phí về ví."
       />
       <Card>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <Segmented
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'ALL', label: 'Tất cả' },
+              { value: 'ENROLLED', label: STATUS_TAG.ENROLLED.label },
+              { value: 'CANCELLED', label: STATUS_TAG.CANCELLED.label },
+            ]}
+          />
+          <DateRangeFilter value={range} onChange={setRange} />
+        </div>
         {enrollments.isError && !enrollments.data ? (
           <ErrorState message={toApiError(enrollments.error).message} onRetry={() => void enrollments.refetch()} />
         ) : (
           <Table<MyEnrollment>
             rowKey="id"
             columns={columns}
-            dataSource={enrollments.data}
+            dataSource={rows}
             loading={enrollments.isFetching}
             scroll={{ x: 'max-content' }}
             pagination={{ pageSize: 10, hideOnSinglePage: true }}
             locale={{
               emptyText: enrollments.isFetching ? (
                 ' '
+              ) : filtered ? (
+                <EmptyState title="Không có lớp nào khớp bộ lọc" />
               ) : (
                 <EmptyState
                   title="Bạn chưa đăng ký lớp nào"
