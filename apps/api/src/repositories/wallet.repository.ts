@@ -6,6 +6,8 @@ import { pageArgs } from '~/utils/pagination';
 
 const walletTransactionSelect = {
   id: true,
+  accountId: true,
+  requestHash: true,
   transactionCode: true,
   type: true,
   topUpMethod: true,
