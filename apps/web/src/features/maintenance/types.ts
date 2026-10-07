@@ -27,8 +27,9 @@ export interface AffectedBooking {
   date: string;
   startTime: string;
   endTime: string;
-  refundAmount: number;
   packageId: string | null;
+  /** Facilities of the same sport with room at exactly that time. */
+  alternatives: Ref[];
 }
 
 export interface AffectedSession {
@@ -57,21 +58,34 @@ export type SessionResolution =
       startTime: string;
       endTime: string;
       facilityId?: string;
-    }
-  | { sessionId: string; action: 'CANCEL' };
+    };
+
+export interface BookingMove {
+  bookingId: string;
+  facilityId: string;
+}
 
 export interface CreateMaintenanceBody extends MaintenanceRequest {
+  bookingMoves: BookingMove[];
   sessionResolutions: SessionResolution[];
 }
 
 export interface CreateMaintenanceResult {
   maintenance: Maintenance;
-  cancelledBookings: number;
-  refundedTotal: number;
+  movedBookings: number;
   sessionsUpdated: number;
 }
 
-/** A session the maintenance cannot be applied to (body of a 409 `MAINTENANCE_BLOCKED`). */
+/** A booking that has nowhere to move (`bookings` of a 409 `MAINTENANCE_BLOCKED`). */
+export interface BlockedBooking {
+  bookingId: string;
+  who: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
+/** A session whose resolution cannot be applied (`sessions` of a 409 `MAINTENANCE_BLOCKED`). */
 export interface BlockedSession {
   sessionId: string;
   className: string;

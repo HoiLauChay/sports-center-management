@@ -1,8 +1,7 @@
 import type { Facility, Ref } from '@sports-center/shared';
-import { cancelBookingForMaintenance } from '~/features/bookings/mocks/bookings';
-import type { BalanceOf } from '~/features/checkout/mocks/checkout';
+import { moveBookingForMaintenance } from '~/features/bookings/mocks/bookings';
 import type { Actor } from '~/features/checkout/mocks/pricing';
-import { cancelSession, updateSession } from '~/features/classes/mocks/classAdmin';
+import { updateSession } from '~/features/classes/mocks/classAdmin';
 import { classesDb, classesStore } from '~/features/classes/mocks/classes';
 import { commerceStore } from '~/lib/mock/commerce';
 import { mockErrors } from '~/lib/mock/errors';
@@ -11,6 +10,7 @@ import { isPast, nowVN, toMinutes } from '~/lib/time';
 import type {
   AffectedBooking,
   AffectedSession,
+  BlockedBooking,
   BlockedSession,
   CreateMaintenanceBody,
   CreateMaintenanceResult,
@@ -63,6 +63,22 @@ function freeAt(facilityId: string, date: string, startTime: string, endTime: st
   return !store.get().items.some((item) => item.facility.id === facilityId && hits(item, date, startTime, endTime));
 }
 
+/** Can one more booking fit: no class session, no maintenance and fewer bookings than the capacity (BR_2.1, BR_2.3). */
+function roomAt(facility: Facility, date: string, startTime: string, endTime: string, extra = 0) {
+  const overlapping = (entry: { date: string; startTime: string; endTime: string }) =>
+    entry.date === date && startTime < entry.endTime && entry.startTime < endTime;
+  if (classesDb.sessionsAt(facility.id, date).some((entry) => overlapping(entry.session))) return false;
+  if (store.get().items.some((item) => item.facility.id === facility.id && hits(item, date, startTime, endTime))) {
+    return false;
+  }
+  const booked = commerceStore
+    .get()
+    .bookings.filter(
+      (entry) => entry.status === 'CONFIRMED' && entry.facility.id === facility.id && overlapping(entry),
+    ).length;
+  return booked + extra < facility.capacityPerSlot;
+}
+
 function validateWindow(request: MaintenanceRequest, facilities: Facility[]) {
   const facility = facilities.find((entry) => entry.id === request.facilityId);
   if (!facility) throw mockErrors.invalid('body.facilityId', 'Vui lòng chọn sân / phòng');
@@ -90,7 +106,7 @@ function validateWindow(request: MaintenanceRequest, facilities: Facility[]) {
   return facility;
 }
 
-/** `POST /maintenances/preview`: bookings that would be cancelled and sessions that need a decision. */
+/** `POST /maintenances/preview`: bookings to move and sessions that need a decision, each with its alternatives. */
 export function previewMaintenance(request: MaintenanceRequest, facilities: Facility[]): MaintenancePreview {
   const facility = validateWindow(request, facilities);
 
@@ -110,8 +126,16 @@ export function previewMaintenance(request: MaintenanceRequest, facilities: Faci
       date: entry.date,
       startTime: entry.startTime,
       endTime: entry.endTime,
-      refundAmount: entry.account ? Math.max(0, entry.paidAmount - entry.refundedAmount) : 0,
       packageId: entry.packageId,
+      alternatives: facilities
+        .filter(
+          (other) =>
+            other.isActive &&
+            other.id !== facility.id &&
+            other.sports.some((sport) => facility.sports.some((own) => own.id === sport.id)) &&
+            roomAt(other, entry.date, entry.startTime, entry.endTime),
+        )
+        .map((other) => ({ id: other.id, name: other.name })),
     }))
     .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
 
@@ -159,7 +183,6 @@ function blockReason(
   resolution: SessionResolution,
   request: MaintenanceRequest,
   facilities: Facility[],
-  cancelledPerClass: Map<string, number>,
 ): string | null {
   if (resolution.action === 'MOVE_FACILITY') {
     const target = facilities.find((entry) => entry.id === resolution.facilityId);
@@ -168,51 +191,71 @@ function blockReason(
       return `${target.name} không còn trống vào khung giờ này`;
     return null;
   }
-  if (resolution.action === 'RESCHEDULE') {
-    if (toMinutes(resolution.startTime) >= toMinutes(resolution.endTime)) return 'Giờ kết thúc phải sau giờ bắt đầu';
-    if (isPast(resolution.date, resolution.startTime)) return 'Thời điểm mới đã qua';
-    const facilityId = resolution.facilityId ?? request.facilityId;
-    if (facilityId === request.facilityId && hits(request, resolution.date, resolution.startTime, resolution.endTime)) {
-      return 'Thời điểm mới vẫn nằm trong khoảng bảo trì';
-    }
-    if (!freeAt(facilityId, resolution.date, resolution.startTime, resolution.endTime, session.id)) {
-      return 'Sân / phòng đã có lịch vào thời điểm mới';
-    }
-    return null;
+  if (toMinutes(resolution.startTime) >= toMinutes(resolution.endTime)) return 'Giờ kết thúc phải sau giờ bắt đầu';
+  if (isPast(resolution.date, resolution.startTime)) return 'Thời điểm mới đã qua';
+  const facilityId = resolution.facilityId ?? request.facilityId;
+  if (facilityId === request.facilityId && hits(request, resolution.date, resolution.startTime, resolution.endTime)) {
+    return 'Thời điểm mới vẫn nằm trong khoảng bảo trì';
   }
-  const remaining = classesDb.sessionsOf(session.classId).filter((entry) => entry.status === 'SCHEDULED').length;
-  const cancelling = (cancelledPerClass.get(session.classId) ?? 0) + 1;
-  cancelledPerClass.set(session.classId, cancelling);
-  return remaining - cancelling < 1 ? 'Đây là buổi cuối còn lại của lớp, hãy hủy cả lớp' : null;
+  if (!freeAt(facilityId, resolution.date, resolution.startTime, resolution.endTime, session.id)) {
+    return 'Sân / phòng đã có lịch vào thời điểm mới';
+  }
+  return null;
 }
 
 /**
- * `POST /maintenances` (BR_2.19): everything is re-checked, then bookings are cancelled and refunded, sessions are
- * moved / rescheduled / cancelled and the maintenance is saved. Nothing is changed when any session is blocked.
+ * `POST /maintenances` (BR_2.19): everything is re-checked, then bookings move to the chosen facility at the same time
+ * (same price, no refund), sessions are moved or rescheduled and the maintenance is saved. Nothing changes when any
+ * booking has nowhere to go or any session resolution cannot be applied.
  */
-export async function createMaintenance(
+export function createMaintenance(
   actor: Actor,
   body: CreateMaintenanceBody,
   facilities: Facility[],
-  balanceOf: BalanceOf,
-): Promise<CreateMaintenanceResult> {
+): CreateMaintenanceResult {
   const facility = validateWindow(body, facilities);
   const preview = previewMaintenance(body, facilities);
 
-  const missing = preview.affectedSessions.filter(
+  const missingBookings = preview.affectedBookings.filter(
+    (booking) => !body.bookingMoves.some((entry) => entry.bookingId === booking.id),
+  );
+  if (missingBookings.length > 0) {
+    throw mockErrors.invalid('body.bookingMoves', `Còn ${missingBookings.length} booking chưa chọn sân thay thế`);
+  }
+  const missingSessions = preview.affectedSessions.filter(
     (session) => !body.sessionResolutions.some((entry) => entry.sessionId === session.id),
   );
-  if (missing.length > 0) {
-    throw mockErrors.invalid('body.sessionResolutions', `Còn ${missing.length} buổi học chưa có cách xử lý`);
+  if (missingSessions.length > 0) {
+    throw mockErrors.invalid('body.sessionResolutions', `Còn ${missingSessions.length} buổi học chưa có cách xử lý`);
   }
 
-  const cancelledPerClass = new Map<string, number>();
-  const blocked: BlockedSession[] = [];
+  const taken = new Map<string, number>();
+  const blockedBookings: BlockedBooking[] = [];
+  for (const booking of preview.affectedBookings) {
+    const move = body.bookingMoves.find((entry) => entry.bookingId === booking.id)!;
+    const target = facilities.find((entry) => entry.id === move.facilityId);
+    const key = `${move.facilityId}|${booking.date}|${booking.startTime}`;
+    const fits =
+      target &&
+      booking.alternatives.some((entry) => entry.id === target.id) &&
+      roomAt(target, booking.date, booking.startTime, booking.endTime, taken.get(key) ?? 0);
+    if (fits) taken.set(key, (taken.get(key) ?? 0) + 1);
+    else {
+      blockedBookings.push({
+        bookingId: booking.id,
+        who: booking.account?.fullName ?? booking.guestName ?? 'Khách',
+        date: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+      });
+    }
+  }
+  const blockedSessions: BlockedSession[] = [];
   for (const session of preview.affectedSessions) {
     const resolution = body.sessionResolutions.find((entry) => entry.sessionId === session.id)!;
-    const reason = blockReason(session, resolution, body, facilities, cancelledPerClass);
+    const reason = blockReason(session, resolution, body, facilities);
     if (reason) {
-      blocked.push({
+      blockedSessions.push({
         sessionId: session.id,
         className: session.className,
         date: session.date,
@@ -222,20 +265,21 @@ export async function createMaintenance(
       });
     }
   }
-  if (blocked.length > 0) {
+  if (blockedBookings.length > 0 || blockedSessions.length > 0) {
     throw mockErrors.conflict(
       'MAINTENANCE_BLOCKED',
-      `Có ${blocked.length} buổi học không thể xử lý, chưa ghi nhận bảo trì`,
-      { blocked },
+      'Có booking hoặc buổi học không thể xử lý, chưa ghi nhận bảo trì',
+      {
+        bookings: blockedBookings,
+        sessions: blockedSessions,
+      },
     );
   }
 
-  // Moves and reschedules first: if one fails after all, the class data goes back to how it was.
+  // Sessions first: if one fails after all, the class data goes back to how it was.
   const classesSnapshot = structuredClone(classesStore.get());
-  let sessionsUpdated = 0;
   try {
     for (const resolution of body.sessionResolutions) {
-      if (resolution.action === 'CANCEL') continue;
       updateSession(
         resolution.sessionId,
         resolution.action === 'MOVE_FACILITY'
@@ -248,7 +292,6 @@ export async function createMaintenance(
             },
         facilities,
       );
-      sessionsUpdated += 1;
     }
   } catch (error) {
     classesStore.update((state) => {
@@ -257,28 +300,12 @@ export async function createMaintenance(
       state.registrations = classesSnapshot.registrations;
     });
     const blockedBy = error instanceof Error ? error.message : 'Không thể xử lý buổi học';
-    throw mockErrors.conflict('MAINTENANCE_BLOCKED', blockedBy, { blocked: [] });
+    throw mockErrors.conflict('MAINTENANCE_BLOCKED', blockedBy, { bookings: [], sessions: [] });
   }
 
-  let refundedTotal = 0;
-  for (const booking of preview.affectedBookings) {
-    refundedTotal += await cancelBookingForMaintenance(
-      actor,
-      booking.id,
-      `Hoàn tiền: ${facility.name} bảo trì (${body.reason.trim()})`,
-      balanceOf,
-    );
-  }
-  for (const resolution of body.sessionResolutions) {
-    if (resolution.action !== 'CANCEL') continue;
-    const result = await cancelSession(
-      actor,
-      resolution.sessionId,
-      `${facility.name} bảo trì: ${body.reason.trim()}`,
-      balanceOf,
-    );
-    refundedTotal += result.refundTotal;
-    sessionsUpdated += 1;
+  for (const move of body.bookingMoves) {
+    const target = facilities.find((entry) => entry.id === move.facilityId)!;
+    moveBookingForMaintenance(move.bookingId, { id: target.id, name: target.name });
   }
 
   const maintenance: Maintenance = {
@@ -293,7 +320,11 @@ export async function createMaintenance(
   store.update((state) => {
     state.items.push(maintenance);
   });
-  return { maintenance, cancelledBookings: preview.affectedBookings.length, refundedTotal, sessionsUpdated };
+  return {
+    maintenance,
+    movedBookings: body.bookingMoves.length,
+    sessionsUpdated: body.sessionResolutions.length,
+  };
 }
 
 /** `DELETE /maintenances/{id}`: only a maintenance that has not started can be removed. */

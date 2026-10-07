@@ -18,11 +18,11 @@ export function useMaintenancePreview() {
   return useMutation({ mutationFn: (request: MaintenanceRequest) => maintenanceService.preview(request) });
 }
 
-/** Everything a maintenance can change: facility schedules, bookings, class sessions and wallets. */
+/** Everything a maintenance can change: facility schedules, bookings and class sessions. */
 function useRefreshAfterMaintenance() {
   const queryClient = useQueryClient();
   return () => {
-    for (const key of ['maintenance', 'classes', 'bookings', 'wallet', 'orders', 'schedule', 'facility-schedule']) {
+    for (const key of ['maintenance', 'classes', 'bookings', 'schedule', 'facility-schedule']) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   };

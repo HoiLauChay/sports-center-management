@@ -1,4 +1,4 @@
-import type { Paginated } from '@sports-center/shared';
+import type { Paginated, Ref } from '@sports-center/shared';
 import { addRefundToItem, type BalanceOf } from '~/features/checkout/mocks/checkout';
 import type { Actor } from '~/features/checkout/mocks/pricing';
 import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refundPolicy';
@@ -101,58 +101,29 @@ function orderIdOf(state: CommerceState, orderItemId: string) {
   return state.orders.find((order) => order.items.some((item) => item.id === orderItemId))?.id ?? '';
 }
 
-/**
- * Cancels a booking because the facility goes into maintenance and gives the member back everything that was paid
- * and not yet refunded; a guest paid at the counter and is not refunded (BR_2.17, BR_2.19). Returns the refund.
- */
-export async function cancelBookingForMaintenance(
-  actor: Actor,
-  bookingId: string,
-  reason: string,
-  balanceOf: BalanceOf,
-): Promise<number> {
-  const found = commerceStore.get().bookings.find((entry) => entry.id === bookingId);
-  if (!found || found.status !== 'CONFIRMED') return 0;
-  const refund = found.account ? Math.max(0, found.paidAmount - found.refundedAmount) : 0;
-
-  const orderId = commerceStore.update((state) => {
-    const booking = state.bookings.find((entry) => entry.id === bookingId)!;
-    booking.status = 'CANCELLED';
-    booking.refundedAmount += refund;
-    if (refund > 0) addRefundToItem(state, booking.orderItemId, refund);
-    return orderIdOf(state, booking.orderItemId);
+/** Moves a booking to another facility at the same time because its facility goes into maintenance (BR_2.19). */
+export function moveBookingForMaintenance(bookingId: string, facility: Ref) {
+  commerceStore.update((state) => {
+    const booking = state.bookings.find((entry) => entry.id === bookingId);
+    if (booking?.status === 'CONFIRMED') booking.facility = facility;
   });
-  await creditRefund(
-    actor,
-    found.account?.id,
-    refund,
-    { orderId, orderItemId: found.orderItemId, description: reason },
-    balanceOf,
-    `refund:booking:${found.id}`,
-  );
-  return refund;
 }
 
-/**
- * Gives part of an enrollment line back to the member's wallet when a manager cancels a session or a whole class
- * (BR_2.7b, BR_2.23). Never refunds more than what was paid and not yet refunded; returns what was actually refunded.
- */
-export async function refundEnrollment(
+/** Refunds the whole enrollment line and cancels the enrollment when a manager cancels the class (BR_2.7b). */
+export async function refundEnrollmentLine(
   actor: Actor,
   enrollmentId: string,
-  amount: number,
   description: string,
   balanceOf: BalanceOf,
-  options: { cancel?: boolean } = {},
-): Promise<number> {
+) {
   const found = commerceStore.get().enrollments.find((entry) => entry.id === enrollmentId);
   if (!found) return 0;
-  const refund = Math.max(0, Math.min(Math.round(amount), enrollmentRefund(found)));
+  const refund = enrollmentRefund(found);
 
   const orderId = commerceStore.update((state) => {
     const enrollment = state.enrollments.find((entry) => entry.id === enrollmentId)!;
     enrollment.refundedAmount += refund;
-    if (options.cancel) enrollment.status = 'CANCELLED';
+    enrollment.status = 'CANCELLED';
     if (refund > 0) addRefundToItem(state, enrollment.orderItemId, refund);
     return orderIdOf(state, enrollment.orderItemId);
   });
@@ -162,7 +133,7 @@ export async function refundEnrollment(
     refund,
     { orderId, orderItemId: found.orderItemId, description },
     balanceOf,
-    `refund:enrollment:${found.id}:${found.refundedAmount + refund}`,
+    `refund:enrollment:${found.id}`,
   );
   return refund;
 }

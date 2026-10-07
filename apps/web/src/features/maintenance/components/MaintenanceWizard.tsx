@@ -3,7 +3,6 @@ import {
   Alert,
   Button,
   Card,
-  Checkbox,
   DatePicker,
   Form,
   Input,
@@ -20,13 +19,14 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useSettings } from '~/features/settings';
-import { formatDate, formatVND, VN_TIMEZONE } from '~/lib/format';
+import { formatDate, VN_TIMEZONE } from '~/lib/format';
 import { describeApiError, errorPayload, toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, slotGrid, todayVN } from '~/lib/time';
 import { useCreateMaintenance, useMaintenancePreview } from '../hooks/useMaintenance';
 import type {
   AffectedBooking,
   AffectedSession,
+  BlockedBooking,
   BlockedSession,
   CreateMaintenanceResult,
   MaintenancePreview,
@@ -36,19 +36,19 @@ import type {
 
 const MINUTE_FORMAT = 'YYYY-MM-DD HH:mm';
 
+const NOTHING_BLOCKED = { bookings: [], sessions: [] };
+
 const toIso = (value: Dayjs) => dayjs.tz(value.format(MINUTE_FORMAT), VN_TIMEZONE).toISOString();
 
 type Resolutions = Record<string, SessionResolution | undefined>;
+type Moves = Record<string, string | undefined>;
 
 /** The first thing missing from a session's resolution, or `null` when it is complete. */
 function resolutionError(resolution: SessionResolution | undefined): string | null {
   if (!resolution) return 'Chưa chọn cách xử lý';
   if (resolution.action === 'MOVE_FACILITY') return resolution.facilityId ? null : 'Chọn sân / phòng thay thế';
-  if (resolution.action === 'RESCHEDULE') {
-    if (!resolution.date || !resolution.startTime || !resolution.endTime) return 'Chọn ngày và giờ mới';
-    return resolution.startTime < resolution.endTime ? null : 'Giờ kết thúc phải sau giờ bắt đầu';
-  }
-  return null;
+  if (!resolution.date || !resolution.startTime || !resolution.endTime) return 'Chọn ngày và giờ mới';
+  return resolution.startTime < resolution.endTime ? null : 'Giờ kết thúc phải sau giờ bắt đầu';
 }
 
 /** Suggested resolution: move the session to the first free facility of the same sport. */
@@ -78,7 +78,7 @@ function ResolutionCell({
 
   const choose = (action: SessionResolution['action']) => {
     if (action === 'MOVE_FACILITY') onChange(suggest(session) ?? { sessionId: session.id, action, facilityId: '' });
-    else if (action === 'RESCHEDULE') {
+    else {
       onChange({
         sessionId: session.id,
         action,
@@ -86,7 +86,7 @@ function ResolutionCell({
         startTime: session.startTime,
         endTime: session.endTime,
       });
-    } else onChange({ sessionId: session.id, action: 'CANCEL' });
+    }
   };
 
   return (
@@ -104,7 +104,6 @@ function ResolutionCell({
             disabled: noAlternative,
           },
           { value: 'RESCHEDULE', label: 'Dời ngày giờ' },
-          { value: 'CANCEL', label: 'Hủy buổi (hoàn tiền học viên)' },
         ]}
       />
       {value?.action === 'MOVE_FACILITY' && (
@@ -162,51 +161,15 @@ function ResolutionCell({
   );
 }
 
-const bookingColumns: TableColumnsType<AffectedBooking> = [
-  {
-    title: 'Khách',
-    key: 'who',
-    render: (_, booking) =>
-      booking.account ? (
-        <b>{booking.account.fullName}</b>
-      ) : (
-        <span>
-          <Tag className="!m-0 !mr-1">Khách</Tag>
-          {booking.guestName}
-        </span>
-      ),
-  },
-  {
-    title: 'Thời gian',
-    key: 'time',
-    render: (_, booking) => (
-      <span className="whitespace-nowrap">
-        {formatDate(booking.date)} · {booking.startTime}–{booking.endTime}
-      </span>
-    ),
-  },
-  {
-    title: 'Gói',
-    key: 'package',
-    render: (_, booking) => (booking.packageId ? <Tag className="!m-0">Định kỳ</Tag> : '—'),
-  },
-  {
-    title: 'Hoàn tiền',
-    key: 'refund',
-    align: 'right',
-    render: (_, booking) => <b className="tabular-nums">{formatVND(booking.refundAmount)}</b>,
-  },
-];
-
 interface MaintenanceWizardProps {
   open: boolean;
   onClose: () => void;
 }
 
 /**
- * Creating a maintenance (BR_2.19, UC_2.4/2.5): 1) facility, time window and reason; 2) preview of the bookings that
- * will be cancelled and the sessions that need a decision; 3) the result. Confirming stays disabled while any booking
- * is not acknowledged or any session has no complete resolution.
+ * Creating a maintenance (BR_2.19, UC_2.4/2.5): 1) facility, time window and reason; 2) preview of the bookings to
+ * move and the sessions that need a decision; 3) the result. Confirming stays disabled while any booking has no
+ * facility to move to or any session has no complete resolution.
  */
 export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const [form] = Form.useForm<{ facilityId: string; range: [Dayjs, Dayjs]; reason: string }>();
@@ -217,8 +180,8 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const [request, setRequest] = useState<MaintenanceRequest | null>(null);
   const [data, setData] = useState<MaintenancePreview | null>(null);
   const [resolutions, setResolutions] = useState<Resolutions>({});
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [blocked, setBlocked] = useState<BlockedSession[]>([]);
+  const [moves, setMoves] = useState<Moves>({});
+  const [blocked, setBlocked] = useState<{ bookings: BlockedBooking[]; sessions: BlockedSession[] }>(NOTHING_BLOCKED);
   const [result, setResult] = useState<CreateMaintenanceResult | null>(null);
 
   const facilityName = (id: string) => facilities.data?.find((entry) => entry.id === id)?.name ?? '';
@@ -231,8 +194,8 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       setRequest(null);
       setData(null);
       setResolutions({});
-      setAcknowledged(false);
-      setBlocked([]);
+      setMoves({});
+      setBlocked(NOTHING_BLOCKED);
       setResult(null);
       form.resetFields();
       preview.reset();
@@ -252,8 +215,10 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
         setRequest(next);
         setData(affected);
         setResolutions(Object.fromEntries(affected.affectedSessions.map((session) => [session.id, suggest(session)])));
-        setAcknowledged(false);
-        setBlocked([]);
+        setMoves(
+          Object.fromEntries(affected.affectedBookings.map((booking) => [booking.id, booking.alternatives[0]?.id])),
+        );
+        setBlocked(NOTHING_BLOCKED);
         setStep(1);
       },
     });
@@ -262,16 +227,19 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const sessions = data?.affectedSessions ?? [];
   const bookings = data?.affectedBookings ?? [];
   const noAlternative = sessions.filter((session) => session.alternatives.length === 0);
+  const stranded = bookings.filter((booking) => booking.alternatives.length === 0);
+  const unmoved = bookings.filter((booking) => !moves[booking.id]);
   const unresolved = sessions.filter((session) => resolutionError(resolutions[session.id]) !== null);
-  const refundTotal = bookings.reduce((sum, booking) => sum + booking.refundAmount, 0);
-  const ready = unresolved.length === 0 && (bookings.length === 0 || acknowledged);
+  const ready = unresolved.length === 0 && unmoved.length === 0;
+  const blockedCount = blocked.bookings.length + blocked.sessions.length;
 
   const confirm = () => {
     if (!request || !ready) return;
-    setBlocked([]);
+    setBlocked(NOTHING_BLOCKED);
     create.mutate(
       {
         ...request,
+        bookingMoves: bookings.map((booking) => ({ bookingId: booking.id, facilityId: moves[booking.id]! })),
         sessionResolutions: sessions.map((session) => resolutions[session.id]!),
       },
       {
@@ -279,10 +247,60 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
           setResult(created);
           setStep(2);
         },
-        onError: (error) => setBlocked(errorPayload<BlockedSession[]>(error, 'blocked') ?? []),
+        onError: (error) =>
+          setBlocked({
+            bookings: errorPayload<BlockedBooking[]>(error, 'bookings') ?? [],
+            sessions: errorPayload<BlockedSession[]>(error, 'sessions') ?? [],
+          }),
       },
     );
   };
+
+  const bookingColumns: TableColumnsType<AffectedBooking> = [
+    {
+      title: 'Khách',
+      key: 'who',
+      render: (_, booking) =>
+        booking.account ? (
+          <b>{booking.account.fullName}</b>
+        ) : (
+          <span>
+            <Tag className="!m-0 !mr-1">Khách</Tag>
+            {booking.guestName}
+          </span>
+        ),
+    },
+    {
+      title: 'Thời gian',
+      key: 'time',
+      render: (_, booking) => (
+        <span className="whitespace-nowrap">
+          {formatDate(booking.date)} · {booking.startTime}–{booking.endTime}
+          {booking.packageId && <Tag className="!m-0 !ml-1.5">Định kỳ</Tag>}
+        </span>
+      ),
+    },
+    {
+      title: 'Chuyển sang',
+      key: 'move',
+      render: (_, booking) =>
+        booking.alternatives.length === 0 ? (
+          <Tag color="error" className="!m-0">
+            Không còn sân thay thế
+          </Tag>
+        ) : (
+          <Select
+            size="small"
+            className="min-w-48"
+            value={moves[booking.id]}
+            placeholder="Chọn sân / phòng"
+            status={moves[booking.id] ? undefined : 'error'}
+            onChange={(facilityId) => setMoves((current) => ({ ...current, [booking.id]: facilityId }))}
+            options={booking.alternatives.map((entry) => ({ value: entry.id, label: entry.name }))}
+          />
+        ),
+    },
+  ];
 
   const sessionColumns: TableColumnsType<AffectedSession> = [
     {
@@ -335,9 +353,9 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               title={
                 ready
                   ? undefined
-                  : unresolved.length > 0
-                    ? `Còn ${unresolved.length} buổi học chưa có cách xử lý`
-                    : 'Hãy xác nhận việc hủy booking và hoàn tiền'
+                  : unmoved.length > 0
+                    ? `Còn ${unmoved.length} booking chưa có sân thay thế`
+                    : `Còn ${unresolved.length} buổi học chưa có cách xử lý`
               }
             >
               <Button type="primary" disabled={!ready} loading={create.isPending} onClick={confirm}>
@@ -412,14 +430,20 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
             showIcon
             title={`${facilityName(request.facilityId)} · ${dayjs(request.startAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} → ${dayjs(request.endAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} · ${request.reason}`}
           />
-          {blocked.length > 0 && (
+          {blockedCount > 0 && (
             <Alert
               type="error"
               showIcon
-              title={`Chưa ghi nhận bảo trì: ${blocked.length} buổi học không thể xử lý`}
+              title={`Chưa ghi nhận bảo trì: ${blockedCount} mục không thể xử lý`}
               description={
                 <ul className="m-0 pl-5">
-                  {blocked.map((item) => (
+                  {blocked.bookings.map((item) => (
+                    <li key={item.bookingId}>
+                      Booking của <b>{item.who}</b> · {formatDate(item.date)} {item.startTime}–{item.endTime}: không còn
+                      sân thay thế
+                    </li>
+                  ))}
+                  {blocked.sessions.map((item) => (
                     <li key={item.sessionId}>
                       <b>{item.className}</b> · {formatDate(item.date)} {item.startTime}–{item.endTime}: {item.reason}
                     </li>
@@ -428,8 +452,28 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               }
             />
           )}
-          {create.isError && blocked.length === 0 && (
+          {create.isError && blockedCount === 0 && (
             <Alert type="error" showIcon title={describeApiError(create.error)} />
+          )}
+          {stranded.length > 0 && (
+            <Alert
+              type="error"
+              showIcon
+              title={`${stranded.length} booking không còn sân / phòng thay thế, chưa thể bảo trì khung giờ này`}
+              description={
+                <>
+                  <ul className="m-0 pl-5">
+                    {stranded.map((booking) => (
+                      <li key={booking.id}>
+                        <b>{booking.account?.fullName ?? booking.guestName}</b> · {formatDate(booking.date)}{' '}
+                        {booking.startTime}–{booking.endTime}
+                      </li>
+                    ))}
+                  </ul>
+                  <span>Hãy chọn khoảng thời gian khác hoặc liên hệ khách trước khi bảo trì.</span>
+                </>
+              }
+            />
           )}
           {noAlternative.length > 0 && (
             <Alert
@@ -445,13 +489,13 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                       </li>
                     ))}
                   </ul>
-                  <span>Hãy dời ngày giờ hoặc hủy các buổi này.</span>
+                  <span>Hãy dời ngày giờ các buổi này.</span>
                 </>
               }
             />
           )}
 
-          <Card size="small" title={`Booking sẽ bị hủy (${bookings.length})`}>
+          <Card size="small" title={`Booking cần chuyển sân (${bookings.length})`}>
             <Table<AffectedBooking>
               rowKey="id"
               size="small"
@@ -462,15 +506,9 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               locale={{ emptyText: 'Không có booking nào bị ảnh hưởng' }}
             />
             {bookings.length > 0 && (
-              <div className="mt-3 flex flex-col gap-2">
-                <span className="text-[13px] text-sc-muted">
-                  Thành viên được hoàn 100% phần đã trả về ví (tổng {formatVND(refundTotal)}), khách vãng lai không được
-                  hoàn.
-                </span>
-                <Checkbox checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)}>
-                  Tôi xác nhận hủy {bookings.length} booking và hoàn tiền như trên
-                </Checkbox>
-              </div>
+              <p className="mt-3 mb-0 text-[13px] text-sc-muted">
+                Booking giữ nguyên giờ và giá, không hoàn tiền; thành viên được thông báo về sân mới.
+              </p>
             )}
           </Card>
 
@@ -492,7 +530,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
         <Result
           status="success"
           title="Đã ghi nhận lịch bảo trì"
-          subTitle={`${result.maintenance.facility.name}: hủy ${result.cancelledBookings} booking, xử lý ${result.sessionsUpdated} buổi học, hoàn ${formatVND(result.refundedTotal)} về ví.`}
+          subTitle={`${result.maintenance.facility.name}: chuyển ${result.movedBookings} booking sang sân khác, xử lý ${result.sessionsUpdated} buổi học.`}
         />
       )}
     </Modal>
