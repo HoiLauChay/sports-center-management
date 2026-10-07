@@ -31,7 +31,35 @@ export type CourseEnrollmentSnapshot = ItemSnapshotBase & {
   endDate: string;
 };
 
-export type ItemSnapshot = FacilityBookingSnapshot | CourseEnrollmentSnapshot;
+export type FacilityPackageSnapshot = ItemSnapshotBase & {
+  facilityName: string;
+  sportNames: string[];
+  startDate: string;
+  endDate: string;
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  weeks: number;
+  sessions: number;
+  slotsPerSession: number;
+  pricePerSlot: number;
+  freeSessions: number;
+};
+
+export type ItemSnapshot = FacilityBookingSnapshot | FacilityPackageSnapshot | CourseEnrollmentSnapshot;
+
+export interface FacilityPackagePreview {
+  bookings: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    available: boolean;
+    conflict?: 'BOOKED' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
+  }[];
+  isValid: boolean;
+  unitPrice: number;
+  basePrice: number;
+}
 
 export interface QuoteLine {
   lineNumber: number;

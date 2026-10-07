@@ -10,6 +10,7 @@ import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
 import enrollmentRouter from '~/routes/enrollment.routes';
 import facilityRouter from '~/routes/facility.routes';
+import facilityPackageRouter from '~/routes/facilityPackage.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
@@ -42,6 +43,7 @@ export const apiRoutes: [string, Router][] = [
   ['/cron', cronRouter],
   ['/enrollments', enrollmentRouter],
   ['/facilities', facilityRouter],
+  ['/facility-packages', facilityPackageRouter],
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/invoices', myInvoiceRouter],

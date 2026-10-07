@@ -16,7 +16,7 @@ let request: Awaited<ReturnType<typeof startServer>>['request'];
 let checkout: ReturnType<typeof buildFetcher>;
 
 const unused = () => Promise.reject(new Error('not used'));
-const realBookingHandler = lineHandlers.FACILITY_BOOKING;
+const realHandlers = { ...lineHandlers };
 
 beforeAll(async () => {
   ({ server, request } = await startServer('/orders'));
@@ -47,7 +47,8 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-  lineHandlers.FACILITY_BOOKING = realBookingHandler;
+  for (const type of Object.keys(lineHandlers) as (keyof typeof lineHandlers)[]) delete lineHandlers[type];
+  Object.assign(lineHandlers, realHandlers);
   server.close();
 });
 
