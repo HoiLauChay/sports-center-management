@@ -7,6 +7,20 @@ import { timeOfDaySchema as timeSchema } from './time';
 const dateSchema = z.iso.date('Ngày không hợp lệ');
 const facilityIdSchema = z.uuid('Mã cơ sở không hợp lệ');
 
+const packageFields = {
+  facilityId: facilityIdSchema,
+  startDate: dateSchema,
+  daysOfWeek: z
+    .array(z.int('Thứ không hợp lệ').min(0, 'Thứ không hợp lệ').max(6, 'Thứ không hợp lệ'))
+    .min(1, 'Chọn ít nhất một thứ')
+    .refine((days) => new Set(days).size === days.length, 'Thứ bị trùng'),
+  startTime: timeSchema,
+  endTime: timeSchema,
+  weeks: z.int('Số tuần phải là số nguyên').min(1, 'Số tuần tối thiểu là 1').max(52, 'Số tuần tối đa là 52'),
+};
+
+export const facilityPackagePreviewBodySchema = z.object(packageFields);
+
 export const checkoutItemInputSchema = z.discriminatedUnion(
   'type',
   [
@@ -17,18 +31,7 @@ export const checkoutItemInputSchema = z.discriminatedUnion(
       startTime: timeSchema,
       endTime: timeSchema,
     }),
-    z.object({
-      type: z.literal('FACILITY_PACKAGE'),
-      facilityId: facilityIdSchema,
-      startDate: dateSchema,
-      daysOfWeek: z
-        .array(z.int('Thứ không hợp lệ').min(0, 'Thứ không hợp lệ').max(6, 'Thứ không hợp lệ'))
-        .min(1, 'Chọn ít nhất một thứ')
-        .refine((days) => new Set(days).size === days.length, 'Thứ bị trùng'),
-      startTime: timeSchema,
-      endTime: timeSchema,
-      weeks: z.int('Số tuần phải là số nguyên').min(1, 'Số tuần tối thiểu là 1').max(52, 'Số tuần tối đa là 52'),
-    }),
+    z.object({ type: z.literal('FACILITY_PACKAGE'), ...packageFields }),
     z.object({ type: z.literal('COURSE_ENROLLMENT'), classId: z.uuid('Mã lớp không hợp lệ') }),
     z.object({ type: z.literal('MEMBERSHIP'), packageId: z.uuid('Mã gói không hợp lệ') }),
   ],
@@ -81,4 +84,5 @@ export type CheckoutItemInput = z.infer<typeof checkoutItemInputSchema>;
 export type CheckoutBuyer = z.infer<typeof checkoutBuyerSchema>;
 export type CheckoutQuoteBody = z.infer<typeof checkoutQuoteBodySchema>;
 export type CheckoutBody = z.infer<typeof checkoutBodySchema>;
+export type FacilityPackagePreviewBody = z.infer<typeof facilityPackagePreviewBodySchema>;
 export type CounterInvoiceBody = z.infer<typeof counterInvoiceBodySchema>;
