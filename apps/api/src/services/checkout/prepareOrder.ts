@@ -1,8 +1,16 @@
 import { ERROR_CODE, type CheckoutItemInput } from '@sports-center/shared';
 
+import invoiceRepository from '~/repositories/invoice.repository';
 import { applyCoupon } from '~/services/checkout/coupon';
 import { lineHandlers } from '~/services/checkout/lines';
-import type { CheckoutContext, Db, LineError, PreparedLine, PreparedOrder } from '~/services/checkout/types';
+import type {
+  CheckoutContext,
+  CounterOrderPayload,
+  Db,
+  LineError,
+  PreparedLine,
+  PreparedOrder,
+} from '~/services/checkout/types';
 
 const precheck = (ctx: CheckoutContext, input: CheckoutItemInput, earlier: CheckoutItemInput[]): LineError | null => {
   const handler = lineHandlers[input.type];
@@ -16,6 +24,22 @@ const precheck = (ctx: CheckoutContext, input: CheckoutItemInput, earlier: Check
   return null;
 };
 
+const loadHeldLines = async (db: Db, ctx: CheckoutContext) => {
+  for (const invoice of await invoiceRepository.findHeldOrders(ctx.now, db)) {
+    const { prepared } = invoice.requestPayload as unknown as CounterOrderPayload;
+    for (const { lineNumber, input, result } of prepared.lines) {
+      if (!result.ok) continue;
+      ctx.planned.push({
+        lineNumber,
+        accountId: invoice.accountId,
+        type: input.type,
+        data: result.data,
+        uses: result.uses ?? [],
+      });
+    }
+  }
+};
+
 export const prepareOrder = async (
   db: Db,
   ctx: CheckoutContext,
@@ -23,12 +47,21 @@ export const prepareOrder = async (
   couponCode?: string,
 ): Promise<PreparedOrder> => {
   const lines: PreparedLine[] = [];
+  const buyerId = ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : null;
+  await loadHeldLines(db, ctx);
 
   for (const [index, input] of inputs.entries()) {
     const lineNumber = index + 1;
     const error = precheck(ctx, input, inputs.slice(0, index));
     const result = error ? { ok: false as const, error } : await lineHandlers[input.type]!.prepare(db, ctx, input);
-    if (result.ok) ctx.planned.push({ lineNumber, type: input.type, data: result.data, uses: result.uses ?? [] });
+    if (result.ok)
+      ctx.planned.push({
+        lineNumber,
+        accountId: buyerId,
+        type: input.type,
+        data: result.data,
+        uses: result.uses ?? [],
+      });
     lines.push({ lineNumber, input, result, couponDiscount: 0 });
   }
 
@@ -48,5 +81,6 @@ export const prepareOrder = async (
     couponDiscount,
     total: subtotal - membershipDiscount - couponDiscount,
     valid: priced.length === lines.length && (applied?.coupon.valid ?? true),
+    membershipName: membershipDiscount > 0 ? (ctx.benefits?.current?.packageName ?? null) : null,
   };
 };

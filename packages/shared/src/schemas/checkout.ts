@@ -57,12 +57,14 @@ export const checkoutQuoteBodySchema = z.object({
   couponCode: z.string().trim().toUpperCase().min(1, 'Mã giảm giá không hợp lệ').max(50).optional(),
 });
 
+const expectedTotalSchema = z
+  .int('Tổng tiền phải là số nguyên')
+  .min(0, 'Tổng tiền không được âm')
+  .max(MAX_MONEY, 'Tổng tiền quá lớn');
+
 export const checkoutBodySchema = checkoutQuoteBodySchema.extend({
   paymentMethod: z.enum(['WALLET', 'CASH', 'CARD'], 'Phương thức thanh toán không hợp lệ'),
-  expectedTotal: z
-    .int('Tổng tiền phải là số nguyên')
-    .min(0, 'Tổng tiền không được âm')
-    .max(MAX_MONEY, 'Tổng tiền quá lớn'),
+  expectedTotal: expectedTotalSchema,
   idempotencyKey: z
     .string('Thiếu khóa chống gửi lặp')
     .trim()
@@ -70,7 +72,13 @@ export const checkoutBodySchema = checkoutQuoteBodySchema.extend({
     .max(100, 'Khóa chống gửi lặp quá dài'),
 });
 
+export const counterInvoiceBodySchema = checkoutQuoteBodySchema.extend({
+  buyer: checkoutBuyerSchema,
+  expectedTotal: expectedTotalSchema,
+});
+
 export type CheckoutItemInput = z.infer<typeof checkoutItemInputSchema>;
 export type CheckoutBuyer = z.infer<typeof checkoutBuyerSchema>;
 export type CheckoutQuoteBody = z.infer<typeof checkoutQuoteBodySchema>;
 export type CheckoutBody = z.infer<typeof checkoutBodySchema>;
+export type CounterInvoiceBody = z.infer<typeof counterInvoiceBodySchema>;

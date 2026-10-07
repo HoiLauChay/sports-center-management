@@ -11,6 +11,11 @@ class InvoiceController {
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã tạo hóa đơn nạp ví', result: invoice }));
   };
 
+  cancel = async (req: Request, res: Response) => {
+    const invoice = await invoiceService.cancel(req.params.id as string);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã hủy hóa đơn', result: invoice }));
+  };
+
   listMine = async (req: Request, res: Response) => {
     const page = await invoiceService.listMine(req.user!.id, req.query as unknown as ListMyInvoicesQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: page }));

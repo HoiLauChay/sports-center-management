@@ -1,4 +1,5 @@
 import couponRepository from '~/repositories/coupon.repository';
+import invoiceRepository from '~/repositories/invoice.repository';
 import type { AppliedCoupon, CheckoutContext, Db, PreparedLine } from '~/services/checkout/types';
 import { allocate, percentOf } from '~/utils/money';
 
@@ -39,7 +40,9 @@ export const applyCoupon = async (
     return rejected(`Đơn chưa đạt giá trị tối thiểu ${minimum.toLocaleString('vi-VN')}đ`, coupon);
   }
 
-  const [used, usedByBuyer] = await couponRepository.countUses(coupon.id, ctx.buyer.accountId, db);
+  const [ordered, orderedByBuyer] = await couponRepository.countUses(coupon.id, ctx.buyer.accountId, db);
+  const [held, heldByBuyer] = await invoiceRepository.countHeldCoupon(coupon.id, ctx.buyer.accountId, ctx.now, db);
+  const [used, usedByBuyer] = [ordered + held, orderedByBuyer + heldByBuyer];
   if (coupon.maxUses !== null && used >= coupon.maxUses) return rejected('Mã giảm giá đã hết lượt', coupon);
   if (usedByBuyer >= coupon.maxUsesPerUser) return rejected('Người mua đã dùng hết lượt của mã này', coupon);
 

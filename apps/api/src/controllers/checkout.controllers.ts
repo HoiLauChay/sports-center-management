@@ -10,6 +10,11 @@ class CheckoutController {
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Thanh toán thành công', result: order }));
   };
 
+  createInvoice = async (req: Request, res: Response) => {
+    const invoice = await checkoutService.createInvoice(req.user!, req.body);
+    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã phát hành hóa đơn', result: invoice }));
+  };
+
   quote = async (req: Request, res: Response) => {
     const quote = await checkoutService.quote(req.user!, req.body);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: quote }));

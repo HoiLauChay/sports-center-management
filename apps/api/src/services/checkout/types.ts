@@ -25,6 +25,7 @@ export interface ActiveBenefits {
 
 export interface PlannedLine {
   lineNumber: number;
+  accountId: string | null;
   type: OrderItemType;
   data: unknown;
   uses: PlannedUse[];
@@ -102,4 +103,10 @@ export interface PreparedOrder {
   couponDiscount: number;
   total: number;
   valid: boolean;
+  membershipName: string | null;
+}
+
+export interface CounterOrderPayload {
+  buyer: CheckoutContext['buyer'];
+  prepared: PreparedOrder;
 }
