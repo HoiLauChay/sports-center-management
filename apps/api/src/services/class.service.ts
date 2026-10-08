@@ -164,7 +164,27 @@ class ClassService {
       );
     }
 
-    const recipients = new Set(enrollments.map(({ accountId }) => accountId));
+    const pending = await registrationRepository.findPending(current.id, tx);
+    for (const registration of pending) {
+      const updated = await registrationRepository.review(registration.id, 'REJECTED', managerId, tx);
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'REJECT',
+          entityType: 'CLASS_COACH_REGISTRATION',
+          entityId: registration.id,
+          oldValues: registration,
+          newValues: updated,
+          ipAddress: ip,
+        },
+        tx,
+      );
+    }
+
+    const recipients = new Set([
+      ...enrollments.map(({ accountId }) => accountId),
+      ...pending.map(({ coachId }) => coachId),
+    ]);
     if (current.coachId) recipients.add(current.coachId);
     notifications.push(
       ...(await notificationService.create(

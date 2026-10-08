@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
-import { todayInCenter } from '~/utils/time';
+import { addDays, todayInCenter } from '~/utils/time';
 import { seedOpenClass } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { buildFetcher, createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
@@ -25,8 +25,8 @@ beforeEach(async () => {
   await prisma.systemSetting.create({ data: {} });
 });
 
-const seedDraftClass = async () => {
-  const { id, courseId } = await seedOpenClass();
+const seedDraftClass = async (dates?: Parameters<typeof seedOpenClass>[0]) => {
+  const { id, courseId } = await seedOpenClass(dates);
   const { sportId } = await prisma.course.findUniqueOrThrow({ where: { id: courseId } });
   await prisma.class.update({ where: { id }, data: { status: 'DRAFT', coachId: null } });
   return { id, sportId };
@@ -79,6 +79,19 @@ describe('coach assignment', () => {
       [second.id, 'REJECTED'],
     ]);
     expect((await assign({ registrationId: other.id })).status).toBe(409);
+
+    const cancelled = await seedDraftClass({
+      startDate: addDays(todayInCenter(), 4),
+      endDate: addDays(todayInCenter(), 11),
+    });
+    await prisma.coachSpecialization.create({
+      data: { coachId: first.id, sportId: cancelled.sportId, status: 'APPROVED' },
+    });
+    expect((await request('POST', `/${cancelled.id}/coach-registrations`, first)).status).toBe(201);
+    expect((await request('POST', `/${cancelled.id}/cancel`, manager, { reason: 'Đóng lớp' })).status).toBe(200);
+    expect(await prisma.classCoachRegistration.findFirst({ where: { classId: cancelled.id } })).toMatchObject({
+      status: 'REJECTED',
+    });
   });
 
   test('assigning a coach who already teaches at that time changes nothing', async () => {
