@@ -34,6 +34,16 @@ describe('OpenAPI docs', () => {
       ]),
     );
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
+    expect(paths['/classes/{id}/coach-registrations']?.post).toMatchObject({
+      description: 'Vai trò: COACH',
+      security: [{ cookie: [] }],
+    });
+    expect(paths['/classes/{id}/coach-registrations']?.get).toMatchObject({ description: 'Vai trò: MANAGER' });
+    expect(paths['/classes/{id}/assign-coach']?.post).toMatchObject({
+      description: 'Vai trò: MANAGER',
+      requestBody: { content: { 'application/json': { schema: { anyOf: expect.any(Array) } } } },
+    });
+    expect(paths['/classes/{id}/withdraw']?.post).toMatchObject({ description: 'Vai trò: COACH' });
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
   });
 });
