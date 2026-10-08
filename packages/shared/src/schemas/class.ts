@@ -89,3 +89,10 @@ export const reviewClassBodySchema = z.object({
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
+
+export const assignCoachBodySchema = z.union([
+  z.strictObject({ registrationId: z.uuid('Mã đăng ký không hợp lệ') }),
+  z.strictObject({ coachId: z.uuid('Mã huấn luyện viên không hợp lệ') }),
+]);
+
+export type AssignCoachBody = z.infer<typeof assignCoachBodySchema>;

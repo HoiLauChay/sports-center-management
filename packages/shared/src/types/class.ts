@@ -40,6 +40,7 @@ export interface ClassSummary {
 
 export interface ClassDetail extends ClassSummary {
   sessions: ClassSession[];
+  coachRegistrations?: CoachRegistration[];
 }
 
 export interface Enrollment {
@@ -56,4 +57,13 @@ export interface Enrollment {
 export interface CancelEnrollmentResult {
   enrollment: Enrollment;
   refund: number;
+}
+
+export interface CoachRegistration {
+  id: string;
+  classId: string;
+  coach: Person;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  source: 'COACH_REGISTERED' | 'MANAGER_ASSIGNED';
+  createdAt: string;
 }
