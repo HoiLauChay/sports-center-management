@@ -24,9 +24,6 @@ export function useCreateCourse(onSuccess?: (created: Course) => void) {
       message.success(`Đã tạo khóa học "${course.name}"`);
       onSuccess?.(course);
     },
-    onError: (err) => {
-      message.error(toApiError(err).message);
-    },
   });
 }
 
@@ -40,9 +37,6 @@ export function useUpdateCourse(onSuccess?: (updated: Course) => void) {
       void queryClient.invalidateQueries({ queryKey: coursesQueryOptions.queryKey });
       message.success(`Đã cập nhật khóa học "${course.name}"`);
       onSuccess?.(course);
-    },
-    onError: (err) => {
-      message.error(toApiError(err).message);
     },
   });
 }

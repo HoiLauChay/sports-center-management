@@ -1,11 +1,10 @@
-import type { Course } from '@sports-center/shared';
-import { Button, Card, Popconfirm, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { PAGINATION, type ClassSummary, type Course } from '@sports-center/shared';
+import { Button, Card, Popconfirm, Space, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useManagerClasses } from '~/features/classes/hooks/useClassAdmin';
-import type { GymClass } from '~/features/classes/types';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useCourses, useDeleteCourse } from '../hooks/useCourses';
@@ -14,15 +13,14 @@ import { CourseFormModal } from './CourseFormModal';
 /** `/admin/courses` (UC_2.11, BR_2.8): course templates (sport, sessions, fee); each course opens many classes. */
 export function CoursesPage() {
   const courses = useCourses();
-  const classes = useManagerClasses();
+  const classes = useManagerClasses({ page: 1, limit: PAGINATION.MAX_LIMIT });
   const deleteMutation = useDeleteCourse();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
 
-  /** Live classes of each course, shown next to it; an OPEN one blocks deleting the course. */
   const classesOf = useMemo(() => {
-    const map = new Map<string, GymClass[]>();
-    for (const item of classes.data ?? []) {
+    const map = new Map<string, ClassSummary[]>();
+    for (const item of classes.data?.items ?? []) {
       if (item.status === 'CANCELLED') continue;
       map.set(item.course.id, [...(map.get(item.course.id) ?? []), item]);
     }
@@ -72,7 +70,6 @@ export function CoursesPage() {
       key: 'actions',
       align: 'right',
       render: (_, record) => {
-        const hasOpenClass = (classesOf.get(record.id) ?? []).some((item) => item.status === 'OPEN');
         return (
           <Space>
             <Button size="small" onClick={() => openModal(record)}>
@@ -86,11 +83,9 @@ export function CoursesPage() {
               okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
               onConfirm={() => deleteMutation.mutate(record.id)}
             >
-              <Tooltip title={hasOpenClass ? 'Khóa học còn lớp đang mở' : undefined}>
-                <Button size="small" danger disabled={hasOpenClass}>
-                  Xóa
-                </Button>
-              </Tooltip>
+              <Button size="small" danger>
+                Xóa
+              </Button>
             </Popconfirm>
           </Space>
         );
@@ -102,7 +97,7 @@ export function CoursesPage() {
     <>
       <PageHeader
         title="Khóa học"
-        description="Template khóa học: bộ môn, số buổi, học phí. Mỗi khóa mở được nhiều lớp."
+        description="Mỗi khóa học có bộ môn, số buổi và học phí; từ một khóa mở được nhiều lớp."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => openModal(null)}>
             Tạo khóa học
