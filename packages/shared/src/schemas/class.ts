@@ -86,12 +86,11 @@ export const reviewClassBodySchema = z.object({
   note: z.string().trim().min(1).max(500, 'Ghi chú tối đa 500 ký tự').optional(),
 });
 
+export const cancelClassBodySchema = z.object({
+  reason: z.string('Cần nhập lý do hủy lớp').trim().min(1, 'Cần nhập lý do hủy lớp').max(500, 'Lý do tối đa 500 ký tự'),
+});
+
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
-
-export const cancelClassBodySchema = z.strictObject({
-  reason: z.string().trim().min(1, 'Cần nhập lý do hủy lớp').max(500, 'Lý do tối đa 500 ký tự'),
-});
-
 export type CancelClassBody = z.infer<typeof cancelClassBodySchema>;
