@@ -62,6 +62,46 @@ class MemberMembershipRepository {
   findById = (id: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.memberMembership.findUnique({ where: { id, accountId }, select: memberMembershipSelect });
 
+  findDueIds = (today: string, take: number) =>
+    prisma.memberMembership.findMany({
+      where: { status: 'ACTIVE', endDate: { lte: new Date(today) } },
+      select: { id: true, accountId: true },
+      orderBy: { endDate: 'asc' },
+      take,
+    });
+
+  countDue = (today: string) =>
+    prisma.memberMembership.count({ where: { status: 'ACTIVE', endDate: { lte: new Date(today) } } });
+
+  findForJob = (id: string, tx: Prisma.TransactionClient) =>
+    tx.memberMembership.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        accountId: true,
+        packageId: true,
+        status: true,
+        endDate: true,
+        autoRenew: true,
+        cancelledAt: true,
+        package: { select: { name: true } },
+      },
+    });
+
+  findExpiring = (today: string, lastDay: string, take: number) =>
+    prisma.memberMembership.findMany({
+      where: { status: 'ACTIVE', endDate: { gt: new Date(today), lte: new Date(lastDay) } },
+      select: {
+        id: true,
+        accountId: true,
+        endDate: true,
+        autoRenew: true,
+        cancelledAt: true,
+        package: { select: { name: true, price: true } },
+      },
+      take,
+    });
+
   findActive = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.memberMembership.findFirst({
       where: { accountId, status: 'ACTIVE' },
