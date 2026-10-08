@@ -11,6 +11,7 @@ export * from './notification';
 export * from './order';
 export * from './pagination';
 export * from './payment';
+export * from './report';
 export * from './setting';
 export * from './specialization';
 export * from './sport';
