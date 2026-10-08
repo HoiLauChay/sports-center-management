@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
+import { formatDate } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { myMembershipsService } from '../services/myMemberships.service';
 import type { MyMemberships } from '../types';
@@ -16,24 +17,6 @@ export function useMyMemberships() {
     retry: false,
   });
   const refresh = () => queryClient.invalidateQueries({ queryKey });
-  const autoRenew = useMutation({
-    mutationFn: ({ membershipId, enabled }: { membershipId: string; enabled: boolean }) =>
-      myMembershipsService.setAutoRenew(membershipId, enabled),
-    onSuccess: (updated, { enabled }) => {
-      queryClient.setQueryData<MyMemberships>(
-        queryKey,
-        (data) =>
-          data && {
-            ...data,
-            current: data.current?.id === updated.id ? updated : data.current,
-            history: data.history.map((membership) => (membership.id === updated.id ? updated : membership)),
-          },
-      );
-      void refresh();
-      message.success(enabled ? 'Đã bật tự động gia hạn' : 'Đã tắt tự động gia hạn');
-    },
-    onError: (error) => message.error(toApiError(error).message),
-  });
   const cancel = useMutation({
     mutationFn: (membershipId: string) => myMembershipsService.cancel(membershipId),
     onSuccess: (cancelled) => {
@@ -41,14 +24,14 @@ export function useMyMemberships() {
         queryKey,
         (data) =>
           data && {
-            current: data.current?.id === cancelled.id ? null : data.current,
-            history: [cancelled, ...data.history.filter(({ id }) => id !== cancelled.id)],
+            ...data,
+            current: data.current?.id === cancelled.id ? cancelled : data.current,
           },
       );
       void refresh();
-      message.success('Đã hủy gói. Quyền lợi đã dừng.');
+      message.success(`Đã hủy gói. Bạn vẫn dùng được đến ${formatDate(cancelled.endDate)}.`);
     },
     onError: (error) => message.error(toApiError(error).message),
   });
-  return { query, autoRenew, cancel };
+  return { query, cancel };
 }
