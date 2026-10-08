@@ -62,6 +62,18 @@ class MemberMembershipRepository {
   findById = (id: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.memberMembership.findUnique({ where: { id, accountId }, select: memberMembershipSelect });
 
+  findActive = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.memberMembership.findFirst({
+      where: { accountId, status: 'ACTIVE' },
+      select: { id: true, packageId: true, endDate: true },
+    });
+
+  create = (data: Prisma.MemberMembershipUncheckedCreateInput, tx: Prisma.TransactionClient) =>
+    tx.memberMembership.create({ data, select: { id: true } });
+
+  addPeriod = (data: Prisma.MembershipOrderUncheckedCreateInput, tx: Prisma.TransactionClient) =>
+    tx.membershipOrder.create({ data, select: { id: true } });
+
   update = (id: string, data: Prisma.MemberMembershipUpdateInput, tx: Prisma.TransactionClient) =>
     tx.memberMembership.update({ where: { id }, data, select: memberMembershipSelect });
 }
