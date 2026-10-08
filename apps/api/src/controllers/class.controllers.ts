@@ -17,10 +17,12 @@ class ClassController {
     const result = await coachAssignmentService.register(req.user!.id, req.params.id as string, getClientIp(req));
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã đăng ký dạy', result }));
   };
+
   listCoachRegistrations = async (req: Request, res: Response) => {
     const result = await coachAssignmentService.list(req.params.id as string);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
+
   assignCoach = async (req: Request, res: Response) => {
     const result = await coachAssignmentService.assign(
       req.user!.id,
@@ -30,6 +32,7 @@ class ClassController {
     );
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã phân công huấn luyện viên', result }));
   };
+
   withdrawCoach = async (req: Request, res: Response) => {
     const result = await coachAssignmentService.withdraw(req.user!.id, req.params.id as string, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã rút khỏi lớp', result }));
