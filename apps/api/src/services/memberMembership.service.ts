@@ -5,11 +5,11 @@ import type { Prisma, Role } from '~/generated/prisma/client';
 import { isMembershipCurrent, toMemberMembershipResponse } from '~/mappers/memberMembership.mapper';
 import accountRepository from '~/repositories/account.repository';
 import bookingRepository from '~/repositories/booking.repository';
-import memberMembershipRepository from '~/repositories/memberMembership.repository';
+import memberMembershipRepository, { type MemberMembershipRow } from '~/repositories/memberMembership.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
-import { formatDate, fromDbTime, todayInCenter } from '~/utils/time';
+import { monthOf, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction } from '~/utils/transaction';
 
 const notFound = () =>
@@ -22,37 +22,24 @@ const notFound = () =>
 const invalidState = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
 
-class MemberMembershipService {
-  private freeSlotsUsed = async (accountId: string, today: string, tx: Prisma.TransactionClient) => {
-    const [year, month] = today.split('-').map(Number);
-    const from = `${today.slice(0, 7)}-01`;
-    const to = formatDate(new Date(Date.UTC(year!, month!, 1)));
-    const [bookings, settings] = await Promise.all([
-      bookingRepository.findFreeSlotTimes(accountId, from, to, tx),
-      settingRepository.get(tx),
-    ]);
-    return bookings.reduce(
-      (sum, { startTime, endTime }) =>
-        sum + (fromDbTime(endTime) - fromDbTime(startTime)) / settings.slotDurationMinutes,
-      0,
-    );
-  };
+const toResponse = async (row: MemberMembershipRow, today: string, tx?: Prisma.TransactionClient) => {
+  if (!isMembershipCurrent(row, today)) return toMemberMembershipResponse(row, today, 0);
+  const { slotDurationMinutes } = await settingRepository.get(tx);
+  const used = await bookingRepository.countFreeSlots(row.accountId, monthOf(today), slotDurationMinutes, tx);
+  return toMemberMembershipResponse(row, today, used);
+};
 
-  list = async (accountId: string): Promise<MyMemberships> =>
-    runTransaction(async (tx) => {
-      if (!(await accountRepository.findById(accountId, 'MEMBER', tx))) throw notFound();
-      const today = todayInCenter();
-      const [rows, used] = await Promise.all([
-        memberMembershipRepository.findMine(accountId, tx),
-        this.freeSlotsUsed(accountId, today, tx),
-      ]);
-      const mapped = rows.map((row) => toMemberMembershipResponse(row, today, used));
-      const currentId = rows.find((row) => isMembershipCurrent(row, today))?.id;
-      return {
-        current: mapped.find(({ id }) => id === currentId) ?? null,
-        history: mapped.filter(({ id }) => id !== currentId),
-      };
-    });
+class MemberMembershipService {
+  list = async (accountId: string): Promise<MyMemberships> => {
+    if (!(await accountRepository.findById(accountId, 'MEMBER'))) throw notFound();
+    const today = todayInCenter();
+    const rows = await memberMembershipRepository.findByAccount(accountId);
+    const current = rows.find((row) => isMembershipCurrent(row, today));
+    return {
+      current: current ? await toResponse(current, today) : null,
+      history: rows.filter((row) => row !== current).map((row) => toMemberMembershipResponse(row, today, 0)),
+    };
+  };
 
   setAutoRenew = async (accountId: string, id: string, body: AutoRenewBody, ip?: string) =>
     runTransaction(async (tx) => {
@@ -64,6 +51,7 @@ class MemberMembershipService {
       if (body.autoRenew && (!current.package.isActive || current.package.deletedAt)) {
         throw invalidState('Gói đã ngừng bán hoặc bị xóa, không thể bật tự động gia hạn');
       }
+
       const updated = await memberMembershipRepository.update(id, { autoRenew: body.autoRenew }, tx);
       await auditService.record(
         {
@@ -77,24 +65,20 @@ class MemberMembershipService {
         },
         tx,
       );
-      return toMemberMembershipResponse(updated, today, await this.freeSlotsUsed(accountId, today, tx));
+      return toResponse(updated, today, tx);
     });
 
   cancel = async (actor: { id: string; role: Role }, accountId: string, id: string, ip?: string) =>
     runTransaction(async (tx) => {
-      if (actor.role === 'MEMBER' && actor.id !== accountId) throw notFound();
       await lockRows(tx, { accounts: [accountId], memberMemberships: [id] });
       const current = await memberMembershipRepository.findById(id, accountId, tx);
       if (!current) throw notFound();
       const today = todayInCenter();
       if (!isMembershipCurrent(current, today)) throw invalidState('Chỉ hủy gói còn hiệu lực');
+
       const updated = await memberMembershipRepository.update(
         id,
-        {
-          status: 'CANCELLED',
-          autoRenew: false,
-          cancelledAt: new Date(),
-        },
+        { status: 'CANCELLED', autoRenew: false, cancelledAt: new Date() },
         tx,
       );
       await auditService.record(
@@ -109,7 +93,7 @@ class MemberMembershipService {
         },
         tx,
       );
-      return toMemberMembershipResponse(updated, today, await this.freeSlotsUsed(accountId, today, tx));
+      return toResponse(updated, today, tx);
     });
 }
 

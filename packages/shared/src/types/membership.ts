@@ -34,7 +34,6 @@ export interface MemberMembership {
   endDate: string;
   autoRenew: boolean;
   currentBenefits: MembershipBenefits | null;
-  /** Confirmed FREE_SLOT booking slots in the center's current calendar month. */
   freeSlotsUsedThisMonth: number;
   periods: MembershipPeriod[];
 }
