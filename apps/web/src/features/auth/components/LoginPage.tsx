@@ -7,15 +7,6 @@ import { useLogin } from '../hooks/useAuth';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { INPUT_ICON_STYLE } from './inputIcon';
 
-/** Accounts created by `bun db:seed` (apps/api/src/seeds/seed.ts). */
-const DEV_PASSWORD = 'Demo@1234';
-const DEV_ACCOUNTS = [
-  { label: 'Học viên', email: 'member1@sportscenter.local' },
-  { label: 'HLV', email: 'coach1@sportscenter.local' },
-  { label: 'Quản lý', email: 'manager@sportscenter.local' },
-  { label: 'Lễ tân', email: 'reception1@sportscenter.local' },
-];
-
 export function LoginPage() {
   const { form, onSubmit, isSubmitting } = useLogin();
   const rootError = form.formState.errors.root?.message;
@@ -78,28 +69,6 @@ export function LoginPage() {
         <Button type="primary" htmlType="submit" block loading={isSubmitting}>
           Đăng nhập
         </Button>
-
-        {import.meta.env.DEV && (
-          <div className="mt-4 rounded-xl border border-dashed border-sc-primary-border bg-orange-50/50 p-3 text-xs">
-            <div className="mb-2 font-bold text-sc-ink">Đăng nhập nhanh (tài khoản seed, chỉ hiện khi dev):</div>
-            <div className="grid grid-cols-2 gap-2">
-              {DEV_ACCOUNTS.map((account) => (
-                <Button
-                  key={account.email}
-                  size="small"
-                  className="!text-xs"
-                  onClick={() => {
-                    form.setValue('email', account.email);
-                    form.setValue('password', DEV_PASSWORD);
-                    void onSubmit();
-                  }}
-                >
-                  {account.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
       </Form>
 
       <AuthAlt>
