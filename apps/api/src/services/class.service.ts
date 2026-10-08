@@ -9,7 +9,9 @@ import {
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
+import { toCoachRegistrationResponse } from '~/mappers/coachRegistration.mapper';
 import classRepository, { type ClassDetailRow, type ClassViewer } from '~/repositories/class.repository';
+import registrationRepository from '~/repositories/coachRegistration.repository';
 import courseRepository from '~/repositories/course.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import specializationRepository from '~/repositories/specialization.repository';
@@ -88,7 +90,10 @@ class ClassService {
   get = async (viewer: ClassViewer, id: string) => {
     const row = await classRepository.findVisibleDetail(id, viewer);
     if (!row) throw notFound();
-    return toClassDetailResponse(row);
+    const result = toClassDetailResponse(row);
+    if (viewer.role === 'MANAGER')
+      result.coachRegistrations = (await registrationRepository.findAll(id)).map(toCoachRegistrationResponse);
+    return result;
   };
 
   update = async (managerId: string, id: string, body: UpdateClassBody, ip?: string) => {

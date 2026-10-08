@@ -75,6 +75,17 @@ const catalog = (today: Date): Prisma.ClassWhereInput => ({
 
 const visibleTo = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => {
   if (viewer.role === 'MANAGER') return {};
+  if (viewer.role === 'COACH')
+    return {
+      OR: [
+        { coachId: viewer.id },
+        {
+          status: { in: ['DRAFT', 'PENDING_APPROVAL'] },
+          coachId: null,
+          course: { sport: { coachSpecializations: { some: { coachId: viewer.id, status: 'APPROVED' } } } },
+        },
+      ],
+    };
   if (viewer.role !== 'MEMBER') return { status: { not: 'DRAFT' } };
   return { OR: [catalog(today), { enrollments: { some: { accountId: viewer.id } } }] };
 };
@@ -166,7 +177,7 @@ class ClassRepository {
   unassignCoach = (ids: string[], tx: Prisma.TransactionClient = prisma) =>
     tx.class.updateManyAndReturn({
       where: { id: { in: ids } },
-      data: { coachId: null, status: 'PENDING_APPROVAL' },
+      data: { coachId: null, status: 'PENDING_APPROVAL', approvedById: null, approvedAt: null },
       select: classSelect,
     });
 }
