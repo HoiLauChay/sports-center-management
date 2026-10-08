@@ -9,7 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select, TimePicker } from 'antd';
 import dayjs from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
@@ -66,17 +66,14 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
   const schedule = useFieldArray({ control, name: 'weeklySchedule' });
   const handleApiError = useFormApiError(form);
   const courseId = useWatch({ control, name: 'courseId' });
+  const slots = useWatch({ control, name: 'weeklySchedule' });
   const course = courses.data?.find((item) => item.id === courseId);
   const facilityOptions = (facilities.data ?? [])
     .filter((facility) => facility.isActive && course && facility.sports.some((sport) => sport.id === course.sport.id))
     .map((facility) => ({ value: facility.id, label: facility.name }));
 
-  useEffect(() => {
-    if (!open) return;
-    form.reset(blankClass());
-  }, [open, form]);
-
   const close = () => {
+    form.reset(blankClass());
     setConflicts([]);
     onClose();
   };
@@ -255,7 +252,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
               name={`weeklySchedule.${index}.endTime`}
               className="flex-1"
               render={(field, invalid) => {
-                const startTime = form.getValues(`weeklySchedule.${index}.startTime`);
+                const startTime = slots[index]?.startTime;
                 return (
                   <TimePicker.RangePicker
                     className="w-full"
