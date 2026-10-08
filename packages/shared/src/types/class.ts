@@ -1,4 +1,10 @@
-import type { ClassDerivedStatus, ClassStatus, EnrollmentStatus } from '../constants/enums';
+import type {
+  ClassDerivedStatus,
+  ClassStatus,
+  CoachRegistrationSource,
+  CoachRegistrationStatus,
+  EnrollmentStatus,
+} from '../constants/enums';
 import type { Ref } from './api';
 import type { Person } from './audit';
 import type { Course } from './course';
@@ -68,7 +74,7 @@ export interface CoachRegistration {
   id: string;
   classId: string;
   coach: Person;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  source: 'COACH_REGISTERED' | 'MANAGER_ASSIGNED';
+  status: CoachRegistrationStatus;
+  source: CoachRegistrationSource;
   createdAt: string;
 }
