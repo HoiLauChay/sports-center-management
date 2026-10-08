@@ -73,19 +73,18 @@ const catalog = (today: Date): Prisma.ClassWhereInput => ({
   sessions: { some: { status: 'SCHEDULED' } },
 });
 
+const needsCoach = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => ({
+  status: { in: ['DRAFT', 'PENDING_APPROVAL'] },
+  coachId: null,
+  startDate: { gt: today },
+  ...(viewer.role === 'COACH' && {
+    course: { sport: { coachSpecializations: { some: { coachId: viewer.id, status: 'APPROVED' } } } },
+  }),
+});
+
 const visibleTo = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => {
   if (viewer.role === 'MANAGER') return {};
-  if (viewer.role === 'COACH')
-    return {
-      OR: [
-        { coachId: viewer.id },
-        {
-          status: { in: ['DRAFT', 'PENDING_APPROVAL'] },
-          coachId: null,
-          course: { sport: { coachSpecializations: { some: { coachId: viewer.id, status: 'APPROVED' } } } },
-        },
-      ],
-    };
+  if (viewer.role === 'COACH') return { OR: [{ status: { not: 'DRAFT' } }, needsCoach(viewer, today)] };
   if (viewer.role !== 'MEMBER') return { status: { not: 'DRAFT' } };
   return { OR: [catalog(today), { enrollments: { some: { accountId: viewer.id } } }] };
 };
@@ -114,6 +113,7 @@ class ClassRepository {
       ...(query.sportId && { course: { sportId: query.sportId } }),
       AND: [
         visibleTo(viewer, today),
+        query.needsCoach ? needsCoach(viewer, today) : {},
         query.openForEnrollment ? catalog(today) : {},
         query.derivedStatus ? derivedFilter(query.derivedStatus, today) : {},
         query.q

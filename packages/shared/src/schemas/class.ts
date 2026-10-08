@@ -66,6 +66,7 @@ export const listClassesQuerySchema = pageQuerySchema.extend({
   courseId: z.uuid('Mã khóa học không hợp lệ').optional(),
   coachId: z.uuid('Mã huấn luyện viên không hợp lệ').optional(),
   facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+  needsCoach: z.stringbool('Bộ lọc cần huấn luyện viên không hợp lệ').optional(),
   openForEnrollment: z.stringbool('Bộ lọc nhận đăng ký không hợp lệ').optional(),
 });
 
