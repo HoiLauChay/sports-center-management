@@ -23,8 +23,18 @@ class CoachRegistrationRepository {
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
 
-  findById = (id: string, tx: Prisma.TransactionClient) =>
-    tx.classCoachRegistration.findUnique({ where: { id }, select: registrationSelect });
+  findPending = (classId: string, tx: Prisma.TransactionClient) =>
+    tx.classCoachRegistration.findMany({
+      where: { classId, status: 'PENDING' },
+      select: registrationSelect,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+  findInClass = (id: string, classId: string, tx: Prisma.TransactionClient) =>
+    tx.classCoachRegistration.findFirst({ where: { id, classId }, select: registrationSelect });
+
+  hasPending = async (classId: string, coachId: string, tx: Prisma.TransactionClient) =>
+    (await tx.classCoachRegistration.count({ where: { classId, coachId, status: 'PENDING' } })) > 0;
 
   create = (data: Prisma.ClassCoachRegistrationUncheckedCreateInput, tx: Prisma.TransactionClient) =>
     tx.classCoachRegistration.create({ data, select: registrationSelect });

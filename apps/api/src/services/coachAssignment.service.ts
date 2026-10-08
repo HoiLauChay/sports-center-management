@@ -7,6 +7,7 @@ import { toCoachRegistrationResponse } from '~/mappers/coachRegistration.mapper'
 import accountRepository from '~/repositories/account.repository';
 import classRepository, { type ClassDetailRow } from '~/repositories/class.repository';
 import registrationRepository from '~/repositories/coachRegistration.repository';
+import enrollmentRepository from '~/repositories/enrollment.repository';
 import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
@@ -26,6 +27,13 @@ const requireClass = async (id: string, tx: Prisma.TransactionClient) => {
   const current = await classRepository.findDetail(id, tx);
   if (!current) throw notFound();
   return current;
+};
+
+const pickCoach = async (classId: string, body: AssignCoachBody, tx: Prisma.TransactionClient) => {
+  if ('coachId' in body) return { coachId: body.coachId, registrationId: null };
+  const registration = await registrationRepository.findInClass(body.registrationId, classId, tx);
+  if (!registration) throw notFound('Không tìm thấy đăng ký của lớp');
+  return { coachId: registration.coachId, registrationId: registration.id };
 };
 
 const sessionsOf = (current: ClassDetailRow) => current.sessions.filter(({ status }) => status === 'SCHEDULED');
@@ -69,11 +77,7 @@ class CoachAssignmentService {
         throw invalidState('Chỉ đăng ký lớp nháp hoặc chờ duyệt chưa có huấn luyện viên');
       assertNotStarted(current);
       await assertQualifiedAndAvailable(current, coachId, tx);
-      if (
-        (await registrationRepository.findAll(classId, tx)).some(
-          (row) => row.coachId === coachId && row.status === 'PENDING',
-        )
-      ) {
+      if (await registrationRepository.hasPending(classId, coachId, tx)) {
         throw new ErrorWithStatus({
           status: HTTP_STATUS.CONFLICT,
           code: ERROR_CODE.CONFLICT,
@@ -81,7 +85,6 @@ class CoachAssignmentService {
         });
       }
       const created = await registrationRepository.create({ classId, coachId, source: 'COACH_REGISTERED' }, tx);
-      const updated = await classRepository.update(classId, { status: 'PENDING_APPROVAL' }, tx);
       await auditService.record(
         {
           accountId: coachId,
@@ -93,18 +96,21 @@ class CoachAssignmentService {
         },
         tx,
       );
-      await auditService.record(
-        {
-          accountId: coachId,
-          action: 'UPDATE',
-          entityType: 'CLASS',
-          entityId: classId,
-          oldValues: current,
-          newValues: updated,
-          ipAddress: ip,
-        },
-        tx,
-      );
+      if (current.status === 'DRAFT') {
+        const updated = await classRepository.update(classId, { status: 'PENDING_APPROVAL' }, tx);
+        await auditService.record(
+          {
+            accountId: coachId,
+            action: 'UPDATE',
+            entityType: 'CLASS',
+            entityId: classId,
+            oldValues: current,
+            newValues: updated,
+            ipAddress: ip,
+          },
+          tx,
+        );
+      }
       return created;
     });
     return toCoachRegistrationResponse(registration);
@@ -113,13 +119,12 @@ class CoachAssignmentService {
   assign = async (managerId: string, classId: string, body: AssignCoachBody, ip?: string) => {
     const { row, notifications } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
-      const selected = 'registrationId' in body ? await registrationRepository.findById(body.registrationId, tx) : null;
-      if ('registrationId' in body && (!selected || selected.classId !== classId))
-        throw notFound('Không tìm thấy đăng ký của lớp');
-      if (selected && selected.status !== 'PENDING') throw invalidState('Chỉ có thể chọn đăng ký đang chờ');
-      const coachId = selected?.coachId ?? ('coachId' in body ? body.coachId : '');
+      const { coachId, registrationId } = await pickCoach(classId, body, tx);
       await lockRows(tx, { accounts: [coachId], classes: [classId] });
       const current = await requireClass(classId, tx);
+      const pending = await registrationRepository.findPending(classId, tx);
+      const selected = pending.find(({ id }) => id === registrationId);
+      if (registrationId && !selected) throw invalidState('Chỉ có thể chọn đăng ký đang chờ');
       if (
         current.status === 'CANCELLED' ||
         !sessionsOf(current).length ||
@@ -130,7 +135,6 @@ class CoachAssignmentService {
       if (current.coachId === coachId) throw invalidState('Huấn luyện viên này đã được phân công');
       await assertQualifiedAndAvailable(current, coachId, tx);
 
-      const pending = (await registrationRepository.findAll(classId, tx)).filter(({ status }) => status === 'PENDING');
       for (const registration of pending) {
         const status = registration.id === selected?.id ? 'APPROVED' : 'REJECTED';
         const updated = await registrationRepository.review(registration.id, status, managerId, tx);
@@ -240,10 +244,7 @@ class CoachAssignmentService {
         },
         tx,
       );
-      const enrollments = await tx.classEnrollment.findMany({
-        where: { classId, status: 'ENROLLED' },
-        select: { accountId: true },
-      });
+      const enrollments = await enrollmentRepository.findActiveByClass(classId, tx);
       const managerIds = await accountRepository.findActiveManagerIds(tx);
       const notifications = await notificationService.create(
         [
