@@ -9,6 +9,7 @@ export * from './facility';
 export * from './membership';
 export * from './notification';
 export * from './payment';
+export * from './report';
 export * from './schedule';
 export * from './setting';
 export * from './specialization';
