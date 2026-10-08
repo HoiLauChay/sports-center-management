@@ -1,4 +1,5 @@
 import {
+  assignCoachBodySchema,
   cancelClassBodySchema,
   classIdParamsSchema,
   createClassBodySchema,
@@ -42,6 +43,31 @@ classRouter.post(
   isRole('MANAGER'),
   validate({ params: classIdParamsSchema, body: cancelClassBodySchema }),
   classController.cancel,
+);
+
+classRouter.post(
+  '/:id/coach-registrations',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema }),
+  classController.registerCoach,
+);
+classRouter.get(
+  '/:id/coach-registrations',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema }),
+  classController.listCoachRegistrations,
+);
+classRouter.post(
+  '/:id/assign-coach',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: assignCoachBodySchema }),
+  classController.assignCoach,
+);
+classRouter.post(
+  '/:id/withdraw',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema }),
+  classController.withdrawCoach,
 );
 
 export default classRouter;

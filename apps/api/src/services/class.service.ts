@@ -10,7 +10,9 @@ import {
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
+import { toCoachRegistrationResponse } from '~/mappers/coachRegistration.mapper';
 import classRepository, { type ClassDetailRow, type ClassViewer } from '~/repositories/class.repository';
+import registrationRepository from '~/repositories/coachRegistration.repository';
 import courseRepository from '~/repositories/course.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import facilityRepository from '~/repositories/facility.repository';
@@ -162,7 +164,27 @@ class ClassService {
       );
     }
 
-    const recipients = new Set(enrollments.map(({ accountId }) => accountId));
+    const pending = await registrationRepository.findPending(current.id, tx);
+    for (const registration of pending) {
+      const updated = await registrationRepository.review(registration.id, 'REJECTED', managerId, tx);
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'REJECT',
+          entityType: 'CLASS_COACH_REGISTRATION',
+          entityId: registration.id,
+          oldValues: registration,
+          newValues: updated,
+          ipAddress: ip,
+        },
+        tx,
+      );
+    }
+
+    const recipients = new Set([
+      ...enrollments.map(({ accountId }) => accountId),
+      ...pending.map(({ coachId }) => coachId),
+    ]);
     if (current.coachId) recipients.add(current.coachId);
     notifications.push(
       ...(await notificationService.create(
@@ -194,7 +216,10 @@ class ClassService {
   get = async (viewer: ClassViewer, id: string) => {
     const row = await classRepository.findVisibleDetail(id, viewer);
     if (!row) throw notFound();
-    return toClassDetailResponse(row);
+    const result = toClassDetailResponse(row);
+    if (viewer.role === 'MANAGER')
+      result.coachRegistrations = (await registrationRepository.findAll(id)).map(toCoachRegistrationResponse);
+    return result;
   };
 
   update = async (managerId: string, id: string, body: UpdateClassBody, ip?: string) => {

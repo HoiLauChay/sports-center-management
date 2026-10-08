@@ -66,6 +66,7 @@ export const listClassesQuerySchema = pageQuerySchema.extend({
   courseId: z.uuid('Mã khóa học không hợp lệ').optional(),
   coachId: z.uuid('Mã huấn luyện viên không hợp lệ').optional(),
   facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+  needsCoach: z.stringbool('Bộ lọc cần huấn luyện viên không hợp lệ').optional(),
   openForEnrollment: z.stringbool('Bộ lọc nhận đăng ký không hợp lệ').optional(),
 });
 
@@ -90,7 +91,13 @@ export const cancelClassBodySchema = z.object({
   reason: z.string('Cần nhập lý do hủy lớp').trim().min(1, 'Cần nhập lý do hủy lớp').max(500, 'Lý do tối đa 500 ký tự'),
 });
 
+export const assignCoachBodySchema = z.union([
+  z.strictObject({ registrationId: z.uuid('Mã đăng ký không hợp lệ') }),
+  z.strictObject({ coachId: z.uuid('Mã huấn luyện viên không hợp lệ') }),
+]);
+
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
 export type CancelClassBody = z.infer<typeof cancelClassBodySchema>;
+export type AssignCoachBody = z.infer<typeof assignCoachBodySchema>;
