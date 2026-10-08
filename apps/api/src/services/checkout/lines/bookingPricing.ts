@@ -4,7 +4,7 @@ import bookingRepository from '~/repositories/booking.repository';
 import { plannedFor } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, Db } from '~/services/checkout/types';
 import { percentOf } from '~/utils/money';
-import { formatDate, fromDbTime } from '~/utils/time';
+import { monthOf } from '~/utils/time';
 
 export interface BookedSlots {
   date: string;
@@ -23,11 +23,6 @@ interface PricedFacility {
   pricePerSlot: unknown;
 }
 
-const monthOf = (date: string) => {
-  const [year, month] = date.split('-').map(Number);
-  return { from: `${date.slice(0, 7)}-01`, to: formatDate(new Date(Date.UTC(year!, month!, 1))) };
-};
-
 const plannedBookings = (ctx: CheckoutContext, accountId: string): BookedSlots[] =>
   plannedFor(ctx, accountId).flatMap(({ type, data }) => {
     if (type === 'FACILITY_BOOKING') return [data as BookedSlots];
@@ -36,11 +31,7 @@ const plannedBookings = (ctx: CheckoutContext, accountId: string): BookedSlots[]
   });
 
 const freeSlotsUsed = async (db: Db, ctx: CheckoutContext, accountId: string, from: string, to: string) => {
-  const slotMinutes = ctx.settings.slotDurationMinutes;
-  const booked = (await bookingRepository.findFreeSlotTimes(accountId, from, to, db)).reduce(
-    (sum, { startTime, endTime }) => sum + (fromDbTime(endTime) - fromDbTime(startTime)) / slotMinutes,
-    0,
-  );
+  const booked = await bookingRepository.countFreeSlots(accountId, { from, to }, ctx.settings.slotDurationMinutes, db);
   const planned = plannedBookings(ctx, accountId)
     .filter(({ benefit, date }) => benefit === 'FREE_SLOT' && from <= date && date < to)
     .reduce((sum, { slots }) => sum + slots, 0);

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Alert, Button, Card, Popconfirm, Progress, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Popconfirm, Progress, Table, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
@@ -15,7 +15,11 @@ const STATUS = {
   ACTIVE: { label: 'Đang hoạt động', color: 'green' },
   EXPIRED: { label: 'Hết hạn', color: 'red' },
   CANCELLED: { label: 'Đã hủy', color: 'volcano' },
+  ENDING: { label: 'Đã hủy, còn hạn', color: 'orange' },
 } as const;
+
+const statusOf = (membership: MemberMembership) =>
+  membership.status === 'ACTIVE' && membership.cancelledAt ? 'ENDING' : membership.status;
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -34,8 +38,10 @@ const historyColumns: TableColumnsType<MemberMembership> = [
   { title: 'Đến', dataIndex: 'endDate', render: formatDate },
   {
     title: 'Trạng thái',
-    dataIndex: 'status',
-    render: (status: MemberMembership['status']) => <Tag color={STATUS[status].color}>{STATUS[status].label}</Tag>,
+    render: (_, membership) => {
+      const status = statusOf(membership);
+      return <Tag color={STATUS[status].color}>{STATUS[status].label}</Tag>;
+    },
   },
 ];
 
@@ -49,14 +55,14 @@ const periodColumns: TableColumnsType<PeriodRow> = [
 ];
 
 export function MyMembershipsPage() {
-  const { query, autoRenew, cancel } = useMyMemberships();
+  const { query, cancel } = useMyMemberships();
   const current = query.data?.current;
-  const busy = autoRenew.isPending || cancel.isPending;
   const today = dayjs().tz(VN_TIMEZONE).format('YYYY-MM-DD');
   const isEffective = Boolean(
     current && current.status === 'ACTIVE' && current.startDate <= today && today < current.endDate,
   );
-  const displayStatus = current?.status === 'ACTIVE' && today >= current.endDate ? 'EXPIRED' : current?.status;
+  const displayStatus =
+    current && (current.status === 'ACTIVE' && today >= current.endDate ? 'EXPIRED' : statusOf(current));
   const daysLeft = current ? Math.max(0, dayjs(current.endDate).diff(dayjs(today), 'day')) : 0;
   const totalDays = current ? Math.max(1, dayjs(current.endDate).diff(dayjs(current.startDate), 'day')) : 1;
   const latestPeriod = current?.periods.reduce<MembershipPeriod | null>(
@@ -153,35 +159,33 @@ export function MyMembershipsPage() {
                   </div>
                 )}
                 <div className="mt-4 border-t border-sc-border-soft pt-4">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <strong>Tự động gia hạn</strong>
-                    <Switch
-                      aria-label="Tự động gia hạn gói thành viên"
-                      checked={current.autoRenew}
-                      loading={autoRenew.isPending}
-                      disabled={busy || !isEffective}
-                      onChange={(enabled) => autoRenew.mutate({ membershipId: current.id, enabled })}
-                    />
-                  </div>
-                  <p className="mb-4 text-sm text-sc-muted">
-                    Khi đến hạn, hệ thống dùng số dư ví để gia hạn cùng gói. Nếu ví không đủ tiền hoặc gói ngừng bán,
-                    gói sẽ không tự gia hạn.
-                  </p>
-                  <Popconfirm
-                    title="Hủy gói? Quyền lợi dừng ngay, không hoàn tiền."
-                    description="Tự động gia hạn cũng sẽ tắt."
-                    okText="Hủy gói"
-                    cancelText="Không"
-                    okButtonProps={{ danger: true }}
-                    styles={{ container: { maxWidth: 340 } }}
-                    disabled={busy || !isEffective}
-                    onConfirm={() => cancel.mutateAsync(current.id).catch(() => undefined)}
-                  >
-                    <Button danger loading={cancel.isPending} disabled={busy || !isEffective}>
-                      Hủy gói thành viên
-                    </Button>
-                  </Popconfirm>
-                  <p className="mt-2 mb-0 text-xs text-sc-muted">Hủy gói sẽ dừng quyền lợi ngay và không hoàn tiền.</p>
+                  {current.cancelledAt ? (
+                    <p className="mb-0 text-sm text-sc-muted">
+                      Gói đã hủy và sẽ không gia hạn. Bạn vẫn dùng quyền lợi đến {formatDate(current.endDate)}. Mua lại
+                      cùng gói trước ngày này để tiếp tục.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mb-4 text-sm text-sc-muted">
+                        Khi đến hạn, hệ thống dùng số dư ví để gia hạn cùng gói. Nếu ví không đủ tiền hoặc gói ngừng
+                        bán, gói sẽ không tự gia hạn.
+                      </p>
+                      <Popconfirm
+                        title="Hủy gói? Gói sẽ không gia hạn, không hoàn tiền."
+                        description={`Bạn vẫn dùng quyền lợi đến ${formatDate(current.endDate)}.`}
+                        okText="Hủy gói"
+                        cancelText="Không"
+                        okButtonProps={{ danger: true }}
+                        styles={{ container: { maxWidth: 340 } }}
+                        disabled={cancel.isPending || !isEffective}
+                        onConfirm={() => cancel.mutateAsync(current.id).catch(() => undefined)}
+                      >
+                        <Button danger loading={cancel.isPending} disabled={cancel.isPending || !isEffective}>
+                          Hủy gói thành viên
+                        </Button>
+                      </Popconfirm>
+                    </>
+                  )}
                 </div>
               </Card>
             ) : (

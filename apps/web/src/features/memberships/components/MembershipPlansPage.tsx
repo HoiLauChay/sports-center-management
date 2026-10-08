@@ -166,7 +166,7 @@ export function MembershipPlansPage() {
               Gia hạn nối tiếp từ ngày hết hạn; gói mua trong cùng đơn chưa giảm giá cho các dòng khác của đơn đó.
             </span>
             <span>
-              Hủy gói: mất quyền lợi ngay, không hoàn tiền.{' '}
+              Hủy gói: không gia hạn, không hoàn tiền, vẫn dùng đến hết hạn.{' '}
               <Link
                 to={PATHS.myMemberships}
                 className="font-semibold text-sc-ink underline decoration-sc-border underline-offset-[3px] hover:text-sc-primary"

@@ -20,5 +20,10 @@ export const updateSportBodySchema = createSportBodySchema.partial().extend({
 
 export const sportIdParamsSchema = z.object({ id: z.uuid('Mã bộ môn không hợp lệ') });
 
+export const deleteSportQuerySchema = z.object({
+  confirm: z.stringbool('Xác nhận không hợp lệ').optional(),
+});
+
 export type CreateSportBody = z.infer<typeof createSportBodySchema>;
 export type UpdateSportBody = z.infer<typeof updateSportBodySchema>;
+export type DeleteSportQuery = z.infer<typeof deleteSportQuerySchema>;

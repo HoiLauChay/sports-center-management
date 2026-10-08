@@ -2,6 +2,7 @@ import { ERROR_CODE, type CreateMembershipBody, type UpdateMembershipBody } from
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toMembershipResponse } from '~/mappers/membership.mapper';
+import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import membershipRepository from '~/repositories/membership.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
@@ -95,7 +96,7 @@ class MembershipService {
     action: string,
     tx: Parameters<Parameters<typeof runTransaction>[0]>[0],
   ) => {
-    const accountIds = await membershipRepository.findAutoRenewAccountIds(packageId, tx);
+    const accountIds = await memberMembershipRepository.findAutoRenewAccountIds(packageId, tx);
     if (accountIds.length === 0) return [];
     return notificationService.create(
       accountIds.map((accountId) => ({

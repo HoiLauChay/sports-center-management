@@ -54,6 +54,11 @@ export interface Enrollment {
   enrolledAt: string;
 }
 
+export interface CancelClassResult {
+  class: ClassDetail;
+  refundTotal: number;
+}
+
 export interface CancelEnrollmentResult {
   enrollment: Enrollment;
   refund: number;

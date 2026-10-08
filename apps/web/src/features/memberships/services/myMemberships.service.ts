@@ -7,13 +7,6 @@ export const myMembershipsService = {
     const { data } = await privateApi.get<ApiResponse<MyMemberships>>('/me/memberships');
     return data.result;
   },
-  setAutoRenew: async (id: string, autoRenew: boolean) => {
-    const { data } = await privateApi.patch<ApiResponse<MemberMembership>>(
-      `/me/memberships/${encodeURIComponent(id)}/auto-renew`,
-      { autoRenew },
-    );
-    return data.result;
-  },
   cancel: async (id: string) => {
     const { data } = await privateApi.post<ApiResponse<MemberMembership>>(
       `/me/memberships/${encodeURIComponent(id)}/cancel`,
