@@ -36,8 +36,6 @@ export const updateMembershipBodySchema = z.object(membershipFields).partial();
 
 export const membershipIdParamsSchema = z.object({ id: z.uuid('Mã gói không hợp lệ') });
 
-export const autoRenewBodySchema = z.object({ autoRenew: z.boolean('Trạng thái tự động gia hạn không hợp lệ') });
-
 export const memberMembershipParamsSchema = z.object({
   id: z.uuid('Mã thành viên không hợp lệ'),
   membershipId: z.uuid('Mã gói của thành viên không hợp lệ'),
@@ -46,4 +44,3 @@ export const memberMembershipParamsSchema = z.object({
 export type CreateMembershipBody = z.infer<typeof createMembershipBodySchema>;
 export type CreateMembershipInput = z.input<typeof createMembershipBodySchema>;
 export type UpdateMembershipBody = z.infer<typeof updateMembershipBodySchema>;
-export type AutoRenewBody = z.infer<typeof autoRenewBodySchema>;

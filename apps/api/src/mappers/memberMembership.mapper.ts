@@ -32,6 +32,7 @@ export const toMemberMembershipResponse = (
     startDate: formatDate(row.startDate),
     endDate: formatDate(row.endDate),
     autoRenew: row.autoRenew,
+    cancelledAt: row.cancelledAt?.toISOString() ?? null,
     currentBenefits: period ? benefitsOf(period) : null,
     freeSlotsUsedThisMonth,
     periods: row.periods.map((period) => ({
