@@ -105,7 +105,7 @@ const settle = async (tx: Prisma.TransactionClient, id: string, accountId: strin
 class MembershipJobService {
   run = async (now = new Date()) => {
     const today = todayInCenter(now);
-    const counts = { renewed: 0, expired: 0, cancelled: 0, failed: 0 };
+    const counts = { renewed: 0, expired: 0, cancelled: 0, failed: 0, reminded: 0 };
     let notifications: CreatedNotification[] = [];
 
     for (const { id, accountId } of await memberMembershipRepository.findDueIds(today, CRON.BATCH_SIZE)) {
@@ -121,7 +121,33 @@ class MembershipJobService {
       }
     }
 
-    notificationService.sendEmailsAfterCommit(notifications);
+    const { membershipExpiryWarningDays } = await settingRepository.get();
+    const expiring = await memberMembershipRepository.findExpiring(
+      today,
+      addDays(today, membershipExpiryWarningDays),
+      CRON.BATCH_SIZE,
+    );
+    const reminders = await notificationService.create(
+      expiring.map((membership) => {
+        const endDay = formatCenterDate(formatDate(membership.endDate));
+        const renews = membership.autoRenew && !membership.cancelledAt;
+        return {
+          accountId: membership.accountId,
+          type: 'MEMBERSHIP' as const,
+          title: 'Gói thành viên sắp hết hạn',
+          message: renews
+            ? `Gói ${membership.package.name} sẽ tự gia hạn ngày ${endDay} bằng ví (${Number(membership.package.price).toLocaleString('vi-VN')}đ). Hãy đảm bảo đủ số dư.`
+            : `Gói ${membership.package.name} sẽ hết hạn ngày ${endDay}.`,
+          referenceType: 'MEMBERSHIP',
+          referenceId: membership.id,
+          dedupKey: `membership-expiring:${membership.id}:${formatDate(membership.endDate)}`,
+          sendEmail: true,
+        };
+      }),
+    );
+    counts.reminded = reminders.length;
+
+    notificationService.sendEmailsAfterCommit([...notifications, ...reminders]);
     return { ...counts, remaining: await memberMembershipRepository.countDue(today) };
   };
 }
