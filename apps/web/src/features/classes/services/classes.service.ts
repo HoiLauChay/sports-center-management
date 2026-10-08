@@ -2,8 +2,9 @@ import type {
   Account,
   ApiResponse,
   ClassDetail,
-  ClassSummary,
   ListClassesQuery as ClassesQuery,
+  ClassSummary,
+  CreateClassBody,
   Paginated,
 } from '@sports-center/shared';
 import { cancelEnrollment, listMyEnrollments } from '~/features/bookings/mocks/bookings';
@@ -15,6 +16,7 @@ import { mockRequest } from '~/lib/mock/errors';
 import { ensureClassSeed } from '../mocks/classes';
 
 export type ListClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'sportId' | 'coachId' | 'q'>;
+export type ManagerClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'status' | 'derivedStatus' | 'courseId'>;
 
 async function seeded() {
   const catalog = await loadCatalog();
@@ -23,7 +25,7 @@ async function seeded() {
 }
 
 /**
- * Classes open for enrollment and class detail come from the API. My enrollments and their cancellation stay mock
+ * Classes (catalog, detail, manager list, create, approve, reject) come from the API. My enrollments and their cancellation stay mock
  * until `GET /me/enrollments` (#167) ships.
  */
 export const classesService = {
@@ -36,6 +38,26 @@ export const classesService = {
 
   get: async (id: string) => {
     const { data } = await privateApi.get<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}`);
+    return data.result;
+  },
+
+  listForManager: async (query: ManagerClassesQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', { params: query });
+    return data.result;
+  },
+
+  create: async (body: CreateClassBody) => {
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>('/classes', body);
+    return data.result;
+  },
+
+  approve: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}/approve`);
+    return data.result;
+  },
+
+  reject: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}/reject`, {});
     return data.result;
   },
 

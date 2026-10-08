@@ -1,7 +1,6 @@
-import type { Account, CreateClassBody } from '@sports-center/shared';
+import type { Account } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
 import { actorOf } from '~/features/checkout/services/checkout.service';
-import { coursesService } from '~/features/courses/services/courses.service';
 import { walletService } from '~/features/wallet/services/wallet.service';
 import { mockRequest } from '~/lib/mock/errors';
 import {
@@ -11,17 +10,13 @@ import {
   classOverview,
   classRefundPreview,
   coachPool,
-  createClass,
   getAdminDetail,
-  listClassesForManager,
   rejectClass,
   updateClass,
   updateSession,
 } from '../mocks/classAdmin';
 import { ensureClassSeed } from '../mocks/classes';
 import type { ClassPatch, SessionPatch } from '../types';
-
-export type { ManagerClassItem } from '../mocks/classAdmin';
 
 async function seeded() {
   const catalog = await loadCatalog();
@@ -35,19 +30,6 @@ async function seeded() {
  * `api.design.md`, so each body becomes a `privateApi` call.
  */
 export const classAdminService = {
-  list: () =>
-    mockRequest(async () => {
-      await seeded();
-      return listClassesForManager();
-    }, 150),
-
-  create: (input: CreateClassBody) =>
-    mockRequest(async () => {
-      const { facilities } = await seeded();
-      const courses = await coursesService.list();
-      return createClass(input, facilities, courses);
-    }, 300),
-
   get: (id: string) =>
     mockRequest(async () => {
       await seeded();

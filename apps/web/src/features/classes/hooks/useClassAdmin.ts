@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
+import { classesService, type ManagerClassesQuery } from '../services/classes.service';
 import type { ClassPatch, SessionPatch } from '../types';
 
 const adminKey = (id: string) => ['classes', 'admin', id] as const;
@@ -12,8 +13,12 @@ export function useClassAdmin(id: string) {
   return useQuery({ queryKey: adminKey(id), queryFn: () => classAdminService.get(id), retry: false });
 }
 
-export function useManagerClasses() {
-  return useQuery({ queryKey: ['classes', 'manager-list'], queryFn: () => classAdminService.list() });
+export function useManagerClasses(query: ManagerClassesQuery) {
+  return useQuery({
+    queryKey: ['classes', 'manager-list', query],
+    queryFn: () => classesService.listForManager(query),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useClassOverview() {
@@ -112,9 +117,9 @@ function useClassListAction(run: (classId: string) => Promise<unknown>, success:
 }
 
 export function useApproveClassFromList() {
-  return useClassListAction((classId) => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
+  return useClassListAction((classId) => classesService.approve(classId), 'Đã duyệt mở lớp.');
 }
 
 export function useRejectClassFromList() {
-  return useClassListAction((classId) => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+  return useClassListAction((classId) => classesService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
 }

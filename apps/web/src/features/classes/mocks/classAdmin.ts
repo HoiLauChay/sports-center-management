@@ -1,10 +1,4 @@
-import {
-  createClassBodySchema,
-  type CreateClassBody,
-  type Facility,
-  type Person,
-  type ScheduleClash,
-} from '@sports-center/shared';
+import { type Facility, type Person } from '@sports-center/shared';
 import { refundEnrollmentLine } from '~/features/bookings/mocks/bookings';
 import type { BalanceOf } from '~/features/checkout/mocks/checkout';
 import type { Actor } from '~/features/checkout/mocks/pricing';
@@ -21,12 +15,11 @@ import type {
   ClassSession,
   ClassStudent,
   CoachRegistration,
-  Course,
   GymClass,
   RefundPreview,
   SessionPatch,
 } from '../types';
-import { classesDb, classesStore, generateSessions, MOCK_COACHES } from './classes';
+import { classesDb, classesStore, MOCK_COACHES } from './classes';
 
 /** Coaches a manager may assign directly (the real list comes from the users API once the class API ships). */
 export const coachPool = (): Person[] => {
@@ -331,27 +324,6 @@ export function getClassesTaughtByCoach(coachId: string): CoachClassItem[] {
     .sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''));
 }
 
-export interface ManagerClassItem extends GymClass {
-  /** Coaches waiting for the manager to choose. */
-  pendingRegistrations: number;
-  /** Sessions that still stand; a cancelled class keeps the count it had. */
-  sessionCount: number;
-}
-
-/** `GET /classes` for a manager: every class, newest first, with what the list shows next to it. */
-export function listClassesForManager(): ManagerClassItem[] {
-  return classesDb
-    .allClasses()
-    .map((item) => ({
-      ...item,
-      pendingRegistrations: classesDb.registrationsOf(item.id).filter((entry) => entry.status === 'PENDING').length,
-      sessionCount: classesDb
-        .sessionsOf(item.id)
-        .filter((session) => item.status === 'CANCELLED' || session.status === 'SCHEDULED').length,
-    }))
-    .sort((a, b) => (b.startDate ?? '').localeCompare(a.startDate ?? ''));
-}
-
 export function classRefundPreview(id: string): RefundPreview {
   const view = requireView(id);
   const real = enrolledOf(id);
@@ -480,63 +452,3 @@ export function classOverview() {
 }
 
 /** `POST /classes`: a draft with every session generated from the weekly schedule, holding its facility slots (BR_2.3). */
-export function createClass(input: CreateClassBody, facilities: Facility[], courses: Course[]) {
-  const parsed = createClassBodySchema.safeParse(input);
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0]!;
-    throw mockErrors.invalid(['body', ...issue.path].join('.'), issue.message);
-  }
-
-  const course = courses.find((c) => c.id === input.courseId);
-  if (!course) throw mockErrors.invalid('body.courseId', 'Khóa học không tồn tại');
-
-  const facility = facilities.find((f) => f.id === input.facilityId);
-  if (!facility) throw mockErrors.invalid('body.facilityId', 'Cơ sở không tồn tại');
-
-  if (!facility.sports.some((s) => s.id === course.sport.id)) {
-    throw mockErrors.invalid('body.facilityId', `Cơ sở ${facility.name} không hỗ trợ bộ môn ${course.sport.name}`);
-  }
-
-  const id = newId();
-  const ref = { id: facility.id, name: facility.name };
-  const sessions = generateSessions(id, ref, input.startDate, input.weeklySchedule, course.totalSessions);
-
-  const conflicts: ScheduleClash[] = [];
-  for (const session of sessions) {
-    const existing = classesDb.sessionsAt(facility.id, session.date);
-    for (const { session: other, className } of existing) {
-      if (overlaps(session.startTime, session.endTime, other.startTime, other.endTime)) {
-        conflicts.push({
-          date: session.date,
-          startTime: session.startTime,
-          endTime: session.endTime,
-          reason: 'CLASS_SESSION',
-          classSession: { id: other.id, classId: other.classId, className },
-        });
-      }
-    }
-  }
-
-  if (conflicts.length > 0) {
-    throw mockErrors.conflict('SCHEDULE_CONFLICT', 'Lịch học bị trùng với lịch hiện có tại cơ sở', { conflicts });
-  }
-
-  classesStore.update((state) => {
-    state.classes.push({
-      id,
-      name: input.name.trim(),
-      course,
-      status: 'DRAFT',
-      weeklySchedule: input.weeklySchedule,
-      facility: ref,
-      coach: null,
-      minStudents: input.minStudents,
-      maxStudents: input.maxStudents,
-      cancelReason: null,
-      baseEnrolled: 0,
-    });
-    state.sessions.push(...sessions);
-  });
-
-  return requireView(id);
-}
