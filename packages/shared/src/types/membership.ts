@@ -33,6 +33,7 @@ export interface MemberMembership {
   startDate: string;
   endDate: string;
   autoRenew: boolean;
+  cancelledAt: string | null;
   currentBenefits: MembershipBenefits | null;
   freeSlotsUsedThisMonth: number;
   periods: MembershipPeriod[];

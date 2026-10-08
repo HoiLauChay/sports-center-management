@@ -87,7 +87,13 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
 
     if (period.expireId) await memberMembershipRepository.update(period.expireId, { status: 'EXPIRED' }, tx);
     const membershipId = period.renewId
-      ? (await memberMembershipRepository.update(period.renewId, { endDate: new Date(period.end) }, tx)).id
+      ? (
+          await memberMembershipRepository.update(
+            period.renewId,
+            { endDate: new Date(period.end), autoRenew: true, cancelledAt: null },
+            tx,
+          )
+        ).id
       : (
           await memberMembershipRepository.create(
             {
@@ -95,6 +101,7 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
               packageId: data.packageId,
               startDate: new Date(period.start),
               endDate: new Date(period.end),
+              autoRenew: true,
             },
             tx,
           )

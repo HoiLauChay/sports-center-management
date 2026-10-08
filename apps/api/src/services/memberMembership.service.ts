@@ -1,4 +1,4 @@
-import { ERROR_CODE, type AutoRenewBody, type MyMemberships } from '@sports-center/shared';
+import { ERROR_CODE, type MyMemberships } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
@@ -41,33 +41,6 @@ class MemberMembershipService {
     };
   };
 
-  setAutoRenew = async (accountId: string, id: string, body: AutoRenewBody, ip?: string) =>
-    runTransaction(async (tx) => {
-      await lockRows(tx, { accounts: [accountId], memberMemberships: [id] });
-      const current = await memberMembershipRepository.findById(id, accountId, tx);
-      if (!current) throw notFound();
-      const today = todayInCenter();
-      if (!isMembershipCurrent(current, today)) throw invalidState('Chỉ thay đổi tự động gia hạn cho gói còn hiệu lực');
-      if (body.autoRenew && (!current.package.isActive || current.package.deletedAt)) {
-        throw invalidState('Gói đã ngừng bán hoặc bị xóa, không thể bật tự động gia hạn');
-      }
-
-      const updated = await memberMembershipRepository.update(id, { autoRenew: body.autoRenew }, tx);
-      await auditService.record(
-        {
-          accountId,
-          action: 'UPDATE',
-          entityType: 'MEMBER_MEMBERSHIP',
-          entityId: id,
-          oldValues: current,
-          newValues: updated,
-          ipAddress: ip,
-        },
-        tx,
-      );
-      return toResponse(updated, today, tx);
-    });
-
   cancel = async (actor: { id: string; role: Role }, accountId: string, id: string, ip?: string) =>
     runTransaction(async (tx) => {
       await lockRows(tx, { accounts: [accountId], memberMemberships: [id] });
@@ -75,12 +48,9 @@ class MemberMembershipService {
       if (!current) throw notFound();
       const today = todayInCenter();
       if (!isMembershipCurrent(current, today)) throw invalidState('Chỉ hủy gói còn hiệu lực');
+      if (current.cancelledAt) throw invalidState('Gói đã được hủy trước đó');
 
-      const updated = await memberMembershipRepository.update(
-        id,
-        { status: 'CANCELLED', autoRenew: false, cancelledAt: new Date() },
-        tx,
-      );
+      const updated = await memberMembershipRepository.update(id, { autoRenew: false, cancelledAt: new Date() }, tx);
       await auditService.record(
         {
           accountId: actor.id,

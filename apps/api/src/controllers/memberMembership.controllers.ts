@@ -16,16 +16,6 @@ class MemberMembershipController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
-  setAutoRenew = async (req: Request, res: Response) => {
-    const result = await memberMembershipService.setAutoRenew(
-      req.user!.id,
-      req.params.id as string,
-      req.body,
-      getClientIp(req),
-    );
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã cập nhật tự động gia hạn', result }));
-  };
-
   cancelMine = async (req: Request, res: Response) => {
     const result = await memberMembershipService.cancel(
       req.user!,
@@ -35,7 +25,7 @@ class MemberMembershipController {
     );
     res
       .status(HTTP_STATUS.OK)
-      .json(new ResponseClient({ message: 'Đã hủy gói, quyền lợi dừng ngay và không hoàn tiền', result }));
+      .json(new ResponseClient({ message: 'Đã hủy gói, dùng được đến hết hạn và không hoàn tiền', result }));
   };
 
   cancelForMember = async (req: Request, res: Response) => {
@@ -47,7 +37,7 @@ class MemberMembershipController {
     );
     res
       .status(HTTP_STATUS.OK)
-      .json(new ResponseClient({ message: 'Đã hủy gói, quyền lợi dừng ngay và không hoàn tiền', result }));
+      .json(new ResponseClient({ message: 'Đã hủy gói, dùng được đến hết hạn và không hoàn tiền', result }));
   };
 }
 

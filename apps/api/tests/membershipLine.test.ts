@@ -37,11 +37,16 @@ const buy = async (member: Viewer, packageId: string, expectedTotal: number) => 
 };
 
 describe('membership line', () => {
-  test('renewing early extends the end date and keeps the earlier period untouched', async () => {
+  test('renewing early extends the end date, keeps the earlier period and undoes a cancellation', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
     await seedBalance(member.id, 1_000_000);
     await giveActiveMembership(member.id, { bookingDiscountPct: 10 });
-    const before = await prisma.memberMembership.findFirstOrThrow({ include: { periods: true } });
+    const cancelled = await prisma.memberMembership.findFirstOrThrow();
+    const before = await prisma.memberMembership.update({
+      where: { id: cancelled.id },
+      data: { cancelledAt: new Date() },
+      include: { periods: true },
+    });
     const oldEnd = formatDate(before.endDate);
 
     const order = await buy(member, before.packageId, 500_000);
@@ -53,6 +58,7 @@ describe('membership line', () => {
       include: { periods: { orderBy: { periodStart: 'asc' } } },
     });
     expect(formatDate(after.endDate)).toBe(addDays(oldEnd, 31));
+    expect(after).toMatchObject({ cancelledAt: null, autoRenew: true });
     expect(after.periods.map(({ periodStart, periodEnd }) => [formatDate(periodStart), formatDate(periodEnd)])).toEqual(
       [
         [formatDate(before.periods[0]!.periodStart), oldEnd],
@@ -83,7 +89,10 @@ describe('membership line', () => {
     await prisma.membership.update({ where: { id: lapsed.packageId }, data: { bookingDiscountPct: 50 } });
 
     const rows = await prisma.memberMembership.findMany({ orderBy: { createdAt: 'asc' }, include: { periods: true } });
-    expect(rows.map(({ status }) => status)).toEqual(['EXPIRED', 'ACTIVE']);
+    expect(rows.map(({ status, autoRenew }) => [status, autoRenew])).toEqual([
+      ['EXPIRED', false],
+      ['ACTIVE', true],
+    ]);
     expect(formatDate(rows[1]!.startDate)).toBe(todayInCenter());
     expect(rows[1]!.periods[0]!.bookingDiscountPct).toBe(10);
 
