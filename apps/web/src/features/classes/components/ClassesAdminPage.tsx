@@ -1,3 +1,4 @@
+import type { ClassSummary } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Popconfirm, Segmented, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
@@ -7,38 +8,35 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
-import type { ManagerClassItem } from '../services/classAdmin.service';
-import { classAdminActions, classDateRange, weeklyLines } from '../utils';
-import { CancelClassModal } from './ClassAdminModals';
+import type { ManagerClassesQuery } from '../services/classes.service';
+import { classDateRange, weeklyLines } from '../utils';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
 
-type Phase = 'ALL' | 'PENDING' | 'NEED_COACH' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+const LIMIT = 10;
 
-const IN_PHASE: Record<Phase, (item: ManagerClassItem) => boolean> = {
-  ALL: () => true,
-  PENDING: (item) => item.status === 'PENDING_APPROVAL',
-  NEED_COACH: (item) => !item.coach && item.status !== 'CANCELLED' && item.derivedStatus !== 'COMPLETED',
-  OPEN: (item) => item.status === 'OPEN' && item.derivedStatus === 'UPCOMING',
-  ONGOING: (item) => item.status === 'OPEN' && item.derivedStatus === 'ONGOING',
-  COMPLETED: (item) => item.status === 'OPEN' && item.derivedStatus === 'COMPLETED',
-  CANCELLED: (item) => item.status === 'CANCELLED',
+type Phase = 'ALL' | 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+
+const PHASE_QUERY: Record<Phase, Pick<ManagerClassesQuery, 'status' | 'derivedStatus'>> = {
+  ALL: {},
+  PENDING: { status: 'PENDING_APPROVAL' },
+  OPEN: { status: 'OPEN', derivedStatus: 'UPCOMING' },
+  ONGOING: { status: 'OPEN', derivedStatus: 'ONGOING' },
+  COMPLETED: { status: 'OPEN', derivedStatus: 'COMPLETED' },
+  CANCELLED: { status: 'CANCELLED' },
 };
 
-/** `/admin/classes` (UC_2.12/2.15/2.18): every class, pending approvals first, approved or cancelled from the list. */
+/** `/admin/classes` (UC_2.12, UC_2.15): every class by phase; pending ones are approved or rejected from the list. */
 export function ClassesAdminPage() {
-  const classes = useManagerClasses();
+  const [phase, setPhase] = useState<Phase>('ALL');
+  const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const classes = useManagerClasses({ page, limit: LIMIT, ...PHASE_QUERY[phase] });
+  const pending = useManagerClasses({ page: 1, limit: 1, ...PHASE_QUERY.PENDING });
   const approve = useApproveClassFromList();
   const reject = useRejectClassFromList();
-  const [phase, setPhase] = useState<Phase>('ALL');
-  const [createOpen, setCreateOpen] = useState(false);
-  const [cancelling, setCancelling] = useState<ManagerClassItem | null>(null);
 
-  const all = classes.data ?? [];
-  const pendingCount = all.filter(IN_PHASE.PENDING).length;
-  const rows = all.filter(IN_PHASE[phase]).sort((a, b) => Number(IN_PHASE.PENDING(b)) - Number(IN_PHASE.PENDING(a)));
-
-  const columns: TableColumnsType<ManagerClassItem> = [
+  const columns: TableColumnsType<ClassSummary> = [
     {
       title: 'Tên lớp',
       width: 220,
@@ -58,14 +56,14 @@ export function ClassesAdminPage() {
       ),
     },
     { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag> },
-    { title: 'Facility', render: (_, record) => record.facility.name },
+    { title: 'Phòng / sân', render: (_, record) => record.facility.name },
     {
       title: 'HLV',
       render: (_, record) =>
         record.coach ? (
           <span className="whitespace-nowrap">{record.coach.fullName}</span>
         ) : (
-          <span className="whitespace-nowrap text-orange-500">Chưa có · {record.pendingRegistrations} đăng ký</span>
+          <span className="whitespace-nowrap text-orange-500">Chưa có HLV</span>
         ),
     },
     {
@@ -75,7 +73,7 @@ export function ClassesAdminPage() {
           <div className="font-semibold">
             {record.enrolledCount}/{record.maxStudents}
           </div>
-          <div className="text-xs text-sc-muted">min {record.minStudents}</div>
+          <div className="text-xs text-sc-muted">tối thiểu {record.minStudents}</div>
         </div>
       ),
     },
@@ -91,60 +89,43 @@ export function ClassesAdminPage() {
     },
     {
       title: 'Thời gian',
-      render: (_, record) => (
-        <div className="whitespace-nowrap text-xs leading-tight">
-          <div>{classDateRange(record)}</div>
-          <div className="text-sc-muted">{record.sessionCount} buổi</div>
-        </div>
-      ),
+      render: (_, record) => <span className="whitespace-nowrap text-xs">{classDateRange(record)}</span>,
     },
     { title: 'Trạng thái', render: (_, record) => <ClassStatusTag item={record} /> },
     {
       key: 'actions',
       align: 'right',
       width: 190,
-      render: (_, record) => {
-        const actions = classAdminActions(record);
-        if (actions.reject) {
-          return (
-            <Space size={4}>
-              <Tooltip title={actions.approve ? undefined : 'Lớp chưa có HLV, phân công trong chi tiết lớp trước'}>
-                <Button
-                  size="small"
-                  type="primary"
-                  disabled={!actions.approve}
-                  loading={approve.isPending && approve.variables === record.id}
-                  onClick={() => approve.mutate(record.id)}
-                >
-                  Duyệt mở
-                </Button>
-              </Tooltip>
-              <Popconfirm
-                title="Từ chối, lớp về trạng thái nháp?"
-                okText="Từ chối"
-                cancelText="Không"
-                onConfirm={() => reject.mutate(record.id)}
-              >
-                <Button size="small" loading={reject.isPending && reject.variables === record.id}>
-                  Từ chối
-                </Button>
-              </Popconfirm>
-            </Space>
-          );
-        }
-        return (
+      render: (_, record) =>
+        record.status === 'PENDING_APPROVAL' ? (
           <Space size={4}>
-            <Link to="/admin/classes/$classId" params={{ classId: record.id }}>
-              <Button size="small">Chi tiết</Button>
-            </Link>
-            {actions.cancel && (
-              <Button size="small" danger onClick={() => setCancelling(record)}>
-                Hủy
+            <Tooltip title={record.coach ? undefined : 'Lớp chưa có HLV, phân công trong chi tiết lớp trước'}>
+              <Button
+                size="small"
+                type="primary"
+                disabled={!record.coach}
+                loading={approve.isPending && approve.variables === record.id}
+                onClick={() => approve.mutate(record.id)}
+              >
+                Duyệt mở
               </Button>
-            )}
+            </Tooltip>
+            <Popconfirm
+              title="Từ chối, lớp về trạng thái nháp?"
+              okText="Từ chối"
+              cancelText="Không"
+              onConfirm={() => reject.mutate(record.id)}
+            >
+              <Button size="small" loading={reject.isPending && reject.variables === record.id}>
+                Từ chối
+              </Button>
+            </Popconfirm>
           </Space>
-        );
-      },
+        ) : (
+          <Link to="/admin/classes/$classId" params={{ classId: record.id }}>
+            <Button size="small">Chi tiết</Button>
+          </Link>
+        ),
     },
   ];
 
@@ -152,7 +133,7 @@ export function ClassesAdminPage() {
     <>
       <PageHeader
         title="Lớp học"
-        description="Lớp = section của khóa học. Sinh buổi học từ lịch tuần, giữ slot facility từ DRAFT, cần HLV + duyệt để OPEN."
+        description="Các lớp mở từ khóa học. Lớp cần có HLV và được duyệt mới nhận đăng ký."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>
             Tạo lớp
@@ -163,11 +144,13 @@ export function ClassesAdminPage() {
       <Segmented<Phase>
         className="!mb-4 max-w-full overflow-x-auto"
         value={phase}
-        onChange={setPhase}
+        onChange={(value) => {
+          setPhase(value);
+          setPage(1);
+        }}
         options={[
           { value: 'ALL', label: 'Tất cả' },
-          { value: 'PENDING', label: `Chờ duyệt (${pendingCount})` },
-          { value: 'NEED_COACH', label: 'Cần HLV' },
+          { value: 'PENDING', label: `Chờ duyệt (${pending.data?.total ?? 0})` },
           { value: 'OPEN', label: 'Đang mở' },
           { value: 'ONGOING', label: 'Đang học' },
           { value: 'COMPLETED', label: 'Kết thúc' },
@@ -179,16 +162,23 @@ export function ClassesAdminPage() {
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />
         ) : (
-          <Table<ManagerClassItem>
+          <Table<ClassSummary>
             rowKey="id"
             columns={columns}
-            dataSource={rows}
-            loading={classes.isPending}
+            dataSource={classes.data?.items}
+            loading={classes.isFetching}
             scroll={{ x: 1100 }}
-            pagination={{ pageSize: 10, showSizeChanger: false, hideOnSinglePage: true }}
+            pagination={{
+              current: page,
+              pageSize: LIMIT,
+              total: classes.data?.total ?? 0,
+              showSizeChanger: false,
+              hideOnSinglePage: true,
+              onChange: setPage,
+            }}
             locale={{
               emptyText: (
-                <EmptyState title="Không có lớp nào" description="Bấm 'Tạo lớp' để chia lớp cho một khóa học." />
+                <EmptyState title="Không có lớp nào" description="Bấm 'Tạo lớp' để mở lớp cho một khóa học." />
               ),
             }}
           />
@@ -196,7 +186,6 @@ export function ClassesAdminPage() {
       </Card>
 
       <ClassCreateModal open={createOpen} onClose={() => setCreateOpen(false)} />
-      {cancelling && <CancelClassModal open item={cancelling} onClose={() => setCancelling(null)} />}
     </>
   );
 }
