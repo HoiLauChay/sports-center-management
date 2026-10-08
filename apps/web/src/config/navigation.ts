@@ -23,6 +23,7 @@ import {
   School,
   Settings,
   ShoppingCart,
+  Sparkles,
   Store,
   Ticket,
   Trophy,
@@ -74,7 +75,12 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/orders', label: 'Hóa đơn', icon: Receipt },
       ],
     },
-    { items: [{ path: '/support', label: 'Hỗ trợ', icon: LifeBuoy }] },
+    {
+      items: [
+        { path: '/support', label: 'Hỗ trợ', icon: LifeBuoy },
+        { path: '/assistant', label: 'Trợ lý AI', icon: Sparkles },
+      ],
+    },
   ],
   COACH: [
     {
