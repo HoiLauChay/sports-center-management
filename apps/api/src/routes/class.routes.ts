@@ -1,4 +1,5 @@
 import {
+  cancelClassBodySchema,
   classIdParamsSchema,
   createClassBodySchema,
   listClassesQuerySchema,
@@ -34,6 +35,13 @@ classRouter.post(
   isRole('MANAGER'),
   validate({ params: classIdParamsSchema, body: reviewClassBodySchema }),
   classController.reject,
+);
+
+classRouter.post(
+  '/:id/cancel',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: cancelClassBodySchema }),
+  classController.cancel,
 );
 
 export default classRouter;

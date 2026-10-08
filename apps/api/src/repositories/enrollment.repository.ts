@@ -19,6 +19,12 @@ class EnrollmentRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.classEnrollment.findUnique({ where: { id }, select: enrollmentSelect });
 
+  findActiveByClass = (classId: string, tx: Prisma.TransactionClient) =>
+    tx.classEnrollment.findMany({
+      where: { classId, status: 'ENROLLED' },
+      select: { id: true, accountId: true, orderItemId: true },
+    });
+
   hasActive = async (classId: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
     (await tx.classEnrollment.count({ where: { classId, accountId, status: 'ENROLLED' } })) > 0;
 
