@@ -70,7 +70,7 @@ describe('sport crud', () => {
     expect(await prisma.sport.count()).toBe(0);
   });
 
-  test('cannot delete or deactivate sport with unfinished classes', async () => {
+  test('a sport with classes not yet started needs confirmation to delete and cannot be deactivated', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
 
     const sport = await prisma.sport.create({ data: { name: 'Futsal' } });
@@ -93,7 +93,7 @@ describe('sport crud', () => {
 
     const deleteRes = await req('DELETE', `/${sport.id}`, manager);
     expect(deleteRes.status).toBe(409);
-    expect(await readCode(deleteRes)).toBe('HAS_DEPENDENCIES');
+    expect(await readCode(deleteRes)).toBe('CONFIRMATION_REQUIRED');
 
     const deactivateRes = await req('PATCH', `/${sport.id}`, manager, { isActive: false });
     expect(deactivateRes.status).toBe(409);

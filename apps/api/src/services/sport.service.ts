@@ -1,16 +1,50 @@
-import { ERROR_CODE, type CreateSportBody, type UpdateSportBody } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type CreateSportBody,
+  type DeleteSportQuery,
+  type SportDeletionImpact,
+  type UpdateSportBody,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toSportResponse } from '~/mappers/sport.mapper';
+import classRepository from '~/repositories/class.repository';
 import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import classService from '~/services/class.service';
+import notificationService, { type CreatedNotification } from '~/services/notification.service';
 import uploadService from '~/services/upload.service';
 import { isUniqueViolation } from '~/utils/dbError';
-import { runTransaction, withScheduleLock } from '~/utils/transaction';
+import { formatDate, todayInCenter } from '~/utils/time';
+import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const notFound = () =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy bộ môn' });
+
+type NotStartedClass = Awaited<ReturnType<typeof sportRepository.findNotStartedClasses>>[number];
+
+const impactOf = (classes: NotStartedClass[]): SportDeletionImpact => ({
+  affectedClasses: classes.map(({ id, name, status, startDate, enrollments }) => ({
+    id,
+    name,
+    status,
+    startDate: startDate ? formatDate(startDate) : null,
+    students: enrollments.length,
+  })),
+  refundTotal: classes
+    .flatMap(({ enrollments }) => enrollments)
+    .filter(({ orderItem }) => !orderItem.refundedAt)
+    .reduce((sum, { orderItem }) => sum + Number(orderItem.totalAmount), 0),
+});
+
+const confirmationRequired = (impact: SportDeletionImpact) =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.CONFLICT,
+    code: ERROR_CODE.CONFIRMATION_REQUIRED,
+    message: 'Bộ môn còn lớp chưa học, xác nhận để hủy các lớp và hoàn tiền',
+    meta: { ...impact },
+  });
 
 const nameTaken = () =>
   new ErrorWithStatus({
@@ -95,14 +129,33 @@ class SportService {
     }
   };
 
-  remove = async (managerId: string, id: string, ip?: string) => {
-    await runTransaction(async (tx) => {
+  remove = async (managerId: string, id: string, { confirm }: DeleteSportQuery, ip?: string) => {
+    const notifications = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
+      const today = todayInCenter();
+      const planned = await sportRepository.findNotStartedClasses(id, today, tx);
+      const studentIds = [
+        ...new Set(planned.flatMap(({ enrollments }) => enrollments.map(({ accountId }) => accountId))),
+      ];
+      await lockRows(tx, {
+        accounts: studentIds,
+        memberProfiles: studentIds,
+        classes: planned.map((cls) => cls.id),
+      });
 
       const current = await sportRepository.findById(id, tx);
       if (!current) throw notFound();
+      if (await sportRepository.hasOngoingClasses(id, today, tx)) throw hasDependencies();
 
-      if (await sportRepository.hasUnfinishedClasses(id, tx)) throw hasDependencies();
+      const classes = await sportRepository.findNotStartedClasses(id, today, tx);
+      if (classes.length > 0 && !confirm) throw confirmationRequired(impactOf(classes));
+
+      const created: CreatedNotification[] = [];
+      for (const cls of classes) {
+        const detail = (await classRepository.findDetail(cls.id, tx))!;
+        const cancelled = await classService.cancelLocked(tx, managerId, detail, `Bộ môn ${current.name} bị xóa`, ip);
+        created.push(...cancelled.notifications);
+      }
 
       await sportRepository.update(id, { isActive: false, deletedAt: new Date() }, tx);
       await auditService.record(
@@ -116,7 +169,10 @@ class SportService {
         },
         tx,
       );
+      return created;
     });
+
+    notificationService.sendEmailsAfterCommit(notifications);
   };
 }
 

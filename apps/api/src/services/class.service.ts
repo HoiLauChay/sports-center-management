@@ -83,7 +83,6 @@ const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.Transaction
 class ClassService {
   cancel = async (managerId: string, id: string, { reason }: CancelClassBody, ip?: string) => {
     const { result, notifications } = await runTransaction(async (tx) => {
-      const notifications: CreatedNotification[] = [];
       await withScheduleLock(tx);
       const studentIds = [
         ...new Set((await enrollmentRepository.findActiveByClass(id, tx)).map(({ accountId }) => accountId)),
@@ -94,81 +93,93 @@ class ClassService {
       if (!current) throw notFound();
       if (current.status === 'CANCELLED') throw invalidState('Lớp học đã bị hủy');
 
-      const enrollments = await enrollmentRepository.findActiveByClass(id, tx);
-      let refundTotal = 0;
-      for (const enrollment of enrollments) {
-        await enrollmentRepository.cancel(enrollment.id, tx);
-        const refund = await refundService.refundItem(tx, {
-          orderItemId: enrollment.orderItemId,
-          reason: `Lớp ${current.name} bị hủy`,
-          createdById: managerId,
-        });
-        refundTotal += refund.refunded;
-        notifications.push(...refund.notifications);
-      }
-
-      const now = new Date();
-      const remaining = current.sessions.filter(
-        (session) =>
-          session.status === 'SCHEDULED' &&
-          toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.endTime)) > now,
-      );
-      await classRepository.cancelSessions(
-        remaining.map((session) => session.id),
-        reason,
-        tx,
-      );
-      const row = await classRepository.update(id, { status: 'CANCELLED', cancelReason: reason }, tx);
-
-      await auditService.record(
-        {
-          accountId: managerId,
-          action: 'UPDATE',
-          entityType: 'CLASS',
-          entityId: id,
-          oldValues: current,
-          newValues: row,
-          ipAddress: ip,
-        },
-        tx,
-      );
-      for (const session of remaining) {
-        await auditService.record(
-          {
-            accountId: managerId,
-            action: 'UPDATE',
-            entityType: 'CLASS_SESSION',
-            entityId: session.id,
-            oldValues: session,
-            newValues: { ...session, status: 'CANCELLED', cancelReason: reason },
-            ipAddress: ip,
-          },
-          tx,
-        );
-      }
-
-      const recipients = new Set(enrollments.map(({ accountId }) => accountId));
-      if (current.coachId) recipients.add(current.coachId);
-      notifications.push(
-        ...(await notificationService.create(
-          [...recipients].map((accountId) => ({
-            accountId,
-            type: 'CLASS' as const,
-            title: 'Lớp học đã bị hủy',
-            message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}`,
-            referenceType: 'CLASS',
-            referenceId: id,
-            dedupKey: `class-cancelled:${id}:${accountId}`,
-            sendEmail: true,
-          })),
-          tx,
-        )),
-      );
+      const { row, refundTotal, notifications } = await this.cancelLocked(tx, managerId, current, reason, ip);
       return { result: { class: toClassDetailResponse(row), refundTotal }, notifications };
     });
 
     notificationService.sendEmailsAfterCommit(notifications);
     return result;
+  };
+
+  cancelLocked = async (
+    tx: Prisma.TransactionClient,
+    managerId: string,
+    current: ClassDetailRow,
+    reason: string,
+    ip?: string,
+  ) => {
+    const notifications: CreatedNotification[] = [];
+    const enrollments = await enrollmentRepository.findActiveByClass(current.id, tx);
+    let refundTotal = 0;
+    for (const enrollment of enrollments) {
+      await enrollmentRepository.cancel(enrollment.id, tx);
+      const refund = await refundService.refundItem(tx, {
+        orderItemId: enrollment.orderItemId,
+        reason: `Lớp ${current.name} bị hủy`,
+        createdById: managerId,
+      });
+      refundTotal += refund.refunded;
+      notifications.push(...refund.notifications);
+    }
+
+    const now = new Date();
+    const remaining = current.sessions.filter(
+      (session) =>
+        session.status === 'SCHEDULED' &&
+        toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.endTime)) > now,
+    );
+    await classRepository.cancelSessions(
+      remaining.map((session) => session.id),
+      reason,
+      tx,
+    );
+    const row = await classRepository.update(current.id, { status: 'CANCELLED', cancelReason: reason }, tx);
+
+    await auditService.record(
+      {
+        accountId: managerId,
+        action: 'UPDATE',
+        entityType: 'CLASS',
+        entityId: current.id,
+        oldValues: current,
+        newValues: row,
+        ipAddress: ip,
+      },
+      tx,
+    );
+    for (const session of remaining) {
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'CLASS_SESSION',
+          entityId: session.id,
+          oldValues: session,
+          newValues: { ...session, status: 'CANCELLED', cancelReason: reason },
+          ipAddress: ip,
+        },
+        tx,
+      );
+    }
+
+    const recipients = new Set(enrollments.map(({ accountId }) => accountId));
+    if (current.coachId) recipients.add(current.coachId);
+    notifications.push(
+      ...(await notificationService.create(
+        [...recipients].map((accountId) => ({
+          accountId,
+          type: 'CLASS' as const,
+          title: 'Lớp học đã bị hủy',
+          message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}`,
+          referenceType: 'CLASS',
+          referenceId: current.id,
+          dedupKey: `class-cancelled:${current.id}:${accountId}`,
+          sendEmail: true,
+        })),
+        tx,
+      )),
+    );
+    return { row, refundTotal, notifications };
   };
 
   list = async (viewer: ClassViewer, query: ListClassesQuery) => {
