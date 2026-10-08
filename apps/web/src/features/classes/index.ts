@@ -8,4 +8,4 @@ export { CoachClassStudentsModal } from './components/CoachClassStudentsModal';
 export { CoachOpenClassesPage } from './components/CoachOpenClassesPage';
 export { EnrollmentsPage } from './components/EnrollmentsPage';
 export { useClassOverview } from './hooks/useClassAdmin';
-export { useClasses, useCoaches } from './hooks/useClasses';
+export { useClassCoaches, useClasses } from './hooks/useClasses';

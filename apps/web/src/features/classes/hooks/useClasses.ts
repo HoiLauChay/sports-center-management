@@ -1,14 +1,19 @@
+import { PAGINATION, type Person } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
-import { classAdminService } from '../services/classAdmin.service';
 import { classesService, type ListClassesQuery } from '../services/classes.service';
 
-export function useCoaches() {
+export function useClassCoaches() {
   return useQuery({
     queryKey: ['classes', 'coaches'],
-    queryFn: () => classAdminService.coaches(),
+    queryFn: () => classesService.list({ page: 1, limit: PAGINATION.MAX_LIMIT }),
+    select: (page) => [
+      ...new Map(
+        page.items.flatMap((item): [string, Person][] => (item.coach ? [[item.coach.id, item.coach]] : [])),
+      ).values(),
+    ],
   });
 }
 
