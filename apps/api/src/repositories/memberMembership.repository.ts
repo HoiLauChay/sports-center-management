@@ -29,7 +29,30 @@ const memberMembershipSelect = {
 export type MemberMembershipRow = Prisma.MemberMembershipGetPayload<{ select: typeof memberMembershipSelect }>;
 
 class MemberMembershipRepository {
-  findMine = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
+  findActivePeriods = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.membershipOrder.findMany({
+      where: { membership: { accountId, status: 'ACTIVE' } },
+      select: {
+        periodStart: true,
+        periodEnd: true,
+        gymAccess: true,
+        bookingDiscountPct: true,
+        classDiscountPct: true,
+        freeBookingSlotsPerMonth: true,
+        membership: { select: { package: { select: { name: true } } } },
+      },
+      orderBy: { periodStart: 'asc' },
+    });
+
+  findAutoRenewAccountIds = (packageId: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.memberMembership
+      .findMany({
+        where: { packageId, status: 'ACTIVE', autoRenew: true },
+        select: { accountId: true },
+      })
+      .then((rows) => rows.map(({ accountId }) => accountId));
+
+  findByAccount = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.memberMembership.findMany({
       where: { accountId },
       select: memberMembershipSelect,
