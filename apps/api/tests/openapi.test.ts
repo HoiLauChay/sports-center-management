@@ -35,5 +35,22 @@ describe('OpenAPI docs', () => {
     );
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
+    expect(paths['/sessions/{id}']?.patch).toMatchObject({
+      tags: ['sessions'],
+      description: 'Vai trò: MANAGER',
+      security: [{ cookie: [] }],
+      requestBody: {
+        content: {
+          'application/json': {
+            schema: {
+              properties: {
+                date: { type: 'string', format: 'date' },
+                facilityId: { type: 'string', format: 'uuid' },
+              },
+            },
+          },
+        },
+      },
+    });
   });
 });
