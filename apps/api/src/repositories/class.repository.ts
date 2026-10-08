@@ -24,7 +24,7 @@ const classSelect = {
 
 const ref = { select: { id: true, name: true } } as const;
 
-const sessionSelect = {
+export const sessionSelect = {
   id: true,
   classId: true,
   sessionNumber: true,
