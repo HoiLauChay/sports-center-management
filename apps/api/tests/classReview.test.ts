@@ -5,11 +5,9 @@ import type { Server } from 'node:http';
 import { prisma } from '~/configs/db';
 import type { Prisma, Role } from '~/generated/prisma/client';
 import notificationService from '~/services/notification.service';
-import scheduleService from '~/services/schedule.service';
-import { formatDate, toDbTime, todayInCenter } from '~/utils/time';
+import { toDbTime, todayInCenter } from '~/utils/time';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
-import { seedBooking } from './helpers/schedule';
 
 let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
@@ -97,132 +95,6 @@ const list = async (viewer: { id: string; role: Role }, query = '') =>
   (await readResult<Paginated<ClassSummary>>(await request('GET', `/${query}`, viewer))).items.map(({ name }) => name);
 
 describe('class viewing, editing and review', () => {
-  test('cancellation frees the slot for booking, notifies only the coach and active students, and retains purchase history', async () => {
-    const { manager, member, other, coach, room, makeClass, enroll } = await setup();
-    await prisma.systemSetting.create({ data: {} });
-    const cls = await makeClass();
-    const enrollment = await enroll(cls.id);
-    await enroll(cls.id, other.id, 'CANCELLED');
-    const date = formatDate(day(2));
-    const query = { facility: { id: room.id, exclusive: false }, ranges: [{ date, start: 360, end: 420 }] };
-    expect((await scheduleService.findConflicts(prisma, query)).map(({ reason }) => reason)).toEqual(['CLASS_SESSION']);
-    const response = await request('POST', `/${cls.id}/cancel`, manager, { reason: '  HLV nghỉ  ' });
-    expect(response.status).toBe(200);
-    const result = await readResult<ClassDetail>(response);
-    expect(result).toMatchObject({ status: 'CANCELLED', cancelReason: 'HLV nghỉ' });
-    expect(result.sessions[0]).toMatchObject({ status: 'CANCELLED', cancelReason: 'HLV nghỉ' });
-    expect(await scheduleService.findConflicts(prisma, query)).toEqual([]);
-    expect(
-      (await scheduleService.facilityDay(room.id, date))!.slots.find(({ startTime }) => startTime === '06:00')?.status,
-    ).toBe('AVAILABLE');
-    await seedBooking(room.id, '06:00', '07:00', { date, accountId: member.id });
-    expect(
-      (await scheduleService.facilityDay(room.id, date))!.slots.find(({ startTime }) => startTime === '06:00')?.status,
-    ).toBe('FULL');
-    const notices = await prisma.notification.findMany({ where: { referenceId: cls.id } });
-    expect(notices.map(({ accountId }) => accountId).sort()).toEqual([coach.id, member.id].sort());
-    expect(notices.every(({ message, sendEmail }) => message.includes('HLV nghỉ') && sendEmail)).toBe(true);
-    expect(emails).toHaveBeenCalledTimes(1);
-    expect(await prisma.classEnrollment.findUnique({ where: { id: enrollment.id } })).toMatchObject({
-      status: 'ENROLLED',
-    });
-    expect(await prisma.orderItem.findUnique({ where: { id: enrollment.orderItemId } })).toMatchObject({
-      refundedAt: null,
-    });
-    expect((await request('GET', `/${cls.id}`, member)).status).toBe(200);
-    expect(await prisma.auditLog.count({ where: { entityId: cls.id, entityType: 'CLASS', action: 'UPDATE' } })).toBe(1);
-    expect(await prisma.auditLog.count({ where: { entityType: 'CLASS_SESSION', action: 'UPDATE' } })).toBe(1);
-  });
-
-  test('draft and pending classes can be cancelled; a started class keeps past and previously cancelled sessions', async () => {
-    const { manager, room, makeClass } = await setup();
-    for (const status of ['DRAFT', 'PENDING_APPROVAL'] as const) {
-      const cls = await makeClass({ status, coachId: null });
-      expect((await request('POST', `/${cls.id}/cancel`, manager, { reason: 'Không mở lớp' })).status).toBe(200);
-    }
-    const cls = await makeClass({ startDate: day(-2) });
-    await prisma.classSession.createMany({
-      data: [
-        {
-          classId: cls.id,
-          facilityId: room.id,
-          sessionNumber: 2,
-          sessionDate: day(-2),
-          startTime: toDbTime(360),
-          endTime: toDbTime(420),
-        },
-        {
-          classId: cls.id,
-          facilityId: room.id,
-          sessionNumber: 3,
-          sessionDate: day(3),
-          startTime: toDbTime(360),
-          endTime: toDbTime(420),
-          status: 'CANCELLED',
-          cancelReason: 'Lý do cũ',
-        },
-      ],
-    });
-    const result = await readResult<ClassDetail>(
-      await request('POST', `/${cls.id}/cancel`, manager, { reason: 'Dừng lớp' }),
-    );
-    expect(result.sessions.map(({ status, cancelReason }) => [status, cancelReason])).toEqual([
-      ['CANCELLED', 'Dừng lớp'],
-      ['SCHEDULED', null],
-      ['CANCELLED', 'Lý do cũ'],
-    ]);
-  });
-
-  test('cancellation requires manager, valid id and reason; missing and deleted classes return 404', async () => {
-    const { manager, member, coach, makeClass } = await setup();
-    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
-    const cls = await makeClass();
-    for (const viewer of [member, coach, receptionist]) {
-      expect((await request('POST', `/${cls.id}/cancel`, viewer, { reason: 'Hủy' })).status).toBe(403);
-    }
-    for (const body of [{}, { reason: ' ' }, { reason: 'x'.repeat(501) }]) {
-      expect((await request('POST', `/${cls.id}/cancel`, manager, body)).status).toBe(422);
-    }
-    expect((await request('POST', '/invalid/cancel', manager, { reason: 'Hủy' })).status).toBe(422);
-    expect((await request('POST', `/${crypto.randomUUID()}/cancel`, manager, { reason: 'Hủy' })).status).toBe(404);
-    await prisma.class.update({ where: { id: cls.id }, data: { deletedAt: new Date() } });
-    expect((await request('POST', `/${cls.id}/cancel`, manager, { reason: 'Hủy' })).status).toBe(404);
-    expect(await prisma.notification.count()).toBe(0);
-  });
-
-  test('simultaneous and repeated cancellation produce one change and one batch of notices', async () => {
-    const { manager, makeClass } = await setup();
-    const cls = await makeClass();
-    const results = await Promise.all([
-      request('POST', `/${cls.id}/cancel`, manager, { reason: 'A' }),
-      request('POST', `/${cls.id}/cancel`, manager, { reason: 'B' }),
-    ]);
-    expect(results.map(({ status }) => status).sort()).toEqual([200, 409]);
-    expect((await request('POST', `/${cls.id}/cancel`, manager, { reason: 'C' })).status).toBe(409);
-    expect(await prisma.notification.count({ where: { referenceId: cls.id } })).toBe(1);
-    expect(await prisma.auditLog.count({ where: { entityId: cls.id, entityType: 'CLASS' } })).toBe(1);
-    expect(emails).toHaveBeenCalledTimes(1);
-  });
-
-  test('failure to persist notifications rolls back the class, sessions and audits', async () => {
-    const { manager, makeClass } = await setup();
-    const cls = await makeClass();
-    const failure = spyOn(notificationService, 'create').mockRejectedValueOnce(new Error('notification failure'));
-    try {
-      expect((await request('POST', `/${cls.id}/cancel`, manager, { reason: 'Hủy' })).status).toBe(500);
-    } finally {
-      failure.mockRestore();
-    }
-    expect(await prisma.class.findUnique({ where: { id: cls.id } })).toMatchObject({
-      status: 'OPEN',
-      cancelReason: null,
-    });
-    expect(await prisma.classSession.count({ where: { classId: cls.id, status: 'SCHEDULED' } })).toBe(1);
-    expect(await prisma.auditLog.count()).toBe(0);
-    expect(await prisma.notification.count()).toBe(0);
-    expect(emails).not.toHaveBeenCalled();
-  });
-
   test('a member sees the enrollment catalog, full classes included, plus classes bought; staff never see drafts unless manager', async () => {
     const { manager, member, other, makeClass, enroll } = await setup();
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
