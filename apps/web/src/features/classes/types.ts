@@ -117,3 +117,19 @@ export interface RefundPreview {
   students: number;
   amount: number;
 }
+
+/** `/coach/open-classes` row: a class needing a coach, with this coach's registration. */
+export interface OpenClassItem extends GymClass {
+  /** This coach's own registration, if any. */
+  registration: Pick<CoachRegistration, 'id' | 'status'> | null;
+  /** Coaches waiting for the manager to choose. */
+  pendingRegistrations: number;
+  /** Readable clash with a class the coach already teaches (BR_2.12), or `null`. */
+  clash: string | null;
+}
+
+/** `/coach/classes` row: a class this coach teaches. */
+export interface CoachClassItem extends GymClass {
+  /** The session to take attendance for: today's, else the next one still scheduled. */
+  attendanceSessionId: string | null;
+}

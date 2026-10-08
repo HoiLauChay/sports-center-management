@@ -11,8 +11,6 @@ import {
 } from '../mocks/classAdmin';
 import { ensureClassSeed } from '../mocks/classes';
 
-export type { CoachClassItem, OpenClassItem } from '../mocks/classAdmin';
-
 async function seeded() {
   const catalog = await loadCatalog();
   ensureClassSeed(catalog.facilities, catalog.settings);

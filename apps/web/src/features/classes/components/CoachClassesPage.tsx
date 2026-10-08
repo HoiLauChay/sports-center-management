@@ -5,7 +5,7 @@ import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
 import { useMyClasses } from '../hooks/useCoachClasses';
-import type { CoachClassItem } from '../services/coachClasses.service';
+import type { CoachClassItem } from '../types';
 import { classDateRange } from '../utils';
 import { ClassStatusTag, WeeklyTags } from './ClassTableParts';
 import { CoachClassStudentsModal } from './CoachClassStudentsModal';

@@ -14,8 +14,10 @@ import type {
   ClassPatch,
   ClassSession,
   ClassStudent,
+  CoachClassItem,
   CoachRegistration,
   GymClass,
+  OpenClassItem,
   RefundPreview,
   SessionPatch,
 } from '../types';
@@ -225,15 +227,6 @@ const activeRegistration = (classId: string, coachId: string) =>
     (entry) => entry.classId === classId && entry.coach.id === coachId && entry.status !== 'REJECTED',
   );
 
-export interface OpenClassItem extends GymClass {
-  /** This coach's own registration, if any. */
-  registration: Pick<CoachRegistration, 'id' | 'status'> | null;
-  /** Coaches waiting for the manager to choose. */
-  pendingRegistrations: number;
-  /** Readable clash with a class the coach already teaches (BR_2.12), or `null`. */
-  clash: string | null;
-}
-
 /** `/coach/open-classes`: classes of the coach's approved sports that still need a coach (BR_2.14). */
 export function getOpenClassesForCoach(coachId: string, approvedSportIds: string[]): OpenClassItem[] {
   return classesDb
@@ -302,11 +295,6 @@ export function withdrawCoachRegistration(classId: string, coachId: string) {
     state.registrations = (state.registrations ?? []).filter((entry) => entry.id !== registration.id);
   });
   return requireView(classId);
-}
-
-export interface CoachClassItem extends GymClass {
-  /** The session to take attendance for: today's, else the next one still scheduled. */
-  attendanceSessionId: string | null;
 }
 
 /** `/coach/classes`: the classes this coach is the current coach of. */

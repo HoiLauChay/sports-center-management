@@ -9,7 +9,7 @@ import {
   useRegisterToTeach,
   useWithdrawRegistration,
 } from '../hooks/useCoachClasses';
-import type { OpenClassItem } from '../services/coachClasses.service';
+import type { OpenClassItem } from '../types';
 import { CLASS_STATUS_TAG, classDateRange } from '../utils';
 import { WeeklyTags } from './ClassTableParts';
 
