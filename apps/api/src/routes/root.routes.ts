@@ -17,6 +17,7 @@ import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import { myOrderRouter, orderRouter } from '~/routes/order.routes';
 import paymentRouter from '~/routes/payment.routes';
+import reportRouter from '~/routes/report.routes';
 import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
@@ -55,6 +56,7 @@ export const apiRoutes: [string, Router][] = [
   ['/me/support-requests', mySupportRouter],
   ['/orders', orderRouter],
   ['/payments', paymentRouter],
+  ['/reports', reportRouter],
   ['/settings', settingRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],
