@@ -1,9 +1,15 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { fromDbTime } from '~/utils/time';
 
 class BookingRepository {
-  findFreeSlotTimes = (accountId: string, from: string, to: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.facilityBooking.findMany({
+  countFreeSlots = async (
+    accountId: string,
+    { from, to }: { from: string; to: string },
+    slotMinutes: number,
+    tx: Prisma.TransactionClient = prisma,
+  ) => {
+    const bookings = await tx.facilityBooking.findMany({
       where: {
         accountId,
         status: 'CONFIRMED',
@@ -12,6 +18,11 @@ class BookingRepository {
       },
       select: { startTime: true, endTime: true },
     });
+    return bookings.reduce(
+      (sum, { startTime, endTime }) => sum + (fromDbTime(endTime) - fromDbTime(startTime)) / slotMinutes,
+      0,
+    );
+  };
 
   create = (data: Prisma.FacilityBookingUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.facilityBooking.create({ data, select: { id: true } });

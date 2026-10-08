@@ -3,7 +3,7 @@ import { ERROR_CODE, type CheckoutBuyer } from '@sports-center/shared';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import accountRepository from '~/repositories/account.repository';
-import membershipRepository from '~/repositories/membership.repository';
+import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import type { ActiveBenefits, BenefitPeriod, CheckoutContext, Db } from '~/services/checkout/types';
@@ -18,7 +18,7 @@ const invalidBuyer = (path: string, message: string) =>
   });
 
 const loadBenefits = async (db: Db, accountId: string, now: Date): Promise<ActiveBenefits> => {
-  const periods: BenefitPeriod[] = (await membershipRepository.findActivePeriods(accountId, db)).map(
+  const periods: BenefitPeriod[] = (await memberMembershipRepository.findActivePeriods(accountId, db)).map(
     ({ membership, ...period }) => ({
       ...period,
       packageName: membership.package.name,

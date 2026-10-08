@@ -12,6 +12,7 @@ import enrollmentRouter from '~/routes/enrollment.routes';
 import facilityRouter from '~/routes/facility.routes';
 import facilityPackageRouter from '~/routes/facilityPackage.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
+import { myMembershipRouter } from '~/routes/memberMembership.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import { myOrderRouter, orderRouter } from '~/routes/order.routes';
@@ -47,6 +48,7 @@ export const apiRoutes: [string, Router][] = [
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
   ['/me/wallet', myWalletRouter],
