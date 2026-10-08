@@ -6,9 +6,9 @@ import {
 } from '@sports-center/shared';
 
 import memberMembershipRepository from '~/repositories/memberMembership.repository';
-import membershipRepository from '~/repositories/membership.repository';
+import membershipRepository, { type MembershipRow } from '~/repositories/membership.repository';
 import { lineError } from '~/services/checkout/lines/shared';
-import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
+import type { CheckoutContext, Db, LineHandler, LineResult, PreparedOrder } from '~/services/checkout/types';
 import { addDays, formatDate, todayInCenter } from '~/utils/time';
 
 type MembershipInput = Extract<CheckoutItemInput, { type: 'MEMBERSHIP' }>;
@@ -17,6 +17,7 @@ interface MembershipData {
   packageId: string;
   durationDays: number;
   benefits: MembershipBenefits;
+  renewFrom?: { membershipId: string; start: string };
 }
 
 const planPeriod = async (db: Db, ctx: CheckoutContext, accountId: string, packageId: string, days: number) => {
@@ -31,6 +32,62 @@ const planPeriod = async (db: Db, ctx: CheckoutContext, accountId: string, packa
 };
 
 const onSale = (row: { isActive: boolean } | null) => !!row?.isActive;
+
+const priceLine = (
+  membership: MembershipRow,
+  period: { start: string; end: string },
+  renewal: boolean,
+  renewFrom?: MembershipData['renewFrom'],
+): LineResult<MembershipData, MembershipSnapshot> => {
+  const benefits: MembershipBenefits = {
+    gymAccess: membership.gymAccess,
+    bookingDiscountPct: membership.bookingDiscountPct,
+    classDiscountPct: membership.classDiscountPct,
+    freeBookingSlotsPerMonth: membership.freeBookingSlotsPerMonth,
+  };
+  const price = Number(membership.price);
+  return {
+    ok: true,
+    subtotal: price,
+    membershipDiscount: 0,
+    snapshot: {
+      title: `Gói ${membership.name} · ${membership.durationDays} ngày`,
+      startAt: period.start,
+      endAt: period.end,
+      discountPct: 0,
+      packageName: membership.name,
+      price,
+      durationDays: membership.durationDays,
+      renewal,
+      benefits,
+    },
+    data: { packageId: membership.id, durationDays: membership.durationDays, benefits, renewFrom },
+  };
+};
+
+export const renewalOrder = (membership: MembershipRow, membershipId: string, start: string): PreparedOrder => {
+  const price = Number(membership.price);
+  return {
+    lines: [
+      {
+        lineNumber: 1,
+        input: { type: 'MEMBERSHIP', packageId: membership.id },
+        result: priceLine(membership, { start, end: addDays(start, membership.durationDays) }, true, {
+          membershipId,
+          start,
+        }),
+        couponDiscount: 0,
+      },
+    ],
+    coupon: null,
+    subtotal: price,
+    membershipDiscount: 0,
+    couponDiscount: 0,
+    total: price,
+    valid: true,
+    membershipName: null,
+  };
+};
 
 export const membershipHandler: LineHandler<MembershipInput, MembershipData, MembershipSnapshot> = {
   type: 'MEMBERSHIP',
@@ -47,31 +104,7 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
     const period = await planPeriod(db, ctx, ctx.buyer.accountId, membership.id, membership.durationDays);
     if (!period) return lineError(ERROR_CODE.INVALID_STATE, 'Người mua đang có gói khác còn hiệu lực');
 
-    const benefits: MembershipBenefits = {
-      gymAccess: membership.gymAccess,
-      bookingDiscountPct: membership.bookingDiscountPct,
-      classDiscountPct: membership.classDiscountPct,
-      freeBookingSlotsPerMonth: membership.freeBookingSlotsPerMonth,
-    };
-    const price = Number(membership.price);
-
-    return {
-      ok: true,
-      subtotal: price,
-      membershipDiscount: 0,
-      snapshot: {
-        title: `Gói ${membership.name} · ${membership.durationDays} ngày`,
-        startAt: period.start,
-        endAt: period.end,
-        discountPct: 0,
-        packageName: membership.name,
-        price,
-        durationDays: membership.durationDays,
-        renewal: !!period.renewId,
-        benefits,
-      },
-      data: { packageId: membership.id, durationDays: membership.durationDays, benefits },
-    };
+    return priceLine(membership, period, !!period.renewId);
   },
 
   verify: async (tx, _ctx, { data }) =>
@@ -82,7 +115,14 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
   fulfill: async (tx, ctx, { data }, orderItemId) => {
     if (ctx.buyer.kind !== 'MEMBER') throw new Error('Membership requires a member buyer');
     const accountId = ctx.buyer.accountId;
-    const period = await planPeriod(tx, ctx, accountId, data.packageId, data.durationDays);
+    const period = data.renewFrom
+      ? {
+          renewId: data.renewFrom.membershipId,
+          expireId: null,
+          start: data.renewFrom.start,
+          end: addDays(data.renewFrom.start, data.durationDays),
+        }
+      : await planPeriod(tx, ctx, accountId, data.packageId, data.durationDays);
     if (!period) throw new Error('Membership period changed after pricing');
 
     if (period.expireId) await memberMembershipRepository.update(period.expireId, { status: 'EXPIRED' }, tx);
