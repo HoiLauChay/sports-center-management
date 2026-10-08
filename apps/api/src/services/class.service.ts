@@ -1,5 +1,6 @@
 import {
   ERROR_CODE,
+  type CancelClassBody,
   type CreateClassBody,
   type ListClassesQuery,
   type ReviewClassBody,
@@ -11,15 +12,17 @@ import type { Prisma } from '~/generated/prisma/client';
 import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
 import classRepository, { type ClassDetailRow, type ClassViewer } from '~/repositories/class.repository';
 import courseRepository from '~/repositories/course.repository';
+import enrollmentRepository from '~/repositories/enrollment.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import specializationRepository from '~/repositories/specialization.repository';
 import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
-import notificationService from '~/services/notification.service';
+import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import refundService from '~/services/refund.service';
 import scheduleService, { type TimeRange } from '~/services/schedule.service';
 import { toPage } from '~/utils/pagination';
-import { formatDate, parseTime, toDbTime, todayInCenter } from '~/utils/time';
+import { formatDate, fromDbTime, parseTime, toCenterDateTime, toDbTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -57,6 +60,8 @@ const notFound = () =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy lớp học' });
 const conflict = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.CONFLICT, message });
+const invalidState = (message: string) =>
+  new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
 
 const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.TransactionClient) => {
   if (!current.coachId) throw conflict('Lớp chưa có huấn luyện viên');
@@ -76,6 +81,96 @@ const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.Transaction
 };
 
 class ClassService {
+  cancel = async (managerId: string, id: string, { reason }: CancelClassBody, ip?: string) => {
+    const { result, notifications } = await runTransaction(async (tx) => {
+      const notifications: CreatedNotification[] = [];
+      await withScheduleLock(tx);
+      const studentIds = [
+        ...new Set((await enrollmentRepository.findActiveByClass(id, tx)).map(({ accountId }) => accountId)),
+      ];
+      await lockRows(tx, { accounts: studentIds, memberProfiles: studentIds, classes: [id] });
+
+      const current = await classRepository.findDetail(id, tx);
+      if (!current) throw notFound();
+      if (current.status === 'CANCELLED') throw invalidState('Lớp học đã bị hủy');
+
+      const enrollments = await enrollmentRepository.findActiveByClass(id, tx);
+      let refundTotal = 0;
+      for (const enrollment of enrollments) {
+        await enrollmentRepository.cancel(enrollment.id, tx);
+        const refund = await refundService.refundItem(tx, {
+          orderItemId: enrollment.orderItemId,
+          reason: `Lớp ${current.name} bị hủy`,
+          createdById: managerId,
+        });
+        refundTotal += refund.refunded;
+        notifications.push(...refund.notifications);
+      }
+
+      const now = new Date();
+      const remaining = current.sessions.filter(
+        (session) =>
+          session.status === 'SCHEDULED' &&
+          toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.endTime)) > now,
+      );
+      await classRepository.cancelSessions(
+        remaining.map((session) => session.id),
+        reason,
+        tx,
+      );
+      const row = await classRepository.update(id, { status: 'CANCELLED', cancelReason: reason }, tx);
+
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'CLASS',
+          entityId: id,
+          oldValues: current,
+          newValues: row,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      for (const session of remaining) {
+        await auditService.record(
+          {
+            accountId: managerId,
+            action: 'UPDATE',
+            entityType: 'CLASS_SESSION',
+            entityId: session.id,
+            oldValues: session,
+            newValues: { ...session, status: 'CANCELLED', cancelReason: reason },
+            ipAddress: ip,
+          },
+          tx,
+        );
+      }
+
+      const recipients = new Set(enrollments.map(({ accountId }) => accountId));
+      if (current.coachId) recipients.add(current.coachId);
+      notifications.push(
+        ...(await notificationService.create(
+          [...recipients].map((accountId) => ({
+            accountId,
+            type: 'CLASS' as const,
+            title: 'Lớp học đã bị hủy',
+            message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}`,
+            referenceType: 'CLASS',
+            referenceId: id,
+            dedupKey: `class-cancelled:${id}:${accountId}`,
+            sendEmail: true,
+          })),
+          tx,
+        )),
+      );
+      return { result: { class: toClassDetailResponse(row), refundTotal }, notifications };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    return result;
+  };
+
   list = async (viewer: ClassViewer, query: ListClassesQuery) => {
     const [rows, total] = await classRepository.findPage(viewer, query);
     return toPage(
