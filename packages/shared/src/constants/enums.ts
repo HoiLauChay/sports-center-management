@@ -33,6 +33,7 @@ export const AUDIT_ENTITY_TYPES = [
   'COURSE',
   'CLASS',
   'CLASS_SESSION',
+  'CLASS_ATTENDANCE',
   'CLASS_COACH_REGISTRATION',
   'COACH_SPECIALIZATION',
   'MEMBERSHIP',
@@ -119,6 +120,9 @@ export type ClassStatus = (typeof CLASS_STATUSES)[number];
 
 export const ENROLLMENT_STATUSES = ['ENROLLED', 'CANCELLED'] as const;
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
+
+export const ATTENDANCE_STATUSES = ['PRESENT', 'ABSENT', 'LATE'] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
 
 export const CLASS_DERIVED_STATUSES = ['UPCOMING', 'ONGOING', 'COMPLETED'] as const;
 export type ClassDerivedStatus = (typeof CLASS_DERIVED_STATUSES)[number];
