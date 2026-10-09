@@ -1,10 +1,11 @@
+import type { Attendance, AttendanceStatus } from '@sports-center/shared';
 import { Alert, Button, Input, Radio, Table, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { formatDateTime } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useAttendance, useSaveAttendance } from '../hooks/useTraining';
-import { ATTENDANCE_STATUSES, ATTENDANCE_TAG, type AttendanceRecord, type AttendanceStatus } from '../types';
+import { ATTENDANCE_ORDER, ATTENDANCE_TAG } from '../types';
 
 interface Draft {
   status: AttendanceStatus;
@@ -27,7 +28,7 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
   const [edits, setEdits] = useState<Record<string, Partial<Draft>>>({});
 
   const rows = useMemo(() => attendance.data ?? [], [attendance.data]);
-  const valueOf = (record: AttendanceRecord): Draft => ({
+  const valueOf = (record: Attendance): Draft => ({
     status: record.status ?? 'PRESENT',
     note: record.note ?? '',
     ...edits[record.account.id],
@@ -44,14 +45,16 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
 
   const submit = () =>
     save.mutate(
-      rows.map((record) => {
-        const value = valueOf(record);
-        return { accountId: record.account.id, status: value.status, note: value.note || undefined };
-      }),
+      {
+        records: rows.map((record) => {
+          const value = valueOf(record);
+          return { accountId: record.account.id, status: value.status, note: value.note };
+        }),
+      },
       { onSuccess: () => setEdits({}) },
     );
 
-  const columns: TableColumnsType<AttendanceRecord> = [
+  const columns: TableColumnsType<Attendance> = [
     {
       title: 'Học viên',
       key: 'student',
@@ -77,7 +80,7 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
           disabled={!editable}
           value={valueOf(record).status}
           onChange={(event) => change(record.account.id, { status: event.target.value as AttendanceStatus })}
-          options={ATTENDANCE_STATUSES.map((status) => ({ value: status, label: ATTENDANCE_TAG[status].label }))}
+          options={ATTENDANCE_ORDER.map((status) => ({ value: status, label: ATTENDANCE_TAG[status].label }))}
         />
       ),
     },
@@ -156,7 +159,7 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
           </div>
         )}
       </div>
-      <Table<AttendanceRecord>
+      <Table<Attendance>
         rowKey={(record) => record.account.id}
         size="middle"
         columns={columns}

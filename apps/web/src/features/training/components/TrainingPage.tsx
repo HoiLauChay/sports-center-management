@@ -1,3 +1,4 @@
+import type { CheckIn, Evaluation, MyAttendance } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Modal, Rate, Select, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
@@ -14,7 +15,7 @@ import {
   useMyTrainingClasses,
   useSessionNote,
 } from '../hooks/useTraining';
-import { ATTENDANCE_TAG, CHECKIN_BASIS_LABEL, type CheckIn, type Evaluation, type MyAttendanceRow } from '../types';
+import { ATTENDANCE_TAG } from '../types';
 
 function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: () => void }) {
   const note = useSessionNote(sessionId ?? undefined);
@@ -63,7 +64,7 @@ function AttendanceSection() {
   for (const row of rows) if (row.status) counts[row.status] += 1;
   const done = counts.PRESENT + counts.LATE + counts.ABSENT;
 
-  const columns: TableColumnsType<MyAttendanceRow> = [
+  const columns: TableColumnsType<MyAttendance> = [
     { title: 'Buổi', key: 'number', width: 70, render: (_, row) => row.session.sessionNumber },
     {
       title: 'Ngày',
@@ -160,7 +161,7 @@ function AttendanceSection() {
           {done > 0 && <Tag className="!m-0">Đi học {Math.round(((counts.PRESENT + counts.LATE) / done) * 100)}%</Tag>}
         </div>
       </div>
-      <Table<MyAttendanceRow>
+      <Table<MyAttendance>
         rowKey={(row) => row.session.id}
         size="middle"
         columns={columns}
@@ -185,8 +186,7 @@ function CheckInHistory() {
       dataIndex: 'checkedInAt',
       render: (value: string) => <span className="whitespace-nowrap">{formatDateTime(value)}</span>,
     },
-    { title: 'Căn cứ', dataIndex: 'basis', render: (value: CheckIn['basis']) => CHECKIN_BASIS_LABEL[value] },
-    { title: 'Lễ tân', dataIndex: ['by', 'fullName'] },
+    { title: 'Lễ tân', dataIndex: ['checkedBy', 'fullName'] },
   ];
 
   return (

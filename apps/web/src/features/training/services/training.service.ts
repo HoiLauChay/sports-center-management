@@ -1,151 +1,99 @@
-import type { Account } from '@sports-center/shared';
-import { loadBenefits, loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
-import { claimClassesForCoach } from '~/features/classes/mocks/classAdmin';
-import { ensureClassSeed } from '~/features/classes/mocks/classes';
-import { usersService } from '~/features/users/services/users.service';
-import { mockErrors, mockRequest } from '~/lib/mock/errors';
-import {
-  checkInCheck,
-  checkInsToday,
-  createCheckIn,
-  createEvaluation,
-  deleteEvaluation,
-  getAttendance,
-  getNote,
-  getTrainingSession,
-  listAnnouncements,
-  listEvaluations,
-  myAttendance,
-  myCheckIns,
-  myClasses,
-  myEvaluations,
-  putNote,
-  saveAttendance,
-  sendAnnouncement,
-  updateEvaluation,
-} from '../mocks/training';
-import type { AttendanceInput, EvaluationInput, SessionNoteInput } from '../types';
+import type {
+  AnnouncementResult,
+  ApiResponse,
+  Attendance,
+  CheckIn,
+  CreateAnnouncementBody,
+  CreateEvaluationBody,
+  Evaluation,
+  ListMyCheckInsQuery,
+  MyAttendance,
+  SaveAttendanceBody,
+  SaveSessionNoteBody,
+  SessionDetail,
+  SessionNote,
+  UpdateEvaluationBody,
+} from '@sports-center/shared';
+import { privateApi } from '~/lib/http';
 
-async function seeded(user: Account) {
-  const { facilities, settings } = await loadCatalog();
-  ensureClassSeed(facilities, settings);
-  if (user.role === 'COACH') claimClassesForCoach({ id: user.id, fullName: user.fullName });
-}
+const session = (id: string) => `/sessions/${encodeURIComponent(id)}`;
 
-/** Resolves a member to what the check-in rules need: their status and whether their membership gives gym access. */
-async function checkOf(user: Account, memberId: string) {
-  const account = await usersService.get(memberId);
-  if (account.role !== 'MEMBER') throw mockErrors.invalid('accountId', 'Chỉ check-in cho thành viên');
-  const person = { id: account.id, fullName: account.fullName };
-  const benefits = await loadBenefits(actorOf(user), { kind: 'MEMBER', person });
-  return checkInCheck({ ...person, status: account.status, phone: account.phone }, benefits?.gymAccess ?? false);
-}
-
-/**
- * Attendance, session notes, evaluations, class announcements, my training history and check-in. Mock until #175,
- * #176 and #177 ship; the shapes follow `api.design.md` (Training), so each body becomes a `privateApi` call.
- */
+/** Attendance, session notes, evaluations, class announcements, my training history and check-in. */
 export const trainingService = {
-  session: (user: Account, sessionId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return getTrainingSession(actorOf(user), sessionId);
-    }, 150),
+  session: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<SessionDetail>>(session(id));
+    return data.result;
+  },
 
-  attendance: (user: Account, sessionId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return getAttendance(actorOf(user), sessionId);
-    }, 150),
+  attendance: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<Attendance[]>>(`${session(id)}/attendance`);
+    return data.result;
+  },
 
-  saveAttendance: (user: Account, sessionId: string, records: AttendanceInput[]) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return saveAttendance(actorOf(user), sessionId, records);
-    }, 350),
+  saveAttendance: async (id: string, body: SaveAttendanceBody) => {
+    const { data } = await privateApi.put<ApiResponse<Attendance[]>>(`${session(id)}/attendance`, body);
+    return data.result;
+  },
 
-  note: (user: Account, sessionId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return getNote(actorOf(user), sessionId);
-    }, 120),
+  note: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<SessionNote | null>>(`${session(id)}/notes`);
+    return data.result;
+  },
 
-  saveNote: (user: Account, sessionId: string, input: SessionNoteInput) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return putNote(actorOf(user), sessionId, input);
-    }, 300),
+  saveNote: async (id: string, body: SaveSessionNoteBody) => {
+    const { data } = await privateApi.put<ApiResponse<SessionNote>>(`${session(id)}/notes`, body);
+    return data.result;
+  },
 
-  evaluations: (user: Account, sessionId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return listEvaluations(actorOf(user), sessionId);
-    }, 150),
+  evaluations: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<Evaluation[]>>(`${session(id)}/evaluations`);
+    return data.result;
+  },
 
-  createEvaluation: (user: Account, sessionId: string, input: EvaluationInput) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return createEvaluation(actorOf(user), sessionId, input);
-    }, 300),
+  createEvaluation: async (id: string, body: CreateEvaluationBody) => {
+    const { data } = await privateApi.post<ApiResponse<Evaluation>>(`${session(id)}/evaluations`, body);
+    return data.result;
+  },
 
-  updateEvaluation: (user: Account, id: string, patch: { rating?: number; comment?: string }) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return updateEvaluation(actorOf(user), id, patch);
-    }, 300),
+  updateEvaluation: async (id: string, body: UpdateEvaluationBody) => {
+    const { data } = await privateApi.patch<ApiResponse<Evaluation>>(`/evaluations/${encodeURIComponent(id)}`, body);
+    return data.result;
+  },
 
-  deleteEvaluation: (user: Account, id: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return deleteEvaluation(actorOf(user), id);
-    }, 300),
+  deleteEvaluation: async (id: string) => {
+    await privateApi.delete(`/evaluations/${encodeURIComponent(id)}`);
+  },
 
-  announce: (user: Account, classId: string, input: { title: string; body: string }) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return sendAnnouncement(actorOf(user), classId, input);
-    }, 350),
+  announce: async (classId: string, body: CreateAnnouncementBody) => {
+    const { data } = await privateApi.post<ApiResponse<AnnouncementResult>>(
+      `/classes/${encodeURIComponent(classId)}/announcements`,
+      body,
+    );
+    return data.result;
+  },
 
-  announcements: (user: Account, classId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return listAnnouncements(classId);
-    }, 100),
+  myAttendance: async (classId: string) => {
+    const { data } = await privateApi.get<ApiResponse<MyAttendance[]>>('/me/attendance', { params: { classId } });
+    return data.result;
+  },
 
-  myClasses: (user: Account) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return myClasses(user.id);
-    }, 150),
+  myEvaluations: async (classId: string) => {
+    const { data } = await privateApi.get<ApiResponse<Evaluation[]>>('/me/evaluations', { params: { classId } });
+    return data.result;
+  },
 
-  myAttendance: (user: Account, classId?: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return myAttendance(user.id, classId);
-    }, 150),
+  myCheckIns: async (range: ListMyCheckInsQuery) => {
+    const { data } = await privateApi.get<ApiResponse<CheckIn[]>>('/me/checkins', { params: range });
+    return data.result;
+  },
 
-  myEvaluations: (user: Account, classId?: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return myEvaluations(user.id, classId);
-    }, 150),
+  checkInsToday: async () => {
+    const { data } = await privateApi.get<ApiResponse<CheckIn[]>>('/checkins');
+    return data.result;
+  },
 
-  myCheckIns: (user: Account, range: { from?: string; to?: string }) =>
-    mockRequest(() => myCheckIns(user.id, range), 150),
-
-  checkInsToday: () => mockRequest(() => checkInsToday(), 100),
-
-  /** The eligibility the receptionist sees before confirming (the server re-checks on `POST /checkins`). */
-  checkInCheck: (user: Account, memberId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return checkOf(user, memberId);
-    }, 200),
-
-  checkIn: (user: Account, memberId: string) =>
-    mockRequest(async () => {
-      await seeded(user);
-      return createCheckIn(actorOf(user), await checkOf(user, memberId));
-    }, 350),
+  checkIn: async (accountId: string) => {
+    const { data } = await privateApi.post<ApiResponse<CheckIn>>('/checkins', { accountId });
+    return data.result;
+  },
 };

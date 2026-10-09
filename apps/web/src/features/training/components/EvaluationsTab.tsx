@@ -1,3 +1,4 @@
+import type { Attendance, Evaluation } from '@sports-center/shared';
 import { Button, Form, Input, Modal, Rate, Table, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
@@ -10,10 +11,9 @@ import {
   useSessionEvaluations,
   useUpdateEvaluation,
 } from '../hooks/useTraining';
-import type { AttendanceRecord, Evaluation } from '../types';
 
 interface Row {
-  record: AttendanceRecord;
+  record: Attendance;
   evaluation?: Evaluation;
 }
 

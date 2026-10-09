@@ -35,14 +35,14 @@ export function CoachSessionPage() {
     );
   }
 
-  const { session, class: owner, studentCount } = detail.data;
+  const session = detail.data;
   const editable = session.status === 'SCHEDULED';
   const upcoming = !isPast(session.date, session.startTime);
 
   return (
     <>
       <PageHeader
-        title={owner.name}
+        title={session.class.name}
         description={
           <span className="flex flex-wrap items-center gap-2">
             Buổi {session.sessionNumber} · {formatDayLabel(session.date)} · {session.startTime}–{session.endTime} ·{' '}
@@ -58,7 +58,7 @@ export function CoachSessionPage() {
             ) : (
               <Tag className="!m-0">Đã diễn ra</Tag>
             )}
-            <Tag className="!m-0">{studentCount} học viên</Tag>
+            <Tag className="!m-0">{session.class.enrolledCount} học viên</Tag>
           </span>
         }
         extra={
@@ -84,7 +84,7 @@ export function CoachSessionPage() {
             {
               key: 'announce',
               label: 'Thông báo lớp',
-              children: <AnnouncementTab classId={owner.id} editable />,
+              children: <AnnouncementTab classId={session.class.id} />,
             },
           ]}
         />
