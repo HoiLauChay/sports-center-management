@@ -1,4 +1,5 @@
-import type { OrderItemType, PaymentMethod } from '../constants/enums';
+import type { AccountStatus, OrderItemType, PaymentMethod } from '../constants/enums';
+import type { Person } from './audit';
 
 export interface OverviewReport {
   revenueToday: number;
@@ -35,4 +36,36 @@ export interface WalletReport {
   totalBalance: number;
   unmatched: { count: number; amount: number };
   buckets: WalletBucket[];
+}
+
+export interface MembersReport {
+  total: number;
+  byStatus: Record<AccountStatus, number>;
+  activeMemberships: number;
+  expiringSoon: number;
+  renewalRate: number;
+  newByPeriod: { period: string; count: number }[];
+}
+
+export interface FacilitiesReport {
+  utilizationRate: number;
+  byFacility: {
+    facilityId: string;
+    name: string;
+    bookings: number;
+    occupancyPct: number;
+    revenue: number;
+  }[];
+}
+
+export interface CoursesReport {
+  byClass: {
+    classId: string;
+    name: string;
+    enrolled: number;
+    max: number;
+    fillRate: number;
+    attendanceRate: number;
+  }[];
+  topCoaches: { coach: Person; students: number }[];
 }
