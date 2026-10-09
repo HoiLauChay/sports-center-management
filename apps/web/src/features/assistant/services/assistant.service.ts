@@ -31,7 +31,7 @@ function answer(question: string, ctx: AssistantContext): string {
     const m = ctx.membership;
     if (missing('membership')) return UNAVAILABLE;
     if (!m) return 'Bạn chưa có gói thành viên nào đang hoạt động. Bạn có thể chọn gói ở trang Gói thành viên.';
-    return `Gói ${m.name} của bạn còn ${m.daysLeft} ngày, hết hạn ngày ${formatDate(m.endDate)}. Bạn có thể gia hạn ở trang Gói của tôi.`;
+    return `Gói thành viên của bạn (${m.name}) còn ${m.daysLeft} ngày, hết hạn ngày ${formatDate(m.endDate)}. Bạn có thể gia hạn ở trang Gói của tôi.`;
   }
 
   if (/lich|buoi|hom nay|tuan nay|ke tiep|sap toi/.test(q)) {
