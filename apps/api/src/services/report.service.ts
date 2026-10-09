@@ -1,7 +1,12 @@
 import {
+  ACCOUNT_STATUSES,
   ORDER_ITEM_TYPES,
   PAYMENT_METHODS,
+  type CoursesReport,
+  type FacilitiesReport,
+  type MembersReport,
   type OverviewReport,
+  type ReportDateQuery,
   type ReportGranularity,
   type ReportRangeQuery,
   type RevenueBucket,
@@ -11,7 +16,9 @@ import {
 } from '@sports-center/shared';
 
 import reportRepository from '~/repositories/report.repository';
-import { addDays, toCenterDateTime, todayInCenter } from '~/utils/time';
+import settingRepository from '~/repositories/setting.repository';
+import { facilityOccupancy, percentage } from '~/utils/reportOccupancy';
+import { addDays, formatDate, toCenterDateTime, todayInCenter } from '~/utils/time';
 
 const zeroes = <K extends string>(keys: readonly K[]) =>
   Object.fromEntries(keys.map((key) => [key, 0])) as Record<K, number>;
@@ -42,6 +49,103 @@ const bucketsOf = <T>(query: ReportRangeQuery, empty: (period: string) => T) =>
 const periodAt = (at: Date, granularity: ReportGranularity) => periodOf(todayInCenter(at), granularity);
 
 class ReportService {
+  members = async (query: ReportDateQuery, now = new Date()): Promise<MembersReport> => {
+    const today = todayInCenter(now);
+    const settings = await settingRepository.get();
+    const [counts, newMembers, activeMemberships, expiringSoon, periods] = await Promise.all([
+      reportRepository.memberCounts(),
+      reportRepository.newMembers(windowOf(query.from, query.to)),
+      reportRepository.countActiveMemberships(today),
+      reportRepository.countExpiringMemberships(today, addDays(today, settings.membershipExpiryWarningDays)),
+      reportRepository.membershipPeriods(query.from, query.to),
+    ]);
+    const byStatus = zeroes(ACCOUNT_STATUSES);
+    for (const row of counts) byStatus[row.status] = row._count._all;
+    const days = new Map(periodsBetween({ ...query, granularity: 'day' }).map((period) => [period, 0]));
+    for (const member of newMembers) {
+      const day = todayInCenter(member.createdAt);
+      days.set(day, days.get(day)! + 1);
+    }
+    const renewed = periods.filter((period) =>
+      period.membership.account.memberships.some((membership) =>
+        membership.periods.some((next) => formatDate(next.periodStart) === formatDate(period.periodEnd)),
+      ),
+    ).length;
+    return {
+      total: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
+      byStatus,
+      activeMemberships,
+      expiringSoon,
+      renewalRate: percentage(renewed, periods.length),
+      newByPeriod: [...days].map(([period, count]) => ({ period, count })),
+    };
+  };
+
+  facilities = async (query: ReportDateQuery): Promise<FacilitiesReport> => {
+    const window = windowOf(query.from, query.to);
+    const [facilities, sales, settings] = await Promise.all([
+      reportRepository.facilityUsage(query.from, query.to, window),
+      reportRepository.facilitySales(window),
+      settingRepository.get(),
+    ]);
+    const revenues = new Map<string, number>();
+    for (const item of sales) {
+      const id = item.facilityPackage?.facilityId ?? item.bookings[0]?.facilityId;
+      if (id) revenues.set(id, (revenues.get(id) ?? 0) + Number(item.totalAmount));
+    }
+    let occupied = 0;
+    let available = 0;
+    const byFacility = facilities.map((facility) => {
+      const usage = facilityOccupancy(facility, query.from, query.to, settings);
+      occupied += usage.occupied;
+      available += usage.available;
+      return {
+        facilityId: facility.id,
+        name: facility.name,
+        bookings: facility.bookings.length,
+        occupancyPct: percentage(usage.occupied, usage.available),
+        revenue: revenues.get(facility.id) ?? 0,
+      };
+    });
+    return { utilizationRate: percentage(occupied, available), byFacility };
+  };
+
+  courses = async (query: ReportDateQuery): Promise<CoursesReport> => {
+    const classes = await reportRepository.courseUsage(query.from, query.to);
+    const coaches = new Map<string, { coach: CoursesReport['topCoaches'][number]['coach']; students: Set<string> }>();
+    const byClass = classes.map((cls) => {
+      if (cls.coach && cls.enrollments.length > 0) {
+        let row = coaches.get(cls.coach.id);
+        if (!row) {
+          row = { coach: { id: cls.coach.id, fullName: cls.coach.fullName }, students: new Set() };
+          coaches.set(cls.coach.id, row);
+        }
+        for (const enrollment of cls.enrollments) row.students.add(enrollment.accountId);
+      }
+      const attendances = cls.sessions.flatMap((session) => session.attendances);
+      return {
+        classId: cls.id,
+        name: cls.name,
+        enrolled: cls.enrollments.length,
+        max: cls.maxStudents,
+        fillRate: percentage(cls.enrollments.length, cls.maxStudents),
+        attendanceRate: percentage(
+          attendances.filter((row) => row.status === 'PRESENT' || row.status === 'LATE').length,
+          attendances.length,
+        ),
+      };
+    });
+    const topCoaches = [...coaches.values()]
+      .map(({ coach, students }) => ({ coach, students: students.size }))
+      .sort(
+        (a, b) =>
+          b.students - a.students ||
+          a.coach.fullName.localeCompare(b.coach.fullName) ||
+          a.coach.id.localeCompare(b.coach.id),
+      );
+    return { byClass, topCoaches };
+  };
+
   overview = async (now = new Date()): Promise<OverviewReport> => {
     const today = todayInCenter(now);
     const window = windowOf(today, today);
