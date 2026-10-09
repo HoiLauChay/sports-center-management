@@ -37,7 +37,6 @@ class EnrollmentRepository {
       where: {
         accountId,
         status: 'ENROLLED',
-        account: { role: 'MEMBER' },
         class: { coachId, status: 'OPEN', deletedAt: null, endDate: { gte: new Date(todayInCenter()) } },
       },
     })) > 0;

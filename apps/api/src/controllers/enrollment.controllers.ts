@@ -7,11 +7,12 @@ import enrollmentService from '~/services/enrollment.service';
 class EnrollmentController {
   listMine = async (req: Request, res: Response) => {
     const result = await enrollmentService.listMine(req.user!.id);
-    res.json(new ResponseClient({ message: 'Thành công', result }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
+
   listForClass = async (req: Request, res: Response) => {
     const result = await enrollmentService.listForClass(req.user!, req.params.id as string);
-    res.json(new ResponseClient({ message: 'Thành công', result }));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
   cancel = async (req: Request, res: Response) => {

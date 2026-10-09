@@ -20,6 +20,8 @@ interface Actor {
 const notFound = () =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy đăng ký' });
 
+const forbidden = (message: string) =>
+  new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 const invalidState = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
 
@@ -38,14 +40,8 @@ class EnrollmentService {
         code: ERROR_CODE.NOT_FOUND,
         message: 'Không tìm thấy lớp học',
       });
-    if (actor.role === 'COACH' && cls.coachId !== actor.id) {
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.FORBIDDEN,
-        code: ERROR_CODE.FORBIDDEN,
-        message: 'Bạn chỉ được xem học viên lớp mình phụ trách',
-      });
-    }
-    // A coach only sees the students still in the class; staff also see who left.
+    if (actor.role === 'COACH' && cls.coachId !== actor.id)
+      throw forbidden('Bạn chỉ được xem học viên lớp mình phụ trách');
     const status = actor.role === 'COACH' ? 'ENROLLED' : undefined;
     return (await enrollmentRepository.findByClass(classId, status)).map(toEnrollmentResponse);
   };
