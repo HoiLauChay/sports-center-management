@@ -35,5 +35,11 @@ describe('OpenAPI docs', () => {
     );
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
+    expect(paths['/coach/classes']?.get).toMatchObject({
+      tags: ['coach/classes'],
+      description: 'Vai trò: COACH',
+      security: [{ cookie: [] }],
+      parameters: [],
+    });
   });
 });
