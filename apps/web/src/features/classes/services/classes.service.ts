@@ -1,66 +1,57 @@
-import type { Account, Paginated } from '@sports-center/shared';
-import { cancelEnrollment, listMyEnrollments } from '~/features/bookings/mocks/bookings';
-import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
-import { walletService } from '~/features/wallet/services/wallet.service';
-import { mockErrors, mockRequest } from '~/lib/mock/errors';
-import { classesDb, ensureClassSeed } from '../mocks/classes';
-import type { GymClass } from '../types';
+import type {
+  ApiResponse,
+  CancelEnrollmentResult,
+  ClassDetail,
+  ListClassesQuery as ClassesQuery,
+  ClassSummary,
+  CreateClassBody,
+  Enrollment,
+  MyEnrollment,
+  Paginated,
+} from '@sports-center/shared';
+import { privateApi } from '~/lib/http';
 
-export interface ListClassesQuery {
-  page: number;
-  limit: number;
-  sportId?: string;
-  q?: string;
-}
+export type ListClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'sportId' | 'coachId' | 'q'>;
+export type ManagerClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'status' | 'derivedStatus' | 'courseId'>;
 
-async function seeded() {
-  const catalog = await loadCatalog();
-  ensureClassSeed(catalog.facilities, catalog.settings);
-  return catalog;
-}
-
-/**
- * Open classes, class detail, my enrollments and enrollment cancellation. Mock until #72, #89, #108 and #133 ship;
- * the shapes follow `api.design.md` (`GET /classes`, `GET /classes/{id}`, `GET /me/enrollments`).
- */
+/** Classes (catalog, detail, manager list, create), my enrollments and their cancellation. */
 export const classesService = {
-  list: (query: ListClassesQuery) =>
-    mockRequest(async (): Promise<Paginated<GymClass>> => {
-      await seeded();
-      const term = query.q?.trim().toLowerCase();
-      const rows = classesDb
-        .allClasses()
-        .filter((item) => classesDb.enrollable(item))
-        .filter((item) => !query.sportId || item.course.sport.id === query.sportId)
-        .filter((item) => !term || `${item.name} ${item.coach?.fullName ?? ''}`.toLowerCase().includes(term))
-        .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''));
-      const start = (query.page - 1) * query.limit;
-      return {
-        items: rows.slice(start, start + query.limit),
-        page: query.page,
-        limit: query.limit,
-        total: rows.length,
-      };
-    }, 180),
+  list: async (query: ListClassesQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', {
+      params: { ...query, openForEnrollment: true },
+    });
+    return data.result;
+  },
 
-  get: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      const found = classesDb.findDetail(id);
-      if (!found) throw mockErrors.notFound('Không tìm thấy lớp học');
-      return found;
-    }, 150),
+  get: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}`);
+    return data.result;
+  },
 
-  listMyEnrollments: (user: Account) =>
-    mockRequest(async () => {
-      await seeded();
-      return listMyEnrollments(actorOf(user));
-    }),
+  enrollments: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<Enrollment[]>>(`/classes/${encodeURIComponent(id)}/enrollments`);
+    return data.result;
+  },
 
-  cancelEnrollment: (user: Account, id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return cancelEnrollment(actorOf(user), id, () => walletService.balanceOfMine());
-    }, 350),
+  listForManager: async (query: ManagerClassesQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', { params: query });
+    return data.result;
+  },
+
+  create: async (body: CreateClassBody) => {
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>('/classes', body);
+    return data.result;
+  },
+
+  listMyEnrollments: async () => {
+    const { data } = await privateApi.get<ApiResponse<MyEnrollment[]>>('/me/enrollments');
+    return data.result;
+  },
+
+  cancelEnrollment: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<CancelEnrollmentResult>>(
+      `/enrollments/${encodeURIComponent(id)}/cancel`,
+    );
+    return data.result;
+  },
 };

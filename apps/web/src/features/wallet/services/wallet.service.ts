@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  CounterTopUpBody,
   CreateTopUpBody,
   Invoice,
   ListMyInvoicesQuery,
@@ -9,15 +10,6 @@ import type {
   WalletTransaction,
 } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
-import { mockErrors, mockRequest } from '~/lib/mock/errors';
-import { walletLedger } from '~/lib/mock/ledger';
-
-export interface CounterTopUpInput {
-  amount: number;
-  method: 'CASH' | 'CARD';
-  note?: string;
-  idempotencyKey: string;
-}
 
 export const walletService = {
   getMine: async (query: WalletQuery) => {
@@ -53,29 +45,12 @@ export const walletService = {
     return data.result;
   },
 
-  /**
-   * Cash / card top-up recorded at the counter (`POST /users/{id}/wallet/top-ups`, #113).
-   * Mock: the real balance is read first so the ledger entry carries a coherent `balanceAfter`.
-   */
-  counterTopUp: async (
-    memberId: string,
-    actor: { id: string; fullName: string },
-    input: CounterTopUpInput,
-  ): Promise<WalletTransaction> => {
-    const serverBalance = (await walletService.getForMember(memberId, { page: 1, limit: 1 })).balance;
-    return mockRequest(() => {
-      if (input.amount < 1) throw mockErrors.invalid('body.amount', 'Số tiền phải lớn hơn 0');
-      return walletLedger.record({
-        accountId: memberId,
-        serverBalance,
-        type: 'TOP_UP',
-        amount: input.amount,
-        source: 'COUNTER',
-        method: input.method,
-        createdBy: { id: actor.id, fullName: actor.fullName },
-        description: input.note?.trim() || 'Nạp ví tại quầy',
-        idempotencyKey: input.idempotencyKey,
-      });
-    });
+  /** Cash or card top-up recorded at the counter. */
+  counterTopUp: async (memberId: string, body: CounterTopUpBody) => {
+    const { data } = await privateApi.post<ApiResponse<WalletTransaction>>(
+      `/users/${encodeURIComponent(memberId)}/wallet/top-ups`,
+      body,
+    );
+    return data.result;
   },
 };

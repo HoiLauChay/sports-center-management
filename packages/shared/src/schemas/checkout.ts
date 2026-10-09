@@ -19,7 +19,10 @@ const packageFields = {
   weeks: z.int('Số tuần phải là số nguyên').min(1, 'Số tuần tối thiểu là 1').max(52, 'Số tuần tối đa là 52'),
 };
 
-export const facilityPackagePreviewBodySchema = z.object(packageFields);
+export const facilityPackagePreviewBodySchema = z.object({
+  ...packageFields,
+  buyer: z.object({ accountId: z.uuid('Mã thành viên không hợp lệ') }).optional(),
+});
 
 export const checkoutItemInputSchema = z.discriminatedUnion(
   'type',

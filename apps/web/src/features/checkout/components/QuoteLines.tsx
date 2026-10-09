@@ -1,7 +1,7 @@
 import { Alert, Button, Table, Tag, type TableColumnsType } from 'antd';
 import { Trash2 } from 'lucide-react';
 import { formatVND } from '~/lib/format';
-import type { CartLine, Quote, QuoteItem } from '../types';
+import type { CartLine, Quote, QuoteLine } from '../types';
 import { ORDER_ITEM_TYPE_LABEL } from '../types';
 import { describeLine } from '../utils';
 
@@ -11,14 +11,14 @@ const BENEFIT_LABEL: Record<string, string> = {
   DISCOUNT: 'Giảm giá theo gói',
 };
 
-function benefitLabel(item: QuoteItem | undefined) {
-  const benefit = item?.snapshot.benefit;
+function benefitLabel(item: QuoteLine | undefined) {
+  const benefit = item?.snapshot?.benefit;
   return typeof benefit === 'string' ? BENEFIT_LABEL[benefit] : undefined;
 }
 
 interface Row {
   line: CartLine;
-  item?: QuoteItem;
+  item?: QuoteLine;
 }
 
 interface QuoteLinesProps {
@@ -50,7 +50,7 @@ export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }
       title: 'Dịch vụ',
       key: 'service',
       render: (_, { line, item }) => {
-        const description = item ? describeLine(item.type, item.snapshot) : null;
+        const description = item ? describeLine(item.type, item.snapshot ?? {}) : null;
         return (
           <div className="flex min-w-56 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">

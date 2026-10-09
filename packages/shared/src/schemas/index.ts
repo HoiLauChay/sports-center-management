@@ -1,6 +1,7 @@
 export * from './account';
 export * from './audit';
 export * from './auth';
+export * from './booking';
 export * from './checkout';
 export * from './class';
 export * from './coupon';
