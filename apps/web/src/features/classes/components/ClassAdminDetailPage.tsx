@@ -14,6 +14,7 @@ import { useApproveClass, useAssignCoach, useClassAdmin, useRejectClass } from '
 import type { ClassAdminDetail, ClassSession, CoachRegistration } from '../types';
 import { classAdminActions, classStatusTag, REGISTRATION_TAG } from '../utils';
 import { AssignCoachModal, CancelClassModal, EditClassModal } from './ClassAdminModals';
+import { ClassStudentsTable } from './ClassStudentsTable';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/$classId');
 
@@ -46,7 +47,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 /**
- * `/admin/classes/{id}`: figures, coach, class info and tabs for sessions and coach registrations.
+ * `/admin/classes/{id}`: figures, coach, class info and tabs for sessions, students and coach registrations.
  * Every button is shown only when the class state allows it (BR_2.10).
  */
 export function ClassAdminDetailPage() {
@@ -314,6 +315,11 @@ export function ClassAdminDetailPage() {
                   className={tableFrame}
                 />
               ),
+            },
+            {
+              key: 'students',
+              label: `Học viên (${item.enrolledCount})`,
+              children: <ClassStudentsTable classId={item.id} showPayment className={tableFrame} />,
             },
             {
               key: 'coaches',
