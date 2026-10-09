@@ -96,6 +96,13 @@ const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhe
 });
 
 class ClassRepository {
+  findAssignedToCoach = (coachId: string) =>
+    prisma.class.findMany({
+      where: { coachId, deletedAt: null, status: { not: 'CANCELLED' } },
+      select: classSummarySelect,
+      orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+    });
+
   cancelSessions = (ids: string[], reason: string, tx: Prisma.TransactionClient) =>
     tx.classSession.updateMany({
       where: { id: { in: ids }, status: 'SCHEDULED' },
