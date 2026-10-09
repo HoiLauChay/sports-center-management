@@ -8,7 +8,7 @@ import {
   type OrderItem,
   type OrderItemType,
 } from '~/features/checkout/types';
-import { describeLine } from '~/features/checkout/utils';
+import { describeLine, refundedOf } from '~/features/checkout/utils';
 import { formatDate, formatVND, VN_TIMEZONE } from '~/lib/format';
 
 /** The issuing company printed on every invoice. */
@@ -97,11 +97,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 /** Notes that explain how a line's price came about, e.g. `giá gốc 240.000 ₫, ưu đãi gói −60.000 ₫`. */
-function priceNote(item: OrderItem) {
+function priceNote(order: Order, item: OrderItem) {
   const parts = [`giá gốc ${formatVND(item.subtotal)}`];
   if (item.membershipDiscount > 0) parts.push(`ưu đãi gói −${formatVND(item.membershipDiscount)}`);
   if (item.couponDiscount > 0) parts.push(`mã giảm −${formatVND(item.couponDiscount)}`);
-  if (item.refundedAmount > 0) parts.push(`đã hoàn ${formatVND(item.refundedAmount)}`);
+  const refunded = refundedOf(order, item.id);
+  if (refunded > 0) parts.push(`đã hoàn ${formatVND(refunded)}`);
   return parts.join(', ');
 }
 
@@ -110,6 +111,7 @@ function priceNote(item: OrderItem) {
  * invisible on screen and is what the browser prints (or saves as PDF) from the "In" / "Tải PDF" buttons.
  */
 export function InvoiceSheet({ order }: { order: Order }) {
+  const refunded = refundedOf(order);
   const buyerName = order.account?.fullName ?? order.guestName ?? '—';
   const paidAt = dayjs(order.paidAt).tz(VN_TIMEZONE);
   const groups = ORDER_ITEM_TYPES.map((type) => ({
@@ -172,10 +174,10 @@ export function InvoiceSheet({ order }: { order: Order }) {
         <span>Tổng thanh toán</span>
         <span className="tabular-nums">{formatVND(order.totalAmount)}</span>
       </div>
-      {order.refundedAmount > 0 && (
+      {refunded > 0 && (
         <>
-          <SummaryRow label="Đã hoàn về ví" value={money(order.refundedAmount, '−')} />
-          <SummaryRow label="Thực thu" value={money(order.totalAmount - order.refundedAmount)} />
+          <SummaryRow label="Đã hoàn về ví" value={money(refunded, '−')} />
+          <SummaryRow label="Thực thu" value={money(order.totalAmount - refunded)} />
         </>
       )}
 
@@ -205,7 +207,7 @@ export function InvoiceSheet({ order }: { order: Order }) {
               >
                 <span className="w-[300px] pr-3">
                   {title}
-                  {detail && group.type !== 'FACILITY_BOOKING' ? ` · ${detail}` : ''} ({priceNote(item)})
+                  {detail && group.type !== 'FACILITY_BOOKING' ? ` · ${detail}` : ''} ({priceNote(order, item)})
                 </span>
                 <span className="w-[60px]">{slot.slots}</span>
                 <span className="w-[110px]">{slot.start}</span>

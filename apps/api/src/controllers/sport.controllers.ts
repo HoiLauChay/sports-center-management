@@ -1,3 +1,4 @@
+import type { DeleteSportQuery } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -23,7 +24,12 @@ class SportController {
   };
 
   remove = async (req: Request, res: Response) => {
-    await sportService.remove(req.user!.id, req.params.id as string, getClientIp(req));
+    await sportService.remove(
+      req.user!.id,
+      req.params.id as string,
+      req.query as unknown as DeleteSportQuery,
+      getClientIp(req),
+    );
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã xóa bộ môn' }));
   };
 }

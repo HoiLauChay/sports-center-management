@@ -1,5 +1,6 @@
+import { PAYMENT_METHODS } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Alert, Card, Col, Row, Table, Tabs, type TableColumnsType } from 'antd';
+import { Card, Col, Row, Table, Tabs, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BarChart, type ChartDatum, type ChartSeries } from '~/components/charts/BarChart';
@@ -111,7 +112,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
     () => ({
       revenue: buckets.reduce((sum, bucket) => sum + bucket.revenue, 0),
       refunds: buckets.reduce((sum, bucket) => sum + bucket.refunds, 0),
-      byMethod: (['WALLET', 'CASH', 'CARD', 'TRANSFER'] as const).map((method) => ({
+      byMethod: PAYMENT_METHODS.map((method) => ({
         method,
         value: buckets.reduce((sum, bucket) => sum + bucket.byPaymentMethod[method], 0),
       })),
@@ -245,7 +246,7 @@ function WalletTab({ range }: { range: ReportRange }) {
         label: periodLabel(bucket.period, range.granularity),
         values: {
           topUpBank: bucket.topUpBankTransfer,
-          topUpCounter: bucket.topUpCounter.CASH + bucket.topUpCounter.CARD + bucket.topUpCounter.TRANSFER,
+          topUpCounter: bucket.topUpCounter.CASH + bucket.topUpCounter.CARD,
           payments: bucket.payments,
           refunds: bucket.refunds,
         },
@@ -272,7 +273,7 @@ function WalletTab({ range }: { range: ReportRange }) {
       align: 'right',
       render: (_, bucket) => (
         <span className="whitespace-nowrap tabular-nums">
-          {formatVND(bucket.topUpCounter.CASH + bucket.topUpCounter.CARD + bucket.topUpCounter.TRANSFER)}
+          {formatVND(bucket.topUpCounter.CASH + bucket.topUpCounter.CARD)}
         </span>
       ),
     },
@@ -371,12 +372,6 @@ export function ReportsPage() {
       <PageHeader
         title="Báo cáo"
         description="Doanh thu tính theo thời điểm thanh toán, không gồm nạp ví. Báo cáo thành viên, sân, khóa học và xuất file sẽ bổ sung sau."
-      />
-      <Alert
-        type="info"
-        showIcon
-        className="!mb-4"
-        title="Số liệu báo cáo đang là dữ liệu mẫu cho các ngày trước hôm nay, cộng thêm đơn hàng phát sinh trên trình duyệt này, cho tới khi API báo cáo (#128) sẵn sàng."
       />
       <Card>
         <Tabs

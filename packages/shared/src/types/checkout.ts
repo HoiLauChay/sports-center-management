@@ -1,6 +1,7 @@
 import type { BookingBenefit, OrderItemType, OrderStatus, PaymentMethod } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Person } from './audit';
+import type { MembershipBenefits } from './membership';
 
 export type ItemSnapshotBase = {
   title: string;
@@ -46,7 +47,16 @@ export type FacilityPackageSnapshot = ItemSnapshotBase & {
   freeSessions: number;
 };
 
-export type ItemSnapshot = FacilityBookingSnapshot | FacilityPackageSnapshot | CourseEnrollmentSnapshot;
+export type MembershipSnapshot = ItemSnapshotBase & {
+  packageName: string;
+  price: number;
+  durationDays: number;
+  renewal: boolean;
+  benefits: MembershipBenefits;
+};
+
+export type ItemSnapshot =
+  FacilityBookingSnapshot | FacilityPackageSnapshot | CourseEnrollmentSnapshot | MembershipSnapshot;
 
 export interface FacilityPackagePreview {
   bookings: {

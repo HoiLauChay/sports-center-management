@@ -29,13 +29,17 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
 
   const next = NEXT_SUPPORT_STATUS[request.status];
   const closed = request.status === 'CLOSED';
-  const dirty = note.trim() !== (request.resolutionNote ?? '');
+  const reply = note.trim();
+  // The API keeps the last reply once one is saved, so an emptied box is never sent.
+  const dirty = reply !== '' && reply !== (request.resolutionNote ?? '');
   const tag = SUPPORT_STATUS_TAG[request.status];
 
   const advance = () => {
     if (!next) return;
     const run = () =>
-      update.mutateAsync({ id: request.id, body: { status: next, resolutionNote: note } }).catch(() => undefined);
+      update
+        .mutateAsync({ id: request.id, body: { status: next, ...(reply && { resolutionNote: reply }) } })
+        .catch(() => undefined);
     if (next === 'CLOSED') {
       confirm({
         title: 'Đóng yêu cầu này?',
@@ -85,7 +89,7 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
             <Button
               disabled={!dirty}
               loading={update.isPending}
-              onClick={() => update.mutate({ id: request.id, body: { resolutionNote: note } })}
+              onClick={() => update.mutate({ id: request.id, body: { resolutionNote: reply } })}
             >
               Lưu phản hồi
             </Button>

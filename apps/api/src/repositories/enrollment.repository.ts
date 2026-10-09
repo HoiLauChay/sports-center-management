@@ -1,5 +1,7 @@
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { EnrollmentStatus, Prisma } from '~/generated/prisma/client';
+import { classSummarySelect } from '~/repositories/class.repository';
+import { todayInCenter } from '~/utils/time';
 
 const enrollmentSelect = {
   id: true,
@@ -16,8 +18,37 @@ const enrollmentSelect = {
 export type EnrollmentRow = Prisma.ClassEnrollmentGetPayload<{ select: typeof enrollmentSelect }>;
 
 class EnrollmentRepository {
+  findByAccount = (accountId: string) =>
+    prisma.classEnrollment.findMany({
+      where: { accountId },
+      select: { ...enrollmentSelect, class: { select: classSummarySelect } },
+      orderBy: [{ enrolledAt: 'desc' }, { id: 'desc' }],
+    });
+
+  findByClass = (classId: string, status?: EnrollmentStatus) =>
+    prisma.classEnrollment.findMany({
+      where: { classId, status },
+      select: enrollmentSelect,
+      orderBy: [{ enrolledAt: 'asc' }, { id: 'asc' }],
+    });
+
+  hasCurrentStudent = async (coachId: string, accountId: string) =>
+    (await prisma.classEnrollment.count({
+      where: {
+        accountId,
+        status: 'ENROLLED',
+        class: { coachId, status: 'OPEN', deletedAt: null, endDate: { gte: new Date(todayInCenter()) } },
+      },
+    })) > 0;
+
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.classEnrollment.findUnique({ where: { id }, select: enrollmentSelect });
+
+  findActiveByClass = (classId: string, tx: Prisma.TransactionClient) =>
+    tx.classEnrollment.findMany({
+      where: { classId, status: 'ENROLLED' },
+      select: { id: true, accountId: true, orderItemId: true },
+    });
 
   hasActive = async (classId: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
     (await tx.classEnrollment.count({ where: { classId, accountId, status: 'ENROLLED' } })) > 0;

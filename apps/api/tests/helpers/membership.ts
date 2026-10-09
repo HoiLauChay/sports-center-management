@@ -10,7 +10,7 @@ interface Benefits {
 
 let seq = 0;
 
-export const giveActiveMembership = async (accountId: string, benefits: Benefits = {}) => {
+export const giveActiveMembership = async (accountId: string, benefits: Benefits = {}, endDate?: string) => {
   const values = {
     gymAccess: false,
     bookingDiscountPct: 0,
@@ -18,9 +18,9 @@ export const giveActiveMembership = async (accountId: string, benefits: Benefits
     freeBookingSlotsPerMonth: 0,
     ...benefits,
   };
-  const today = todayInCenter();
-  const start = new Date(addDays(today, -1));
-  const end = new Date(addDays(today, 30));
+  const lastDay = endDate ?? addDays(todayInCenter(), 30);
+  const start = new Date(addDays(lastDay, -31));
+  const end = new Date(lastDay);
   const gold = await prisma.membership.create({
     data: { name: `Gold ${++seq}`, price: 500_000, durationDays: 31, ...values },
   });

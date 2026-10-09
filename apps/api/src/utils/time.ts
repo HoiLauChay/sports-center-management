@@ -53,6 +53,11 @@ export const formatTime = (minutes: number) =>
 
 export const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 
+export const monthOf = (date: string) => {
+  const [year, month] = date.split('-').map(Number);
+  return { from: `${date.slice(0, 7)}-01`, to: formatDate(new Date(Date.UTC(year!, month!, 1))) };
+};
+
 export const addDays = (date: string, days: number) =>
   formatDate(new Date(Date.parse(`${date}T00:00:00Z`) + days * 24 * 60 * MINUTE));
 
