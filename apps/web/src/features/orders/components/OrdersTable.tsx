@@ -4,6 +4,7 @@ import { DataTable } from '~/components/data/DataTable';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, type Order } from '~/features/checkout/types';
+import { refundedOf } from '~/features/checkout/utils';
 import { formatDateTime, formatVND } from '~/lib/format';
 
 interface OrdersTableProps {
@@ -79,8 +80,8 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
       render: (_, order) => (
         <div className="flex flex-col items-start gap-0.5">
           <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
-          {order.refundedAmount > 0 && (
-            <span className="text-xs text-sc-error">Đã hoàn {formatVND(order.refundedAmount)}</span>
+          {refundedOf(order) > 0 && (
+            <span className="text-xs text-sc-error">Đã hoàn {formatVND(refundedOf(order))}</span>
           )}
         </div>
       ),

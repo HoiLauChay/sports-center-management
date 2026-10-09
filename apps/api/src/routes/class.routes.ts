@@ -4,17 +4,30 @@ import {
   classIdParamsSchema,
   createClassBodySchema,
   listClassesQuerySchema,
+  listCoachRegistrationsQuerySchema,
   reviewClassBodySchema,
   updateClassBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
 import classController from '~/controllers/class.controllers';
+import enrollmentController from '~/controllers/enrollment.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
-const classRouter = Router();
+export const coachClassRouter = Router();
+coachClassRouter.use(auth, isRole('COACH'));
+coachClassRouter.get('/', classController.listForCoach);
 
+export const coachRegistrationRouter = Router();
+coachRegistrationRouter.use(auth, isRole('COACH'));
+coachRegistrationRouter.get(
+  '/',
+  validate({ query: listCoachRegistrationsQuerySchema }),
+  classController.listMyCoachRegistrations,
+);
+
+export const classRouter = Router();
 classRouter.use(auth);
 classRouter.get('/', validate({ query: listClassesQuerySchema }), classController.list);
 classRouter.get('/:id', validate({ params: classIdParamsSchema }), classController.get);
@@ -70,4 +83,9 @@ classRouter.post(
   classController.withdrawCoach,
 );
 
-export default classRouter;
+classRouter.get(
+  '/:id/enrollments',
+  isRole('COACH', 'MANAGER', 'RECEPTIONIST'),
+  validate({ params: classIdParamsSchema }),
+  enrollmentController.listForClass,
+);

@@ -60,6 +60,10 @@ export interface Enrollment {
   enrolledAt: string;
 }
 
+export interface MyEnrollment extends Omit<Enrollment, 'class'> {
+  class: ClassSummary;
+}
+
 export interface CancelClassResult {
   class: ClassDetail;
   refundTotal: number;

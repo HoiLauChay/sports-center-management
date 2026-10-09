@@ -1,92 +1,52 @@
-import type { Account } from '@sports-center/shared';
+import type { ApiResponse, AssignCoachBody, CancelClassResult, UpdateClassBody } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
-import { walletService } from '~/features/wallet/services/wallet.service';
+import { privateApi } from '~/lib/http';
 import { mockRequest } from '~/lib/mock/errors';
-import {
-  approveClass,
-  assignCoach,
-  cancelClass,
-  classOverview,
-  classRefundPreview,
-  coachPool,
-  getAdminDetail,
-  rejectClass,
-  updateClass,
-  updateSession,
-} from '../mocks/classAdmin';
+import { classOverview } from '../mocks/classAdmin';
 import { ensureClassSeed } from '../mocks/classes';
-import type { ClassPatch, SessionPatch } from '../types';
+import type { ClassAdminDetail } from '../types';
 
-async function seeded() {
-  const catalog = await loadCatalog();
-  ensureClassSeed(catalog.facilities, catalog.settings);
-  return catalog;
-}
+const path = (id: string) => `/classes/${encodeURIComponent(id)}`;
 
 /**
- * Manager class management (`GET /classes/{id}`, `PATCH /classes/{id}`, approve / reject / cancel, `assign-coach`,
- * `PATCH /sessions/{id}`). Mock until #171 ships, since the page also needs coach registrations and enrollments; the shapes follow
- * `api.design.md`, so each body becomes a `privateApi` call.
+ * Manager class management: `GET /classes/{id}` (with coach registrations for a manager), `PATCH`, approve, reject,
+ * cancel and `assign-coach`. The dashboard overview stays mock until the class figures have an endpoint.
  */
 export const classAdminService = {
-  get: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return getAdminDetail(id);
-    }, 150),
+  get: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<ClassAdminDetail>>(path(id));
+    return { ...data.result, coachRegistrations: data.result.coachRegistrations ?? [] };
+  },
 
   overview: () =>
     mockRequest(async () => {
-      await seeded();
+      const catalog = await loadCatalog();
+      ensureClassSeed(catalog.facilities, catalog.settings);
       return classOverview();
     }, 150),
 
-  coaches: () =>
-    mockRequest(async () => {
-      await seeded();
-      return coachPool();
-    }, 100),
+  update: async (id: string, body: UpdateClassBody) => {
+    const { data } = await privateApi.patch<ApiResponse<ClassAdminDetail>>(path(id), body);
+    return data.result;
+  },
 
-  update: (id: string, patch: ClassPatch) =>
-    mockRequest(async () => {
-      await seeded();
-      return updateClass(id, patch);
-    }, 250),
+  approve: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/approve`, {});
+    return data.result;
+  },
 
-  approve: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return approveClass(id);
-    }, 250),
+  reject: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/reject`, {});
+    return data.result;
+  },
 
-  reject: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return rejectClass(id);
-    }, 250),
+  assignCoach: async (id: string, body: AssignCoachBody) => {
+    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/assign-coach`, body);
+    return data.result;
+  },
 
-  assignCoach: (id: string, input: { registrationId: string } | { coachId: string }) =>
-    mockRequest(async () => {
-      await seeded();
-      return assignCoach(id, input);
-    }, 250),
-
-  classRefundPreview: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return classRefundPreview(id);
-    }, 100),
-
-  cancel: (user: Account, id: string, reason: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return cancelClass(actorOf(user), id, reason, walletService.balanceOfMember);
-    }, 400),
-
-  updateSession: (sessionId: string, patch: SessionPatch) =>
-    mockRequest(async () => {
-      const { facilities } = await seeded();
-      return updateSession(sessionId, patch, facilities);
-    }, 250),
+  cancel: async (id: string, reason: string) => {
+    const { data } = await privateApi.post<ApiResponse<CancelClassResult>>(`${path(id)}/cancel`, { reason });
+    return data.result;
+  },
 };

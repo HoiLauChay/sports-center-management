@@ -1,21 +1,27 @@
-import { mockErrors, mockRequest } from '~/lib/mock/errors';
-import { couponsDb } from '../mocks/coupons';
+import type { ApiResponse } from '@sports-center/shared';
+import { privateApi } from '~/lib/http';
 import type { Coupon, CouponInput } from '../types';
 
 /**
- * Coupon CRUD (`/coupons`, manager). Mock until #137 ships: swap each body for
- * `privateApi.get/post/patch/delete<ApiResponse<Coupon…>>('/coupons…')`, the shapes already follow `api.design.md`.
+ * Coupon CRUD (`/coupons`, manager).
  */
 export const couponsService = {
-  list: () => mockRequest((): Coupon[] => couponsDb.list()),
+  list: async (): Promise<Coupon[]> => {
+    const { data } = await privateApi.get<ApiResponse<Coupon[]>>('/coupons');
+    return data.result;
+  },
 
-  create: (input: CouponInput) => mockRequest(() => couponsDb.create(input)),
+  create: async (input: CouponInput): Promise<Coupon> => {
+    const { data } = await privateApi.post<ApiResponse<Coupon>>('/coupons', input);
+    return data.result;
+  },
 
-  update: (id: string, input: Partial<CouponInput>) =>
-    mockRequest(() => {
-      if (!id) throw mockErrors.notFound();
-      return couponsDb.update(id, input);
-    }),
+  update: async (id: string, input: Partial<CouponInput>): Promise<Coupon> => {
+    const { data } = await privateApi.patch<ApiResponse<Coupon>>(`/coupons/${encodeURIComponent(id)}`, input);
+    return data.result;
+  },
 
-  remove: (id: string) => mockRequest(() => couponsDb.remove(id)),
+  remove: async (id: string): Promise<void> => {
+    await privateApi.delete(`/coupons/${encodeURIComponent(id)}`);
+  },
 };

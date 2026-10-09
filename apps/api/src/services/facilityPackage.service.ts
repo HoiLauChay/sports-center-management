@@ -2,11 +2,14 @@ import {
   ERROR_CODE,
   type FacilityPackagePreview,
   type FacilityPackagePreviewBody,
+  type Role,
   type ScheduleClashReason,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import { toFacilityPackageResponse } from '~/mappers/booking.mapper';
+import bookingRepository from '~/repositories/booking.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import { buildContext } from '~/services/checkout/context';
 import { planPackage } from '~/services/checkout/lines/facilityPackage';
@@ -28,8 +31,11 @@ const CONFLICT_OF: Record<ScheduleClashReason, Conflict> = {
 };
 
 class FacilityPackageService {
-  preview = async (actor: { id: string; role: 'MEMBER' }, body: FacilityPackagePreviewBody) => {
-    const ctx = await buildContext(prisma, actor, undefined);
+  listMine = async (accountId: string) =>
+    (await bookingRepository.findPackagesByAccount(accountId)).map(toFacilityPackageResponse);
+
+  preview = async (actor: { id: string; role: Role }, { buyer, ...body }: FacilityPackagePreviewBody) => {
+    const ctx = await buildContext(prisma, actor, buyer);
     await loadHeldLines(prisma, ctx);
     const plan = await planPackage(prisma, ctx, body);
     if (!plan) {
