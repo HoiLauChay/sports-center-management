@@ -92,9 +92,3 @@ export interface SessionPatch {
   endTime?: string;
   facilityId?: string;
 }
-
-export interface ClassPatch {
-  name?: string;
-  minStudents?: number;
-  maxStudents?: number;
-}

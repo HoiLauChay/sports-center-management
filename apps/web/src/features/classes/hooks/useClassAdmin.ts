@@ -1,11 +1,10 @@
-import type { AssignCoachBody } from '@sports-center/shared';
+import type { AssignCoachBody, UpdateClassBody } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
 import { classesService, type ManagerClassesQuery } from '../services/classes.service';
-import type { ClassPatch } from '../types';
 
 const adminKey = (id: string) => ['classes', 'admin', id] as const;
 
@@ -51,7 +50,7 @@ function useClassAction<V, R>(run: (variables: V) => Promise<R>, success: string
 }
 
 export function useUpdateClass(classId: string) {
-  return useClassAction((patch: ClassPatch) => classAdminService.update(classId, patch), 'Đã lưu thông tin lớp.');
+  return useClassAction((patch: UpdateClassBody) => classAdminService.update(classId, patch), 'Đã lưu thông tin lớp.');
 }
 
 export function useApproveClass(classId: string) {
