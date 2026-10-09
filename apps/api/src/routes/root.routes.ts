@@ -17,6 +17,7 @@ import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import { myOrderRouter, orderRouter } from '~/routes/order.routes';
 import paymentRouter from '~/routes/payment.routes';
+import { coachScheduleRouter, memberScheduleRouter } from '~/routes/personalSchedule.routes';
 import reportRouter from '~/routes/report.routes';
 import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
@@ -39,6 +40,7 @@ export const apiRoutes: [string, Router][] = [
   ['/bank-transactions', bankTransactionRouter],
   ['/checkout', checkoutRouter],
   ['/coach/specializations', coachSpecializationRouter],
+  ['/coach/schedule', coachScheduleRouter],
   ['/classes', classRouter],
   ['/coupons', couponRouter],
   ['/courses', courseRouter],
@@ -52,6 +54,7 @@ export const apiRoutes: [string, Router][] = [
   ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
+  ['/me/schedule', memberScheduleRouter],
   ['/me/wallet', myWalletRouter],
   ['/me/support-requests', mySupportRouter],
   ['/orders', orderRouter],
