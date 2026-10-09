@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CLASS_DERIVED_STATUSES, CLASS_STATUSES } from '../constants/enums';
+import { CLASS_DERIVED_STATUSES, CLASS_STATUSES, COACH_REGISTRATION_STATUSES } from '../constants/enums';
 import { pageQuerySchema } from './pagination';
 import { timeOfDaySchema } from './time';
 
@@ -96,8 +96,13 @@ export const assignCoachBodySchema = z.union([
   z.strictObject({ coachId: z.uuid('Mã huấn luyện viên không hợp lệ') }),
 ]);
 
+export const listCoachRegistrationsQuerySchema = z.object({
+  status: z.enum(COACH_REGISTRATION_STATUSES, 'Trạng thái không hợp lệ').optional(),
+});
+
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
 export type CancelClassBody = z.infer<typeof cancelClassBodySchema>;
 export type AssignCoachBody = z.infer<typeof assignCoachBodySchema>;
+export type ListCoachRegistrationsQuery = z.infer<typeof listCoachRegistrationsQuerySchema>;

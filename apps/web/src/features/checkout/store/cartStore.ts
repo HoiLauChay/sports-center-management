@@ -33,6 +33,8 @@ export class CartStore {
   private readonly listeners = new Set<Listener>();
   private raw: string | null | undefined;
   private snapshot: CartState = EMPTY;
+  /** Set once a write failed (storage full or blocked): this tab then keeps the draft in memory only. */
+  private memoryOnly = false;
 
   constructor(storage: Storage | null, key: string) {
     this.storage = storage;
@@ -40,11 +42,12 @@ export class CartStore {
   }
 
   private read(): CartState {
+    if (!this.storage || this.memoryOnly) return this.snapshot;
     let raw: string | null;
     try {
-      raw = this.storage?.getItem(this.key) ?? null;
+      raw = this.storage.getItem(this.key);
     } catch {
-      raw = null;
+      return this.snapshot;
     }
     if (raw === this.raw) return this.snapshot;
     this.raw = raw;
@@ -68,7 +71,8 @@ export class CartStore {
     try {
       this.storage?.setItem(this.key, raw);
     } catch {
-      /* storage full or blocked: the in-memory snapshot below still drives this tab */
+      // Storage full or blocked: reading it back would bring the old draft back, so stay in memory.
+      this.memoryOnly = true;
     }
     this.raw = raw;
     this.snapshot = next;

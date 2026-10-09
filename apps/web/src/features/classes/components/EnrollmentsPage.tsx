@@ -1,3 +1,4 @@
+import type { MyEnrollment } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Segmented, Table, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
@@ -10,7 +11,6 @@ import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { vnDate } from '~/lib/time';
 import { useCancelEnrollment, useMyEnrollments } from '../hooks/useClasses';
-import type { MyEnrollment } from '../types';
 import { weeklyText } from '../utils';
 
 const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string }> = {
@@ -100,8 +100,8 @@ export function EnrollmentsPage() {
           <Tag color={STATUS_TAG[enrollment.status].color} className="!m-0">
             {STATUS_TAG[enrollment.status].label}
           </Tag>
-          {enrollment.refundedAmount > 0 && (
-            <span className="text-xs text-sc-error">Đã hoàn {formatVND(enrollment.refundedAmount)}</span>
+          {enrollment.refundedAt && (
+            <span className="text-xs text-sc-error">Đã hoàn {formatVND(enrollment.paidAmount)}</span>
           )}
         </div>
       ),
