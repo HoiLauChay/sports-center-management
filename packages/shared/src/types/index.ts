@@ -9,6 +9,7 @@ export * from './class';
 export * from './coupon';
 export * from './course';
 export * from './facility';
+export * from './maintenance';
 export * from './membership';
 export * from './notification';
 export * from './payment';
