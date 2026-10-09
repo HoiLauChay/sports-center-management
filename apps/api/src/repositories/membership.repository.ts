@@ -32,29 +32,6 @@ class MembershipRepository {
 
   update = (id: string, data: Prisma.MembershipUpdateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.membership.update({ where: { id }, data, select: membershipSelect });
-
-  findActivePeriods = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.membershipOrder.findMany({
-      where: { membership: { accountId, status: 'ACTIVE' } },
-      select: {
-        periodStart: true,
-        periodEnd: true,
-        gymAccess: true,
-        bookingDiscountPct: true,
-        classDiscountPct: true,
-        freeBookingSlotsPerMonth: true,
-        membership: { select: { package: { select: { name: true } } } },
-      },
-      orderBy: { periodStart: 'asc' },
-    });
-
-  findAutoRenewAccountIds = (packageId: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.memberMembership
-      .findMany({
-        where: { packageId, status: 'ACTIVE', autoRenew: true },
-        select: { accountId: true },
-      })
-      .then((rows) => rows.map(({ accountId }) => accountId));
 }
 
 export default new MembershipRepository();

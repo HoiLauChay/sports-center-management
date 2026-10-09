@@ -1,18 +1,33 @@
 import {
+  assignCoachBodySchema,
+  cancelClassBodySchema,
   classIdParamsSchema,
   createClassBodySchema,
   listClassesQuerySchema,
+  listCoachRegistrationsQuerySchema,
   reviewClassBodySchema,
   updateClassBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
 import classController from '~/controllers/class.controllers';
+import enrollmentController from '~/controllers/enrollment.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
-const classRouter = Router();
+export const coachClassRouter = Router();
+coachClassRouter.use(auth, isRole('COACH'));
+coachClassRouter.get('/', classController.listForCoach);
 
+export const coachRegistrationRouter = Router();
+coachRegistrationRouter.use(auth, isRole('COACH'));
+coachRegistrationRouter.get(
+  '/',
+  validate({ query: listCoachRegistrationsQuerySchema }),
+  classController.listMyCoachRegistrations,
+);
+
+export const classRouter = Router();
 classRouter.use(auth);
 classRouter.get('/', validate({ query: listClassesQuerySchema }), classController.list);
 classRouter.get('/:id', validate({ params: classIdParamsSchema }), classController.get);
@@ -36,4 +51,41 @@ classRouter.post(
   classController.reject,
 );
 
-export default classRouter;
+classRouter.post(
+  '/:id/cancel',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: cancelClassBodySchema }),
+  classController.cancel,
+);
+
+classRouter.post(
+  '/:id/coach-registrations',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema }),
+  classController.registerCoach,
+);
+classRouter.get(
+  '/:id/coach-registrations',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema }),
+  classController.listCoachRegistrations,
+);
+classRouter.post(
+  '/:id/assign-coach',
+  isRole('MANAGER'),
+  validate({ params: classIdParamsSchema, body: assignCoachBodySchema }),
+  classController.assignCoach,
+);
+classRouter.post(
+  '/:id/withdraw',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema }),
+  classController.withdrawCoach,
+);
+
+classRouter.get(
+  '/:id/enrollments',
+  isRole('COACH', 'MANAGER', 'RECEPTIONIST'),
+  validate({ params: classIdParamsSchema }),
+  enrollmentController.listForClass,
+);

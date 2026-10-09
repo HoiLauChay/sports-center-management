@@ -51,6 +51,12 @@ export type CreatableRole = (typeof CREATABLE_ROLES)[number];
 export const SPECIALIZATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export type SpecializationStatus = (typeof SPECIALIZATION_STATUSES)[number];
 
+export const COACH_REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export type CoachRegistrationStatus = (typeof COACH_REGISTRATION_STATUSES)[number];
+
+export const COACH_REGISTRATION_SOURCES = ['COACH_REGISTERED', 'MANAGER_ASSIGNED'] as const;
+export type CoachRegistrationSource = (typeof COACH_REGISTRATION_SOURCES)[number];
+
 export const NOTIFICATION_TYPES = [
   'PAYMENT',
   'MEMBERSHIP',
@@ -110,6 +116,12 @@ export type FacilitySlotStatus = (typeof FACILITY_SLOT_STATUSES)[number];
 
 export const CLASS_STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'OPEN', 'CANCELLED'] as const;
 export type ClassStatus = (typeof CLASS_STATUSES)[number];
+
+export const BOOKING_STATUSES = ['CONFIRMED', 'CANCELLED'] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+export const FACILITY_PACKAGE_STATUSES = ['ACTIVE', 'CANCELLED'] as const;
+export type FacilityPackageStatus = (typeof FACILITY_PACKAGE_STATUSES)[number];
 
 export const ENROLLMENT_STATUSES = ['ENROLLED', 'CANCELLED'] as const;
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];

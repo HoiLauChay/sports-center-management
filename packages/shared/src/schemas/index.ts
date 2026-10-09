@@ -1,6 +1,7 @@
 export * from './account';
 export * from './audit';
 export * from './auth';
+export * from './booking';
 export * from './checkout';
 export * from './class';
 export * from './coupon';
@@ -11,6 +12,7 @@ export * from './notification';
 export * from './order';
 export * from './pagination';
 export * from './payment';
+export * from './report';
 export * from './setting';
 export * from './specialization';
 export * from './sport';

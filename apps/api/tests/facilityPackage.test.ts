@@ -103,4 +103,27 @@ describe('facility package line', () => {
     expect(facilityPackage.bookings.map(({ benefit }) => benefit)).toEqual(['FREE_SLOT', 'DISCOUNT']);
     expect(await expectWalletConsistent(member.id)).toBe(410_000);
   });
+
+  test('a receptionist previews for the named member and sees the sessions that member already has', async () => {
+    const [court, otherCourt] = await Promise.all([seedFacility(2), seedFacility(2)]);
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'reception@example.com');
+    const startDate = addDays(todayInCenter(), 1);
+    await seedBooking(otherCourt.id, '18:00', '19:00', { date: startDate, accountId: member.id });
+    const weekly = {
+      facilityId: court.id,
+      startDate,
+      daysOfWeek: [dayOfWeek(startDate)],
+      startTime: '18:00',
+      endTime: '19:00',
+      weeks: 2,
+    };
+
+    const preview = await readResult<FacilityPackagePreview>(
+      await request('POST', '/preview', receptionist, { ...weekly, buyer: { accountId: member.id } }),
+    );
+    expect(preview.bookings.map(({ available }) => available)).toEqual([false, true]);
+    expect(preview.isValid).toBe(false);
+    expect((await request('POST', '/preview', receptionist, weekly)).status).toBe(422);
+  });
 });

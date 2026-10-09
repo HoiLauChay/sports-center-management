@@ -1,23 +1,32 @@
-import type { Account } from '@sports-center/shared';
-import { mockRequest } from '~/lib/mock/errors';
-import { supportDb } from '../mocks/support';
-import type { CreateSupportBody, ListSupportQuery, UpdateSupportBody } from '../types';
+import type { ApiResponse, Paginated } from '@sports-center/shared';
+import { privateApi } from '~/lib/http';
+import type { CreateSupportBody, ListSupportQuery, SupportRequest, UpdateSupportBody } from '../types';
 
-const personOf = (user: Pick<Account, 'id' | 'fullName'>) => ({ id: user.id, fullName: user.fullName });
+const path = (id: string) => `/support-requests/${encodeURIComponent(id)}`;
 
-/**
- * Support requests (`/support-requests`, `/me/support-requests`). Mock until #85 ships: replace each body with the
- * matching `privateApi` call, the types already follow `api.design.md`.
- */
 export const supportService = {
-  create: (user: Account, body: CreateSupportBody) => mockRequest(() => supportDb.create(personOf(user), body)),
+  create: async (body: CreateSupportBody) => {
+    const { data } = await privateApi.post<ApiResponse<SupportRequest>>('/support-requests', body);
+    return data.result;
+  },
 
-  listMine: (user: Account) => mockRequest(() => supportDb.listMine(user.id), 150),
+  listMine: async () => {
+    const { data } = await privateApi.get<ApiResponse<SupportRequest[]>>('/me/support-requests');
+    return data.result;
+  },
 
-  list: (query: ListSupportQuery) => mockRequest(() => supportDb.list(query), 150),
+  list: async (params: ListSupportQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<SupportRequest>>>('/support-requests', { params });
+    return data.result;
+  },
 
-  get: (id: string) => mockRequest(() => supportDb.get(id), 100),
+  get: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<SupportRequest>>(path(id));
+    return data.result;
+  },
 
-  update: (user: Account, id: string, body: UpdateSupportBody) =>
-    mockRequest(() => supportDb.update(personOf(user), id, body)),
+  update: async (id: string, body: UpdateSupportBody) => {
+    const { data } = await privateApi.patch<ApiResponse<SupportRequest>>(path(id), body);
+    return data.result;
+  },
 };

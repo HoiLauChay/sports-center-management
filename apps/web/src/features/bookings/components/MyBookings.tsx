@@ -1,3 +1,4 @@
+import type { Booking, FacilityPackage } from '@sports-center/shared';
 import { Alert, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
@@ -6,7 +7,6 @@ import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { DAY_SHORT, WEEK_ORDER, formatDayLabel } from '~/lib/time';
 import { useMyBookings, useMyPackages } from '../hooks/useBookings';
-import type { Booking, FacilityPackage } from '../types';
 
 const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
   NONE: null,
@@ -52,7 +52,12 @@ function BookingsTab() {
       title: 'Đã trả',
       dataIndex: 'paidAmount',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number | null) =>
+        value === null ? (
+          <span className="whitespace-nowrap text-sc-muted">Theo gói</span>
+        ) : (
+          <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>
+        ),
     },
     {
       title: 'Trạng thái',
