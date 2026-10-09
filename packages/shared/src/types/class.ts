@@ -1,4 +1,10 @@
-import type { ClassDerivedStatus, ClassStatus, EnrollmentStatus } from '../constants/enums';
+import type {
+  ClassDerivedStatus,
+  ClassStatus,
+  CoachRegistrationSource,
+  CoachRegistrationStatus,
+  EnrollmentStatus,
+} from '../constants/enums';
 import type { Ref } from './api';
 import type { Person } from './audit';
 import type { Course } from './course';
@@ -40,6 +46,7 @@ export interface ClassSummary {
 
 export interface ClassDetail extends ClassSummary {
   sessions: ClassSession[];
+  coachRegistrations?: CoachRegistration[];
 }
 
 export interface Enrollment {
@@ -53,7 +60,21 @@ export interface Enrollment {
   enrolledAt: string;
 }
 
+export interface CancelClassResult {
+  class: ClassDetail;
+  refundTotal: number;
+}
+
 export interface CancelEnrollmentResult {
   enrollment: Enrollment;
   refund: number;
+}
+
+export interface CoachRegistration {
+  id: string;
+  classId: string;
+  coach: Person;
+  status: CoachRegistrationStatus;
+  source: CoachRegistrationSource;
+  createdAt: string;
 }

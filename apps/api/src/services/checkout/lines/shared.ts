@@ -21,8 +21,11 @@ export const lineError = (code: LineError['code'], message: string) => ({
   error: { code, message },
 });
 
+export const plannedFor = (ctx: CheckoutContext, accountId: string) =>
+  ctx.planned.filter((line) => line.accountId === accountId);
+
 export const busyInOrder = (ctx: CheckoutContext, ranges: TimeRange[]) =>
   ctx.buyer.kind === 'MEMBER' &&
-  ctx.planned.some(({ uses }) =>
+  plannedFor(ctx, ctx.buyer.accountId).some(({ uses }) =>
     uses.some((use) => ranges.some((range) => use.date === range.date && overlaps(use, range))),
   );

@@ -40,6 +40,7 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   SYSTEM_SETTING: 'Cấu hình hệ thống',
   BANK_TRANSACTION: 'Giao dịch ngân hàng',
   INVOICE: 'Hóa đơn',
+  WALLET_TRANSACTION: 'Giao dịch ví',
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -59,6 +60,7 @@ const FIELD_LABEL: Record<string, string> = {
   gymAccess: 'Quyền vào phòng gym',
   freeBookingSlotsPerMonth: 'Lượt đặt sân miễn phí / tháng',
   autoRenew: 'Tự động gia hạn',
+  cancelledAt: 'Thời điểm hủy',
   startDate: 'Ngày bắt đầu',
   endDate: 'Ngày kết thúc',
   staffNotes: 'Ghi chú nhân sự',

@@ -73,8 +73,18 @@ const catalog = (today: Date): Prisma.ClassWhereInput => ({
   sessions: { some: { status: 'SCHEDULED' } },
 });
 
+const needsCoach = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => ({
+  status: { in: ['DRAFT', 'PENDING_APPROVAL'] },
+  coachId: null,
+  startDate: { gt: today },
+  ...(viewer.role === 'COACH' && {
+    course: { sport: { coachSpecializations: { some: { coachId: viewer.id, status: 'APPROVED' } } } },
+  }),
+});
+
 const visibleTo = (viewer: ClassViewer, today: Date): Prisma.ClassWhereInput => {
   if (viewer.role === 'MANAGER') return {};
+  if (viewer.role === 'COACH') return { OR: [{ status: { not: 'DRAFT' } }, needsCoach(viewer, today)] };
   if (viewer.role !== 'MEMBER') return { status: { not: 'DRAFT' } };
   return { OR: [catalog(today), { enrollments: { some: { accountId: viewer.id } } }] };
 };
@@ -86,6 +96,12 @@ const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhe
 });
 
 class ClassRepository {
+  cancelSessions = (ids: string[], reason: string, tx: Prisma.TransactionClient) =>
+    tx.classSession.updateMany({
+      where: { id: { in: ids }, status: 'SCHEDULED' },
+      data: { status: 'CANCELLED', cancelReason: reason },
+    });
+
   findPage = (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
     const today = new Date(todayInCenter());
     const where: Prisma.ClassWhereInput = {
@@ -97,6 +113,7 @@ class ClassRepository {
       ...(query.sportId && { course: { sportId: query.sportId } }),
       AND: [
         visibleTo(viewer, today),
+        query.needsCoach ? needsCoach(viewer, today) : {},
         query.openForEnrollment ? catalog(today) : {},
         query.derivedStatus ? derivedFilter(query.derivedStatus, today) : {},
         query.q
@@ -166,7 +183,7 @@ class ClassRepository {
   unassignCoach = (ids: string[], tx: Prisma.TransactionClient = prisma) =>
     tx.class.updateManyAndReturn({
       where: { id: { in: ids } },
-      data: { coachId: null, status: 'PENDING_APPROVAL' },
+      data: { coachId: null, status: 'PENDING_APPROVAL', approvedById: null, approvedAt: null },
       select: classSelect,
     });
 }

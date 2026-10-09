@@ -41,6 +41,7 @@ export const AUDIT_ENTITY_TYPES = [
   'SYSTEM_SETTING',
   'BANK_TRANSACTION',
   'INVOICE',
+  'WALLET_TRANSACTION',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -49,6 +50,12 @@ export type CreatableRole = (typeof CREATABLE_ROLES)[number];
 
 export const SPECIALIZATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export type SpecializationStatus = (typeof SPECIALIZATION_STATUSES)[number];
+
+export const COACH_REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export type CoachRegistrationStatus = (typeof COACH_REGISTRATION_STATUSES)[number];
+
+export const COACH_REGISTRATION_SOURCES = ['COACH_REGISTERED', 'MANAGER_ASSIGNED'] as const;
+export type CoachRegistrationSource = (typeof COACH_REGISTRATION_SOURCES)[number];
 
 export const NOTIFICATION_TYPES = [
   'PAYMENT',

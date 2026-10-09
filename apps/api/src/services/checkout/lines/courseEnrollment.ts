@@ -38,13 +38,16 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
     const sessions = row.sessions.filter(({ status }) => status === 'SCHEDULED');
     if (!row.coach || sessions.length === 0) return lineError(ERROR_CODE.INVALID_STATE, 'Lớp chưa mở đăng ký');
 
-    const inOrder = ctx.planned.some(
+    const seatsHeld = ctx.planned.filter(
       ({ type, data }) => type === 'COURSE_ENROLLMENT' && (data as EnrollmentData).classId === row.id,
     );
+    const inOrder = seatsHeld.some((line) => line.accountId === accountId);
     if (inOrder || (await enrollmentRepository.hasActive(row.id, accountId, db))) {
       return lineError(ERROR_CODE.CONFLICT, 'Người mua đã đăng ký lớp này');
     }
-    if (row._count.enrollments >= row.maxStudents) return lineError(ERROR_CODE.CONFLICT, 'Lớp đã đủ học viên');
+    if (row._count.enrollments + seatsHeld.length >= row.maxStudents) {
+      return lineError(ERROR_CODE.CONFLICT, 'Lớp đã đủ học viên');
+    }
 
     const ranges = sessions.map((session) => ({
       date: formatDate(session.sessionDate),

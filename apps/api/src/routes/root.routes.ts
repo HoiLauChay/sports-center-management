@@ -10,11 +10,14 @@ import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
 import enrollmentRouter from '~/routes/enrollment.routes';
 import facilityRouter from '~/routes/facility.routes';
+import facilityPackageRouter from '~/routes/facilityPackage.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
+import { myMembershipRouter } from '~/routes/memberMembership.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import { myOrderRouter, orderRouter } from '~/routes/order.routes';
 import paymentRouter from '~/routes/payment.routes';
+import reportRouter from '~/routes/report.routes';
 import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
@@ -42,15 +45,18 @@ export const apiRoutes: [string, Router][] = [
   ['/cron', cronRouter],
   ['/enrollments', enrollmentRouter],
   ['/facilities', facilityRouter],
+  ['/facility-packages', facilityPackageRouter],
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
   ['/me/wallet', myWalletRouter],
   ['/me/support-requests', mySupportRouter],
   ['/orders', orderRouter],
   ['/payments', paymentRouter],
+  ['/reports', reportRouter],
   ['/settings', settingRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],

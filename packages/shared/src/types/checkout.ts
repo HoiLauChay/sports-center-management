@@ -1,6 +1,7 @@
 import type { BookingBenefit, OrderItemType, OrderStatus, PaymentMethod } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Person } from './audit';
+import type { MembershipBenefits } from './membership';
 
 export type ItemSnapshotBase = {
   title: string;
@@ -31,7 +32,44 @@ export type CourseEnrollmentSnapshot = ItemSnapshotBase & {
   endDate: string;
 };
 
-export type ItemSnapshot = FacilityBookingSnapshot | CourseEnrollmentSnapshot;
+export type FacilityPackageSnapshot = ItemSnapshotBase & {
+  facilityName: string;
+  sportNames: string[];
+  startDate: string;
+  endDate: string;
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  weeks: number;
+  sessions: number;
+  slotsPerSession: number;
+  pricePerSlot: number;
+  freeSessions: number;
+};
+
+export type MembershipSnapshot = ItemSnapshotBase & {
+  packageName: string;
+  price: number;
+  durationDays: number;
+  renewal: boolean;
+  benefits: MembershipBenefits;
+};
+
+export type ItemSnapshot =
+  FacilityBookingSnapshot | FacilityPackageSnapshot | CourseEnrollmentSnapshot | MembershipSnapshot;
+
+export interface FacilityPackagePreview {
+  bookings: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    available: boolean;
+    conflict?: 'BOOKED' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
+  }[];
+  isValid: boolean;
+  unitPrice: number;
+  basePrice: number;
+}
 
 export interface QuoteLine {
   lineNumber: number;

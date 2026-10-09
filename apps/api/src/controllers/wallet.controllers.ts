@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ResponseClient } from '~/rules/response';
 import walletService from '~/services/wallet.service';
+import { getClientIp } from '~/utils/request';
 
 class WalletController {
   getMine = async (req: Request, res: Response) => {
@@ -14,6 +15,16 @@ class WalletController {
   getForMember = async (req: Request, res: Response) => {
     const wallet = await walletService.getForMember(req.params.id as string, req.query as unknown as WalletQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: wallet }));
+  };
+
+  topUpAtCounter = async (req: Request, res: Response) => {
+    const transaction = await walletService.topUpAtCounter(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã nạp tiền vào ví', result: transaction }));
   };
 }
 

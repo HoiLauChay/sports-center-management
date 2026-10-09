@@ -20,6 +20,7 @@ import type {
   ReceptionistProfile,
   Sport,
   SystemSetting,
+  WalletTransaction,
 } from '~/generated/prisma/client';
 
 const fields =
@@ -87,7 +88,14 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'isActive',
     'deletedAt',
   ),
-  MEMBER_MEMBERSHIP: fields<MemberMembership>()('packageId', 'startDate', 'endDate', 'autoRenew', 'status'),
+  MEMBER_MEMBERSHIP: fields<MemberMembership>()(
+    'packageId',
+    'startDate',
+    'endDate',
+    'autoRenew',
+    'status',
+    'cancelledAt',
+  ),
   COUPON: fields<Coupon>()(
     'code',
     'name',
@@ -114,4 +122,12 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
   ),
   BANK_TRANSACTION: fields<BankTransaction>()('amount', 'paymentCode', 'status', 'resolvedAccountId', 'note'),
   INVOICE: fields<Invoice>()('purpose', 'accountId', 'amount', 'status', 'bankTransactionId', 'orderId'),
+  WALLET_TRANSACTION: fields<WalletTransaction>()(
+    'accountId',
+    'type',
+    'topUpMethod',
+    'amount',
+    'balanceAfter',
+    'description',
+  ),
 };

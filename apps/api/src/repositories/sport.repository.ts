@@ -37,6 +37,38 @@ class SportRepository {
   update = (id: string, data: Prisma.SportUpdateInput, tx: Prisma.TransactionClient = prisma) =>
     tx.sport.update({ where: { id }, data, select: sportSelect });
 
+  hasOngoingClasses = async (sportId: string, today: string, tx: Prisma.TransactionClient = prisma) =>
+    (await tx.class.count({
+      where: {
+        course: { sportId },
+        deletedAt: null,
+        status: { in: ['DRAFT', 'PENDING_APPROVAL', 'OPEN'] },
+        startDate: { lte: new Date(today) },
+        OR: [{ endDate: null }, { endDate: { gte: new Date(today) } }],
+      },
+    })) > 0;
+
+  findNotStartedClasses = (sportId: string, today: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.class.findMany({
+      where: {
+        course: { sportId },
+        deletedAt: null,
+        status: { in: ['DRAFT', 'PENDING_APPROVAL', 'OPEN'] },
+        OR: [{ startDate: null }, { startDate: { gt: new Date(today) } }],
+      },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        startDate: true,
+        enrollments: {
+          where: { status: 'ENROLLED' },
+          select: { accountId: true, orderItem: { select: { totalAmount: true, refundedAt: true } } },
+        },
+      },
+      orderBy: { startDate: 'asc' },
+    });
+
   hasUnfinishedClasses = async (sportId: string, tx: Prisma.TransactionClient = prisma) => {
     const today = todayInCenter();
     return (

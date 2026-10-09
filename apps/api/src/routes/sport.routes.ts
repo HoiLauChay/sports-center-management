@@ -1,4 +1,9 @@
-import { createSportBodySchema, sportIdParamsSchema, updateSportBodySchema } from '@sports-center/shared';
+import {
+  createSportBodySchema,
+  deleteSportQuerySchema,
+  sportIdParamsSchema,
+  updateSportBodySchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import sportController from '~/controllers/sport.controllers';
@@ -16,6 +21,11 @@ sportRouter.patch(
   validate({ params: sportIdParamsSchema, body: updateSportBodySchema }),
   sportController.update,
 );
-sportRouter.delete('/:id', isRole('MANAGER'), validate({ params: sportIdParamsSchema }), sportController.remove);
+sportRouter.delete(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: sportIdParamsSchema, query: deleteSportQuerySchema }),
+  sportController.remove,
+);
 
 export default sportRouter;

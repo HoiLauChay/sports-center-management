@@ -1,14 +1,18 @@
-import { ERROR_CODE, type WalletQuery } from '@sports-center/shared';
+import { ERROR_CODE, type CounterTopUpBody, type WalletQuery } from '@sports-center/shared';
 
+import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { toWalletTransactionResponse } from '~/mappers/wallet.mapper';
 import accountRepository from '~/repositories/account.repository';
 import walletRepository from '~/repositories/wallet.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import { idempotencyKey } from '~/utils/idempotency';
+import auditService from '~/services/audit.service';
+import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import { hashRequest, idempotencyKey, withIdempotency } from '~/utils/idempotency';
 import { toPage } from '~/utils/pagination';
-import { transactionCode } from '~/utils/paymentCode';
+import { retryOnDuplicateCode, transactionCode } from '~/utils/paymentCode';
+import { lockRows, runTransaction } from '~/utils/transaction';
 
 interface CreditInput {
   accountId: string;
@@ -39,18 +43,81 @@ interface RefundInput {
   description: string;
 }
 
+const memberNotFound = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.NOT_FOUND,
+    code: ERROR_CODE.NOT_FOUND,
+    message: 'Không tìm thấy thành viên',
+  });
+
 class WalletService {
   getMine = (accountId: string, query: WalletQuery) => this.load(accountId, query);
 
   getForMember = async (accountId: string, query: WalletQuery) => {
-    if (!(await accountRepository.findById(accountId, 'MEMBER'))) {
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.NOT_FOUND,
-        code: ERROR_CODE.NOT_FOUND,
-        message: 'Không tìm thấy thành viên',
-      });
-    }
+    if (!(await accountRepository.findById(accountId, 'MEMBER'))) throw memberNotFound();
     return this.load(accountId, query);
+  };
+
+  topUpAtCounter = async (receptionistId: string, accountId: string, body: CounterTopUpBody, ip?: string) => {
+    const { idempotencyKey: clientKey, ...payload } = body;
+    const key = idempotencyKey.cash(receptionistId, clientKey);
+    const requestHash = hashRequest({ accountId, ...payload });
+    let notifications: CreatedNotification[] = [];
+
+    const transaction = await withIdempotency({
+      requestHash,
+      find: () => walletRepository.findTransactionByKey(key, prisma),
+      execute: () =>
+        retryOnDuplicateCode('transaction_code_key', () =>
+          runTransaction(async (tx) => {
+            await lockRows(tx, { accounts: [accountId], memberProfiles: [accountId] });
+            const replayed = await walletRepository.findTransactionByKey(key, tx);
+            if (replayed) return replayed;
+            const member = await accountRepository.findById(accountId, 'MEMBER', tx);
+            if (member?.status !== 'ACTIVE') throw memberNotFound();
+
+            const created = await this.credit(tx, {
+              accountId,
+              amount: body.amount,
+              idempotencyKey: key,
+              requestHash,
+              method: body.method,
+              createdById: receptionistId,
+              description: body.note || 'Nạp tiền tại quầy',
+            });
+            await auditService.record(
+              {
+                accountId: receptionistId,
+                action: 'CREATE',
+                entityType: 'WALLET_TRANSACTION',
+                entityId: created.id,
+                newValues: created,
+                ipAddress: ip,
+              },
+              tx,
+            );
+            notifications = await notificationService.create(
+              [
+                {
+                  accountId,
+                  type: 'PAYMENT',
+                  title: 'Nạp ví thành công',
+                  message: `Ví của bạn đã được cộng ${body.amount.toLocaleString('vi-VN')}đ tại quầy.`,
+                  referenceType: 'WALLET_TRANSACTION',
+                  referenceId: created.id,
+                  dedupKey: `counter-top-up:${created.id}`,
+                  sendEmail: true,
+                },
+              ],
+              tx,
+            );
+            return created;
+          }),
+        ),
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toWalletTransactionResponse(transaction);
   };
 
   pay = async (tx: Prisma.TransactionClient, input: PayInput) => {

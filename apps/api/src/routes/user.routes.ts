@@ -1,6 +1,8 @@
 import {
+  counterTopUpBodySchema,
   createUserBodySchema,
   listUsersQuerySchema,
+  memberMembershipParamsSchema,
   updateUserBodySchema,
   updateUserStatusBodySchema,
   userIdParamsSchema,
@@ -8,6 +10,7 @@ import {
 } from '@sports-center/shared';
 import { Router } from 'express';
 
+import memberMembershipController from '~/controllers/memberMembership.controllers';
 import userController from '~/controllers/user.controllers';
 import walletController from '~/controllers/wallet.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
@@ -28,6 +31,24 @@ userRouter.get(
   isRole('MANAGER', 'RECEPTIONIST'),
   validate({ params: userIdParamsSchema, query: walletQuerySchema }),
   walletController.getForMember,
+);
+userRouter.get(
+  '/:id/memberships',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: userIdParamsSchema }),
+  memberMembershipController.listForMember,
+);
+userRouter.post(
+  '/:id/memberships/:membershipId/cancel',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: memberMembershipParamsSchema }),
+  memberMembershipController.cancelForMember,
+);
+userRouter.post(
+  '/:id/wallet/top-ups',
+  isRole('RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, body: counterTopUpBodySchema }),
+  walletController.topUpAtCounter,
 );
 userRouter.post('/', isRole('MANAGER'), validate({ body: createUserBodySchema }), userController.create);
 userRouter.patch(

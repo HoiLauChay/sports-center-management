@@ -8,11 +8,11 @@ import {
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import scheduleRepository from '~/repositories/schedule.repository';
+import { priceBookings } from '~/services/checkout/lines/bookingPricing';
 import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
-import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
+import type { LineHandler } from '~/services/checkout/types';
 import scheduleService, { type PlannedUse } from '~/services/schedule.service';
-import { percentOf } from '~/utils/money';
-import { addDays, formatDate, fromDbTime, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
+import { addDays, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
 
 type BookingInput = Extract<CheckoutItemInput, { type: 'FACILITY_BOOKING' }>;
 
@@ -25,46 +25,6 @@ interface BookingData {
   unitPrice: number;
   benefit: BookingBenefit;
 }
-
-const monthOf = (date: string) => {
-  const [year, month] = date.split('-').map(Number);
-  return { from: `${date.slice(0, 7)}-01`, to: formatDate(new Date(Date.UTC(year!, month!, 1))) };
-};
-
-const freeSlotsUsed = async (db: Db, ctx: CheckoutContext, accountId: string, date: string) => {
-  const { from, to } = monthOf(date);
-  const slotMinutes = ctx.settings.slotDurationMinutes;
-  const booked = (await bookingRepository.findFreeSlotTimes(accountId, from, to, db)).reduce(
-    (sum, { startTime, endTime }) => sum + (fromDbTime(endTime) - fromDbTime(startTime)) / slotMinutes,
-    0,
-  );
-  const planned = ctx.planned
-    .filter(({ type }) => type === 'FACILITY_BOOKING')
-    .map(({ data }) => data as BookingData)
-    .filter(({ benefit, date: day }) => benefit === 'FREE_SLOT' && from <= day && day < to)
-    .reduce((sum, { slots }) => sum + slots, 0);
-  return booked + planned;
-};
-
-const benefitOf = async (
-  db: Db,
-  ctx: CheckoutContext,
-  facilityType: string,
-  date: string,
-  slots: number,
-): Promise<{ benefit: BookingBenefit; discountPct: number }> => {
-  if (ctx.buyer.kind === 'GUEST' || !ctx.benefits) return { benefit: 'NONE', discountPct: 0 };
-  const current = ctx.benefits.current;
-  if (facilityType === 'GYM' && current?.gymAccess) return { benefit: 'GYM_ACCESS', discountPct: 100 };
-
-  const quota = ctx.benefits.periodOn(date)?.freeBookingSlotsPerMonth ?? 0;
-  if (quota >= slots && quota - (await freeSlotsUsed(db, ctx, ctx.buyer.accountId, date)) >= slots) {
-    return { benefit: 'FREE_SLOT', discountPct: 100 };
-  }
-
-  const pct = current?.bookingDiscountPct ?? 0;
-  return pct > 0 ? { benefit: 'DISCOUNT', discountPct: pct } : { benefit: 'NONE', discountPct: 0 };
-};
 
 export const facilityBookingHandler: LineHandler<BookingInput, BookingData, FacilityBookingSnapshot> = {
   type: 'FACILITY_BOOKING',
@@ -95,14 +55,14 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
 
     const slots = (range.end - range.start) / ctx.settings.slotDurationMinutes;
     const unitPrice = Number(facility.pricePerSlot);
-    const subtotal = unitPrice * slots;
-    const { benefit, discountPct } = await benefitOf(db, ctx, facility.type, input.date, slots);
+    const [priced] = await priceBookings(db, ctx, facility, [{ date: input.date, slots }]);
+    const { subtotal, discount, discountPct, benefit } = priced!;
     const use: PlannedUse = { ...range, facilityId: facility.id, exclusive: false };
 
     return {
       ok: true,
       subtotal,
-      membershipDiscount: percentOf(subtotal, discountPct),
+      membershipDiscount: discount,
       snapshot: {
         title: facility.name,
         startAt: toCenterDateTime(range.date, range.start).toISOString(),
