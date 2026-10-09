@@ -8,6 +8,11 @@ import coachAssignmentService from '~/services/coachAssignment.service';
 import { getClientIp } from '~/utils/request';
 
 class ClassController {
+  listForCoach = async (req: Request, res: Response) => {
+    const result = await classService.listForCoach(req.user!.id);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
   cancel = async (req: Request, res: Response) => {
     const result = await classService.cancel(req.user!.id, req.params.id as string, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã hủy lớp học', result }));
