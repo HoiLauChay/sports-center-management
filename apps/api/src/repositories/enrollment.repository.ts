@@ -1,5 +1,5 @@
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { EnrollmentStatus, Prisma } from '~/generated/prisma/client';
 import { classSummarySelect } from '~/repositories/class.repository';
 import { todayInCenter } from '~/utils/time';
 
@@ -25,7 +25,7 @@ class EnrollmentRepository {
       orderBy: [{ enrolledAt: 'desc' }, { id: 'desc' }],
     });
 
-  findByClass = (classId: string, status?: 'ENROLLED') =>
+  findByClass = (classId: string, status?: EnrollmentStatus) =>
     prisma.classEnrollment.findMany({
       where: { classId, status },
       select: enrollmentSelect,

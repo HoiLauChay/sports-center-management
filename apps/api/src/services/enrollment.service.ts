@@ -20,6 +20,8 @@ interface Actor {
 const notFound = () =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy đăng ký' });
 
+const classNotFound = () =>
+  new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy lớp học' });
 const forbidden = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 const invalidState = (message: string) =>
@@ -34,12 +36,7 @@ class EnrollmentService {
 
   listForClass = async (actor: Actor, classId: string) => {
     const cls = await classRepository.findDetail(classId);
-    if (!cls)
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.NOT_FOUND,
-        code: ERROR_CODE.NOT_FOUND,
-        message: 'Không tìm thấy lớp học',
-      });
+    if (!cls) throw classNotFound();
     if (actor.role === 'COACH' && cls.coachId !== actor.id)
       throw forbidden('Bạn chỉ được xem học viên lớp mình phụ trách');
     const status = actor.role === 'COACH' ? 'ENROLLED' : undefined;
