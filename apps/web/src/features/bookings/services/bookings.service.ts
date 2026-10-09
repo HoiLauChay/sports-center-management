@@ -7,11 +7,11 @@ import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
 import { listBookingsOn, listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
 import { previewPackage } from '../mocks/schedule';
-import type { PackagePreviewRequest } from '../types';
+import type { PackagePreview, PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedule, recurring-package preview and my bookings. The facility schedule comes from the API; the rest is mock until
- * #112, #133 and #138 ship (see `../mocks`); the facilities, settings and membership data they rely on come from the real API.
+ * Facility schedule, recurring-package preview and my bookings. The schedule and the member's package preview come from the
+ * API; my bookings and the reception day list stay mock until #167 ships (see `../mocks`).
  */
 export const bookingsService = {
   facilitySchedule: async (facilityId: string, date: string) => {
@@ -22,8 +22,13 @@ export const bookingsService = {
     return data.result;
   },
 
-  /** `POST /facility-packages/preview` */
-  previewPackage: (request: PackagePreviewRequest) =>
+  previewPackage: async (body: PackagePreviewRequest) => {
+    const { data } = await privateApi.post<ApiResponse<PackagePreview>>('/facility-packages/preview', body);
+    return data.result;
+  },
+
+  /** `POST /facility-packages/preview` only accepts members, so the counter keeps the mock until #134 wires it. */
+  previewPackageAtCounter: (request: PackagePreviewRequest) =>
     mockRequest(async () => {
       const { facilities, settings } = await loadCatalog();
       ensureClassSeed(facilities, settings);

@@ -35,10 +35,11 @@ export function useFacilitySchedules(facilityIds: string[], date: string) {
   };
 }
 
-export function usePackagePreview(request: PackagePreviewRequest | null) {
+export function usePackagePreview(request: PackagePreviewRequest | null, atCounter = false) {
   return useQuery({
-    queryKey: ['facility-package-preview', request],
-    queryFn: () => bookingsService.previewPackage(request!),
+    queryKey: ['facility-package-preview', atCounter, request],
+    queryFn: () =>
+      atCounter ? bookingsService.previewPackageAtCounter(request!) : bookingsService.previewPackage(request!),
     enabled: Boolean(request),
     placeholderData: keepPreviousData,
     retry: false,

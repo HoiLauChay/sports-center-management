@@ -1,4 +1,4 @@
-import type { Person, Ref } from '@sports-center/shared';
+import type { FacilityPackagePreview, Person, Ref } from '@sports-center/shared';
 
 export type BookingStatus = 'CONFIRMED' | 'CANCELLED';
 export type BookingBenefit = 'NONE' | 'DISCOUNT' | 'GYM_ACCESS' | 'FREE_SLOT';
@@ -35,31 +35,13 @@ export interface FacilityPackage {
   bookings: Booking[];
 }
 
-export type PackageConflict = 'BOOKED' | 'CLASS' | 'MAINTENANCE' | 'CLOSED';
+export type {
+  FacilityPackagePreview as PackagePreview,
+  FacilityPackagePreviewBody as PackagePreviewRequest,
+} from '@sports-center/shared';
 
-export interface PackagePreviewRequest {
-  facilityId: string;
-  startDate: string;
-  daysOfWeek: number[];
-  startTime: string;
-  endTime: string;
-  weeks: number;
-}
-
-export interface PackagePreviewBooking {
-  date: string;
-  startTime: string;
-  endTime: string;
-  available: boolean;
-  conflict?: PackageConflict;
-}
-
-export interface PackagePreview {
-  bookings: PackagePreviewBooking[];
-  isValid: boolean;
-  unitPrice: number;
-  basePrice: number;
-}
+export type PackagePreviewBooking = FacilityPackagePreview['bookings'][number];
+export type PackageConflict = NonNullable<PackagePreviewBooking['conflict']>;
 
 /** A range of consecutive slots picked on the grid. */
 export interface SlotSelection {
