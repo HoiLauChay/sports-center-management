@@ -8,7 +8,8 @@ import { PrismaClient } from '~/generated/prisma/client';
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
   max: 5,
-  // Prisma's pg adapter expects UTC for both scalar and nested timestamptz values.
+  // PrismaPg serializes Date parameters as UTC without an offset and expects UTC results.
+  // Await setup on every new connection before the pool makes it available.
   onConnect: async (client) => {
     await client.query("SET TIME ZONE 'UTC'");
   },

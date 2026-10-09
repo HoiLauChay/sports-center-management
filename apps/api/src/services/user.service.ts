@@ -11,7 +11,7 @@ import {
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
-import { toAccountResponse, toAccountSummary } from '~/mappers/account.mapper';
+import { toAccountResponse, toAccountSummary, toStudentResponse } from '~/mappers/account.mapper';
 import accountRepository, { type AccountWithProfile } from '~/repositories/account.repository';
 import classRepository from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
@@ -99,7 +99,7 @@ class UserService {
     if (viewer.role === 'COACH' && !(await enrollmentRepository.hasCurrentStudent(viewer.id, id))) throw notFound();
     const account = await accountRepository.findById(id, visibleRole(viewer));
     if (!account) throw notFound();
-    return toAccountResponse(account);
+    return viewer.role === 'COACH' ? toStudentResponse(account) : toAccountResponse(account);
   };
 
   create = async (viewer: Viewer, body: CreateUserBody, ip?: string) => {

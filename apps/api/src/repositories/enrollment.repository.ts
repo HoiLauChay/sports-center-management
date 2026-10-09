@@ -25,9 +25,9 @@ class EnrollmentRepository {
       orderBy: [{ enrolledAt: 'desc' }, { id: 'desc' }],
     });
 
-  findByClass = (classId: string) =>
+  findByClass = (classId: string, status?: 'ENROLLED') =>
     prisma.classEnrollment.findMany({
-      where: { classId },
+      where: { classId, status },
       select: enrollmentSelect,
       orderBy: [{ enrolledAt: 'asc' }, { id: 'asc' }],
     });

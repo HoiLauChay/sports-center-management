@@ -96,6 +96,8 @@ describe('enrollment and coach student access', () => {
     const detail = await readResult<Record<string, unknown>>(response);
     expect(detail).toMatchObject({ id: member.id, role: 'MEMBER', profile: { healthNotes: 'Đau gối' } });
     expect(detail).not.toHaveProperty('passwordHash');
+    expect(detail).not.toHaveProperty('address');
+    expect(detail.profile).not.toHaveProperty('walletBalance');
     expect((await request('GET', '/users', coach)).status).toBe(403);
     expect((await request('GET', `/users/${coach.id}`, coach)).status).toBe(404);
     expect((await request('GET', `/users/${member.id}/wallet`, coach)).status).toBe(403);
@@ -108,6 +110,9 @@ describe('enrollment and coach student access', () => {
     expect((await request('GET', `/users/${member.id}`, otherCoach)).status).toBe(200);
     expect((await request('POST', `/enrollments/${enrollment.id}/cancel`, member)).status).toBe(200);
     expect((await request('GET', `/users/${member.id}`, otherCoach)).status).toBe(404);
+    expect(await readResult<Enrollment[]>(await request('GET', `/classes/${cls.id}/enrollments`, otherCoach))).toEqual(
+      [],
+    );
   });
 
   test('completed, cancelled and deleted classes do not grant student profile access', async () => {
