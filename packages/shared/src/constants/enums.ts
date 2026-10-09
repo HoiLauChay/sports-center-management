@@ -117,6 +117,12 @@ export type FacilitySlotStatus = (typeof FACILITY_SLOT_STATUSES)[number];
 export const CLASS_STATUSES = ['DRAFT', 'PENDING_APPROVAL', 'OPEN', 'CANCELLED'] as const;
 export type ClassStatus = (typeof CLASS_STATUSES)[number];
 
+export const BOOKING_STATUSES = ['CONFIRMED', 'CANCELLED'] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+export const FACILITY_PACKAGE_STATUSES = ['ACTIVE', 'CANCELLED'] as const;
+export type FacilityPackageStatus = (typeof FACILITY_PACKAGE_STATUSES)[number];
+
 export const ENROLLMENT_STATUSES = ['ENROLLED', 'CANCELLED'] as const;
 export type EnrollmentStatus = (typeof ENROLLMENT_STATUSES)[number];
 

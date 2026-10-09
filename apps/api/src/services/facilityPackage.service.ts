@@ -7,6 +7,8 @@ import {
 
 import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import { toFacilityPackageResponse } from '~/mappers/booking.mapper';
+import bookingRepository from '~/repositories/booking.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import { buildContext } from '~/services/checkout/context';
 import { planPackage } from '~/services/checkout/lines/facilityPackage';
@@ -28,6 +30,9 @@ const CONFLICT_OF: Record<ScheduleClashReason, Conflict> = {
 };
 
 class FacilityPackageService {
+  listMine = async (accountId: string) =>
+    (await bookingRepository.findPackagesByAccount(accountId)).map(toFacilityPackageResponse);
+
   preview = async (actor: { id: string; role: 'MEMBER' }, body: FacilityPackagePreviewBody) => {
     const ctx = await buildContext(prisma, actor, undefined);
     await loadHeldLines(prisma, ctx);

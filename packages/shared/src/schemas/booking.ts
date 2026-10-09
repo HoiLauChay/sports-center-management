@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
+import { BOOKING_STATUSES } from '../constants/enums';
 import { phoneSchema } from './account';
 import { pageQuerySchema } from './pagination';
 
 const bookingQuery = pageQuerySchema.extend({
   from: z.iso.date('Ngày bắt đầu không hợp lệ').optional(),
   to: z.iso.date('Ngày kết thúc không hợp lệ').optional(),
-  status: z.enum(['CONFIRMED', 'CANCELLED'], 'Trạng thái không hợp lệ').optional(),
+  status: z.enum(BOOKING_STATUSES, 'Trạng thái không hợp lệ').optional(),
 });
 const validRange = ({ from, to }: { from?: string; to?: string }) => !from || !to || from <= to;
 const rangeIssue = { path: ['to'], message: 'Ngày kết thúc phải từ ngày bắt đầu trở đi' };

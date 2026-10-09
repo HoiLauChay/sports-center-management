@@ -5,6 +5,7 @@ import type {
   ListClassesQuery as ClassesQuery,
   ClassSummary,
   CreateClassBody,
+  Enrollment,
   MyEnrollment,
   Paginated,
 } from '@sports-center/shared';
@@ -24,6 +25,11 @@ export const classesService = {
 
   get: async (id: string) => {
     const { data } = await privateApi.get<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}`);
+    return data.result;
+  },
+
+  enrollments: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<Enrollment[]>>(`/classes/${encodeURIComponent(id)}/enrollments`);
     return data.result;
   },
 

@@ -33,6 +33,13 @@ export function useClass(id: string) {
   });
 }
 
+export function useClassEnrollments(classId: string) {
+  return useQuery({
+    queryKey: ['classes', 'enrollments', classId],
+    queryFn: () => classesService.enrollments(classId),
+  });
+}
+
 export function useMyEnrollments() {
   const user = useCurrentUser();
   return useQuery({

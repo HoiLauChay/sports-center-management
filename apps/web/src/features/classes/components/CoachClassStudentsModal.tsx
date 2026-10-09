@@ -1,7 +1,7 @@
 import { Modal } from 'antd';
 import { Users } from 'lucide-react';
-import { EmptyState } from '~/components/feedback/States';
 import type { GymClass } from '../types';
+import { ClassStudentsTable } from './ClassStudentsTable';
 
 interface CoachClassStudentsModalProps {
   /** The class whose students are shown; `null` keeps the modal closed. */
@@ -9,10 +9,7 @@ interface CoachClassStudentsModalProps {
   onClose: () => void;
 }
 
-/**
- * UC_2.21: the students of a class the coach teaches. Only the head count is known until
- * `GET /classes/{id}/enrollments` (#167) ships.
- */
+/** UC_2.21: the students of a class the coach teaches. */
 export function CoachClassStudentsModal({ gymClass, onClose }: CoachClassStudentsModalProps) {
   return (
     <Modal
@@ -47,10 +44,7 @@ export function CoachClassStudentsModal({ gymClass, onClose }: CoachClassStudent
             </div>
           </div>
         </div>
-        <EmptyState
-          title="Chưa xem được danh sách học viên"
-          description="Hệ thống chưa hỗ trợ xem tên học viên của lớp, hiện chỉ có sĩ số."
-        />
+        {gymClass && <ClassStudentsTable classId={gymClass.id} />}
       </div>
     </Modal>
   );

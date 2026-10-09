@@ -5,6 +5,10 @@ import bookingController from '~/controllers/booking.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
+export const myBookingRouter = Router();
+myBookingRouter.use(auth, isRole('MEMBER'));
+myBookingRouter.get('/', validate({ query: listMyBookingsQuerySchema }), bookingController.listMine);
+
 export const bookingRouter = Router();
 bookingRouter.use(auth);
 bookingRouter.get(
@@ -19,11 +23,3 @@ bookingRouter.get(
   validate({ params: bookingIdParamsSchema }),
   bookingController.get,
 );
-
-export const myBookingRouter = Router();
-myBookingRouter.use(auth, isRole('MEMBER'));
-myBookingRouter.get('/', validate({ query: listMyBookingsQuerySchema }), bookingController.listMine);
-
-export const myFacilityPackageRouter = Router();
-myFacilityPackageRouter.use(auth, isRole('MEMBER'));
-myFacilityPackageRouter.get('/', bookingController.listPackagesMine);

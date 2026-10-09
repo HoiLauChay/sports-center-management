@@ -1,4 +1,4 @@
-import type { BookingBenefit } from '../constants/enums';
+import type { BookingBenefit, BookingStatus, FacilityPackageStatus } from '../constants/enums';
 import type { Ref } from './api';
 import type { Person } from './audit';
 
@@ -8,7 +8,7 @@ export interface Booking {
   date: string;
   startTime: string;
   endTime: string;
-  status: 'CONFIRMED' | 'CANCELLED';
+  status: BookingStatus;
   unitPrice: number;
   benefit: BookingBenefit;
   paidAmount: number | null;
@@ -28,7 +28,7 @@ export interface FacilityPackage {
   daysOfWeek: number[];
   startTime: string;
   endTime: string;
-  status: 'ACTIVE' | 'CANCELLED';
+  status: FacilityPackageStatus;
   unitPrice: number;
   bookings: Booking[];
 }

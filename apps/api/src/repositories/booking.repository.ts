@@ -20,6 +20,7 @@ const bookingSelect = {
   createdAt: true,
   orderItem: { select: { totalAmount: true, order: { select: { guestName: true, guestPhone: true } } } },
 } satisfies Prisma.FacilityBookingSelect;
+
 const packageSelect = {
   id: true,
   facility: { select: { id: true, name: true } },
@@ -32,6 +33,7 @@ const packageSelect = {
   unitPrice: true,
   bookings: { select: bookingSelect, orderBy: [{ bookingDate: 'asc' }, { startTime: 'asc' }, { id: 'asc' }] },
 } satisfies Prisma.FacilityPackageSelect;
+
 export type BookingRow = Prisma.FacilityBookingGetPayload<{ select: typeof bookingSelect }>;
 export type FacilityPackageRow = Prisma.FacilityPackageGetPayload<{ select: typeof packageSelect }>;
 
