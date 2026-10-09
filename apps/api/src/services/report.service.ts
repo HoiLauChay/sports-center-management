@@ -7,6 +7,7 @@ import {
   type MembersReport,
   type OverviewReport,
   type ReportDateQuery,
+  type ReportExportQuery,
   type ReportGranularity,
   type ReportRangeQuery,
   type RevenueBucket,
@@ -17,6 +18,18 @@ import {
 
 import reportRepository from '~/repositories/report.repository';
 import settingRepository, { type SettingRow } from '~/repositories/setting.repository';
+import { toPdf } from '~/services/reportExport/reportExport.pdf';
+import {
+  coursesTables,
+  facilitiesTables,
+  membersTables,
+  overviewTables,
+  REPORT_TITLE,
+  revenueTables,
+  walletTables,
+  type ReportTable,
+} from '~/services/reportExport/reportExport.tables';
+import { toXlsx } from '~/services/reportExport/reportExport.xlsx';
 import {
   addDays,
   formatDate,
@@ -256,6 +269,31 @@ class ReportService {
           bucket.refunds,
       })),
     };
+  };
+
+  exportFile = async ({ report, format, ...range }: ReportExportQuery) => {
+    const tables: Record<ReportExportQuery['report'], () => Promise<ReportTable[]>> = {
+      overview: async () => overviewTables(await this.overview()),
+      revenue: async () => revenueTables(await this.revenue(range)),
+      wallet: async () => walletTables(await this.wallet(range)),
+      members: async () => membersTables(await this.members(range)),
+      facilities: async () => facilitiesTables(await this.facilities(range)),
+      courses: async () => coursesTables(await this.courses(range)),
+    };
+    const today = todayInCenter();
+    const document = {
+      title: `Báo cáo ${REPORT_TITLE[report].toLowerCase()}`,
+      period: report === 'overview' ? `Ngày ${today}` : `Từ ${range.from} đến ${range.to}`,
+      tables: await tables[report](),
+    };
+    const name = `bao-cao-${report}-${report === 'overview' ? today : `${range.from}_${range.to}`}`;
+    return format === 'pdf'
+      ? { fileName: `${name}.pdf`, contentType: 'application/pdf', body: await toPdf(document) }
+      : {
+          fileName: `${name}.xlsx`,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          body: await toXlsx(document),
+        };
   };
 }
 

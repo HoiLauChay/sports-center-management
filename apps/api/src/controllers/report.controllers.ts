@@ -1,4 +1,4 @@
-import type { ReportDateQuery, ReportRangeQuery } from '@sports-center/shared';
+import type { ReportDateQuery, ReportExportQuery, ReportRangeQuery } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -6,6 +6,11 @@ import { ResponseClient } from '~/rules/response';
 import reportService from '~/services/report.service';
 
 class ReportController {
+  exportFile = async (req: Request, res: Response) => {
+    const { fileName, contentType, body } = await reportService.exportFile(req.query as unknown as ReportExportQuery);
+    res.status(HTTP_STATUS.OK).type(contentType).attachment(fileName).send(body);
+  };
+
   members = async (req: Request, res: Response) => {
     const result = await reportService.members(req.query as unknown as ReportDateQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
