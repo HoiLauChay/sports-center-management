@@ -24,6 +24,12 @@ import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
 import { mySupportRouter, supportRouter } from '~/routes/support.routes';
+import {
+  classAnnouncementRouter,
+  evaluationRouter,
+  myEvaluationRouter,
+  sessionTrainingRouter,
+} from '~/routes/training.routes';
 import uploadRouter from '~/routes/upload.routes';
 import userRouter from '~/routes/user.routes';
 import { myWalletRouter, walletRouter } from '~/routes/wallet.routes';
@@ -46,16 +52,19 @@ export const apiRoutes: [string, Router][] = [
   ['/coach/specializations', coachSpecializationRouter],
   ['/coach/schedule', coachScheduleRouter],
   ['/classes', classRouter],
+  ['/classes', classAnnouncementRouter],
   ['/coupons', couponRouter],
   ['/courses', courseRouter],
   ['/cron', cronRouter],
   ['/enrollments', enrollmentRouter],
+  ['/evaluations', evaluationRouter],
   ['/facilities', facilityRouter],
   ['/facility-packages', facilityPackageRouter],
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/bookings', myBookingRouter],
   ['/me/enrollments', myEnrollmentRouter],
+  ['/me/evaluations', myEvaluationRouter],
   ['/me/facility-packages', myFacilityPackageRouter],
   ['/me/invoices', myInvoiceRouter],
   ['/me/memberships', myMembershipRouter],
@@ -67,6 +76,7 @@ export const apiRoutes: [string, Router][] = [
   ['/orders', orderRouter],
   ['/payments', paymentRouter],
   ['/reports', reportRouter],
+  ['/sessions', sessionTrainingRouter],
   ['/settings', settingRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],
