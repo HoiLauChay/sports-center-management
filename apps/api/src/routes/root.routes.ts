@@ -5,7 +5,7 @@ import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
 import { bookingRouter, myBookingRouter } from '~/routes/booking.routes';
 import checkoutRouter from '~/routes/checkout.routes';
-import { classRouter, coachClassRouter } from '~/routes/class.routes';
+import { classRouter, coachClassRouter, coachRegistrationRouter } from '~/routes/class.routes';
 import couponRouter from '~/routes/coupon.routes';
 import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
@@ -41,6 +41,7 @@ export const apiRoutes: [string, Router][] = [
   ['/bookings', bookingRouter],
   ['/checkout', checkoutRouter],
   ['/coach/classes', coachClassRouter],
+  ['/coach/registrations', coachRegistrationRouter],
   ['/coach/specializations', coachSpecializationRouter],
   ['/classes', classRouter],
   ['/coupons', couponRouter],

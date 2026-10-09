@@ -1,4 +1,4 @@
-import type { ListClassesQuery } from '@sports-center/shared';
+import type { ListClassesQuery, ListCoachRegistrationsQuery } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -10,6 +10,14 @@ import { getClientIp } from '~/utils/request';
 class ClassController {
   listForCoach = async (req: Request, res: Response) => {
     const result = await classService.listForCoach(req.user!.id);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
+  listMyCoachRegistrations = async (req: Request, res: Response) => {
+    const result = await coachAssignmentService.listMine(
+      req.user!.id,
+      req.query as unknown as ListCoachRegistrationsQuery,
+    );
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 

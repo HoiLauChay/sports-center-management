@@ -4,6 +4,7 @@ import {
   classIdParamsSchema,
   createClassBodySchema,
   listClassesQuerySchema,
+  listCoachRegistrationsQuerySchema,
   reviewClassBodySchema,
   updateClassBodySchema,
 } from '@sports-center/shared';
@@ -17,6 +18,14 @@ import { validate } from '~/utils/validation';
 export const coachClassRouter = Router();
 coachClassRouter.use(auth, isRole('COACH'));
 coachClassRouter.get('/', classController.listForCoach);
+
+export const coachRegistrationRouter = Router();
+coachRegistrationRouter.use(auth, isRole('COACH'));
+coachRegistrationRouter.get(
+  '/',
+  validate({ query: listCoachRegistrationsQuerySchema }),
+  classController.listMyCoachRegistrations,
+);
 
 export const classRouter = Router();
 classRouter.use(auth);
