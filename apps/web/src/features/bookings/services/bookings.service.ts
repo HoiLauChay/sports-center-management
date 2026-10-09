@@ -13,11 +13,10 @@ import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
 import { previewPackage } from '../mocks/schedule';
-import type { PackagePreviewRequest } from '../types';
+import type { PackagePreview, PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedule, recurring-package preview and bookings. Everything but the package preview comes from the API; the
- * preview stays mock until it is wired (see `../mocks`).
+ * Facility schedule, recurring-package preview and bookings, all from the API except the counter package preview.
  */
 export const bookingsService = {
   facilitySchedule: async (facilityId: string, date: string) => {
@@ -28,8 +27,13 @@ export const bookingsService = {
     return data.result;
   },
 
-  /** `POST /facility-packages/preview` */
-  previewPackage: (request: PackagePreviewRequest) =>
+  previewPackage: async (body: PackagePreviewRequest) => {
+    const { data } = await privateApi.post<ApiResponse<PackagePreview>>('/facility-packages/preview', body);
+    return data.result;
+  },
+
+  /** `POST /facility-packages/preview` only previews for the signed-in member, so the counter keeps the mock. */
+  previewPackageAtCounter: (request: PackagePreviewRequest) =>
     mockRequest(async () => {
       const { facilities, settings } = await loadCatalog();
       ensureClassSeed(facilities, settings);
