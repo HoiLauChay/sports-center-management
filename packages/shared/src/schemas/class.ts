@@ -100,9 +100,25 @@ export const listCoachRegistrationsQuerySchema = z.object({
   status: z.enum(COACH_REGISTRATION_STATUSES, 'Trạng thái không hợp lệ').optional(),
 });
 
+export const sessionIdParamsSchema = z.object({ id: z.uuid('Mã buổi học không hợp lệ') });
+
+export const updateSessionBodySchema = z
+  .strictObject({
+    date: z.iso.date('Ngày học không hợp lệ').optional(),
+    startTime: timeOfDaySchema.optional(),
+    endTime: timeOfDaySchema.optional(),
+    facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+  })
+  .refine((body) => Object.values(body).some((value) => value !== undefined), 'Cần ít nhất một trường để cập nhật')
+  .refine(({ startTime, endTime }) => startTime === undefined || endTime === undefined || startTime < endTime, {
+    path: ['endTime'],
+    message: 'Giờ kết thúc phải sau giờ bắt đầu',
+  });
+
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
 export type CancelClassBody = z.infer<typeof cancelClassBodySchema>;
 export type AssignCoachBody = z.infer<typeof assignCoachBodySchema>;
 export type ListCoachRegistrationsQuery = z.infer<typeof listCoachRegistrationsQuerySchema>;
+export type UpdateSessionBody = z.infer<typeof updateSessionBodySchema>;
