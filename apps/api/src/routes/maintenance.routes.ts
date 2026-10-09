@@ -1,4 +1,10 @@
-import { listMaintenancesQuerySchema, maintenanceWindowSchema } from '@sports-center/shared';
+import {
+  createMaintenanceBodySchema,
+  listMaintenancesQuerySchema,
+  maintenanceIdParamsSchema,
+  maintenanceWindowSchema,
+  updateMaintenanceBodySchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import maintenanceController from '~/controllers/maintenance.controllers';
@@ -18,6 +24,24 @@ maintenanceRouter.post(
   isRole('MANAGER'),
   validate({ body: maintenanceWindowSchema }),
   maintenanceController.preview,
+);
+maintenanceRouter.post(
+  '/',
+  isRole('MANAGER'),
+  validate({ body: createMaintenanceBodySchema }),
+  maintenanceController.create,
+);
+maintenanceRouter.patch(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: maintenanceIdParamsSchema, body: updateMaintenanceBodySchema }),
+  maintenanceController.update,
+);
+maintenanceRouter.delete(
+  '/:id',
+  isRole('MANAGER'),
+  validate({ params: maintenanceIdParamsSchema }),
+  maintenanceController.remove,
 );
 
 export default maintenanceRouter;

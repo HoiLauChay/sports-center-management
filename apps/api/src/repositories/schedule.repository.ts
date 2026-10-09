@@ -103,6 +103,28 @@ class ScheduleRepository {
       }),
     ]);
 
+  findMemberBookingsOn = (dates: string[]) =>
+    prisma.facilityBooking.findMany({
+      where: { status: 'CONFIRMED', accountId: { not: null }, bookingDate: { in: toDays(dates) } },
+      select: { ...bookingSelect, accountId: true },
+    });
+
+  findSessionsOn = (dates: string[]) =>
+    prisma.classSession.findMany({
+      where: { ...liveSession, sessionDate: { in: toDays(dates) } },
+      select: {
+        ...sessionSelect,
+        class: {
+          select: {
+            id: true,
+            name: true,
+            coachId: true,
+            enrollments: { where: { status: 'ENROLLED' }, select: { accountId: true } },
+          },
+        },
+      },
+    });
+
   findUpcomingBookings = (
     where: Prisma.FacilityBookingWhereInput = {},
     tx: Prisma.TransactionClient = prisma,

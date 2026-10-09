@@ -46,7 +46,7 @@ class CoachRegistrationRepository {
   create = (data: Prisma.ClassCoachRegistrationUncheckedCreateInput, tx: Prisma.TransactionClient) =>
     tx.classCoachRegistration.create({ data, select: registrationSelect });
 
-  review = (id: string, status: 'APPROVED' | 'REJECTED', managerId: string, tx: Prisma.TransactionClient) =>
+  review = (id: string, status: 'APPROVED' | 'REJECTED', managerId: string | null, tx: Prisma.TransactionClient) =>
     tx.classCoachRegistration.update({
       where: { id, status: 'PENDING' },
       data: { status, reviewedById: managerId, reviewedAt: new Date() },
