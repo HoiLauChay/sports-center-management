@@ -35,6 +35,7 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   CLASS_ATTENDANCE: 'Điểm danh buổi học',
   CLASS_COACH_REGISTRATION: 'Phân công huấn luyện viên',
   COACH_SPECIALIZATION: 'Chuyên môn huấn luyện viên',
+  MEMBER_EVALUATION: 'Đánh giá học viên',
   MEMBERSHIP: 'Gói thành viên',
   MEMBER_MEMBERSHIP: 'Gói của thành viên',
   COUPON: 'Mã giảm giá',

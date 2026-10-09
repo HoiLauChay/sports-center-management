@@ -15,6 +15,7 @@ import type {
   FacilityMaintenance,
   Invoice,
   ManagerProfile,
+  MemberEvaluation,
   MemberMembership,
   MemberProfile,
   Membership,
@@ -84,6 +85,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
   ),
   CLASS_COACH_REGISTRATION: fields<ClassCoachRegistration>()('classId', 'coachId', 'source', 'status'),
   COACH_SPECIALIZATION: fields<CoachSpecialization>()('coachId', 'sportId', 'status', 'reviewNote'),
+  MEMBER_EVALUATION: fields<MemberEvaluation>()('sessionId', 'accountId', 'coachId', 'rating', 'comment', 'deletedAt'),
   MEMBERSHIP: fields<Membership>()(
     'name',
     'description',

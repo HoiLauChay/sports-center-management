@@ -1,8 +1,15 @@
-import { saveAttendanceBodySchema, sessionIdParamsSchema, updateSessionBodySchema } from '@sports-center/shared';
+import {
+  createEvaluationBodySchema,
+  saveAttendanceBodySchema,
+  saveSessionNoteBodySchema,
+  sessionIdParamsSchema,
+  updateSessionBodySchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import attendanceController from '~/controllers/attendance.controllers';
 import sessionController from '~/controllers/session.controllers';
+import trainingController from '~/controllers/training.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
@@ -25,6 +32,30 @@ sessionRouter.put(
   isRole('COACH', 'MANAGER'),
   validate({ params: sessionIdParamsSchema, body: saveAttendanceBodySchema }),
   attendanceController.save,
+);
+sessionRouter.get(
+  '/:id/notes',
+  isRole('COACH', 'MANAGER', 'MEMBER'),
+  validate({ params: sessionIdParamsSchema }),
+  trainingController.getNote,
+);
+sessionRouter.put(
+  '/:id/notes',
+  isRole('COACH'),
+  validate({ params: sessionIdParamsSchema, body: saveSessionNoteBodySchema }),
+  trainingController.saveNote,
+);
+sessionRouter.get(
+  '/:id/evaluations',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: sessionIdParamsSchema }),
+  trainingController.listSessionEvaluations,
+);
+sessionRouter.post(
+  '/:id/evaluations',
+  isRole('COACH'),
+  validate({ params: sessionIdParamsSchema, body: createEvaluationBodySchema }),
+  trainingController.createEvaluation,
 );
 
 export default sessionRouter;
