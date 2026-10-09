@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, getRouteApi } from '@tanstack/react-router';
 import { Alert, Button, Card, Popconfirm, Radio, Result } from 'antd';
 import { Printer } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
@@ -23,7 +23,6 @@ import { usersService } from '~/features/users/services/users.service';
 import { InvoicePayPanel } from '~/features/wallet';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { newId } from '~/lib/mock/store';
 import { buyerToApi, useCancelCounterInvoice, useCounterInvoice, useStartCounterTransfer } from '../hooks/useCounter';
 import { CounterBuyerCard } from './CounterBuyerCard';
 import { CounterServicePicker } from './CounterServicePicker';
@@ -126,7 +125,6 @@ export function CounterOrderPage() {
   const [method, setMethod] = useState<PaymentMethod>('CASH');
   const [paidOrder, setPaidOrder] = useState<Order | null>(null);
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
-  const transferKey = useRef<{ fingerprint: string; key: string } | null>(null);
 
   // `?memberId=` pre-selects the buyer (opened from a member's profile). Only applies to an empty draft.
   const preselect = useQuery({
@@ -171,16 +169,12 @@ export function CounterOrderPage() {
   const pay = (expectedTotal: number) => {
     if (!buyer) return;
     if (method === 'TRANSFER') {
-      const fingerprint = JSON.stringify([buyer, items, cart.couponCode, expectedTotal]);
-      if (transferKey.current?.fingerprint !== fingerprint) transferKey.current = { fingerprint, key: newId() };
       startTransfer.mutate(
         {
           buyer,
           items,
           couponCode: cart.couponCode || undefined,
-          paymentMethod: 'TRANSFER',
           expectedTotal,
-          idempotencyKey: transferKey.current.key,
         },
         { onSuccess: (invoice) => setInvoiceId(invoice.id) },
       );

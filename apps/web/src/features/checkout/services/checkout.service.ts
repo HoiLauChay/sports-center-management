@@ -1,6 +1,6 @@
 import type { Account, ApiResponse, Invoice, Paginated } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
-import type { CheckoutRequest, ListOrdersQuery, Order, Quote, QuoteRequest } from '../types';
+import type { CheckoutBody, CheckoutQuoteBody, CounterInvoiceBody, ListOrdersQuery, Order, Quote } from '../types';
 
 export function actorOf(user: Pick<Account, 'id' | 'role' | 'fullName'>) {
   return { id: user.id, role: user.role, fullName: user.fullName };
@@ -23,7 +23,7 @@ export const checkoutService = {
    * Calculates prices, discounts (memberships & coupons) and checks validity of all items.
    * `POST /checkout/quote`
    */
-  quote: async (request: QuoteRequest): Promise<Quote> => {
+  quote: async (request: CheckoutQuoteBody): Promise<Quote> => {
     const { data } = await privateApi.post<ApiResponse<Quote>>('/checkout/quote', {
       buyer: request.buyer,
       items: request.items,
@@ -36,7 +36,7 @@ export const checkoutService = {
    * Finalizes checkout and creates an Order.
    * `POST /checkout` with idempotencyKey to prevent duplicate charges.
    */
-  checkout: async (request: CheckoutRequest): Promise<Order> => {
+  checkout: async (request: CheckoutBody): Promise<Order> => {
     const { data } = await privateApi.post<ApiResponse<Order>>('/checkout', {
       buyer: request.buyer,
       items: request.items,
@@ -51,7 +51,7 @@ export const checkoutService = {
   /**
    * Counter order paid by transfer: creates invoice and returns QR (`POST /checkout/invoices`).
    */
-  startCounterTransfer: async (request: CheckoutRequest): Promise<Invoice> => {
+  startCounterTransfer: async (request: CounterInvoiceBody): Promise<Invoice> => {
     const { data } = await privateApi.post<ApiResponse<Invoice>>('/checkout/invoices', {
       buyer: request.buyer,
       items: request.items,

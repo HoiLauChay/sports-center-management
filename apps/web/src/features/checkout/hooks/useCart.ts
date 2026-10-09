@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { useCurrentUser } from '~/features/auth';
 import { checkoutService } from '../services/checkout.service';
 import { counterDraftStore, memberCartStore, type CartState, type CartStore } from '../store/cartStore';
-import type { Buyer, CheckoutItemInput, Quote } from '../types';
+import type { CheckoutBuyer, CheckoutItemInput, Quote } from '../types';
 
 export function useCartState(store: CartStore): CartState {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
@@ -28,7 +28,7 @@ export function useCounterDraft() {
 
 interface UseQuoteParams {
   user: Account;
-  buyer?: Buyer;
+  buyer?: CheckoutBuyer;
   items: CheckoutItemInput[];
   couponCode?: string;
   enabled?: boolean;
@@ -36,7 +36,7 @@ interface UseQuoteParams {
 
 export const quoteQueryKey = (
   userId: string,
-  buyer: Buyer | undefined,
+  buyer: CheckoutBuyer | undefined,
   items: CheckoutItemInput[],
   couponCode?: string,
 ) => ['quote', userId, buyer ?? null, items, couponCode || null] as const;

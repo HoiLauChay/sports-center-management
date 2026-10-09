@@ -1,18 +1,18 @@
-import type { Account, PaymentMethod } from '@sports-center/shared';
+import type { Account } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useRef, useState } from 'react';
 import { errorPayload, toApiError } from '~/lib/http-errors';
 import { newId } from '~/lib/mock/store';
 import { checkoutService } from '../services/checkout.service';
-import type { Buyer, CheckoutItemInput, Order, Quote } from '../types';
+import type { CheckoutBody, CheckoutBuyer, CheckoutItemInput, Order, Quote } from '../types';
 
 interface CheckoutParams {
   user: Account;
-  buyer?: Buyer;
+  buyer?: CheckoutBuyer;
   items: CheckoutItemInput[];
   couponCode?: string;
-  paymentMethod: PaymentMethod;
+  paymentMethod: CheckoutBody['paymentMethod'];
   /** Quote total the person is looking at; the server refuses (PRICE_CHANGED) when it no longer matches. */
   expectedTotal: number;
 }

@@ -3,13 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { checkoutService } from '~/features/checkout/services/checkout.service';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
-import type { Buyer, CheckoutRequest } from '~/features/checkout/types';
+import type { CheckoutBuyer, CounterInvoiceBody } from '~/features/checkout/types';
 import type { MyMemberships } from '~/features/memberships/types';
 import { INVOICE_POLL_MS } from '~/features/wallet';
 import { privateApi } from '~/lib/http';
 import { toApiError } from '~/lib/http-errors';
 
-export function buyerToApi(buyer: DraftBuyer | null): Buyer | undefined {
+export function buyerToApi(buyer: DraftBuyer | null): CheckoutBuyer | undefined {
   if (!buyer) return undefined;
   return buyer.kind === 'MEMBER' ? { accountId: buyer.accountId } : { guest: { name: buyer.name, phone: buyer.phone } };
 }
@@ -46,7 +46,7 @@ export function useCounterInvoice(id: string | undefined) {
 
 export function useStartCounterTransfer() {
   const { message } = App.useApp();
-  return useMutation<Invoice, unknown, CheckoutRequest>({
+  return useMutation<Invoice, unknown, CounterInvoiceBody>({
     mutationFn: (request) => checkoutService.startCounterTransfer(request),
     onError: (error) => message.error(toApiError(error).message),
   });
