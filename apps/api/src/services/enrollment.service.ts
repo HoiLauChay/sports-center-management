@@ -1,8 +1,10 @@
-import { ERROR_CODE, type CancelEnrollmentResult } from '@sports-center/shared';
+import { ERROR_CODE, type CancelEnrollmentResult, type MyEnrollment } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
+import { toClassSummaryResponse } from '~/mappers/class.mapper';
 import { toEnrollmentResponse } from '~/mappers/enrollment.mapper';
+import classRepository from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
@@ -18,10 +20,29 @@ interface Actor {
 const notFound = () =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy đăng ký' });
 
+const classNotFound = () =>
+  new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message: 'Không tìm thấy lớp học' });
+const forbidden = (message: string) =>
+  new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 const invalidState = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
 
 class EnrollmentService {
+  listMine = async (accountId: string): Promise<MyEnrollment[]> =>
+    (await enrollmentRepository.findByAccount(accountId)).map((row) => ({
+      ...toEnrollmentResponse(row),
+      class: toClassSummaryResponse(row.class),
+    }));
+
+  listForClass = async (actor: Actor, classId: string) => {
+    const cls = await classRepository.findDetail(classId);
+    if (!cls) throw classNotFound();
+    if (actor.role === 'COACH' && cls.coachId !== actor.id)
+      throw forbidden('Bạn chỉ được xem học viên lớp mình phụ trách');
+    const status = actor.role === 'COACH' ? 'ENROLLED' : undefined;
+    return (await enrollmentRepository.findByClass(classId, status)).map(toEnrollmentResponse);
+  };
+
   cancel = async (actor: Actor, id: string): Promise<CancelEnrollmentResult> => {
     const found = await enrollmentRepository.findById(id);
     if (!found || (actor.role === 'MEMBER' && found.accountId !== actor.id)) throw notFound();

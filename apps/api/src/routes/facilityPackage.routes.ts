@@ -5,13 +5,14 @@ import facilityPackageController from '~/controllers/facilityPackage.controllers
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
-const facilityPackageRouter = Router();
+export const myFacilityPackageRouter = Router();
+myFacilityPackageRouter.use(auth, isRole('MEMBER'));
+myFacilityPackageRouter.get('/', facilityPackageController.listMine);
 
+export const facilityPackageRouter = Router();
 facilityPackageRouter.use(auth, isRole('MEMBER'));
 facilityPackageRouter.post(
   '/preview',
   validate({ body: facilityPackagePreviewBodySchema }),
   facilityPackageController.preview,
 );
-
-export default facilityPackageRouter;

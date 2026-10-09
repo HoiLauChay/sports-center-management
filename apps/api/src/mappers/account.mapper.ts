@@ -1,4 +1,4 @@
-import type { Account, AccountSummary } from '@sports-center/shared';
+import type { Account, AccountSummary, StudentAccount } from '@sports-center/shared';
 
 import type { AccountSummaryRow, AccountWithProfile } from '~/repositories/account.repository';
 
@@ -55,3 +55,18 @@ export const toAccountResponse = (account: AccountWithProfile): Account => ({
   createdAt: account.createdAt.toISOString(),
   profile: toProfile(account),
 });
+
+export const toStudentResponse = (account: AccountWithProfile): StudentAccount => {
+  const { emergencyContact, fitnessGoals, healthNotes } = account.memberProfile!;
+  return {
+    id: account.id,
+    email: account.email,
+    fullName: account.fullName,
+    phone: account.phone,
+    dateOfBirth: account.dateOfBirth?.toISOString().slice(0, 10) ?? null,
+    gender: account.gender,
+    avatarUrl: account.avatarUrl,
+    role: account.role,
+    profile: { emergencyContact, fitnessGoals, healthNotes },
+  };
+};

@@ -1,7 +1,6 @@
-import type { FacilitySchedule } from '@sports-center/shared';
+import type { FacilitySchedule, ListMyBookingsQuery } from '@sports-center/shared';
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '~/features/auth';
-import type { ListBookingsQuery } from '../mocks/bookings';
 import { bookingsService } from '../services/bookings.service';
 import type { PackagePreviewRequest } from '../types';
 
@@ -45,11 +44,11 @@ export function usePackagePreview(request: PackagePreviewRequest | null) {
   });
 }
 
-export function useMyBookings(query: ListBookingsQuery) {
+export function useMyBookings(query: ListMyBookingsQuery) {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['bookings', 'mine', user.id, query],
-    queryFn: () => bookingsService.listMine(user, query),
+    queryFn: () => bookingsService.listMine(query),
     placeholderData: keepPreviousData,
   });
 }
@@ -58,7 +57,7 @@ export function useMyPackages() {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['bookings', 'packages', user.id],
-    queryFn: () => bookingsService.listMyPackages(user),
+    queryFn: bookingsService.listMyPackages,
   });
 }
 

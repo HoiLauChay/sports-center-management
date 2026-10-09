@@ -88,7 +88,7 @@ describe('user list and detail permissions', () => {
     expect((await readResult<ListResult>(search)).items[0]?.id).toBe(member.id);
   });
 
-  test('receptionist cannot fetch staff by ID and coach cannot call either route', async () => {
+  test('receptionist cannot fetch staff by ID and coach cannot read unassigned members', async () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const coach = await createAccount('COACH', 'coach@example.com');
@@ -103,7 +103,7 @@ describe('user list and detail permissions', () => {
     );
 
     expect((await getAs('/', coach)).status).toBe(403);
-    expect((await getAs(`/${member.id}`, coach)).status).toBe(403);
+    expect((await getAs(`/${member.id}`, coach)).status).toBe(404);
     expect((await getAs('/', manager)).status).toBe(200);
   });
 });
