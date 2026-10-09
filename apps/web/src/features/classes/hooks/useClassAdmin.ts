@@ -1,6 +1,7 @@
-import type { AssignCoachBody, UpdateClassBody } from '@sports-center/shared';
+import { PAGINATION, type AssignCoachBody, type UpdateClassBody } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
+import { specializationsService } from '~/features/specializations/services/specializations.service';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
@@ -24,10 +25,12 @@ export function useClassOverview() {
   return useQuery({ queryKey: ['classes', 'overview'], queryFn: () => classAdminService.overview() });
 }
 
+/** Coaches approved for the sport, the only ones `assign-coach` accepts (BR_2.14). */
 export function useCoachPool(sportId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ['classes', 'coach-pool', sportId],
-    queryFn: () => classAdminService.coaches(sportId),
+    queryKey: ['specializations', 'coach-pool', sportId],
+    queryFn: () => specializationsService.list({ status: 'APPROVED', sportId, page: 1, limit: PAGINATION.MAX_LIMIT }),
+    select: (page) => page.items.map((entry) => entry.coach),
     enabled,
   });
 }

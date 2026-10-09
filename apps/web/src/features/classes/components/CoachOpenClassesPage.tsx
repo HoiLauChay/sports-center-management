@@ -2,25 +2,22 @@ import type { ClassSummary } from '@sports-center/shared';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useMySpecializations } from '~/features/specializations/hooks/useSpecializations';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import {
-  useApprovedSpecializations,
-  useOpenClasses,
-  usePendingRegistrations,
-  useRegisterToTeach,
-} from '../hooks/useCoachClasses';
+import { useOpenClasses, usePendingRegistrations, useRegisterToTeach } from '../hooks/useCoachClasses';
 import { CLASS_STATUS_TAG, classDateRange } from '../utils';
 import { WeeklyTags } from './ClassTableParts';
 
 /** `/coach/open-classes` (UC_2.13, BR_2.14): drafts of the coach's approved sports that still need a coach. */
 export function CoachOpenClassesPage() {
-  const specializations = useApprovedSpecializations();
+  const specializations = useMySpecializations();
+  const approved = (specializations.data ?? []).filter((entry) => entry.status === 'APPROVED');
   const classes = useOpenClasses();
   const register = useRegisterToTeach();
   const pending = usePendingRegistrations();
 
-  const sportNames = (specializations.data ?? []).map((specialization) => specialization.sport.name).join(', ');
+  const sportNames = approved.map((entry) => entry.sport.name).join(', ');
 
   const action = (record: ClassSummary) => {
     if (pending.data?.has(record.id)) return <Tag color="warning">Đã đăng ký, chờ duyệt</Tag>;
@@ -77,7 +74,7 @@ export function CoachOpenClassesPage() {
         title="Lớp cần HLV"
         description={`Bộ môn đã duyệt: ${sportNames || 'chưa có'} — chỉ hiện lớp nháp / chờ duyệt chưa có HLV.`}
       />
-      {specializations.isSuccess && specializations.data.length === 0 && (
+      {specializations.isSuccess && approved.length === 0 && (
         <Alert
           type="warning"
           showIcon

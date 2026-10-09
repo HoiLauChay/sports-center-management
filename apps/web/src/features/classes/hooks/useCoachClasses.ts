@@ -4,13 +4,6 @@ import { useCurrentUser } from '~/features/auth';
 import { describeApiError } from '~/lib/http-errors';
 import { coachClassesService } from '../services/coachClasses.service';
 
-export function useApprovedSpecializations() {
-  return useQuery({
-    queryKey: ['coach', 'specializations', 'approved'],
-    queryFn: () => coachClassesService.approvedSpecializations(),
-  });
-}
-
 export function useOpenClasses() {
   const user = useCurrentUser();
   return useQuery({
