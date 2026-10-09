@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { myAttendanceRouter } from '~/routes/attendance.routes';
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
@@ -19,7 +20,9 @@ import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
 import { myOrderRouter, orderRouter } from '~/routes/order.routes';
 import paymentRouter from '~/routes/payment.routes';
+import { coachScheduleRouter, memberScheduleRouter } from '~/routes/personalSchedule.routes';
 import reportRouter from '~/routes/report.routes';
+import sessionRouter from '~/routes/session.routes';
 import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
@@ -45,6 +48,7 @@ export const apiRoutes: [string, Router][] = [
   ['/coach/classes', coachClassRouter],
   ['/coach/registrations', coachRegistrationRouter],
   ['/coach/specializations', coachSpecializationRouter],
+  ['/coach/schedule', coachScheduleRouter],
   ['/classes', classRouter],
   ['/coupons', couponRouter],
   ['/courses', courseRouter],
@@ -59,15 +63,18 @@ export const apiRoutes: [string, Router][] = [
   ['/me/enrollments', myEnrollmentRouter],
   ['/me/facility-packages', myFacilityPackageRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/attendance', myAttendanceRouter],
   ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
+  ['/me/schedule', memberScheduleRouter],
   ['/me/wallet', myWalletRouter],
   ['/me/support-requests', mySupportRouter],
   ['/orders', orderRouter],
   ['/payments', paymentRouter],
   ['/reports', reportRouter],
   ['/settings', settingRouter],
+  ['/sessions', sessionRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],
   ['/support-requests', supportRouter],

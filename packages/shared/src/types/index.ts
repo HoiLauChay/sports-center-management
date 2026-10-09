@@ -1,5 +1,6 @@
 export * from './account';
 export * from './api';
+export * from './attendance';
 export * from './audit';
 export * from './booking';
 export * from './checkin';
@@ -11,6 +12,7 @@ export * from './facility';
 export * from './membership';
 export * from './notification';
 export * from './payment';
+export * from './personalSchedule';
 export * from './report';
 export * from './schedule';
 export * from './setting';

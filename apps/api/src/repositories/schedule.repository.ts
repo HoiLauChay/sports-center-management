@@ -78,16 +78,25 @@ class ScheduleRepository {
       select: sessionUsageSelect,
     });
 
-  findMemberCommitments = (accountId: string, dates: string[], tx: Prisma.TransactionClient = prisma) =>
+  findMemberCommitments = (accountIds: string[], dates: string[], tx: Prisma.TransactionClient = prisma) =>
     Promise.all([
       tx.facilityBooking.findMany({
-        where: { accountId, status: 'CONFIRMED', bookingDate: { in: toDays(dates) } },
+        where: {
+          accountId: { in: accountIds },
+          status: 'CONFIRMED',
+          bookingDate: { in: toDays(dates) },
+        },
         select: { id: true, bookingDate: true, ...timeRange },
       }),
       tx.classSession.findMany({
         where: {
           ...liveSession,
-          class: { ...liveSession.class, enrollments: { some: { accountId, status: 'ENROLLED' } } },
+          class: {
+            ...liveSession.class,
+            enrollments: {
+              some: { accountId: { in: accountIds }, status: 'ENROLLED' },
+            },
+          },
           sessionDate: { in: toDays(dates) },
         },
         select: sessionUsageSelect,
