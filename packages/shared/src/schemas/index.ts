@@ -2,6 +2,7 @@ export * from './account';
 export * from './audit';
 export * from './auth';
 export * from './booking';
+export * from './checkin';
 export * from './checkout';
 export * from './class';
 export * from './coupon';
