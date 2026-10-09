@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { myAttendanceRouter, sessionAttendanceRouter } from '~/routes/attendance.routes';
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
@@ -49,6 +50,7 @@ export const apiRoutes: [string, Router][] = [
   ['/invoices', invoiceRouter],
   ['/memberships', membershipRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/attendance', myAttendanceRouter],
   ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
@@ -58,6 +60,7 @@ export const apiRoutes: [string, Router][] = [
   ['/payments', paymentRouter],
   ['/reports', reportRouter],
   ['/settings', settingRouter],
+  ['/sessions', sessionAttendanceRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],
   ['/support-requests', supportRouter],
