@@ -38,3 +38,10 @@ export type AccountSummary = Pick<
   Account,
   'id' | 'email' | 'fullName' | 'phone' | 'avatarUrl' | 'role' | 'status' | 'createdAt'
 >;
+
+export type StudentAccount = Pick<
+  Account,
+  'id' | 'email' | 'fullName' | 'phone' | 'dateOfBirth' | 'gender' | 'avatarUrl' | 'role'
+> & {
+  profile: Omit<MemberProfile, 'walletBalance'>;
+};

@@ -1,4 +1,4 @@
-import { ERROR_CODE, type AssignCoachBody } from '@sports-center/shared';
+import { ERROR_CODE, type AssignCoachBody, type ListCoachRegistrationsQuery } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
@@ -67,6 +67,9 @@ class CoachAssignmentService {
     if (!(await classRepository.findDetail(classId))) throw notFound();
     return (await registrationRepository.findAll(classId)).map(toCoachRegistrationResponse);
   };
+
+  listMine = async (coachId: string, { status }: ListCoachRegistrationsQuery) =>
+    (await registrationRepository.findByCoach(coachId, status)).map(toCoachRegistrationResponse);
 
   register = async (coachId: string, classId: string, ip?: string) => {
     const registration = await runTransaction(async (tx) => {

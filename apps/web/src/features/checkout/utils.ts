@@ -1,6 +1,6 @@
 import { formatDate } from '~/lib/format';
 import { DAY_SHORT, WEEK_ORDER } from '~/lib/time';
-import type { CheckoutItemInput, LineDescription, OrderItemType } from './types';
+import type { CheckoutItemInput, LineDescription, Order, OrderItemType } from './types';
 
 const text = (value: unknown) => (typeof value === 'string' || typeof value === 'number' ? String(value) : '');
 
@@ -47,7 +47,7 @@ export function describeLine(type: OrderItemType, snapshot: Record<string, unkno
         detail: [
           snapshot.coachName ? `HLV ${text(snapshot.coachName)}` : '',
           snapshot.facilityName ? text(snapshot.facilityName) : '',
-          snapshot.totalSessions ? `${text(snapshot.totalSessions)} buổi` : '',
+          snapshot.sessions ? `${text(snapshot.sessions)} buổi` : '',
           dateRange(snapshot.startDate, snapshot.endDate),
         ]
           .filter(Boolean)
@@ -58,7 +58,7 @@ export function describeLine(type: OrderItemType, snapshot: Record<string, unkno
         title: text(snapshot.packageName) || 'Gói thành viên',
         detail: [
           snapshot.durationDays ? `${text(snapshot.durationDays)} ngày` : '',
-          dateRange(snapshot.periodStart, snapshot.periodEnd),
+          dateRange(snapshot.startAt, snapshot.endAt),
         ]
           .filter(Boolean)
           .join(' · '),
@@ -78,4 +78,11 @@ export function selectionKey(selection: CheckoutItemInput): string {
     case 'MEMBERSHIP':
       return `M:${selection.packageId}`;
   }
+}
+
+/** Money already refunded on an order, or on one of its lines when `orderItemId` is given (BR_3.7). */
+export function refundedOf(order: Pick<Order, 'refunds'>, orderItemId?: string) {
+  return order.refunds
+    .filter((refund) => orderItemId === undefined || refund.orderItemId === orderItemId)
+    .reduce((sum, refund) => sum + refund.amount, 0);
 }
