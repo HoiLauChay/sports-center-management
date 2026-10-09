@@ -2,7 +2,6 @@ import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 
 const ref = { select: { id: true, name: true } } as const;
-const coachRef = { select: { id: true, fullName: true } } as const;
 
 const bookingSelect = {
   id: true,
@@ -23,48 +22,48 @@ const sessionSelect = {
   status: true,
   cancelReason: true,
   facility: ref,
-  class: { select: { id: true, name: true, coach: coachRef } },
+  class: { select: { id: true, name: true, coach: { select: { id: true, fullName: true } } } },
 } satisfies Prisma.ClassSessionSelect;
 
 export type PersonalBookingRow = Prisma.FacilityBookingGetPayload<{ select: typeof bookingSelect }>;
 export type PersonalSessionRow = Prisma.ClassSessionGetPayload<{ select: typeof sessionSelect }>;
 
+const between = (from: string, to: string) => ({ gte: new Date(from), lte: new Date(to) });
+const orderBy = [
+  { sessionDate: 'asc' },
+  { startTime: 'asc' },
+  { id: 'asc' },
+] satisfies Prisma.ClassSessionOrderByWithRelationInput[];
+
 class PersonalScheduleRepository {
-  member = async (accountId: string, from: string, to: string) => {
-    const period = { gte: new Date(from), lte: new Date(to) };
-    return Promise.all([
-      prisma.facilityBooking.findMany({
-        where: { accountId, bookingDate: period },
-        select: bookingSelect,
-        orderBy: [{ bookingDate: 'asc' }, { startTime: 'asc' }, { id: 'asc' }],
-      }),
-      prisma.classSession.findMany({
-        where: {
-          sessionDate: period,
-          class: {
-            enrollments: {
-              some: {
-                accountId,
-                OR: [
-                  { status: 'ENROLLED' },
-                  // Class cancellation automatically cancels enrollment while retaining its history.
-                  { status: 'CANCELLED', class: { status: 'CANCELLED' } },
-                ],
-              },
+  findBookings = (accountId: string, from: string, to: string) =>
+    prisma.facilityBooking.findMany({
+      where: { accountId, bookingDate: between(from, to) },
+      select: bookingSelect,
+    });
+
+  findMemberSessions = (accountId: string, from: string, to: string) =>
+    prisma.classSession.findMany({
+      where: {
+        sessionDate: between(from, to),
+        class: {
+          enrollments: {
+            some: {
+              accountId,
+              OR: [{ status: 'ENROLLED' }, { status: 'CANCELLED', class: { status: 'CANCELLED' } }],
             },
           },
         },
-        select: sessionSelect,
-        orderBy: [{ sessionDate: 'asc' }, { startTime: 'asc' }, { id: 'asc' }],
-      }),
-    ]);
-  };
-
-  coach = (coachId: string, from: string, to: string) =>
-    prisma.classSession.findMany({
-      where: { class: { coachId }, sessionDate: { gte: new Date(from), lte: new Date(to) } },
+      },
       select: sessionSelect,
-      orderBy: [{ sessionDate: 'asc' }, { startTime: 'asc' }, { id: 'asc' }],
+      orderBy,
+    });
+
+  findCoachSessions = (coachId: string, from: string, to: string) =>
+    prisma.classSession.findMany({
+      where: { class: { coachId }, sessionDate: between(from, to) },
+      select: sessionSelect,
+      orderBy,
     });
 }
 

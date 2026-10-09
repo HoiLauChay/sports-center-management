@@ -6,19 +6,9 @@ import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
 export const memberScheduleRouter = Router();
-memberScheduleRouter.get(
-  '/',
-  auth,
-  isRole('MEMBER'),
-  validate({ query: personalScheduleQuerySchema }),
-  personalScheduleController.member,
-);
+memberScheduleRouter.use(auth, isRole('MEMBER'));
+memberScheduleRouter.get('/', validate({ query: personalScheduleQuerySchema }), personalScheduleController.member);
 
 export const coachScheduleRouter = Router();
-coachScheduleRouter.get(
-  '/',
-  auth,
-  isRole('COACH'),
-  validate({ query: personalScheduleQuerySchema }),
-  personalScheduleController.coach,
-);
+coachScheduleRouter.use(auth, isRole('COACH'));
+coachScheduleRouter.get('/', validate({ query: personalScheduleQuerySchema }), personalScheduleController.coach);

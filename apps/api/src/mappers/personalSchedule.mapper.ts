@@ -5,51 +5,33 @@ import type {
   MemberScheduleItem,
 } from '@sports-center/shared';
 
+import { toSessionResponse } from '~/mappers/class.mapper';
 import type { PersonalBookingRow, PersonalSessionRow } from '~/repositories/personalSchedule.repository';
 import { formatDate, formatTime, fromDbTime } from '~/utils/time';
 
-const times = (startTime: Date, endTime: Date) => ({
-  startTime: formatTime(fromDbTime(startTime)),
-  endTime: formatTime(fromDbTime(endTime)),
-});
-
-export const mapPersonalBooking = (row: PersonalBookingRow): MemberBookingScheduleItem => ({
+export const toBookingScheduleItem = (row: PersonalBookingRow): MemberBookingScheduleItem => ({
   kind: 'BOOKING',
   id: row.id,
   date: formatDate(row.bookingDate),
-  ...times(row.startTime, row.endTime),
+  startTime: formatTime(fromDbTime(row.startTime)),
+  endTime: formatTime(fromDbTime(row.endTime)),
   facility: row.facility,
   status: row.status,
 });
 
-export const mapMemberSession = (row: PersonalSessionRow): MemberClassScheduleItem => ({
-  kind: 'CLASS_SESSION',
-  id: row.id,
-  date: formatDate(row.sessionDate),
-  ...times(row.startTime, row.endTime),
-  facility: row.facility,
-  class: { id: row.class.id, name: row.class.name, coach: row.class.coach },
-  status: row.status,
-});
+export const toSessionScheduleItem = (row: PersonalSessionRow): MemberClassScheduleItem => {
+  const { id, date, startTime, endTime, facility, status } = toSessionResponse(row);
+  return { kind: 'CLASS_SESSION', id, date, startTime, endTime, facility, status, class: row.class };
+};
 
-export const mapCoachSession = (row: PersonalSessionRow): CoachScheduleItem => ({
-  id: row.id,
-  classId: row.classId,
-  sessionNumber: row.sessionNumber,
-  date: formatDate(row.sessionDate),
-  ...times(row.startTime, row.endTime),
-  facility: row.facility,
+export const toCoachScheduleItem = (row: PersonalSessionRow): CoachScheduleItem => ({
+  ...toSessionResponse(row),
   class: { id: row.class.id, name: row.class.name },
-  status: row.status,
-  cancelReason: row.cancelReason,
 });
 
-export const sortPersonalSchedule = (items: MemberScheduleItem[]): MemberScheduleItem[] =>
-  items.sort(
-    (a, b) =>
-      a.date.localeCompare(b.date) ||
-      a.startTime.localeCompare(b.startTime) ||
-      a.endTime.localeCompare(b.endTime) ||
-      a.kind.localeCompare(b.kind) ||
-      a.id.localeCompare(b.id),
-  );
+export const byStartTime = (a: MemberScheduleItem, b: MemberScheduleItem) =>
+  a.date.localeCompare(b.date) ||
+  a.startTime.localeCompare(b.startTime) ||
+  a.endTime.localeCompare(b.endTime) ||
+  a.kind.localeCompare(b.kind) ||
+  a.id.localeCompare(b.id);
