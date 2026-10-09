@@ -11,7 +11,7 @@ class FacilityPackageController {
   };
 
   preview = async (req: Request, res: Response) => {
-    const preview = await facilityPackageService.preview({ id: req.user!.id, role: 'MEMBER' }, req.body);
+    const preview = await facilityPackageService.preview(req.user!, req.body);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: preview }));
   };
 }

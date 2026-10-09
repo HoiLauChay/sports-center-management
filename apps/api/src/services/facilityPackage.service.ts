@@ -2,6 +2,7 @@ import {
   ERROR_CODE,
   type FacilityPackagePreview,
   type FacilityPackagePreviewBody,
+  type Role,
   type ScheduleClashReason,
 } from '@sports-center/shared';
 
@@ -33,8 +34,8 @@ class FacilityPackageService {
   listMine = async (accountId: string) =>
     (await bookingRepository.findPackagesByAccount(accountId)).map(toFacilityPackageResponse);
 
-  preview = async (actor: { id: string; role: 'MEMBER' }, body: FacilityPackagePreviewBody) => {
-    const ctx = await buildContext(prisma, actor, undefined);
+  preview = async (actor: { id: string; role: Role }, { buyer, ...body }: FacilityPackagePreviewBody) => {
+    const ctx = await buildContext(prisma, actor, buyer);
     await loadHeldLines(prisma, ctx);
     const plan = await planPackage(prisma, ctx, body);
     if (!plan) {
