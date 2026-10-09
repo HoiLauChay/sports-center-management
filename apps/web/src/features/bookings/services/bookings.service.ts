@@ -7,16 +7,11 @@ import type {
   Paginated,
 } from '@sports-center/shared';
 import { PAGINATION } from '@sports-center/shared';
-import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { ensureClassSeed } from '~/features/classes/mocks/classes';
 import { privateApi } from '~/lib/http';
-import { mockErrors, mockRequest } from '~/lib/mock/errors';
-import { toMinutes } from '~/lib/time';
-import { previewPackage } from '../mocks/schedule';
 import type { PackagePreview, PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedule, recurring-package preview and bookings, all from the API except the counter package preview.
+ * Facility schedule, recurring-package preview and bookings.
  */
 export const bookingsService = {
   facilitySchedule: async (facilityId: string, date: string) => {
@@ -31,20 +26,6 @@ export const bookingsService = {
     const { data } = await privateApi.post<ApiResponse<PackagePreview>>('/facility-packages/preview', body);
     return data.result;
   },
-
-  /** `POST /facility-packages/preview` only previews for the signed-in member, so the counter keeps the mock. */
-  previewPackageAtCounter: (request: PackagePreviewRequest) =>
-    mockRequest(async () => {
-      const { facilities, settings } = await loadCatalog();
-      ensureClassSeed(facilities, settings);
-      const facility = facilities.find((entry) => entry.id === request.facilityId);
-      if (!facility) throw mockErrors.notFound('Không tìm thấy sân / phòng');
-      const slots = Math.max(
-        1,
-        Math.round((toMinutes(request.endTime) - toMinutes(request.startTime)) / settings.slotDurationMinutes),
-      );
-      return previewPackage(facility, settings, request, facility.pricePerSlot, slots);
-    }, 150),
 
   listMine: async (params: ListMyBookingsQuery) => {
     const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/me/bookings', { params });
