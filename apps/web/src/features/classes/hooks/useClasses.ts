@@ -44,16 +44,15 @@ export function useMyEnrollments() {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['enrollments', 'mine', user.id],
-    queryFn: () => classesService.listMyEnrollments(user),
+    queryFn: classesService.listMyEnrollments,
   });
 }
 
 export function useCancelEnrollment() {
-  const user = useCurrentUser();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => classesService.cancelEnrollment(user, id),
+    mutationFn: classesService.cancelEnrollment,
     onSuccess: ({ refund }) => {
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
