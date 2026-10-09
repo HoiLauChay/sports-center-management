@@ -35,3 +35,9 @@ export interface MaintenancePreview {
   affectedBookings: MaintenanceAffectedBooking[];
   affectedSessions: MaintenanceAffectedSession[];
 }
+
+export interface MaintenanceResult {
+  maintenance: Maintenance;
+  movedBookings: number;
+  sessionsUpdated: number;
+}
