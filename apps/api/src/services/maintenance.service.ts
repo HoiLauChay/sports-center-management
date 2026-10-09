@@ -265,7 +265,7 @@ class MaintenanceService {
   update = async (
     managerId: string,
     id: string,
-    { bookingMoves, sessionResolutions, ...period }: UpdateMaintenanceBody,
+    { bookingMoves = [], sessionResolutions = [], ...period }: UpdateMaintenanceBody,
     ip?: string,
   ) => {
     const { result, notifications } = await runTransaction(async (tx) => {

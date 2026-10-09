@@ -12,34 +12,31 @@ const periodFields = {
 
 const facilityField = { facilityId: z.uuid('Mã cơ sở không hợp lệ') };
 
-const resolutionFields = {
-  bookingMoves: z
-    .array(z.object({ bookingId: z.uuid('Mã booking không hợp lệ'), facilityId: z.uuid('Mã cơ sở không hợp lệ') }))
-    .default([]),
-  sessionResolutions: z
-    .array(
-      z.discriminatedUnion(
-        'action',
-        [
-          z.object({
-            sessionId: z.uuid('Mã buổi học không hợp lệ'),
-            action: z.literal('MOVE_FACILITY'),
-            facilityId: z.uuid('Mã cơ sở không hợp lệ'),
-          }),
-          z.object({
-            sessionId: z.uuid('Mã buổi học không hợp lệ'),
-            action: z.literal('RESCHEDULE'),
-            date: z.iso.date('Ngày học không hợp lệ'),
-            startTime: timeOfDaySchema,
-            endTime: timeOfDaySchema,
-            facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
-          }),
-        ],
-        'Cách xử lý buổi học không hợp lệ',
-      ),
-    )
-    .default([]),
-};
+const bookingMovesSchema = z.array(
+  z.object({ bookingId: z.uuid('Mã booking không hợp lệ'), facilityId: z.uuid('Mã cơ sở không hợp lệ') }),
+);
+
+const sessionResolutionsSchema = z.array(
+  z.discriminatedUnion(
+    'action',
+    [
+      z.object({
+        sessionId: z.uuid('Mã buổi học không hợp lệ'),
+        action: z.literal('MOVE_FACILITY'),
+        facilityId: z.uuid('Mã cơ sở không hợp lệ'),
+      }),
+      z.object({
+        sessionId: z.uuid('Mã buổi học không hợp lệ'),
+        action: z.literal('RESCHEDULE'),
+        date: z.iso.date('Ngày học không hợp lệ'),
+        startTime: timeOfDaySchema,
+        endTime: timeOfDaySchema,
+        facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+      }),
+    ],
+    'Cách xử lý buổi học không hợp lệ',
+  ),
+);
 
 const endsAfterStart = ({ startAt, endAt }: { startAt: string; endAt: string }) =>
   Date.parse(startAt) < Date.parse(endAt);
@@ -50,11 +47,20 @@ export const maintenanceWindowSchema = z
   .refine(endsAfterStart, endAfterStartIssue);
 
 export const createMaintenanceBodySchema = z
-  .object({ ...facilityField, ...periodFields, ...resolutionFields })
+  .object({
+    ...facilityField,
+    ...periodFields,
+    bookingMoves: bookingMovesSchema.default([]),
+    sessionResolutions: sessionResolutionsSchema.default([]),
+  })
   .refine(endsAfterStart, endAfterStartIssue);
 
 export const updateMaintenanceBodySchema = z
-  .object({ ...periodFields, ...resolutionFields })
+  .object({
+    ...periodFields,
+    bookingMoves: bookingMovesSchema.optional(),
+    sessionResolutions: sessionResolutionsSchema.optional(),
+  })
   .refine(endsAfterStart, endAfterStartIssue);
 
 export const listMaintenancesQuerySchema = z
