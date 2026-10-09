@@ -32,7 +32,7 @@ export const bookingsService = {
     return data.result;
   },
 
-  /** `POST /facility-packages/preview` only accepts members, so the counter keeps the mock until #134 wires it. */
+  /** `POST /facility-packages/preview` only previews for the signed-in member, so the counter keeps the mock. */
   previewPackageAtCounter: (request: PackagePreviewRequest) =>
     mockRequest(async () => {
       const { facilities, settings } = await loadCatalog();
