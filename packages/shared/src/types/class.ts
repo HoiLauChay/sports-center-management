@@ -27,6 +27,10 @@ export interface ClassSession {
   cancelReason: string | null;
 }
 
+export interface SessionDetail extends ClassSession {
+  class: Ref & { sport: Ref; coach: Person | null; enrolledCount: number; maxStudents: number };
+}
+
 export interface ClassSummary {
   id: string;
   name: string;

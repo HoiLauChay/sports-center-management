@@ -1,5 +1,6 @@
 import {
   createEvaluationBodySchema,
+  listSessionsQuerySchema,
   saveAttendanceBodySchema,
   saveSessionNoteBodySchema,
   sessionIdParamsSchema,
@@ -15,6 +16,18 @@ import { validate } from '~/utils/validation';
 
 const sessionRouter = Router();
 sessionRouter.use(auth);
+sessionRouter.get(
+  '/',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ query: listSessionsQuerySchema }),
+  sessionController.list,
+);
+sessionRouter.get(
+  '/:id',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: sessionIdParamsSchema }),
+  sessionController.get,
+);
 sessionRouter.patch(
   '/:id',
   isRole('MANAGER'),

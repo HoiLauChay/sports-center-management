@@ -1,5 +1,25 @@
+import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 import { sessionSelect } from '~/repositories/class.repository';
+
+const ref = { select: { id: true, name: true } } as const;
+
+const detailSelect = {
+  ...sessionSelect,
+  class: {
+    select: {
+      id: true,
+      name: true,
+      coachId: true,
+      coach: { select: { id: true, fullName: true } },
+      maxStudents: true,
+      course: { select: { sport: ref } },
+      _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
+    },
+  },
+} satisfies Prisma.ClassSessionSelect;
+
+export type SessionDetailRow = Prisma.ClassSessionGetPayload<{ select: typeof detailSelect }>;
 
 class SessionRepository {
   findById = (id: string, tx: Prisma.TransactionClient) =>
@@ -21,6 +41,16 @@ class SessionRepository {
           },
         },
       },
+    });
+
+  findDetail = (id: string) =>
+    prisma.classSession.findFirst({ where: { id, class: { deletedAt: null } }, select: detailSelect });
+
+  findOn = (date: string) =>
+    prisma.classSession.findMany({
+      where: { sessionDate: new Date(date), status: 'SCHEDULED', class: { status: 'OPEN', deletedAt: null } },
+      select: detailSelect,
+      orderBy: [{ startTime: 'asc' }, { id: 'asc' }],
     });
 
   update = (id: string, data: Prisma.ClassSessionUncheckedUpdateInput, tx: Prisma.TransactionClient) =>

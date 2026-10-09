@@ -1,8 +1,9 @@
-import { ERROR_CODE, type UpdateSessionBody } from '@sports-center/shared';
+import { ERROR_CODE, type ListSessionsQuery, type Role, type UpdateSessionBody } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { toSessionResponse } from '~/mappers/class.mapper';
+import { toSessionDetailResponse } from '~/mappers/session.mapper';
 import classRepository from '~/repositories/class.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import sessionRepository from '~/repositories/session.repository';
@@ -10,7 +11,7 @@ import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import scheduleService from '~/services/schedule.service';
-import { formatDate, formatTime, fromDbTime, parseTime, toCenterDateTime, toDbTime } from '~/utils/time';
+import { formatDate, formatTime, fromDbTime, parseTime, toCenterDateTime, toDbTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const notFound = () =>
@@ -26,8 +27,24 @@ const invalid = (field: keyof UpdateSessionBody, message: string) =>
     message: 'Dữ liệu không hợp lệ',
     errors: [{ path: `body.${field}`, message }],
   });
+const forbidden = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.FORBIDDEN,
+    code: ERROR_CODE.FORBIDDEN,
+    message: 'Bạn không phụ trách lớp của buổi học này',
+  });
 
 class SessionService {
+  get = async (actor: { id: string; role: Role }, id: string) => {
+    const row = await sessionRepository.findDetail(id);
+    if (!row) throw notFound();
+    if (actor.role === 'COACH' && row.class.coachId !== actor.id) throw forbidden();
+    return toSessionDetailResponse(row);
+  };
+
+  listOn = async ({ date = todayInCenter() }: ListSessionsQuery) =>
+    (await sessionRepository.findOn(date)).map(toSessionDetailResponse);
+
   update = async (managerId: string, id: string, body: UpdateSessionBody, ip?: string) => {
     const { row, notifications } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
