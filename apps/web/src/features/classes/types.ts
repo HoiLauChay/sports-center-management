@@ -81,22 +81,9 @@ export interface CoachRegistration {
   activeClasses?: number;
 }
 
-export interface ClassStudent {
-  id: string;
-  fullName: string;
-  status: 'ENROLLED' | 'CANCELLED';
-  /** Empty for the students that were enrolled before this browser's mock orders. */
-  enrolledAt: string | null;
-  paidAmount: number;
-  refundedAmount: number;
-}
-
-/** `GET /classes/{id}` for a manager: the class, sessions, students, revenue and coach registrations. */
+/** `GET /classes/{id}` for a manager: the class, its sessions and coach registrations. */
 export interface ClassAdminDetail extends GymClassDetail {
   coachRegistrations: CoachRegistration[];
-  students: ClassStudent[];
-  /** Paid enrollment lines and what is left after refunds. */
-  revenue: { lines: number; total: number };
 }
 
 export interface SessionPatch {
@@ -104,16 +91,4 @@ export interface SessionPatch {
   startTime?: string;
   endTime?: string;
   facilityId?: string;
-}
-
-export interface ClassPatch {
-  name?: string;
-  minStudents?: number;
-  maxStudents?: number;
-}
-
-/** What cancelling a class (or one session) would give back, shown before the manager confirms. */
-export interface RefundPreview {
-  students: number;
-  amount: number;
 }
