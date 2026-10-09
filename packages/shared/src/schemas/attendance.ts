@@ -2,8 +2,6 @@ import { z } from 'zod';
 
 import { ATTENDANCE_STATUSES } from '../constants/enums';
 
-export const attendanceSessionParamsSchema = z.object({ id: z.uuid('Mã buổi học không hợp lệ') });
-
 export const saveAttendanceBodySchema = z.object({
   records: z
     .array(
