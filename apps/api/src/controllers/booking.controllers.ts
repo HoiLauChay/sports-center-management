@@ -20,11 +20,6 @@ class BookingController {
     const result = await bookingService.get(req.user!, req.params.id as string);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
-
-  listPackagesMine = async (req: Request, res: Response) => {
-    const result = await bookingService.listPackagesMine(req.user!.id);
-    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
-  };
 }
 
 export default new BookingController();

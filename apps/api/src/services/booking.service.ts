@@ -1,7 +1,7 @@
 import { ERROR_CODE, type ListBookingsQuery, type ListMyBookingsQuery, type Role } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
-import { toBookingResponse, toFacilityPackageResponse } from '~/mappers/booking.mapper';
+import { toBookingResponse } from '~/mappers/booking.mapper';
 import bookingRepository from '~/repositories/booking.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import { toPage } from '~/utils/pagination';
@@ -22,9 +22,6 @@ class BookingService {
     if (!row || (viewer.role === 'MEMBER' && row.account?.id !== viewer.id)) throw notFound();
     return toBookingResponse(row);
   };
-
-  listPackagesMine = async (accountId: string) =>
-    (await bookingRepository.findPackagesByAccount(accountId)).map(toFacilityPackageResponse);
 }
 
 export default new BookingService();
