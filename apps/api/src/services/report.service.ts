@@ -16,9 +16,16 @@ import {
 } from '@sports-center/shared';
 
 import reportRepository from '~/repositories/report.repository';
-import settingRepository from '~/repositories/setting.repository';
-import { facilityOccupancy, percentage } from '~/utils/reportOccupancy';
-import { addDays, formatDate, toCenterDateTime, todayInCenter } from '~/utils/time';
+import settingRepository, { type SettingRow } from '~/repositories/setting.repository';
+import {
+  addDays,
+  formatDate,
+  fromDbTime,
+  generateSlots,
+  overlaps,
+  toCenterDateTime,
+  todayInCenter,
+} from '~/utils/time';
 
 const zeroes = <K extends string>(keys: readonly K[]) =>
   Object.fromEntries(keys.map((key) => [key, 0])) as Record<K, number>;
@@ -47,6 +54,38 @@ const bucketsOf = <T>(query: ReportRangeQuery, empty: (period: string) => T) =>
   new Map(periodsBetween(query).map((period) => [period, empty(period)]));
 
 const periodAt = (at: Date, granularity: ReportGranularity) => periodOf(todayInCenter(at), granularity);
+
+type FacilityUsage = Awaited<ReturnType<typeof reportRepository.facilityUsage>>[number];
+
+const facilityOccupancy = (facility: FacilityUsage, from: string, to: string, settings: SettingRow) => {
+  const grid = generateSlots(
+    fromDbTime(settings.openTime),
+    fromDbTime(settings.closeTime),
+    settings.slotDurationMinutes,
+  );
+  let available = 0;
+  let occupied = 0;
+  for (let date = from; date <= to; date = addDays(date, 1)) {
+    if (date < todayInCenter(facility.createdAt) || (facility.deletedAt && date > todayInCenter(facility.deletedAt)))
+      continue;
+    const bookings = facility.bookings.filter((row) => formatDate(row.bookingDate) === date);
+    const sessions = facility.sessions.filter((row) => formatDate(row.sessionDate) === date);
+    for (const slot of grid) {
+      const startAt = toCenterDateTime(date, slot.start);
+      const endAt = toCenterDateTime(date, slot.end);
+      if (facility.maintenances.some((row) => row.startAt < endAt && startAt < row.endAt)) continue;
+      available += facility.capacityPerSlot;
+      const hits = (row: { startTime: Date; endTime: Date }) =>
+        overlaps(slot, { start: fromDbTime(row.startTime), end: fromDbTime(row.endTime) });
+      occupied += sessions.some(hits)
+        ? facility.capacityPerSlot
+        : Math.min(bookings.filter(hits).length, facility.capacityPerSlot);
+    }
+  }
+  return { available, occupied };
+};
+
+const percentage = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 10_000) / 100 : 0);
 
 class ReportService {
   members = async (query: ReportDateQuery, now = new Date()): Promise<MembersReport> => {

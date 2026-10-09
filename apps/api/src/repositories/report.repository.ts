@@ -25,7 +25,6 @@ class ReportRepository {
       },
     });
 
-  // Compare paid periods: enabling autoRenew is not itself a successful renewal.
   membershipPeriods = (from: string, to: string) =>
     prisma.membershipOrder.findMany({
       where: { periodEnd: { gte: new Date(from), lte: new Date(to) } },
@@ -52,7 +51,6 @@ class ReportRepository {
 
   facilityUsage = (from: string, to: string, window: Window) =>
     prisma.facility.findMany({
-      // Reports retain historical facilities, including inactive/soft-deleted records.
       select: {
         id: true,
         name: true,
