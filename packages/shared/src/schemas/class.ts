@@ -100,6 +100,8 @@ export const listCoachRegistrationsQuerySchema = z.object({
   status: z.enum(COACH_REGISTRATION_STATUSES, 'Trạng thái không hợp lệ').optional(),
 });
 
+export const sessionIdParamsSchema = z.object({ id: z.uuid('Mã buổi học không hợp lệ') });
+
 export type ListClassesQuery = z.infer<typeof listClassesQuerySchema>;
 export type UpdateClassBody = z.infer<typeof updateClassBodySchema>;
 export type ReviewClassBody = z.infer<typeof reviewClassBodySchema>;
