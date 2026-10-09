@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { myAttendanceRouter } from '~/routes/attendance.routes';
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
@@ -59,6 +60,7 @@ export const apiRoutes: [string, Router][] = [
   ['/me/enrollments', myEnrollmentRouter],
   ['/me/facility-packages', myFacilityPackageRouter],
   ['/me/invoices', myInvoiceRouter],
+  ['/me/attendance', myAttendanceRouter],
   ['/me/memberships', myMembershipRouter],
   ['/me/orders', myOrderRouter],
   ['/me/notifications', notificationRouter],
