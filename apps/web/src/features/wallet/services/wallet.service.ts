@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  CounterTopUpBody,
   CreateTopUpBody,
   Invoice,
   ListMyInvoicesQuery,
@@ -9,13 +10,6 @@ import type {
   WalletTransaction,
 } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
-
-export interface CounterTopUpInput {
-  amount: number;
-  method: 'CASH' | 'CARD';
-  note?: string;
-  idempotencyKey: string;
-}
 
 export const walletService = {
   getMine: async (query: WalletQuery) => {
@@ -51,22 +45,11 @@ export const walletService = {
     return data.result;
   },
 
-  /**
-   * Cash / card top-up recorded at the counter (`POST /users/{id}/wallet/top-ups`, #134).
-   */
-  counterTopUp: async (
-    memberId: string,
-    _actor: { id: string; fullName: string },
-    input: CounterTopUpInput,
-  ): Promise<WalletTransaction> => {
+  /** Cash or card top-up recorded at the counter. */
+  counterTopUp: async (memberId: string, body: CounterTopUpBody) => {
     const { data } = await privateApi.post<ApiResponse<WalletTransaction>>(
       `/users/${encodeURIComponent(memberId)}/wallet/top-ups`,
-      {
-        amount: input.amount,
-        method: input.method,
-        note: input.note || undefined,
-        idempotencyKey: input.idempotencyKey,
-      },
+      body,
     );
     return data.result;
   },
