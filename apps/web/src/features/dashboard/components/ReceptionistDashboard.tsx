@@ -5,7 +5,6 @@ import { Banknote, CalendarCheck, LifeBuoy, LogIn } from 'lucide-react';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
-
 import { useOrders } from '~/features/orders/hooks/useOrders';
 import { useSessionsOn } from '~/features/schedule';
 import type { DaySession } from '~/features/schedule/types';
