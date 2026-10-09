@@ -2,6 +2,7 @@ import {
   assignCoachBodySchema,
   cancelClassBodySchema,
   classIdParamsSchema,
+  createAnnouncementBodySchema,
   createClassBodySchema,
   listClassesQuerySchema,
   listCoachRegistrationsQuerySchema,
@@ -12,6 +13,7 @@ import { Router } from 'express';
 
 import classController from '~/controllers/class.controllers';
 import enrollmentController from '~/controllers/enrollment.controllers';
+import trainingController from '~/controllers/training.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
@@ -88,4 +90,10 @@ classRouter.get(
   isRole('COACH', 'MANAGER', 'RECEPTIONIST'),
   validate({ params: classIdParamsSchema }),
   enrollmentController.listForClass,
+);
+classRouter.post(
+  '/:id/announcements',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: classIdParamsSchema, body: createAnnouncementBodySchema }),
+  trainingController.announce,
 );
