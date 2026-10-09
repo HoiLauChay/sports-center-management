@@ -11,9 +11,10 @@ import {
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
-import { toAccountResponse, toAccountSummary } from '~/mappers/account.mapper';
+import { toAccountResponse, toAccountSummary, toStudentResponse } from '~/mappers/account.mapper';
 import accountRepository, { type AccountWithProfile } from '~/repositories/account.repository';
 import classRepository from '~/repositories/class.repository';
+import enrollmentRepository from '~/repositories/enrollment.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
@@ -30,7 +31,8 @@ interface Viewer {
   role: Role;
 }
 
-const visibleRole = (viewer: Viewer): Role | undefined => (viewer.role === 'RECEPTIONIST' ? 'MEMBER' : undefined);
+const visibleRole = (viewer: Viewer): Role | undefined =>
+  ['RECEPTIONIST', 'COACH'].includes(viewer.role) ? 'MEMBER' : undefined;
 
 const taken = (code: ErrorCode, field: 'email' | 'phone', message: string) =>
   new ErrorWithStatus({
@@ -94,9 +96,10 @@ class UserService {
   };
 
   getById = async (viewer: Viewer, id: string) => {
+    if (viewer.role === 'COACH' && !(await enrollmentRepository.hasCurrentStudent(viewer.id, id))) throw notFound();
     const account = await accountRepository.findById(id, visibleRole(viewer));
     if (!account) throw notFound();
-    return toAccountResponse(account);
+    return viewer.role === 'COACH' ? toStudentResponse(account) : toAccountResponse(account);
   };
 
   create = async (viewer: Viewer, body: CreateUserBody, ip?: string) => {

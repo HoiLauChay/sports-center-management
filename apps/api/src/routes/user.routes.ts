@@ -22,7 +22,7 @@ userRouter.use(auth);
 userRouter.get('/', isRole('MANAGER', 'RECEPTIONIST'), validate({ query: listUsersQuerySchema }), userController.list);
 userRouter.get(
   '/:id',
-  isRole('MANAGER', 'RECEPTIONIST'),
+  isRole('MANAGER', 'RECEPTIONIST', 'COACH'),
   validate({ params: userIdParamsSchema }),
   userController.getById,
 );
