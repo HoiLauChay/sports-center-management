@@ -103,6 +103,24 @@ class ClassRepository {
       orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
     });
 
+  findStartingOn = (dates: string[], take: number) =>
+    prisma.class.findMany({
+      where: { status: 'OPEN', deletedAt: null, startDate: { in: dates.map((date) => new Date(date)) } },
+      select: {
+        id: true,
+        minStudents: true,
+        _count: { select: { enrollments: { where: { status: 'ENROLLED' } } } },
+        sessions: {
+          where: { status: 'SCHEDULED' },
+          select: { sessionDate: true, startTime: true },
+          orderBy: [{ sessionDate: 'asc' }, { startTime: 'asc' }],
+          take: 1,
+        },
+      },
+      orderBy: [{ startDate: 'asc' }, { id: 'asc' }],
+      take,
+    });
+
   cancelSessions = (ids: string[], reason: string, tx: Prisma.TransactionClient) =>
     tx.classSession.updateMany({
       where: { id: { in: ids }, status: 'SCHEDULED' },

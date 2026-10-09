@@ -110,7 +110,7 @@ class ClassService {
 
   cancelLocked = async (
     tx: Prisma.TransactionClient,
-    managerId: string,
+    managerId: string | null,
     current: ClassDetailRow,
     reason: string,
     ip?: string,
@@ -123,7 +123,7 @@ class ClassService {
       const refund = await refundService.refundItem(tx, {
         orderItemId: enrollment.orderItemId,
         reason: `Lớp ${current.name} bị hủy`,
-        createdById: managerId,
+        createdById: managerId ?? undefined,
       });
       refundTotal += refund.refunded;
       notifications.push(...refund.notifications);
