@@ -1,20 +1,23 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { ArrowLeft, Download, Printer } from 'lucide-react';
+import { useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { QuoteTotals } from '~/features/checkout/components/QuoteTotals';
+import { checkoutService } from '~/features/checkout/services/checkout.service';
 import { ORDER_ITEM_TYPE_LABEL, type Order, type OrderItem } from '~/features/checkout/types';
-import { describeLine } from '~/features/checkout/utils';
+import { describeLine, refundedOf } from '~/features/checkout/utils';
 import { formatDateTime, formatVND } from '~/lib/format';
-import { toApiError } from '~/lib/http-errors';
+import { describeApiError, toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
 import { InvoiceSheet } from './InvoiceSheet';
 
-const columns: TableColumnsType<OrderItem> = [
+/** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
+const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
   { title: '#', dataIndex: 'lineNumber', width: 48 },
   {
     title: 'Dịch vụ',
@@ -60,16 +63,18 @@ const columns: TableColumnsType<OrderItem> = [
   },
   {
     title: 'Đã hoàn',
-    dataIndex: 'refundedAmount',
+    key: 'refunded',
     align: 'right',
-    render: (value: number, item) =>
-      value ? (
+    render: (_, item) => {
+      const value = refundedOf(order, item.id);
+      return value ? (
         <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0">
           −{formatVND(value)}
         </Tag>
       ) : (
         '—'
-      ),
+      );
+    },
   },
 ];
 
@@ -97,6 +102,8 @@ interface OrderDetailViewProps {
  */
 export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const order = useOrder(orderId);
+  const { message } = App.useApp();
+  const [downloading, setDownloading] = useState(false);
 
   if (order.isPending) return <PageLoading />;
   if (order.isError) {
@@ -111,6 +118,18 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
 
   const data = order.data;
   const buyer = data.account?.fullName ?? data.guestName ?? '—';
+  const refunded = refundedOf(data);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloading(true);
+      await checkoutService.downloadReceipt(data.id, data.orderNumber);
+    } catch (error) {
+      message.error(describeApiError(error));
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <>
@@ -129,7 +148,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               <Link to={back.to}>
                 <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
               </Link>
-              <Button icon={<Download size={16} />} onClick={() => window.print()}>
+              <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
                 Tải PDF
               </Button>
               <Button type="primary" icon={<Printer size={16} />} onClick={() => window.print()}>
@@ -144,7 +163,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <Table<OrderItem>
               rowKey="id"
               size="middle"
-              columns={columns}
+              columns={columnsOf(data)}
               dataSource={data.items}
               pagination={false}
               scroll={{ x: 'max-content' }}
@@ -163,9 +182,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <Card>
               <SectionTitle>Thanh toán</SectionTitle>
               <QuoteTotals quote={toTotals(data)} />
-              {data.refundedAmount > 0 && (
-                <p className="mt-2 mb-0 text-sc-error">Đã hoàn về ví: {formatVND(data.refundedAmount)}</p>
-              )}
+              {refunded > 0 && <p className="mt-2 mb-0 text-sc-error">Đã hoàn về ví: {formatVND(refunded)}</p>}
             </Card>
           </div>
         </div>

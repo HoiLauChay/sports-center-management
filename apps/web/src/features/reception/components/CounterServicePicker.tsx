@@ -5,7 +5,7 @@ import { EmptyState } from '~/components/feedback/States';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { RecurringPackagePicker } from '~/features/bookings/components/RecurringPackagePicker';
 import { SlotBookingPicker } from '~/features/bookings/components/SlotBookingPicker';
-import type { Buyer, CheckoutItemInput } from '~/features/checkout/types';
+import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useClasses } from '~/features/classes/hooks/useClasses';
 import type { GymClass } from '~/features/classes/types';
 import { weeklyText } from '~/features/classes/utils';
@@ -127,7 +127,7 @@ function MembershipPicker({ onAdd }: PickerProps) {
 
 interface CounterServicePickerProps {
   user: Account;
-  buyer: Buyer;
+  buyer: CheckoutBuyer;
   isMember: boolean;
   onAdd: (selection: CheckoutItemInput) => void;
 }

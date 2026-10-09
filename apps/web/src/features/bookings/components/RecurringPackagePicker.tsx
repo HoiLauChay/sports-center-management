@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
-import type { Buyer, CheckoutItemInput } from '~/features/checkout/types';
+import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -22,7 +22,7 @@ const CONFLICT_LABEL: Record<PackageConflict, string> = {
 
 interface RecurringPackagePickerProps {
   user: Account;
-  buyer?: Buyer;
+  buyer?: CheckoutBuyer;
   onAdd: (selection: CheckoutItemInput) => void;
 }
 

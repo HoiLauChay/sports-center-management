@@ -16,7 +16,7 @@ export function useOrder(id: string) {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['orders', 'detail', user.id, id],
-    queryFn: () => checkoutService.getOrder(user, id),
+    queryFn: () => checkoutService.getOrder(id),
     retry: false,
   });
 }

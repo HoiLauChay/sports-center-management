@@ -10,6 +10,7 @@ import {
 import { Router } from 'express';
 
 import classController from '~/controllers/class.controllers';
+import enrollmentController from '~/controllers/enrollment.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
 import { validate } from '~/utils/validation';
 
@@ -68,6 +69,13 @@ classRouter.post(
   isRole('COACH'),
   validate({ params: classIdParamsSchema }),
   classController.withdrawCoach,
+);
+
+classRouter.get(
+  '/:id/enrollments',
+  isRole('COACH', 'MANAGER', 'RECEPTIONIST'),
+  validate({ params: classIdParamsSchema }),
+  enrollmentController.listForClass,
 );
 
 export default classRouter;
