@@ -1,17 +1,22 @@
-import type { Account, ApiResponse, FacilitySchedule } from '@sports-center/shared';
+import type {
+  ApiResponse,
+  Booking,
+  FacilityPackage,
+  FacilitySchedule,
+  ListMyBookingsQuery,
+  Paginated,
+} from '@sports-center/shared';
+import { PAGINATION } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
 import { ensureClassSeed } from '~/features/classes/mocks/classes';
 import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
-import { listBookingsOn, listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
 import { previewPackage } from '../mocks/schedule';
-import type { PackagePreviewRequest } from '../types';
+import type { PackagePreview, PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedule, recurring-package preview and my bookings. The facility schedule comes from the API; the rest is mock until
- * #112, #133 and #138 ship (see `../mocks`); the facilities, settings and membership data they rely on come from the real API.
+ * Facility schedule, recurring-package preview and bookings, all from the API except the counter package preview.
  */
 export const bookingsService = {
   facilitySchedule: async (facilityId: string, date: string) => {
@@ -22,8 +27,13 @@ export const bookingsService = {
     return data.result;
   },
 
-  /** `POST /facility-packages/preview` */
-  previewPackage: (request: PackagePreviewRequest) =>
+  previewPackage: async (body: PackagePreviewRequest) => {
+    const { data } = await privateApi.post<ApiResponse<PackagePreview>>('/facility-packages/preview', body);
+    return data.result;
+  },
+
+  /** `POST /facility-packages/preview` only previews for the signed-in member, so the counter keeps the mock. */
+  previewPackageAtCounter: (request: PackagePreviewRequest) =>
     mockRequest(async () => {
       const { facilities, settings } = await loadCatalog();
       ensureClassSeed(facilities, settings);
@@ -36,10 +46,21 @@ export const bookingsService = {
       return previewPackage(facility, settings, request, facility.pricePerSlot, slots);
     }, 150),
 
-  listMine: (user: Account, query: ListBookingsQuery) => mockRequest(() => listMyBookings(actorOf(user), query)),
+  listMine: async (params: ListMyBookingsQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/me/bookings', { params });
+    return data.result;
+  },
 
-  listMyPackages: (user: Account) => mockRequest(() => listMyPackages(actorOf(user))),
+  listMyPackages: async () => {
+    const { data } = await privateApi.get<ApiResponse<FacilityPackage[]>>('/me/facility-packages');
+    return data.result;
+  },
 
-  /** Reception desk: every confirmed booking of one day. */
-  listOn: (date: string) => mockRequest(() => listBookingsOn(date)),
+  /** Reception desk: every confirmed booking of one day, earliest first. */
+  listOn: async (date: string) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/bookings', {
+      params: { date, status: 'CONFIRMED', page: 1, limit: PAGINATION.MAX_LIMIT },
+    });
+    return data.result.items.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  },
 };

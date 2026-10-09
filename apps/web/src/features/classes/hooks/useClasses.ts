@@ -1,8 +1,21 @@
+import { PAGINATION, type Person } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
 import { classesService, type ListClassesQuery } from '../services/classes.service';
+
+export function useClassCoaches() {
+  return useQuery({
+    queryKey: ['classes', 'coaches'],
+    queryFn: () => classesService.list({ page: 1, limit: PAGINATION.MAX_LIMIT }),
+    select: (page) => [
+      ...new Map(
+        page.items.flatMap((item): [string, Person][] => (item.coach ? [[item.coach.id, item.coach]] : [])),
+      ).values(),
+    ],
+  });
+}
 
 export function useClasses(query: ListClassesQuery) {
   return useQuery({
@@ -20,20 +33,26 @@ export function useClass(id: string) {
   });
 }
 
+export function useClassEnrollments(classId: string) {
+  return useQuery({
+    queryKey: ['classes', 'enrollments', classId],
+    queryFn: () => classesService.enrollments(classId),
+  });
+}
+
 export function useMyEnrollments() {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['enrollments', 'mine', user.id],
-    queryFn: () => classesService.listMyEnrollments(user),
+    queryFn: classesService.listMyEnrollments,
   });
 }
 
 export function useCancelEnrollment() {
-  const user = useCurrentUser();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => classesService.cancelEnrollment(user, id),
+    mutationFn: classesService.cancelEnrollment,
     onSuccess: ({ refund }) => {
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       void queryClient.invalidateQueries({ queryKey: ['classes'] });

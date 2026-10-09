@@ -5,18 +5,20 @@ import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/State
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { toApiError } from '~/lib/http-errors';
-import { useClasses } from '../hooks/useClasses';
+import { useClassCoaches, useClasses } from '../hooks/useClasses';
 import { ClassCard } from './ClassCard';
 
 const LIMIT = 9;
 
-/** `/classes`: classes open for enrollment, filterable by sport. */
+/** `/classes`: classes open for enrollment, filterable by sport and coach. */
 export function ClassesPage() {
   const sports = useQuery(sportsQueryOptions);
+  const coaches = useClassCoaches();
   const [page, setPage] = useState(1);
   const [sportId, setSportId] = useState<string | undefined>();
+  const [coachId, setCoachId] = useState<string | undefined>();
   const [q, setQ] = useState('');
-  const classes = useClasses({ page, limit: LIMIT, sportId, q: q || undefined });
+  const classes = useClasses({ page, limit: LIMIT, sportId, coachId, q: q || undefined });
 
   return (
     <>
@@ -44,6 +46,21 @@ export function ClassesPage() {
           options={(sports.data ?? [])
             .filter((sport) => sport.isActive)
             .map((sport) => ({ value: sport.id, label: sport.name }))}
+        />
+        <Select
+          allowClear
+          placeholder="Mọi huấn luyện viên"
+          className="w-full sm:!w-56"
+          loading={coaches.isPending}
+          value={coachId}
+          onChange={(value: string | undefined) => {
+            setCoachId(value);
+            setPage(1);
+          }}
+          options={(coaches.data ?? []).map((coach) => ({
+            value: coach.id,
+            label: coach.fullName,
+          }))}
         />
       </div>
       {classes.isPending ? (

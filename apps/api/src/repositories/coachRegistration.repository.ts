@@ -1,5 +1,5 @@
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { CoachRegistrationStatus, Prisma } from '~/generated/prisma/client';
 
 const registrationSelect = {
   id: true,
@@ -21,6 +21,13 @@ class CoachRegistrationRepository {
       where: { classId },
       select: registrationSelect,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+
+  findByCoach = (coachId: string, status?: CoachRegistrationStatus) =>
+    prisma.classCoachRegistration.findMany({
+      where: { coachId, status },
+      select: registrationSelect,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     });
 
   findPending = (classId: string, tx: Prisma.TransactionClient) =>

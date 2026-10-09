@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
-import type { Buyer, CheckoutItemInput } from '~/features/checkout/types';
+import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -22,7 +22,7 @@ const CONFLICT_LABEL: Record<PackageConflict, string> = {
 
 interface RecurringPackagePickerProps {
   user: Account;
-  buyer?: Buyer;
+  buyer?: CheckoutBuyer;
   onAdd: (selection: CheckoutItemInput) => void;
 }
 
@@ -51,7 +51,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
     facilityId && slot && days.length > 0 && weeks >= 1
       ? { facilityId, startDate, daysOfWeek: [...days].sort(), startTime: slot.startTime, endTime: slot.endTime, weeks }
       : null;
-  const preview = usePackagePreview(request);
+  const preview = usePackagePreview(request, user.role !== 'MEMBER');
   const selection: CheckoutItemInput | null = request ? { type: 'FACILITY_PACKAGE', ...request } : null;
   const quote = useQuote({ user, buyer, items: selection ? [selection] : [], enabled: Boolean(selection) });
   const line = selection ? quote.data?.items[0] : undefined;
