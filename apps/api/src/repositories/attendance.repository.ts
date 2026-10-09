@@ -38,8 +38,6 @@ const enrolledAtSession = (start: Date): Prisma.ClassEnrollmentWhereInput => ({
   OR: [{ cancelledAt: null }, { cancelledAt: { gt: start } }],
 });
 
-// Bind ISO text as timestamptz so the database session timezone cannot reinterpret UTC.
-// EXISTS prevents duplicate members after cancellation and re-enrollment.
 const missingDefaults = (now: Date) => Prisma.sql`
   SELECT s.id AS "sessionId", s.class_id AS "classId", e.account_id AS "accountId"
   FROM class_sessions s

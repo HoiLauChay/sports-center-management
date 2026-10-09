@@ -6,7 +6,6 @@ import { runTransaction, withScheduleLock } from '~/utils/transaction';
 class AttendanceJobService {
   run = (now = new Date()) =>
     runTransaction(async (tx) => {
-      // Same lock as cancellation, rescheduling, enrollment and manual attendance writes.
       await withScheduleLock(tx);
       const missing = await attendanceRepository.findMissingDefaults(now, CRON.BATCH_SIZE, tx);
       const rows = missing.length
