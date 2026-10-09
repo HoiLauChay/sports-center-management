@@ -25,7 +25,7 @@ async function seeded() {
 }
 
 /**
- * Classes (catalog, detail, manager list, create, approve, reject) come from the API. My enrollments and their cancellation stay mock
+ * Classes (catalog, detail, manager list, create) come from the API. My enrollments and their cancellation stay mock
  * until `GET /me/enrollments` (#167) ships.
  */
 export const classesService = {
@@ -48,16 +48,6 @@ export const classesService = {
 
   create: async (body: CreateClassBody) => {
     const { data } = await privateApi.post<ApiResponse<ClassDetail>>('/classes', body);
-    return data.result;
-  },
-
-  approve: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}/approve`);
-    return data.result;
-  },
-
-  reject: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}/reject`, {});
     return data.result;
   },
 

@@ -1,66 +1,38 @@
-import type { ApiResponse, Person, Specialization } from '@sports-center/shared';
-import { loadCatalog } from '~/features/checkout/mocks/pricing';
+import type { ApiResponse, ClassSummary, CoachRegistration, Paginated, Specialization } from '@sports-center/shared';
+import { PAGINATION } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
-import { mockRequest } from '~/lib/mock/errors';
-import {
-  getClassStudents,
-  getClassesTaughtByCoach,
-  getOpenClassesForCoach,
-  registerCoachForClass,
-  withdrawCoachRegistration,
-} from '../mocks/classAdmin';
-import { ensureClassSeed } from '../mocks/classes';
 
-async function seeded() {
-  const catalog = await loadCatalog();
-  ensureClassSeed(catalog.facilities, catalog.settings);
-}
+const listClasses = async (params: Record<string, unknown>) => {
+  const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', {
+    params: { page: 1, limit: PAGINATION.MAX_LIMIT, ...params },
+  });
+  return data.result.items;
+};
 
-/** Sport ids the coach may teach: their APPROVED specializations (BR_2.14). */
-const approvedSportIds = async () =>
-  (await coachClassesService.approvedSpecializations()).map((specialization) => specialization.sport.id);
-
-/**
- * Coach-side class pages. Specializations come from the real `GET /coach/specializations`; the class lists and
- * registrations stay mock until #171 ships the class API.
- */
+/** Coach-side class pages: classes needing a coach, registering to teach, the classes taught and withdrawing. */
 export const coachClassesService = {
   approvedSpecializations: async (): Promise<Specialization[]> => {
     const { data } = await privateApi.get<ApiResponse<Specialization[]>>('/coach/specializations');
     return data.result.filter((specialization) => specialization.status === 'APPROVED');
   },
 
-  listOpenClasses: async (coach: Person) => {
-    const sportIds = await approvedSportIds();
-    return mockRequest(async () => {
-      await seeded();
-      return getOpenClassesForCoach(coach.id, sportIds);
-    }, 150);
+  /** Drafts and pending classes of the coach's approved sports that still have no coach (BR_2.14). */
+  listOpenClasses: () => listClasses({ needsCoach: true }),
+
+  registerToTeach: async (classId: string) => {
+    const { data } = await privateApi.post<ApiResponse<CoachRegistration>>(
+      `/classes/${encodeURIComponent(classId)}/coach-registrations`,
+    );
+    return data.result;
   },
 
-  registerToTeach: async (coach: Person, classId: string) => {
-    const sportIds = await approvedSportIds();
-    return mockRequest(async () => {
-      await seeded();
-      return registerCoachForClass(classId, { id: coach.id, fullName: coach.fullName }, sportIds);
-    }, 300);
+  listMyClasses: (coachId: string) => listClasses({ coachId }),
+
+  /** Leaves a class that has not started; it goes back to waiting for a coach. */
+  withdraw: async (classId: string) => {
+    const { data } = await privateApi.post<ApiResponse<ClassSummary>>(
+      `/classes/${encodeURIComponent(classId)}/withdraw`,
+    );
+    return data.result;
   },
-
-  withdraw: (coach: Person, classId: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return withdrawCoachRegistration(classId, coach.id);
-    }, 250),
-
-  listMyClasses: (coach: Person) =>
-    mockRequest(async () => {
-      await seeded();
-      return getClassesTaughtByCoach(coach.id);
-    }, 150),
-
-  classStudents: (classId: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return getClassStudents(classId);
-    }, 150),
 };

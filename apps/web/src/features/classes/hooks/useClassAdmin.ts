@@ -34,17 +34,12 @@ export function useCoachPool(sportId: string, enabled: boolean) {
 }
 
 /** Runs a class-management action, refreshes everything the class touches and reports the outcome. */
-function useClassAction<V, R>(
-  classId: string,
-  run: (variables: V) => Promise<R>,
-  success: string | ((result: R) => string),
-) {
+function useClassAction<V, R>(run: (variables: V) => Promise<R>, success: string | ((result: R) => string)) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: run,
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: adminKey(classId) });
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
@@ -56,55 +51,33 @@ function useClassAction<V, R>(
 }
 
 export function useUpdateClass(classId: string) {
-  return useClassAction(
-    classId,
-    (patch: ClassPatch) => classAdminService.update(classId, patch),
-    'Đã lưu thông tin lớp.',
-  );
+  return useClassAction((patch: ClassPatch) => classAdminService.update(classId, patch), 'Đã lưu thông tin lớp.');
 }
 
 export function useApproveClass(classId: string) {
-  return useClassAction(classId, () => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
+  return useClassAction(() => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
 }
 
 export function useRejectClass(classId: string) {
-  return useClassAction(classId, () => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+  return useClassAction(() => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
 }
 
 export function useAssignCoach(classId: string) {
-  return useClassAction(
-    classId,
-    (body: AssignCoachBody) => classAdminService.assignCoach(classId, body),
-    'Đã phân công HLV.',
-  );
+  return useClassAction((body: AssignCoachBody) => classAdminService.assignCoach(classId, body), 'Đã phân công HLV.');
 }
 
 export function useCancelClass(classId: string) {
   return useClassAction(
-    classId,
     (reason: string) => classAdminService.cancel(classId, reason),
     (result) => `Đã hủy lớp, hoàn trọn ${formatVND(result.refundTotal)} về ví học viên.`,
   );
 }
 
 /** Approve / reject straight from the class list, where the class is known per row. */
-function useClassListAction(run: (classId: string) => Promise<unknown>, success: string) {
-  const { message } = App.useApp();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: run,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['classes'] });
-      message.success(success);
-    },
-    onError: (error) => message.error(describeApiError(error)),
-  });
-}
-
 export function useApproveClassFromList() {
-  return useClassListAction((classId) => classesService.approve(classId), 'Đã duyệt mở lớp.');
+  return useClassAction((classId: string) => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
 }
 
 export function useRejectClassFromList() {
-  return useClassListAction((classId) => classesService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+  return useClassAction((classId: string) => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
 }

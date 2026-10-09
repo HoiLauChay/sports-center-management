@@ -1,21 +1,26 @@
-import { Link } from '@tanstack/react-router';
-import { Button, Card, Space, Table, Tag, type TableColumnsType } from 'antd';
+import type { ClassSummary } from '@sports-center/shared';
+import { Button, Card, Popconfirm, Space, Table, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
-import { useMyClasses } from '../hooks/useCoachClasses';
-import type { CoachClassItem } from '../types';
+import { todayVN } from '~/lib/time';
+import { useMyClasses, useWithdrawFromClass } from '../hooks/useCoachClasses';
 import { classDateRange } from '../utils';
 import { ClassStatusTag, WeeklyTags } from './ClassTableParts';
 import { CoachClassStudentsModal } from './CoachClassStudentsModal';
 
+/** The API lets a coach leave an open or pending class before its first session. */
+const canWithdraw = (item: ClassSummary) =>
+  (item.status === 'OPEN' || item.status === 'PENDING_APPROVAL') && (!item.startDate || item.startDate > todayVN());
+
 /** `/coach/classes`: the classes this coach currently teaches (classes.coach_id), with each class's students (UC_2.21). */
 export function CoachClassesPage() {
   const classes = useMyClasses();
-  const [studentsOf, setStudentsOf] = useState<CoachClassItem | null>(null);
+  const withdraw = useWithdrawFromClass();
+  const [studentsOf, setStudentsOf] = useState<ClassSummary | null>(null);
 
-  const columns: TableColumnsType<CoachClassItem> = [
+  const columns: TableColumnsType<ClassSummary> = [
     {
       title: 'Lớp',
       dataIndex: 'name',
@@ -44,12 +49,18 @@ export function CoachClassesPage() {
           <Button size="small" onClick={() => setStudentsOf(record)}>
             Chi tiết
           </Button>
-          {record.derivedStatus === 'ONGOING' && record.attendanceSessionId && (
-            <Link to="/coach/sessions/$sessionId" params={{ sessionId: record.attendanceSessionId }}>
-              <Button size="small" type="primary">
-                Điểm danh
+          {canWithdraw(record) && (
+            <Popconfirm
+              title="Rút khỏi lớp này?"
+              description="Lớp quay về chờ HLV, học viên đã đăng ký được thông báo."
+              okText="Rút"
+              cancelText="Không"
+              onConfirm={() => withdraw.mutate(record.id)}
+            >
+              <Button size="small" danger loading={withdraw.isPending && withdraw.variables === record.id}>
+                Rút khỏi lớp
               </Button>
-            </Link>
+            </Popconfirm>
           )}
         </Space>
       ),
@@ -63,7 +74,7 @@ export function CoachClassesPage() {
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />
         ) : (
-          <Table<CoachClassItem>
+          <Table<ClassSummary>
             rowKey="id"
             columns={columns}
             dataSource={classes.data}

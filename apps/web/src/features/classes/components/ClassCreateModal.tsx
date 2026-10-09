@@ -6,7 +6,7 @@ import {
   type ScheduleClashReason,
 } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select, TimePicker } from 'antd';
+import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
 import dayjs from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -15,10 +15,11 @@ import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses';
+import { useSettings } from '~/features/settings';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { formatDate, formatVND } from '~/lib/format';
 import { errorPayload } from '~/lib/http-errors';
-import { DATE_FORMAT, DAY_LABEL, WEEK_ORDER } from '~/lib/time';
+import { addDays, DATE_FORMAT, DAY_LABEL, slotGrid, todayVN, WEEK_ORDER } from '~/lib/time';
 import { classesService } from '../services/classes.service';
 
 type ClassInput = z.input<typeof createClassBodySchema>;
@@ -41,7 +42,7 @@ const blankClass = (): ClassInput => ({
   courseId: '',
   name: '',
   facilityId: '',
-  startDate: dayjs().add(7, 'day').format(DATE_FORMAT),
+  startDate: addDays(todayVN(), 7),
   minStudents: 4,
   maxStudents: 12,
   weeklySchedule: [emptySlot],
@@ -57,6 +58,10 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
   const queryClient = useQueryClient();
   const courses = useCourses();
   const facilities = useQuery(facilitiesQueryOptions);
+  const settings = useSettings();
+  const grid = settings.data
+    ? slotGrid(settings.data.openTime, settings.data.closeTime, settings.data.slotDurationMinutes)
+    : [];
   const [conflicts, setConflicts] = useState<ScheduleClash[]>([]);
   const form = useForm<ClassInput, unknown, CreateClassBody>({
     resolver: zodResolver(createClassBodySchema),
@@ -194,7 +199,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
               <DatePicker
                 className="w-full"
                 format="DD/MM/YYYY"
-                minDate={dayjs()}
+                minDate={dayjs(addDays(todayVN(), 1))}
                 status={invalid ? 'error' : undefined}
                 value={field.value ? dayjs(field.value) : null}
                 onChange={(value) => field.onChange(value ? value.format(DATE_FORMAT) : '')}
@@ -249,25 +254,33 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
             />
             <FormField
               control={control}
+              name={`weeklySchedule.${index}.startTime`}
+              className="flex-1"
+              render={(field, invalid) => (
+                <Select
+                  {...field}
+                  value={field.value || undefined}
+                  status={invalid ? 'error' : undefined}
+                  placeholder="Bắt đầu"
+                  options={grid.map((slot) => ({ value: slot.startTime, label: slot.startTime }))}
+                />
+              )}
+            />
+            <FormField
+              control={control}
               name={`weeklySchedule.${index}.endTime`}
               className="flex-1"
-              render={(field, invalid) => {
-                const startTime = slots[index]?.startTime;
-                return (
-                  <TimePicker.RangePicker
-                    className="w-full"
-                    format="HH:mm"
-                    minuteStep={15}
-                    order
-                    status={invalid ? 'error' : undefined}
-                    value={startTime && field.value ? [dayjs(startTime, 'HH:mm'), dayjs(field.value, 'HH:mm')] : null}
-                    onChange={(range) => {
-                      form.setValue(`weeklySchedule.${index}.startTime`, range?.[0]?.format('HH:mm') ?? '');
-                      field.onChange(range?.[1]?.format('HH:mm') ?? '');
-                    }}
-                  />
-                );
-              }}
+              render={(field, invalid) => (
+                <Select
+                  {...field}
+                  value={field.value || undefined}
+                  status={invalid ? 'error' : undefined}
+                  placeholder="Kết thúc"
+                  options={grid
+                    .filter((slot) => !slots[index]?.startTime || slot.endTime > slots[index].startTime)
+                    .map((slot) => ({ value: slot.endTime, label: slot.endTime }))}
+                />
+              )}
             />
             <Button
               icon={<Trash2 size={16} />}
