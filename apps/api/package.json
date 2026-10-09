@@ -46,6 +46,7 @@
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",
     "resend": "^6.28.1",
+    "write-excel-file": "4.1.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
