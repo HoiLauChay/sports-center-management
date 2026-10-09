@@ -1,17 +1,22 @@
-import type { Account, ApiResponse, FacilitySchedule } from '@sports-center/shared';
+import type {
+  ApiResponse,
+  Booking,
+  FacilityPackage,
+  FacilitySchedule,
+  ListMyBookingsQuery,
+  Paginated,
+} from '@sports-center/shared';
+import { PAGINATION } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
 import { ensureClassSeed } from '~/features/classes/mocks/classes';
 import { privateApi } from '~/lib/http';
 import { mockErrors, mockRequest } from '~/lib/mock/errors';
 import { toMinutes } from '~/lib/time';
-import { listBookingsOn, listMyBookings, listMyPackages, type ListBookingsQuery } from '../mocks/bookings';
 import { previewPackage } from '../mocks/schedule';
 import type { PackagePreview, PackagePreviewRequest } from '../types';
 
 /**
- * Facility schedule, recurring-package preview and my bookings. The schedule and the member's package preview come from the
- * API; my bookings and the reception day list stay mock until #167 ships (see `../mocks`).
+ * Facility schedule, recurring-package preview and bookings, all from the API except the counter package preview.
  */
 export const bookingsService = {
   facilitySchedule: async (facilityId: string, date: string) => {
@@ -41,10 +46,21 @@ export const bookingsService = {
       return previewPackage(facility, settings, request, facility.pricePerSlot, slots);
     }, 150),
 
-  listMine: (user: Account, query: ListBookingsQuery) => mockRequest(() => listMyBookings(actorOf(user), query)),
+  listMine: async (params: ListMyBookingsQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/me/bookings', { params });
+    return data.result;
+  },
 
-  listMyPackages: (user: Account) => mockRequest(() => listMyPackages(actorOf(user))),
+  listMyPackages: async () => {
+    const { data } = await privateApi.get<ApiResponse<FacilityPackage[]>>('/me/facility-packages');
+    return data.result;
+  },
 
-  /** Reception desk: every confirmed booking of one day. */
-  listOn: (date: string) => mockRequest(() => listBookingsOn(date)),
+  /** Reception desk: every confirmed booking of one day, earliest first. */
+  listOn: async (date: string) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/bookings', {
+      params: { date, status: 'CONFIRMED', page: 1, limit: PAGINATION.MAX_LIMIT },
+    });
+    return data.result.items.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  },
 };

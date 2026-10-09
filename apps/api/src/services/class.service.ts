@@ -83,6 +83,11 @@ const assertReadyToOpen = async (current: ClassDetailRow, tx: Prisma.Transaction
 };
 
 class ClassService {
+  listForCoach = async (coachId: string) => {
+    const rows = await classRepository.findAssignedToCoach(coachId);
+    return rows.map((row) => toClassSummaryResponse(row));
+  };
+
   cancel = async (managerId: string, id: string, { reason }: CancelClassBody, ip?: string) => {
     const { result, notifications } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
