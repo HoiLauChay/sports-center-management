@@ -45,7 +45,9 @@ class EnrollmentService {
         message: 'Bạn chỉ được xem học viên lớp mình phụ trách',
       });
     }
-    return (await enrollmentRepository.findByClass(classId)).map(toEnrollmentResponse);
+    // A coach only sees the students still in the class; staff also see who left.
+    const status = actor.role === 'COACH' ? 'ENROLLED' : undefined;
+    return (await enrollmentRepository.findByClass(classId, status)).map(toEnrollmentResponse);
   };
 
   cancel = async (actor: Actor, id: string): Promise<CancelEnrollmentResult> => {
