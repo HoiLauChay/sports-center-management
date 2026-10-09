@@ -1,38 +1,29 @@
-export interface ScheduleFacilityRef {
-  id: string;
-  name: string;
-}
+import type { BookingStatus } from '../constants/enums';
+import type { Ref } from './api';
+import type { Person } from './audit';
+import type { ClassSession } from './class';
 
-export interface SchedulePersonRef {
-  id: string;
-  fullName: string;
-}
-
-export interface ScheduleItemBase {
+interface ScheduleItemBase {
   id: string;
   date: string;
   startTime: string;
   endTime: string;
-  facility: ScheduleFacilityRef;
+  facility: Ref;
 }
 
 export interface MemberBookingScheduleItem extends ScheduleItemBase {
   kind: 'BOOKING';
-  status: 'CONFIRMED' | 'CANCELLED';
+  status: BookingStatus;
 }
 
 export interface MemberClassScheduleItem extends ScheduleItemBase {
   kind: 'CLASS_SESSION';
-  class: { id: string; name: string; coach: SchedulePersonRef | null };
-  status: 'SCHEDULED' | 'CANCELLED';
+  class: Ref & { coach: Person | null };
+  status: ClassSession['status'];
 }
 
 export type MemberScheduleItem = MemberBookingScheduleItem | MemberClassScheduleItem;
 
-export interface CoachScheduleItem extends ScheduleItemBase {
-  classId: string;
-  sessionNumber: number;
-  status: 'SCHEDULED' | 'CANCELLED';
-  cancelReason: string | null;
-  class: ScheduleFacilityRef;
+export interface CoachScheduleItem extends ClassSession {
+  class: Ref;
 }
