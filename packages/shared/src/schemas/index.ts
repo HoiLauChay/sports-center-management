@@ -18,6 +18,7 @@ export * from './setting';
 export * from './specialization';
 export * from './sport';
 export * from './support';
+export * from './training';
 export * from './upload';
 export * from './user';
 export * from './wallet';
