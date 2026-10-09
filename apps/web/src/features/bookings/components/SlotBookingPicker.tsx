@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
-import type { Buyer, CheckoutItemInput } from '~/features/checkout/types';
+import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -24,7 +24,7 @@ const BENEFIT_TEXT: Record<string, string> = {
 interface SlotBookingPickerProps {
   user: Account;
   /** The person the booking is for (counter orders); members always book for themselves. */
-  buyer?: Buyer;
+  buyer?: CheckoutBuyer;
   onAdd: (selection: CheckoutItemInput) => void;
 }
 
@@ -225,7 +225,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                 </div>
                 {line && line.membershipDiscount > 0 && (
                   <div className="flex justify-between border-b border-dashed border-sc-border py-1 text-sc-success">
-                    <span>{BENEFIT_TEXT[String(line.snapshot.benefit)] ?? 'Ưu đãi gói'}</span>
+                    <span>{BENEFIT_TEXT[String(line.snapshot?.benefit)] ?? 'Ưu đãi gói'}</span>
                     <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
                   </div>
                 )}
