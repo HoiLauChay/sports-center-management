@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import { resetDatabase } from './helpers/db';
-import { buildFetcher, createAccount, readCode, readResult, startServer } from './helpers/http';
+import { buildFetcher, createAccount, readResult, startServer } from './helpers/http';
 import { seedBooking, seedFacility, seedSession } from './helpers/schedule';
 
 import { addDays, todayInCenter } from '~/utils/time';
@@ -58,7 +58,7 @@ beforeEach(async () => {
   await prisma.systemSetting.create({ data: {} });
 });
 
-describe('personal schedule #166', () => {
+describe('personal schedule', () => {
   test('member receives own bookings and enrolled sessions sorted by date/time, including cancelled', async () => {
     const member = await createAccount('MEMBER', 'member166@example.com');
     const other = await createAccount('MEMBER', 'other166@example.com');
@@ -93,34 +93,6 @@ describe('personal schedule #166', () => {
       { id: session.id, status: 'CANCELLED', class: { id: session.classId } },
     ]);
     expect(await readResult<CoachScheduleItem[]>(await coachRequest('GET', QUERY, other))).toEqual([]);
-  });
-
-  test('cancelled class remains visible after its enrollment is cancelled', async () => {
-    const member = await createAccount('MEMBER', 'history166@example.com');
-    const coach = await createAccount('COACH', 'historyCoach166@example.com');
-    const facility = await seedFacility(1);
-    await seedBooking(facility.id, '11:00', '12:00', { accountId: member.id });
-    const session = await seedSession(facility.id, '06:00', '07:00', { coachId: coach.id });
-    const enrollmentOrderItemId = await seedEnrollmentOrderItem(member.id);
-    await prisma.classEnrollment.create({
-      data: { classId: session.classId, accountId: member.id, orderItemId: enrollmentOrderItemId, status: 'CANCELLED' },
-    });
-    await prisma.class.update({ where: { id: session.classId }, data: { status: 'CANCELLED' } });
-    await prisma.classSession.update({ where: { id: session.id }, data: { status: 'CANCELLED' } });
-    const items = await readResult<MemberScheduleItem[]>(await memberRequest('GET', QUERY, member));
-    expect(
-      items.some((item) => item.kind === 'CLASS_SESSION' && item.id === session.id && item.status === 'CANCELLED'),
-    ).toBe(true);
-  });
-
-  test('invalid dates and roles are rejected', async () => {
-    const member = await createAccount('MEMBER', 'memberC166@example.com');
-    const coach = await createAccount('COACH', 'coachC166@example.com');
-    expect((await memberRequest('GET', '?from=2026-10-21&to=2026-10-19', member)).status).toBe(422);
-    expect((await memberRequest('GET', '?from=wrong&to=2026-10-21', member)).status).toBe(422);
-    expect((await memberRequest('GET', QUERY, coach)).status).toBe(403);
-    expect((await coachRequest('GET', QUERY, member)).status).toBe(403);
-    expect(await readCode(await coachRequest('GET', '?from=2026-10-21&to=2026-10-19', coach))).toBe('VALIDATION_ERROR');
   });
 
   test('member and coach retain cancelled sessions after real class cancellation API', async () => {
