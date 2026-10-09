@@ -37,6 +37,7 @@ export interface ConflictQuery {
   facility?: { id: string; exclusive: boolean };
   coachId?: string;
   accountId?: string;
+  accountIds?: string[];
   ignoreSessionIds?: string[];
   planned?: PlannedUse[];
   now?: Date;
@@ -155,8 +156,9 @@ const personClashes = async (tx: Prisma.TransactionClient, query: ConflictQuery)
     }
   }
 
-  if (query.accountId) {
-    const [bookings, sessions] = await scheduleRepository.findMemberCommitments(query.accountId, dates, tx);
+  const accountIds = [...new Set([...(query.accountIds ?? []), ...(query.accountId ? [query.accountId] : [])])];
+  if (accountIds.length > 0) {
+    const [bookings, sessions] = await scheduleRepository.findMemberCommitments(accountIds, dates, tx);
     for (const range of query.ranges) {
       for (const booking of bookings) {
         if (sameDayOverlap(range, timed(booking.bookingDate, booking.startTime, booking.endTime))) {
