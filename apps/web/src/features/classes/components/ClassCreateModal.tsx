@@ -1,12 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  createClassBodySchema,
-  type CreateClassBody,
-  type ScheduleClash,
-  type ScheduleClashReason,
-} from '@sports-center/shared';
+import { createClassBodySchema, type CreateClassBody, type ScheduleClash } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Button, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
 import dayjs from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -17,24 +12,13 @@ import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses';
 import { useSettings } from '~/features/settings';
 import { useFormApiError } from '~/hooks/useFormApiError';
-import { formatDate, formatVND } from '~/lib/format';
+import { formatVND } from '~/lib/format';
 import { errorPayload } from '~/lib/http-errors';
 import { addDays, DATE_FORMAT, DAY_LABEL, slotGrid, todayVN, WEEK_ORDER } from '~/lib/time';
 import { classesService } from '../services/classes.service';
+import { ScheduleClashList } from './ScheduleClashList';
 
 type ClassInput = z.input<typeof createClassBodySchema>;
-
-const CLASH_TEXT: Record<ScheduleClashReason, string> = {
-  CLOSED: 'phòng / sân đang tạm ngừng',
-  PAST: 'buổi đã qua',
-  OFF_GRID: 'giờ học không khớp lưới slot',
-  MAINTENANCE: 'phòng / sân đang bảo trì',
-  CLASS_SESSION: 'trùng buổi học khác',
-  BOOKED: 'đã có lượt đặt sân',
-  FULL: 'phòng / sân đã kín chỗ',
-  COACH_BUSY: 'HLV đã có lịch',
-  MEMBER_BUSY: 'học viên đã có lịch',
-};
 
 const emptySlot = { dayOfWeek: 1, startTime: '', endTime: '' };
 
@@ -113,26 +97,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
       onOk={() => void submit()}
       onCancel={close}
     >
-      {conflicts.length > 0 && (
-        <Alert
-          type="error"
-          showIcon
-          className="!mb-4"
-          title="Lịch học bị trùng"
-          description={
-            <ul className="m-0 list-disc pl-4 text-xs">
-              {conflicts.map((clash) => (
-                <li key={`${clash.date}-${clash.startTime}-${clash.reason}`}>
-                  <strong>{formatDate(clash.date)}</strong> {clash.startTime}–{clash.endTime}:{' '}
-                  {clash.classSession
-                    ? `trùng buổi của lớp "${clash.classSession.className}"`
-                    : CLASH_TEXT[clash.reason]}
-                </li>
-              ))}
-            </ul>
-          }
-        />
-      )}
+      <ScheduleClashList conflicts={conflicts} />
       <FormRootError message={form.formState.errors.root?.message} />
 
       <Form layout="vertical" requiredMark={false} onFinish={() => void submit()}>

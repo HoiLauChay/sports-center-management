@@ -15,6 +15,7 @@ import type { ClassAdminDetail, ClassSession, CoachRegistration } from '../types
 import { classAdminActions, classStatusTag, REGISTRATION_TAG } from '../utils';
 import { AssignCoachModal, CancelClassModal, EditClassModal } from './ClassAdminModals';
 import { ClassStudentsTable } from './ClassStudentsTable';
+import { SessionEditModal } from './SessionEditModal';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/$classId');
 
@@ -60,6 +61,7 @@ export function ClassAdminDetailPage() {
   const assign = useAssignCoach(classId);
   const [modal, setModal] = useState<ModalState>(null);
   const [tab, setTab] = useState<string>();
+  const [editing, setEditing] = useState<ClassSession | null>(null);
 
   if (detail.isPending) return <PageLoading />;
   if (detail.isError) {
@@ -164,6 +166,17 @@ export function ClassAdminDetailPage() {
         ) : (
           <Tag color="processing">Sắp tới</Tag>
         ),
+    },
+    {
+      title: '',
+      key: 'actions',
+      align: 'right',
+      render: (_, session) =>
+        item.status !== 'CANCELLED' && session.status === 'SCHEDULED' && !isPast(session.date, session.startTime) ? (
+          <Button size="small" icon={<Pencil size={14} />} onClick={() => setEditing(session)}>
+            Sửa
+          </Button>
+        ) : null,
     },
   ];
 
@@ -344,6 +357,7 @@ export function ClassAdminDetailPage() {
       <EditClassModal open={modal === 'edit'} item={item} onClose={closeModal} />
       <CancelClassModal open={modal === 'cancel'} item={item} onClose={closeModal} />
       <AssignCoachModal open={modal === 'assign'} item={item} onClose={closeModal} />
+      <SessionEditModal item={item} session={editing} onClose={() => setEditing(null)} />
     </>
   );
 }
