@@ -16,7 +16,6 @@ import { QuoteTotals } from '~/features/checkout/components/QuoteTotals';
 import { useAddToCart } from '~/features/checkout/hooks/useAddToCart';
 import { quoteQueryKey, useCounterDraft, useQuote } from '~/features/checkout/hooks/useCart';
 import { useCheckout } from '~/features/checkout/hooks/useCheckout';
-import { COUNTER_TRANSFER_DELAY_SECONDS } from '~/features/checkout/mocks/checkout';
 import type { Order } from '~/features/checkout/types';
 import { InvoiceSheet } from '~/features/orders/components/InvoiceSheet';
 import { useOrder } from '~/features/orders/hooks/useOrders';
@@ -93,12 +92,6 @@ function TransferPhase({
   return (
     <Card>
       <SectionTitle>Chuyển khoản · hóa đơn {data.paymentCode}</SectionTitle>
-      <Alert
-        type="info"
-        showIcon
-        className="!mb-4"
-        title={`Bản dữ liệu giả: hóa đơn tự chuyển sang "đã thanh toán" sau khoảng ${COUNTER_TRANSFER_DELAY_SECONDS} giây, thay cho webhook SePay.`}
-      />
       <InvoicePayPanel
         invoice={data}
         paidMessage={<>Đã nhận {formatVND(data.amount)}. Đang tạo biên lai…</>}

@@ -54,7 +54,7 @@ export function useCheckout({ onPaid, onQuote }: UseCheckoutOptions) {
 
   const mutation = useMutation({
     mutationFn: (params: CheckoutParams) =>
-      checkoutService.checkout(params.user, {
+      checkoutService.checkout({
         buyer: params.buyer,
         items: params.items,
         couponCode: params.couponCode || undefined,

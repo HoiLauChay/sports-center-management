@@ -62,7 +62,7 @@ describe('Reception counter invoice & top-up APIs (Issue #134)', () => {
       data: { status: true, result: mockInvoice },
     } as never);
 
-    const result = await checkoutService.startCounterTransfer(staffUser, request);
+    const result = await checkoutService.startCounterTransfer(request);
     expect(postSpy).toHaveBeenCalledWith('/checkout/invoices', {
       buyer: request.buyer,
       items: request.items,
@@ -81,7 +81,7 @@ describe('Reception counter invoice & top-up APIs (Issue #134)', () => {
       data: { status: true, result: mockInvoice },
     } as never);
 
-    const result = await checkoutService.getCounterInvoice(staffUser, invoiceId);
+    const result = await checkoutService.getCounterInvoice(invoiceId);
     expect(getSpy).toHaveBeenCalledWith(`/invoices/${invoiceId}`);
     expect(result).toBe(mockInvoice as never);
     getSpy.mockRestore();

@@ -1,4 +1,4 @@
-import type { PaymentMethod, Person } from '@sports-center/shared';
+import type { PaymentMethod } from '@sports-center/shared';
 
 export const ORDER_ITEM_TYPES = ['FACILITY_BOOKING', 'FACILITY_PACKAGE', 'COURSE_ENROLLMENT', 'MEMBERSHIP'] as const;
 export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
@@ -71,37 +71,7 @@ export interface CheckoutRequest extends QuoteRequest {
 
 export type OrderStatus = 'PAID' | 'PARTIALLY_REFUNDED' | 'REFUNDED';
 
-export interface OrderItem {
-  id: string;
-  lineNumber: number;
-  type: OrderItemType;
-  snapshot: Record<string, unknown>;
-  subtotal: number;
-  membershipDiscount: number;
-  couponDiscount: number;
-  totalAmount: number;
-  refundedAmount: number;
-  refId: string;
-}
-
-export interface Order {
-  id: string;
-  orderNumber: string;
-  account: Person | null;
-  guestName: string | null;
-  guestPhone: string | null;
-  createdBy: Person | null;
-  status: OrderStatus;
-  paymentMethod: PaymentMethod;
-  coupon: { code: string; discount: number } | null;
-  subtotal: number;
-  membershipDiscount: number;
-  couponDiscount: number;
-  totalAmount: number;
-  refundedAmount: number;
-  items: OrderItem[];
-  paidAt: string;
-}
+export type { Order, OrderItem, OrderRefund } from '@sports-center/shared';
 
 export interface ListOrdersQuery {
   page: number;

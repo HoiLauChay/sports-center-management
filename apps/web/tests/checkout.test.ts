@@ -1,8 +1,9 @@
 import type { Account } from '@sports-center/shared';
 import { beforeEach, describe, expect, it, spyOn } from 'bun:test';
 import { checkoutService } from '../src/features/checkout/services/checkout.service';
-import { memberCartStore } from '../src/features/checkout/store/cartStore';
+import { CartStore, memberCartStore } from '../src/features/checkout/store/cartStore';
 import type { CheckoutRequest, Order, Quote, QuoteRequest } from '../src/features/checkout/types';
+import { refundedOf } from '../src/features/checkout/utils';
 import { privateApi } from '../src/lib/http';
 
 describe('cartStore (localStorage)', () => {
@@ -74,7 +75,7 @@ describe('checkoutService API endpoints (#110)', () => {
       data: { status: true, result: mockQuote },
     } as never);
 
-    const result = await checkoutService.quote(mockUser, quoteReq);
+    const result = await checkoutService.quote(quoteReq);
     expect(postSpy).toHaveBeenCalledWith('/checkout/quote', {
       buyer: undefined,
       items: quoteReq.items,
@@ -102,7 +103,7 @@ describe('checkoutService API endpoints (#110)', () => {
       data: { status: true, result: mockOrder },
     } as never);
 
-    const result = await checkoutService.checkout(mockUser, checkoutReq);
+    const result = await checkoutService.checkout(checkoutReq);
     expect(postSpy).toHaveBeenCalledWith('/checkout', {
       buyer: undefined,
       items: checkoutReq.items,
@@ -149,9 +150,44 @@ describe('checkoutService API endpoints (#110)', () => {
       data: { status: true, result: mockOrder },
     } as never);
 
-    const result = await checkoutService.getOrder(mockUser, orderId);
+    const result = await checkoutService.getOrder(orderId);
     expect(getSpy).toHaveBeenCalledWith(`/orders/${orderId}`);
     expect(result).toBe(mockOrder as never);
     getSpy.mockRestore();
+  });
+});
+
+describe('refundedOf', () => {
+  const refund = (orderItemId: string | null, amount: number) => ({
+    id: `${orderItemId}-${amount}`,
+    transactionCode: 'RF',
+    orderItemId,
+    amount,
+    reason: null,
+    createdAt: '2026-10-01T00:00:00.000Z',
+  });
+
+  it('sums every refund of the order, or only those of one line', () => {
+    const order = { refunds: [refund('line-1', 100_000), refund('line-2', 50_000)] };
+    expect(refundedOf(order)).toBe(150_000);
+    expect(refundedOf(order, 'line-2')).toBe(50_000);
+    expect(refundedOf({ refunds: [] })).toBe(0);
+  });
+});
+
+describe('CartStore when storage is full', () => {
+  it('keeps the draft in memory instead of reading the old stored value back', () => {
+    const saved = JSON.stringify({ lines: [], couponCode: 'OLD', buyer: null });
+    const storage = {
+      getItem: () => saved,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+    } as unknown as Storage;
+    const store = new CartStore(storage, 'cart');
+
+    expect(store.getSnapshot().couponCode).toBe('OLD');
+    store.setCoupon('NEW');
+    expect(store.getSnapshot().couponCode).toBe('NEW');
   });
 });

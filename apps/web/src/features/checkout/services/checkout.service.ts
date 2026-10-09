@@ -23,7 +23,7 @@ export const checkoutService = {
    * Calculates prices, discounts (memberships & coupons) and checks validity of all items.
    * `POST /checkout/quote`
    */
-  quote: async (_user: Account, request: QuoteRequest): Promise<Quote> => {
+  quote: async (request: QuoteRequest): Promise<Quote> => {
     const { data } = await privateApi.post<ApiResponse<Quote>>('/checkout/quote', {
       buyer: request.buyer,
       items: request.items,
@@ -36,7 +36,7 @@ export const checkoutService = {
    * Finalizes checkout and creates an Order.
    * `POST /checkout` with idempotencyKey to prevent duplicate charges.
    */
-  checkout: async (_user: Account, request: CheckoutRequest): Promise<Order> => {
+  checkout: async (request: CheckoutRequest): Promise<Order> => {
     const { data } = await privateApi.post<ApiResponse<Order>>('/checkout', {
       buyer: request.buyer,
       items: request.items,
@@ -51,7 +51,7 @@ export const checkoutService = {
   /**
    * Counter order paid by transfer: creates invoice and returns QR (`POST /checkout/invoices`).
    */
-  startCounterTransfer: async (_user: Account, request: CheckoutRequest): Promise<Invoice> => {
+  startCounterTransfer: async (request: CheckoutRequest): Promise<Invoice> => {
     const { data } = await privateApi.post<ApiResponse<Invoice>>('/checkout/invoices', {
       buyer: request.buyer,
       items: request.items,
@@ -64,7 +64,7 @@ export const checkoutService = {
   /**
    * Retrieves counter transfer invoice (`GET /invoices/:id`).
    */
-  getCounterInvoice: async (_user: Account, id: string): Promise<Invoice> => {
+  getCounterInvoice: async (id: string): Promise<Invoice> => {
     const { data } = await privateApi.get<ApiResponse<Invoice>>(`/invoices/${encodeURIComponent(id)}`);
     return data.result;
   },
@@ -99,7 +99,7 @@ export const checkoutService = {
   /**
    * Retrieves single order by id (`GET /orders/:id`).
    */
-  getOrder: async (_user: Account, id: string): Promise<Order> => {
+  getOrder: async (id: string): Promise<Order> => {
     const { data } = await privateApi.get<ApiResponse<Order>>(`/orders/${encodeURIComponent(id)}`);
     return data.result;
   },
@@ -119,6 +119,7 @@ export const checkoutService = {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // Some browsers start the download after `click()` returns, so the URL is released a moment later.
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
   },
 };

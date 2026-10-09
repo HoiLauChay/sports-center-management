@@ -1,7 +1,6 @@
 import type { ApiResponse, Invoice } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { useCurrentUser } from '~/features/auth';
 import { checkoutService } from '~/features/checkout/services/checkout.service';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import type { Buyer, CheckoutRequest } from '~/features/checkout/types';
@@ -36,10 +35,9 @@ export function useMemberMemberships(memberId: string | undefined) {
 
 /** Polls a counter transfer invoice every 3 seconds while it waits for money; stops when the screen unmounts. */
 export function useCounterInvoice(id: string | undefined) {
-  const user = useCurrentUser();
   return useQuery({
     queryKey: ['counter-invoice', id],
-    queryFn: () => checkoutService.getCounterInvoice(user, id!),
+    queryFn: () => checkoutService.getCounterInvoice(id!),
     enabled: Boolean(id),
     retry: false,
     refetchInterval: (query) => (query.state.data?.status === 'PENDING' ? INVOICE_POLL_MS : false),
@@ -47,10 +45,9 @@ export function useCounterInvoice(id: string | undefined) {
 }
 
 export function useStartCounterTransfer() {
-  const user = useCurrentUser();
   const { message } = App.useApp();
   return useMutation<Invoice, unknown, CheckoutRequest>({
-    mutationFn: (request) => checkoutService.startCounterTransfer(user, request),
+    mutationFn: (request) => checkoutService.startCounterTransfer(request),
     onError: (error) => message.error(toApiError(error).message),
   });
 }

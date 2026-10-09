@@ -45,7 +45,7 @@ export const quoteQueryKey = (
 export function useQuote({ user, buyer, items, couponCode, enabled = true }: UseQuoteParams) {
   return useQuery<Quote>({
     queryKey: quoteQueryKey(user.id, buyer, items, couponCode),
-    queryFn: () => checkoutService.quote(user, { buyer, items, couponCode: couponCode || undefined }),
+    queryFn: () => checkoutService.quote({ buyer, items, couponCode: couponCode || undefined }),
     enabled: enabled && items.length > 0,
     placeholderData: keepPreviousData,
     staleTime: 0,
