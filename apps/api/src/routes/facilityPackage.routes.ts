@@ -10,7 +10,7 @@ myFacilityPackageRouter.use(auth, isRole('MEMBER'));
 myFacilityPackageRouter.get('/', facilityPackageController.listMine);
 
 export const facilityPackageRouter = Router();
-facilityPackageRouter.use(auth, isRole('MEMBER'));
+facilityPackageRouter.use(auth, isRole('MEMBER', 'RECEPTIONIST'));
 facilityPackageRouter.post(
   '/preview',
   validate({ body: facilityPackagePreviewBodySchema }),

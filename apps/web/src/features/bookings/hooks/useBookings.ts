@@ -34,11 +34,11 @@ export function useFacilitySchedules(facilityIds: string[], date: string) {
   };
 }
 
-export function usePackagePreview(request: PackagePreviewRequest | null, atCounter = false) {
+/** At the counter the preview is for the member buying (`accountId`), with that member's clashes. */
+export function usePackagePreview(request: PackagePreviewRequest | null, accountId?: string) {
   return useQuery({
-    queryKey: ['facility-package-preview', atCounter, request],
-    queryFn: () =>
-      atCounter ? bookingsService.previewPackageAtCounter(request!) : bookingsService.previewPackage(request!),
+    queryKey: ['facility-package-preview', accountId, request],
+    queryFn: () => bookingsService.previewPackage({ ...request!, ...(accountId && { buyer: { accountId } }) }),
     enabled: Boolean(request),
     placeholderData: keepPreviousData,
     retry: false,
