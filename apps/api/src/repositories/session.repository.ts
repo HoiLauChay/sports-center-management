@@ -5,7 +5,9 @@ class SessionRepository {
   findById = (id: string, tx: Prisma.TransactionClient) =>
     tx.classSession.findFirst({
       where: { id, class: { deletedAt: null } },
-      include: {
+      select: {
+        ...sessionSelect,
+        facilityId: true,
         class: {
           select: {
             id: true,

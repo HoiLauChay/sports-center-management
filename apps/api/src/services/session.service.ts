@@ -2,6 +2,7 @@ import { ERROR_CODE, type UpdateSessionBody } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toSessionResponse } from '~/mappers/class.mapper';
+import classRepository from '~/repositories/class.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import sessionRepository from '~/repositories/session.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -68,7 +69,6 @@ class SessionService {
         now,
       });
 
-      // Repeating an identical PATCH must not create another notification.
       if (
         date === formatDate(current.sessionDate) &&
         start === fromDbTime(current.startTime) &&
@@ -90,7 +90,7 @@ class SessionService {
       );
       const bounds = await sessionRepository.dateBounds(cls.id, tx);
       const dates = { startDate: bounds._min.sessionDate, endDate: bounds._max.sessionDate };
-      await tx.class.update({ where: { id: cls.id }, data: dates });
+      await classRepository.update(cls.id, dates, tx);
       await auditService.record(
         {
           accountId: managerId,
