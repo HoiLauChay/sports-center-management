@@ -61,10 +61,7 @@ function answer(question: string, ctx: AssistantContext): string {
   return FALLBACK;
 }
 
-/**
- * The assistant reply (`POST /me/assistant/messages`). Mock: the AI flow is outside the current scope
- * (docs/detail.v4.md), so replies are rule-based on the member's own data until a backend (e.g. DeepSeek) exists.
- */
+/** The assistant reply. Mock until the assistant has an API: replies follow keywords over the member's own data. */
 export const assistantService = {
   ask: (question: string, context: AssistantContext) => mockRequest(() => answer(question, context), 700),
 };
