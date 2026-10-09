@@ -8,7 +8,6 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { WalletCard } from '~/components/ui/WalletCard';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
-import { useCurrentUser } from '~/features/auth';
 import { useSettings } from '~/features/settings';
 import {
   InvoicePayPanel,
@@ -56,7 +55,6 @@ function TransferInvoice({ invoiceId, onDone }: { invoiceId: string; onDone: () 
 
 /** `/reception/top-up`: cash / card top-ups are recorded at once; transfer creates a top-up invoice with a QR. */
 export function CounterTopUpPage() {
-  const user = useCurrentUser();
   const search = routeApi.useSearch();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -76,16 +74,12 @@ export function CounterTopUpPage() {
 
   const record = useMutation({
     mutationFn: (input: { amount: number; method: 'CASH' | 'CARD'; note: string; key: string }) =>
-      walletService.counterTopUp(
-        memberId!,
-        { id: user.id, fullName: user.fullName },
-        {
-          amount: input.amount,
-          method: input.method,
-          note: input.note,
-          idempotencyKey: input.key,
-        },
-      ),
+      walletService.counterTopUp(memberId!, {
+        amount: input.amount,
+        method: input.method,
+        note: input.note || undefined,
+        idempotencyKey: input.key,
+      }),
     onSuccess: (transaction) => {
       keyRef.current = null;
       refreshWallet();

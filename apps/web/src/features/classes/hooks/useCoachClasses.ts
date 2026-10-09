@@ -19,11 +19,21 @@ export function useOpenClasses() {
   });
 }
 
+/** Class ids this coach is waiting on: a pending registration is not shown again as `Đăng ký dạy`. */
+export function usePendingRegistrations() {
+  const user = useCurrentUser();
+  return useQuery({
+    queryKey: ['classes', 'coach-registrations', user.id],
+    queryFn: () => coachClassesService.myRegistrations({ status: 'PENDING' }),
+    select: (registrations) => new Set(registrations.map((registration) => registration.classId)),
+  });
+}
+
 export function useMyClasses() {
   const user = useCurrentUser();
   return useQuery({
     queryKey: ['classes', 'coach-mine', user.id],
-    queryFn: () => coachClassesService.listMyClasses(user.id),
+    queryFn: coachClassesService.listMyClasses,
   });
 }
 

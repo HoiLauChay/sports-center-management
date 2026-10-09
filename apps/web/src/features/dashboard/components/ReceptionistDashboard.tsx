@@ -5,6 +5,7 @@ import { Banknote, CalendarCheck, LifeBuoy, LogIn } from 'lucide-react';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
+import { refundedOf } from '~/features/checkout/utils';
 import { useOrders } from '~/features/orders/hooks/useOrders';
 import { useSessionsOn } from '~/features/schedule';
 import type { DaySession } from '~/features/schedule/types';
@@ -83,7 +84,7 @@ export function ReceptionistDashboard() {
 
   const now = nowVN().format('HH:mm');
   const counterOrders = (orders.data?.items ?? []).filter((order) => order.paymentMethod !== 'WALLET');
-  const counterTotal = counterOrders.reduce((sum, order) => sum + order.totalAmount - order.refundedAmount, 0);
+  const counterTotal = counterOrders.reduce((sum, order) => sum + order.totalAmount - refundedOf(order), 0);
   const upcoming = (bookings.data ?? []).filter((booking) => booking.endTime > now);
   const openRequests = support.data?.total ?? 0;
 

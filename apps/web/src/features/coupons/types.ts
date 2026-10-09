@@ -1,23 +1,6 @@
-import type { OrderItemType } from '~/features/checkout/types';
+import type { Coupon } from '@sports-center/shared';
 
-export type DiscountType = 'PERCENT' | 'FIXED';
-
-export interface Coupon {
-  id: string;
-  code: string;
-  name: string;
-  discountType: DiscountType;
-  discountValue: number;
-  maxDiscount: number | null;
-  validFrom: string;
-  validTo: string;
-  maxUses: number | null;
-  maxUsesPerUser: number;
-  minOrderAmount: number | null;
-  applicableTypes: OrderItemType[] | null;
-  isActive: boolean;
-  usedCount: number;
-}
+export type { Coupon, DiscountType } from '@sports-center/shared';
 
 export type CouponInput = Omit<Coupon, 'id' | 'usedCount'>;
 
