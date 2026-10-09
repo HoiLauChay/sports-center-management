@@ -3,6 +3,7 @@ export * from './api';
 export * from './attendance';
 export * from './audit';
 export * from './booking';
+export * from './checkin';
 export * from './checkout';
 export * from './class';
 export * from './coupon';

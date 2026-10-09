@@ -5,6 +5,7 @@ import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
 import bankTransactionRouter from '~/routes/bankTransaction.routes';
 import { bookingRouter, myBookingRouter } from '~/routes/booking.routes';
+import { checkinRouter, myCheckinRouter } from '~/routes/checkin.routes';
 import checkoutRouter from '~/routes/checkout.routes';
 import { classRouter, coachClassRouter, coachRegistrationRouter } from '~/routes/class.routes';
 import couponRouter from '~/routes/coupon.routes';
@@ -43,6 +44,7 @@ export const apiRoutes: [string, Router][] = [
   ['/auth', authRouter],
   ['/bank-transactions', bankTransactionRouter],
   ['/bookings', bookingRouter],
+  ['/checkins', checkinRouter],
   ['/checkout', checkoutRouter],
   ['/coach/classes', coachClassRouter],
   ['/coach/registrations', coachRegistrationRouter],
@@ -59,6 +61,7 @@ export const apiRoutes: [string, Router][] = [
   ['/maintenances', maintenanceRouter],
   ['/memberships', membershipRouter],
   ['/me/bookings', myBookingRouter],
+  ['/me/checkins', myCheckinRouter],
   ['/me/enrollments', myEnrollmentRouter],
   ['/me/facility-packages', myFacilityPackageRouter],
   ['/me/invoices', myInvoiceRouter],
