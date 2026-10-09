@@ -1,12 +1,4 @@
-import type {
-  ApiResponse,
-  ClassDetail,
-  Facility,
-  MembershipPackage,
-  Person,
-  Role,
-  SystemSettings,
-} from '@sports-center/shared';
+import type { ApiResponse, Facility, MembershipPackage, Person, Role, SystemSettings } from '@sports-center/shared';
 import { bookingProblem, packageDates, previewPackage } from '~/features/bookings/mocks/schedule';
 import type { BookingBenefit } from '~/features/bookings/types';
 import { facilitiesService } from '~/features/catalog/services/facilities.service';
@@ -599,27 +591,6 @@ function evaluateCoupon(code: string | undefined, buyer: BuyerInfo, lines: LineB
 }
 
 /** Prices and validates a draft order exactly like `POST /checkout/quote` (BR_2.5, BR_3.5, BR_3.16–3.19). */
-/** Copies the real classes in the cart into the mock store, so they can be priced and enrolled (see `classesDb.mirror`). */
-async function mirrorRealClasses(items: QuoteRequest['items']) {
-  const ids = new Set(
-    items.flatMap((item) =>
-      item.type === 'COURSE_ENROLLMENT' && (!classesDb.findClass(item.classId) || classesDb.isMirrored(item.classId))
-        ? [item.classId]
-        : [],
-    ),
-  );
-  await Promise.all(
-    [...ids].map(async (id) => {
-      try {
-        const { data } = await privateApi.get<ApiResponse<ClassDetail>>(`/classes/${encodeURIComponent(id)}`);
-        classesDb.mirror(data.result);
-      } catch {
-        // Not a real class either: the line reports NOT_FOUND.
-      }
-    }),
-  );
-}
-
 export async function evaluate(
   actor: Actor,
   request: QuoteRequest,
@@ -628,7 +599,6 @@ export async function evaluate(
   const [catalog, buyer] = await Promise.all([loadCatalog(), resolveBuyer(actor, request.buyer)]);
   const benefits = await loadBenefits(actor, buyer);
   ensureClassSeed(catalog.facilities, catalog.settings);
-  await mirrorRealClasses(request.items);
   const context: PricingContext = { catalog, buyer, benefits, freeUsage: new Map() };
 
   const builds = request.items.map((selection, index) => buildLine(context, selection, index, request.items));

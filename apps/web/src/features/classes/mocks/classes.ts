@@ -16,8 +16,6 @@ import type {
 export type StoredClass = Omit<GymClass, 'enrolledCount' | 'derivedStatus' | 'startDate' | 'endDate'> & {
   /** Students that were already enrolled before this browser's mock orders. */
   baseEnrolled: number;
-  /** Copied from `GET /classes/{id}` so the mock checkout can price a real class. */
-  mirrored?: boolean;
 };
 
 interface ClassesState {
@@ -363,38 +361,6 @@ export const classesDb = {
     );
     if (excludeClassId) classIds.delete(excludeClassId);
     return store.get().sessions.filter((session) => classIds.has(session.classId) && session.status === 'SCHEDULED');
-  },
-
-  /** Whether a class is a copy of a real one (see `mirror`), so it should be refreshed from the API. */
-  isMirrored(id: string): boolean {
-    return store.get().classes.some((entry) => entry.id === id && entry.mirrored);
-  },
-
-  /**
-   * Copies a class from the API, with its sessions, into the mock store. The mock checkout (#110) prices and enrolls
-   * from this store, so real classes need a copy until checkout calls the API.
-   */
-  mirror(detail: GymClassDetail) {
-    store.update((state) => {
-      const { id, name, course, status, weeklySchedule, facility, coach, minStudents, maxStudents, cancelReason } =
-        detail;
-      const stored: StoredClass = {
-        id,
-        name,
-        course,
-        status,
-        weeklySchedule,
-        facility,
-        coach,
-        minStudents,
-        maxStudents,
-        cancelReason,
-        baseEnrolled: detail.enrolledCount,
-        mirrored: true,
-      };
-      state.classes = [...state.classes.filter((entry) => entry.id !== detail.id), stored];
-      state.sessions = [...state.sessions.filter((session) => session.classId !== detail.id), ...detail.sessions];
-    });
   },
 
   /** A class still takes enrollments: OPEN, has a coach, has not started, has seats (BR_2.9). */
