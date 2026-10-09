@@ -40,11 +40,12 @@ export class CartStore {
   }
 
   private read(): CartState {
+    if (!this.storage) return this.snapshot;
     let raw: string | null;
     try {
-      raw = this.storage?.getItem(this.key) ?? null;
+      raw = this.storage.getItem(this.key);
     } catch {
-      raw = null;
+      return this.snapshot;
     }
     if (raw === this.raw) return this.snapshot;
     this.raw = raw;
