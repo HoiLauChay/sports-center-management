@@ -35,5 +35,16 @@ describe('OpenAPI docs', () => {
     );
     expect(paths['/payments/sepay/webhook']?.post?.security).toEqual([{ sepay: [] }]);
     expect(paths['/auth/login']?.post?.security).toBeUndefined();
+    for (const report of ['members', 'facilities', 'courses']) {
+      expect(paths[`/reports/${report}`]?.get).toMatchObject({
+        tags: ['reports'],
+        description: 'Vai trò: MANAGER',
+        security: [{ cookie: [] }],
+        parameters: [
+          expect.objectContaining({ name: 'from', in: 'query', required: true }),
+          expect.objectContaining({ name: 'to', in: 'query', required: true }),
+        ],
+      });
+    }
   });
 });
