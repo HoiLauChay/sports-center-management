@@ -36,7 +36,7 @@ const sessionSelect = {
   cancelReason: true,
 } satisfies Prisma.ClassSessionSelect;
 
-const classSummarySelect = {
+export const classSummarySelect = {
   id: true,
   name: true,
   courseId: true,
