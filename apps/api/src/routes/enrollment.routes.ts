@@ -10,4 +10,8 @@ const enrollmentRouter = Router();
 enrollmentRouter.use(auth, isRole('MEMBER', 'RECEPTIONIST'));
 enrollmentRouter.post('/:id/cancel', validate({ params: enrollmentIdParamsSchema }), enrollmentController.cancel);
 
+export const myEnrollmentRouter = Router();
+myEnrollmentRouter.use(auth, isRole('MEMBER'));
+myEnrollmentRouter.get('/', enrollmentController.listMine);
+
 export default enrollmentRouter;
