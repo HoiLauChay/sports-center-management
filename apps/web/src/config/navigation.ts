@@ -1,7 +1,7 @@
 import type { Role } from '@sports-center/shared';
 import type { LinkProps } from '@tanstack/react-router';
 import {
-  // Award,
+  Award,
   BadgeCheck,
   Bell,
   // BookOpen,
@@ -83,7 +83,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         // { path: '/coach/classes', label: 'Lớp đang dạy', icon: School },
         { path: '/coach/schedule', label: 'Lịch dạy', icon: CalendarDays },
         // { path: '/coach/open-classes', label: 'Lớp cần HLV', icon: ClipboardList },
-        // { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },
+        { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },
       ],
     },
   ],
@@ -108,7 +108,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/admin/reports', label: 'Báo cáo', icon: ChartColumn },
         { path: '/admin/bank-transactions', label: 'Giao dịch ngân hàng', icon: Landmark },
         { path: '/admin/users', label: 'Người dùng', icon: Users },
-        // { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
+        { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
         { path: '/admin/audit-logs', label: 'Lịch sử thao tác', icon: History },
       ],
     },
