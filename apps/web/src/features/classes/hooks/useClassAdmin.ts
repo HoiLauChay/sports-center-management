@@ -1,11 +1,11 @@
+import type { AssignCoachBody } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { useCurrentUser } from '~/features/auth';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
 import { classesService, type ManagerClassesQuery } from '../services/classes.service';
-import type { ClassPatch, SessionPatch } from '../types';
+import type { ClassPatch } from '../types';
 
 const adminKey = (id: string) => ['classes', 'admin', id] as const;
 
@@ -25,16 +25,11 @@ export function useClassOverview() {
   return useQuery({ queryKey: ['classes', 'overview'], queryFn: () => classAdminService.overview() });
 }
 
-export function useCoachPool() {
-  return useQuery({ queryKey: ['classes', 'coach-pool'], queryFn: () => classAdminService.coaches() });
-}
-
-export function useClassRefundPreview(id: string, enabled: boolean) {
+export function useCoachPool(sportId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ['classes', 'refund-preview', id],
-    queryFn: () => classAdminService.classRefundPreview(id),
+    queryKey: ['classes', 'coach-pool', sportId],
+    queryFn: () => classAdminService.coaches(sportId),
     enabled,
-    gcTime: 0,
   });
 }
 
@@ -79,26 +74,16 @@ export function useRejectClass(classId: string) {
 export function useAssignCoach(classId: string) {
   return useClassAction(
     classId,
-    (input: { registrationId: string } | { coachId: string }) => classAdminService.assignCoach(classId, input),
+    (body: AssignCoachBody) => classAdminService.assignCoach(classId, body),
     'Đã phân công HLV.',
   );
 }
 
 export function useCancelClass(classId: string) {
-  const user = useCurrentUser();
   return useClassAction(
     classId,
-    (reason: string) => classAdminService.cancel(user, classId, reason),
+    (reason: string) => classAdminService.cancel(classId, reason),
     (result) => `Đã hủy lớp, hoàn trọn ${formatVND(result.refundTotal)} về ví học viên.`,
-  );
-}
-
-export function useUpdateSession(classId: string) {
-  return useClassAction(
-    classId,
-    (input: { sessionId: string; patch: SessionPatch }) =>
-      classAdminService.updateSession(input.sessionId, input.patch),
-    'Đã cập nhật buổi học.',
   );
 }
 

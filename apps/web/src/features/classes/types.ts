@@ -91,12 +91,9 @@ export interface ClassStudent {
   refundedAmount: number;
 }
 
-/** `GET /classes/{id}` for a manager: the class, sessions, students, revenue and coach registrations. */
+/** `GET /classes/{id}` for a manager: the class, its sessions and coach registrations. */
 export interface ClassAdminDetail extends GymClassDetail {
   coachRegistrations: CoachRegistration[];
-  students: ClassStudent[];
-  /** Paid enrollment lines and what is left after refunds. */
-  revenue: { lines: number; total: number };
 }
 
 export interface SessionPatch {
@@ -110,12 +107,6 @@ export interface ClassPatch {
   name?: string;
   minStudents?: number;
   maxStudents?: number;
-}
-
-/** What cancelling a class (or one session) would give back, shown before the manager confirms. */
-export interface RefundPreview {
-  students: number;
-  amount: number;
 }
 
 /** `/coach/open-classes` row: a class needing a coach, with this coach's registration. */

@@ -1,6 +1,6 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { Alert, Button, Card, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
-import { Banknote, CalendarClock, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
+import { Banknote, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -11,13 +11,13 @@ import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, WEEK_ORDER } from '~/lib/time';
 import { useApproveClass, useAssignCoach, useClassAdmin, useRejectClass } from '../hooks/useClassAdmin';
-import type { ClassAdminDetail, ClassSession, ClassStudent, CoachRegistration } from '../types';
+import type { ClassAdminDetail, ClassSession, CoachRegistration } from '../types';
 import { classAdminActions, classStatusTag, REGISTRATION_TAG } from '../utils';
-import { AssignCoachModal, CancelClassModal, EditClassModal, EditSessionModal } from './ClassAdminModals';
+import { AssignCoachModal, CancelClassModal, EditClassModal } from './ClassAdminModals';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/$classId');
 
-type ModalState = null | 'edit' | 'cancel' | 'assign' | { kind: 'edit-session'; session: ClassSession };
+type ModalState = null | 'edit' | 'cancel' | 'assign';
 
 const SOURCE_LABEL: Record<CoachRegistration['source'], string> = {
   COACH_REGISTERED: 'HLV đăng ký',
@@ -46,7 +46,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 /**
- * `/admin/classes/{id}`: figures, coach, class info and tabs for students, sessions, coach registrations and revenue.
+ * `/admin/classes/{id}`: figures, coach, class info and tabs for sessions and coach registrations.
  * Every button is shown only when the class state allows it (BR_2.10).
  */
 export function ClassAdminDetailPage() {
@@ -78,10 +78,8 @@ export function ClassAdminDetailPage() {
   const taught = liveSessions.filter((session) => isPast(session.date, session.startTime)).length;
   const cancelledSessions = item.sessions.length - liveSessions.length;
   const pendingRegistrations = item.coachRegistrations.filter((entry) => entry.status === 'PENDING').length;
-  const cancelledEnrollments = item.students.filter((student) => student.status === 'CANCELLED').length;
   const fill = Math.round((item.enrolledCount / item.maxStudents) * 100);
   const closeModal = () => setModal(null);
-  const sessionModal = typeof modal === 'object' && modal ? modal : null;
   const needsCoach = item.status === 'PENDING_APPROVAL' && !item.coach;
 
   const askReject = () =>
@@ -110,58 +108,6 @@ export function ClassAdminDetailPage() {
       onOk: () => assign.mutateAsync({ registrationId: registration.id }).catch(() => undefined),
     });
 
-  const studentColumns: TableColumnsType<ClassStudent> = [
-    {
-      title: 'Học viên',
-      key: 'name',
-      render: (_, student) => (
-        <div className="flex items-center gap-2">
-          <Initial name={student.fullName} />
-          <b>{student.fullName}</b>
-        </div>
-      ),
-    },
-    {
-      title: 'Đăng ký lúc',
-      dataIndex: 'enrolledAt',
-      render: (value: string | null) => (value ? formatDateTime(value) : <span className="text-sc-muted-2">—</span>),
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      render: (value: ClassStudent['status']) =>
-        value === 'ENROLLED' ? <Tag color="success">Đang học</Tag> : <Tag>Đã hủy</Tag>,
-    },
-    {
-      title: 'Đã trả',
-      dataIndex: 'paidAmount',
-      align: 'right',
-      render: (value: number) => <span className="tabular-nums">{formatVND(value)}</span>,
-    },
-  ];
-
-  const revenueColumns: TableColumnsType<ClassStudent> = [
-    { title: 'Học viên', dataIndex: 'fullName', render: (name: string) => <b>{name}</b> },
-    {
-      title: 'Đã trả',
-      dataIndex: 'paidAmount',
-      align: 'right',
-      render: (value: number) => <span className="tabular-nums">{formatVND(value)}</span>,
-    },
-    {
-      title: 'Đã hoàn',
-      dataIndex: 'refundedAmount',
-      align: 'right',
-      render: (value: number) => <span className="tabular-nums">{value > 0 ? `−${formatVND(value)}` : '—'}</span>,
-    },
-    {
-      title: 'Còn lại',
-      key: 'rest',
-      align: 'right',
-      render: (_, student) => <b className="tabular-nums">{formatVND(student.paidAmount - student.refundedAmount)}</b>,
-    },
-  ];
-
   const registrationColumns: TableColumnsType<CoachRegistration> = [
     {
       title: 'HLV',
@@ -182,7 +128,6 @@ export function ClassAdminDetailPage() {
       dataIndex: 'status',
       render: (value: CoachRegistration['status']) => <MappedTag value={value} map={REGISTRATION_TAG} />,
     },
-    { title: 'Lớp đang dạy', dataIndex: 'activeClasses', align: 'center', render: (value?: number) => value ?? 0 },
     {
       title: '',
       key: 'actions',
@@ -218,23 +163,6 @@ export function ClassAdminDetailPage() {
         ) : (
           <Tag color="processing">Sắp tới</Tag>
         ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      align: 'right',
-      render: (_, session) => {
-        if (!can.sessions || session.status !== 'SCHEDULED' || isPast(session.date, session.startTime)) return null;
-        return (
-          <Button
-            size="small"
-            icon={<CalendarClock size={14} />}
-            onClick={() => setModal({ kind: 'edit-session', session })}
-          >
-            Sửa / dời / đổi phòng
-          </Button>
-        );
-      },
     },
   ];
 
@@ -304,9 +232,9 @@ export function ClassAdminDetailPage() {
         />
         <StatCard
           icon={Banknote}
-          label="Doanh thu lớp"
-          value={formatVND(item.revenue.total)}
-          hint={`${item.revenue.lines} dòng · học phí ${formatVND(item.course.price)}`}
+          label="Học phí"
+          value={formatVND(item.course.price)}
+          hint={`${item.course.totalSessions} buổi · ${item.course.sport.name}`}
         />
       </div>
 
@@ -360,7 +288,6 @@ export function ClassAdminDetailPage() {
                   </Tag>
                 ))}
             </Row>
-            <Row label="Đã hủy đăng ký">{cancelledEnrollments} lượt</Row>
             <Row label="Sĩ số">
               {item.minStudents} – {item.maxStudents}
             </Row>
@@ -370,25 +297,9 @@ export function ClassAdminDetailPage() {
 
       <Card className="!mt-4">
         <Tabs
-          activeKey={tab ?? (needsCoach ? 'coaches' : 'students')}
+          activeKey={tab ?? (needsCoach ? 'coaches' : 'sessions')}
           onChange={setTab}
           items={[
-            {
-              key: 'students',
-              label: `Học viên (${item.enrolledCount})`,
-              children: (
-                <Table<ClassStudent>
-                  rowKey="id"
-                  size="middle"
-                  columns={studentColumns}
-                  dataSource={item.students}
-                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                  scroll={{ x: 'max-content' }}
-                  className={tableFrame}
-                  locale={{ emptyText: 'Chưa có học viên đăng ký' }}
-                />
-              ),
-            },
             {
               key: 'sessions',
               label: `Buổi học (${item.sessions.length})`,
@@ -420,22 +331,6 @@ export function ClassAdminDetailPage() {
                 />
               ),
             },
-            {
-              key: 'revenue',
-              label: `Doanh thu (${item.revenue.lines})`,
-              children: (
-                <Table<ClassStudent>
-                  rowKey="id"
-                  size="middle"
-                  columns={revenueColumns}
-                  dataSource={item.students.filter((student) => student.paidAmount > 0)}
-                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                  scroll={{ x: 'max-content' }}
-                  className={tableFrame}
-                  locale={{ emptyText: 'Chưa có khoản thu nào' }}
-                />
-              ),
-            },
           ]}
         />
       </Card>
@@ -443,12 +338,6 @@ export function ClassAdminDetailPage() {
       <EditClassModal open={modal === 'edit'} item={item} onClose={closeModal} />
       <CancelClassModal open={modal === 'cancel'} item={item} onClose={closeModal} />
       <AssignCoachModal open={modal === 'assign'} item={item} onClose={closeModal} />
-      <EditSessionModal
-        open={sessionModal?.kind === 'edit-session'}
-        item={item}
-        session={sessionModal?.session ?? null}
-        onClose={closeModal}
-      />
     </>
   );
 }
