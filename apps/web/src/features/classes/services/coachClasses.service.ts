@@ -5,18 +5,12 @@ import type {
   CoachRegistration,
   ListCoachRegistrationsQuery,
   Paginated,
-  Specialization,
 } from '@sports-center/shared';
 import { PAGINATION } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
 
 /** Coach-side class pages: classes needing a coach, registering to teach, the classes taught and withdrawing. */
 export const coachClassesService = {
-  approvedSpecializations: async (): Promise<Specialization[]> => {
-    const { data } = await privateApi.get<ApiResponse<Specialization[]>>('/coach/specializations');
-    return data.result.filter((specialization) => specialization.status === 'APPROVED');
-  },
-
   /** Drafts and pending classes of the coach's approved sports that still have no coach (BR_2.14). */
   listOpenClasses: async () => {
     const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', {

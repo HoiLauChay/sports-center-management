@@ -1,12 +1,4 @@
-import type {
-  ApiResponse,
-  AssignCoachBody,
-  CancelClassResult,
-  Paginated,
-  Specialization,
-  UpdateClassBody,
-} from '@sports-center/shared';
-import { PAGINATION } from '@sports-center/shared';
+import type { ApiResponse, AssignCoachBody, CancelClassResult, UpdateClassBody } from '@sports-center/shared';
 import { loadCatalog } from '~/features/checkout/mocks/pricing';
 import { privateApi } from '~/lib/http';
 import { mockRequest } from '~/lib/mock/errors';
@@ -32,14 +24,6 @@ export const classAdminService = {
       ensureClassSeed(catalog.facilities, catalog.settings);
       return classOverview();
     }, 150),
-
-  /** Coaches approved for the sport, the only ones `assign-coach` accepts (BR_2.14). */
-  coaches: async (sportId: string) => {
-    const { data } = await privateApi.get<ApiResponse<Paginated<Specialization>>>('/specializations', {
-      params: { status: 'APPROVED', sportId, page: 1, limit: PAGINATION.MAX_LIMIT },
-    });
-    return data.result.items.map((entry) => entry.coach);
-  },
 
   update: async (id: string, body: UpdateClassBody) => {
     const { data } = await privateApi.patch<ApiResponse<ClassAdminDetail>>(path(id), body);
