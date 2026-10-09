@@ -1,10 +1,11 @@
+import type { Booking } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, LifeBuoy, LogIn } from 'lucide-react';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
-import type { Booking } from '~/features/bookings/types';
+
 import { useOrders } from '~/features/orders/hooks/useOrders';
 import { useSessionsOn } from '~/features/schedule';
 import type { DaySession } from '~/features/schedule/types';
@@ -65,7 +66,7 @@ const bookingColumns: TableColumnsType<Booking> = [
     align: 'right',
     render: (_, booking) => (
       <span className="inline-flex items-center gap-2 whitespace-nowrap">
-        <span className="tabular-nums">{formatVND(booking.paidAmount)}</span>
+        <span className="tabular-nums">{booking.paidAmount === null ? 'Theo gói' : formatVND(booking.paidAmount)}</span>
         {BENEFIT_TAG[booking.benefit] && <Tag color="success">{BENEFIT_TAG[booking.benefit]}</Tag>}
       </span>
     ),

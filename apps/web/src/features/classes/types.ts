@@ -63,11 +63,6 @@ export interface Enrollment {
   enrolledAt: string;
 }
 
-/** `GET /me/enrollments`: the enrollment with its full class. */
-export interface MyEnrollment extends Omit<Enrollment, 'class'> {
-  class: GymClass;
-}
-
 export type CoachRegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface CoachRegistration {
