@@ -56,6 +56,32 @@ class MaintenanceRepository {
       orderBy: [{ startAt: 'asc' }, { id: 'asc' }],
     });
 
+  findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.facilityMaintenance.findFirst({
+      where: { id, deletedAt: null },
+      select: { ...maintenanceSelect, facilityId: true },
+    });
+
+  hasOverlap = async (
+    facilityId: string,
+    startAt: Date,
+    endAt: Date,
+    excludeId: string | undefined,
+    tx: Prisma.TransactionClient,
+  ) =>
+    (await tx.facilityMaintenance.count({
+      where: { facilityId, deletedAt: null, id: { not: excludeId }, startAt: { lt: endAt }, endAt: { gt: startAt } },
+    })) > 0;
+
+  create = (data: Prisma.FacilityMaintenanceUncheckedCreateInput, tx: Prisma.TransactionClient) =>
+    tx.facilityMaintenance.create({ data, select: maintenanceSelect });
+
+  update = (id: string, data: Prisma.FacilityMaintenanceUncheckedUpdateInput, tx: Prisma.TransactionClient) =>
+    tx.facilityMaintenance.update({ where: { id }, data, select: maintenanceSelect });
+
+  moveBooking = (id: string, facilityId: string, tx: Prisma.TransactionClient) =>
+    tx.facilityBooking.update({ where: { id }, data: { facilityId }, select: { id: true, facility: ref } });
+
   findBookingsBetween = (facilityId: string, startAt: Date, endAt: Date, tx: Prisma.TransactionClient = prisma) =>
     tx.facilityBooking.findMany({
       where: { facilityId, status: 'CONFIRMED', bookingDate: daysOf(startAt, endAt) },
