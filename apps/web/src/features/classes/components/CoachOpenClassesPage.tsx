@@ -1,11 +1,15 @@
 import type { ClassSummary } from '@sports-center/shared';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
-import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { useApprovedSpecializations, useOpenClasses, useRegisterToTeach } from '../hooks/useCoachClasses';
+import {
+  useApprovedSpecializations,
+  useOpenClasses,
+  usePendingRegistrations,
+  useRegisterToTeach,
+} from '../hooks/useCoachClasses';
 import { CLASS_STATUS_TAG, classDateRange } from '../utils';
 import { WeeklyTags } from './ClassTableParts';
 
@@ -14,21 +18,19 @@ export function CoachOpenClassesPage() {
   const specializations = useApprovedSpecializations();
   const classes = useOpenClasses();
   const register = useRegisterToTeach();
-  // The API does not return a coach's own registrations, so the ones made here are remembered for this visit.
-  const [registered, setRegistered] = useState<ReadonlySet<string>>(new Set());
+  const pending = usePendingRegistrations();
 
   const sportNames = (specializations.data ?? []).map((specialization) => specialization.sport.name).join(', ');
 
   const action = (record: ClassSummary) => {
-    if (registered.has(record.id)) return <Tag color="warning">Đã đăng ký, chờ duyệt</Tag>;
+    if (pending.data?.has(record.id)) return <Tag color="warning">Đã đăng ký, chờ duyệt</Tag>;
     return (
       <Button
         type="primary"
         size="small"
         loading={register.isPending && register.variables === record.id}
-        onClick={() =>
-          register.mutate(record.id, { onSuccess: () => setRegistered((ids) => new Set(ids).add(record.id)) })
-        }
+        disabled={pending.isPending}
+        onClick={() => register.mutate(record.id)}
       >
         Đăng ký dạy
       </Button>
