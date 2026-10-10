@@ -1,4 +1,3 @@
-import { newId } from '~/lib/mock/store';
 import type { CartLine, CheckoutItemInput } from '../types';
 import { selectionKey } from '../utils';
 
@@ -98,7 +97,7 @@ export class CartStore {
     const state = this.read();
     const key = selectionKey(selection);
     if (state.lines.some((line) => selectionKey(line.selection) === key)) return false;
-    this.write({ ...state, lines: [...state.lines, { key: newId(), selection }] });
+    this.write({ ...state, lines: [...state.lines, { key: crypto.randomUUID(), selection }] });
     return true;
   };
 

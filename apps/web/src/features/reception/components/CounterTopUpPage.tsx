@@ -19,7 +19,6 @@ import {
 } from '~/features/wallet';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { newId } from '~/lib/mock/store';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/top-up');
 
@@ -111,7 +110,7 @@ export function CounterTopUpPage() {
       return;
     }
     const fingerprint = JSON.stringify([memberId, amount, method, note]);
-    if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: newId() };
+    if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
     record.mutate({ amount, method, note, key: keyRef.current.key });
   };
 
