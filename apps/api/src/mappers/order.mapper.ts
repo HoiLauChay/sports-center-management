@@ -12,9 +12,13 @@ const statusOf = (items: ItemRow[]): OrderStatus => {
   return items.some((item) => !item.refundedAt && Number(item.totalAmount) > 0) ? 'PARTIALLY_REFUNDED' : 'REFUNDED';
 };
 
-const couponOf = (row: OrderRow) => {
-  const code = row.items.find((item) => item.coupon)?.coupon?.code;
-  return code ? { code, discount: Number(row.couponDiscountAmount) } : null;
+const couponsOf = (row: OrderRow) => {
+  const totals = new Map<string, number>();
+  for (const item of row.items) {
+    if (item.coupon)
+      totals.set(item.coupon.code, (totals.get(item.coupon.code) ?? 0) + Number(item.couponDiscountAmount));
+  }
+  return [...totals].map(([code, discount]) => ({ code, discount }));
 };
 
 export const toOrderResponse = (row: OrderRow): Order => ({
@@ -26,7 +30,7 @@ export const toOrderResponse = (row: OrderRow): Order => ({
   createdBy: row.createdBy,
   status: statusOf(row.items),
   paymentMethod: row.paymentMethod,
-  coupon: couponOf(row),
+  coupons: couponsOf(row),
   subtotal: Number(row.subtotal),
   membershipDiscount: Number(row.membershipDiscountAmount),
   couponDiscount: Number(row.couponDiscountAmount),
@@ -39,6 +43,7 @@ export const toOrderResponse = (row: OrderRow): Order => ({
     subtotal: Number(item.subtotal),
     membershipDiscount: Number(item.membershipDiscountAmount),
     couponDiscount: Number(item.couponDiscountAmount),
+    couponCode: item.coupon?.code ?? null,
     totalAmount: Number(item.totalAmount),
     refundedAt: item.refundedAt?.toISOString() ?? null,
     refId: refIdOf(item),

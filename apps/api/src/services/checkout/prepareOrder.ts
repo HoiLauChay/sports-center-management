@@ -1,7 +1,7 @@
 import { ERROR_CODE, type CheckoutItemInput } from '@sports-center/shared';
 
 import invoiceRepository from '~/repositories/invoice.repository';
-import { applyCoupon } from '~/services/checkout/coupon';
+import { applyCoupons } from '~/services/checkout/coupon';
 import { lineHandlers } from '~/services/checkout/lines';
 import type {
   CheckoutContext,
@@ -44,7 +44,7 @@ export const prepareOrder = async (
   db: Db,
   ctx: CheckoutContext,
   inputs: CheckoutItemInput[],
-  couponCode?: string,
+  couponCodes: string[] = [],
 ): Promise<PreparedOrder> => {
   const lines: PreparedLine[] = [];
   const buyerId = ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : null;
@@ -65,26 +65,26 @@ export const prepareOrder = async (
     lines.push({ lineNumber, input, result, couponDiscount: 0, couponId: null });
   }
 
-  const applied = couponCode ? await applyCoupon(db, ctx, lines, couponCode) : null;
+  const { coupons, discounts } = await applyCoupons(db, ctx, lines, couponCodes);
   for (const line of lines) {
-    const share = applied?.discounts.get(line.lineNumber);
-    line.couponDiscount = share ?? 0;
-    line.couponId = share === undefined ? null : applied!.coupon.id;
+    const share = discounts.get(line.lineNumber);
+    line.couponDiscount = share?.amount ?? 0;
+    line.couponId = share?.couponId ?? null;
   }
 
   const priced = lines.map(({ result }) => result).filter((result) => result.ok);
   const subtotal = priced.reduce((sum, result) => sum + result.subtotal, 0);
   const membershipDiscount = priced.reduce((sum, result) => sum + result.membershipDiscount, 0);
-  const couponDiscount = applied?.coupon.discount ?? 0;
+  const couponDiscount = lines.reduce((sum, line) => sum + line.couponDiscount, 0);
 
   return {
     lines,
-    coupon: applied?.coupon ?? null,
+    coupons,
     subtotal,
     membershipDiscount,
     couponDiscount,
     total: subtotal - membershipDiscount - couponDiscount,
-    valid: priced.length === lines.length && (applied?.coupon.valid ?? true),
+    valid: priced.length === lines.length && coupons.every(({ valid }) => valid),
     membershipName: membershipDiscount > 0 ? (ctx.benefits?.current?.packageName ?? null) : null,
   };
 };

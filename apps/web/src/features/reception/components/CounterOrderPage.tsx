@@ -16,7 +16,9 @@ import { QuoteTotals } from '~/features/checkout/components/QuoteTotals';
 import { useAddToCart } from '~/features/checkout/hooks/useAddToCart';
 import { quoteQueryKey, useCounterDraft, useQuote } from '~/features/checkout/hooks/useCart';
 import { useCheckout } from '~/features/checkout/hooks/useCheckout';
+import { checkoutService } from '~/features/checkout/services/checkout.service';
 import type { Order } from '~/features/checkout/types';
+import { blockedReason } from '~/features/checkout/utils';
 import { InvoiceSheet } from '~/features/orders/components/InvoiceSheet';
 import { useOrder } from '~/features/orders/hooks/useOrders';
 import { usersService } from '~/features/users/services/users.service';
@@ -147,7 +149,7 @@ export function CounterOrderPage() {
   const buyer = buyerToApi(cart.buyer);
   const items = cart.lines.map((line) => line.selection);
   const isMember = cart.buyer?.kind === 'MEMBER';
-  const quoteQuery = useQuote({ user, buyer, items, couponCode: cart.couponCode, enabled: Boolean(buyer) });
+  const quoteQuery = useQuote({ user, buyer, items, couponCodes: cart.couponCodes, enabled: Boolean(buyer) });
   const quote = cart.lines.length ? quoteQuery.data : undefined;
 
   const finishOrder = (order: Order) => {
@@ -156,7 +158,7 @@ export function CounterOrderPage() {
   };
   const checkout = useCheckout({
     onPaid: finishOrder,
-    onQuote: (fresh) => queryClient.setQueryData(quoteQueryKey(user.id, buyer, items, cart.couponCode), fresh),
+    onQuote: (fresh) => queryClient.setQueryData(quoteQueryKey(user.id, buyer, items, cart.couponCodes), fresh),
   });
 
   const newOrder = () => {
@@ -173,14 +175,14 @@ export function CounterOrderPage() {
         {
           buyer,
           items,
-          couponCode: cart.couponCode || undefined,
+          couponCodes: cart.couponCodes,
           expectedTotal,
         },
         { onSuccess: (invoice) => setInvoiceId(invoice.id) },
       );
       return;
     }
-    checkout.pay({ user, buyer, items, couponCode: cart.couponCode, paymentMethod: method, expectedTotal });
+    checkout.pay({ user, buyer, items, couponCodes: cart.couponCodes, paymentMethod: method, expectedTotal });
   };
 
   if (paidOrder) {
@@ -254,10 +256,11 @@ export function CounterOrderPage() {
                     />
                     {isMember && (
                       <CouponInput
-                        key={cart.couponCode}
-                        code={cart.couponCode}
+                        codes={cart.couponCodes}
                         quote={quote}
-                        onApply={store.setCoupon}
+                        check={(couponCodes) => checkoutService.quote({ buyer, items, couponCodes })}
+                        onAdd={store.addCoupon}
+                        onRemove={store.removeCoupon}
                         disabled={busy}
                       />
                     )}
@@ -290,9 +293,7 @@ export function CounterOrderPage() {
                           {method === 'TRANSFER' ? 'Tạo hóa đơn chuyển khoản' : 'Thu tiền'} · {formatVND(quote.total)}
                         </Button>
                         {!quote.canCheckout && (
-                          <p className="m-0 text-xs text-sc-error">
-                            Còn dịch vụ không hợp lệ: xóa dòng báo lỗi để thu tiền.
-                          </p>
+                          <p className="m-0 text-xs text-sc-error">{blockedReason(quote)} để thu tiền.</p>
                         )}
                         {method === 'TRANSFER' && quote.total === 0 && (
                           <p className="m-0 text-xs text-sc-muted">

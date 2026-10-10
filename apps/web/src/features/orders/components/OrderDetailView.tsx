@@ -81,7 +81,13 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
 function toTotals(order: Order) {
   return {
     items: [],
-    coupon: order.coupon ? { code: order.coupon.code, valid: true, discount: order.coupon.discount } : null,
+    coupons: order.coupons.map(({ code, discount }) => ({
+      code,
+      discount,
+      valid: true,
+      applied: true,
+      lineNumbers: [],
+    })),
     subtotal: order.subtotal,
     membershipDiscount: order.membershipDiscount,
     couponDiscount: order.couponDiscount,

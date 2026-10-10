@@ -150,7 +150,7 @@ describe('checkout quote', () => {
       await request('POST', '/quote', receptionist, {
         buyer: { guest: { name: 'Khách A', phone: '0901234567' } },
         items: [booking, membership, { type: 'COURSE_ENROLLMENT', classId: '00000000-0000-4000-8000-000000000003' }],
-        couponCode: 'welcome20',
+        couponCodes: ['welcome20'],
       }),
     );
 
@@ -159,7 +159,7 @@ describe('checkout quote', () => {
       'GUEST_NOT_ALLOWED',
       'GUEST_NOT_ALLOWED',
     ]);
-    expect(quote.coupon).toMatchObject({ code: 'WELCOME20', valid: false });
+    expect(quote.coupons[0]).toMatchObject({ code: 'WELCOME20', valid: false });
     expect(quote).toMatchObject({ total: 200_000, walletBalance: null, canCheckout: false });
   });
 });

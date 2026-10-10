@@ -1,6 +1,6 @@
 import { formatDate } from '~/lib/format';
 import { DAY_SHORT, WEEK_ORDER } from '~/lib/time';
-import type { CheckoutItemInput, LineDescription, Order, OrderItemType } from './types';
+import type { CheckoutItemInput, LineDescription, Order, OrderItemType, Quote } from './types';
 
 const text = (value: unknown) => (typeof value === 'string' || typeof value === 'number' ? String(value) : '');
 
@@ -85,4 +85,11 @@ export function refundedOf(order: Pick<Order, 'refunds'>, orderItemId?: string) 
   return order.refunds
     .filter((refund) => orderItemId === undefined || refund.orderItemId === orderItemId)
     .reduce((sum, refund) => sum + refund.amount, 0);
+}
+
+/** Why a quote cannot be paid yet, phrased as the step that unblocks it. */
+export function blockedReason(quote: Pick<Quote, 'items' | 'coupons'>) {
+  if (quote.items.some((item) => !item.valid)) return 'Còn dịch vụ không hợp lệ: xóa hoặc sửa dòng báo lỗi';
+  if (quote.coupons.some((coupon) => !coupon.valid)) return 'Có mã giảm giá không dùng được: bỏ mã báo lỗi';
+  return 'Đơn chưa thanh toán được';
 }

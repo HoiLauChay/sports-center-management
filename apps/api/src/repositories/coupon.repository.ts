@@ -26,6 +26,11 @@ class CouponRepository {
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.coupon.findUnique({ where: { id, deletedAt: null }, select: couponSelect });
 
+  findIdsByCodes = async (codes: string[], tx: Prisma.TransactionClient = prisma) =>
+    (await tx.coupon.findMany({ where: { code: { in: codes }, deletedAt: null }, select: { id: true } })).map(
+      ({ id }) => id,
+    );
+
   findByCode = (code: string, tx: Prisma.TransactionClient = prisma) =>
     tx.coupon.findFirst({ where: { code, deletedAt: null }, select: couponSelect });
 

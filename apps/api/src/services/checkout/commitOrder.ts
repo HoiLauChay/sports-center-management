@@ -52,7 +52,7 @@ export const commitOrder = async (
       total: result.subtotal - result.membershipDiscount - couponDiscount,
     };
   });
-  const coupon = prepared.coupon?.valid ? prepared.coupon : null;
+  const coupons = prepared.coupons.filter(({ applied }) => applied);
 
   const order = await orderRepository.create(
     {
@@ -72,7 +72,7 @@ export const commitOrder = async (
         createdBy,
         paymentMethod: payment.method,
         membership: prepared.membershipName ? { packageName: prepared.membershipName } : null,
-        coupon: coupon && { code: coupon.code, name: coupon.name, discount: coupon.discount },
+        coupons: coupons.map(({ code, name, discount }) => ({ code, name, discount })),
       },
       subtotal: prepared.subtotal,
       membershipDiscountAmount: prepared.membershipDiscount,

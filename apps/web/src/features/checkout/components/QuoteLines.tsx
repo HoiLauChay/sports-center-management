@@ -82,7 +82,15 @@ export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }
       title: 'Mã giảm giá',
       key: 'coupon',
       align: 'right',
-      render: (_, { item }) => (item ? <Money value={item.couponDiscount} discount /> : '…'),
+      render: (_, { item }) =>
+        item ? (
+          <div className="flex flex-col items-end">
+            <Money value={item.couponDiscount} discount />
+            {item.couponCode && <span className="font-mono text-[11.5px] text-sc-muted">{item.couponCode}</span>}
+          </div>
+        ) : (
+          '…'
+        ),
     },
     {
       title: 'Thành tiền',

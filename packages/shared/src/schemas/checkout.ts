@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ORDER_ITEM_TYPES } from '../constants/enums';
 import { MAX_MONEY } from '../constants/money';
 import { phoneSchema } from './account';
 import { timeOfDaySchema as timeSchema } from './time';
@@ -60,7 +61,14 @@ export const checkoutQuoteBodySchema = z.object({
     .array(checkoutItemInputSchema, 'Danh sách dòng không hợp lệ')
     .min(1, 'Đơn phải có ít nhất một dòng')
     .max(20, 'Đơn tối đa 20 dòng'),
-  couponCode: z.string().trim().toUpperCase().min(1, 'Mã giảm giá không hợp lệ').max(50).optional(),
+  couponCodes: z
+    .array(
+      z.string().trim().toUpperCase().min(1, 'Mã giảm giá không hợp lệ').max(50),
+      'Danh sách mã giảm giá không hợp lệ',
+    )
+    .max(ORDER_ITEM_TYPES.length, `Tối đa ${ORDER_ITEM_TYPES.length} mã giảm giá mỗi đơn`)
+    .transform((codes) => [...new Set(codes)])
+    .optional(),
 });
 
 const expectedTotalSchema = z
