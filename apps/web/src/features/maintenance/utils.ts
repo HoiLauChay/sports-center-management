@@ -1,7 +1,8 @@
+import type { Maintenance } from '@sports-center/shared';
 import dayjs from 'dayjs';
 import { VN_TIMEZONE } from '~/lib/format';
 import { nowVN } from '~/lib/time';
-import type { Maintenance, MaintenancePhase } from './types';
+import type { MaintenancePhase } from './types';
 
 export const MINUTE_FORMAT = 'YYYY-MM-DD HH:mm';
 

@@ -1,3 +1,10 @@
+import type {
+  MaintenanceAffectedBooking,
+  MaintenanceAffectedSession,
+  MaintenancePreview,
+  MaintenanceResult,
+  MaintenanceWindow,
+} from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -23,20 +30,9 @@ import { formatDate, VN_TIMEZONE } from '~/lib/format';
 import { describeApiError, errorPayload, toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, slotGrid, todayVN } from '~/lib/time';
 import { useCreateMaintenance, useMaintenancePreview } from '../hooks/useMaintenance';
-import type {
-  AffectedBooking,
-  AffectedSession,
-  BlockedBooking,
-  BlockedSession,
-  CreateMaintenanceResult,
-  MaintenancePreview,
-  MaintenanceRequest,
-  SessionResolution,
-} from '../types';
+import type { SessionResolution } from '../types';
 
 const MINUTE_FORMAT = 'YYYY-MM-DD HH:mm';
-
-const NOTHING_BLOCKED = { bookings: [], sessions: [] };
 
 const toIso = (value: Dayjs) => dayjs.tz(value.format(MINUTE_FORMAT), VN_TIMEZONE).toISOString();
 
@@ -52,7 +48,7 @@ function resolutionError(resolution: SessionResolution | undefined): string | nu
 }
 
 /** Suggested resolution: move the session to the first free facility of the same sport. */
-function suggest(session: AffectedSession): SessionResolution | undefined {
+function suggest(session: MaintenanceAffectedSession): SessionResolution | undefined {
   const first = session.alternatives[0];
   return first ? { sessionId: session.id, action: 'MOVE_FACILITY', facilityId: first.id } : undefined;
 }
@@ -62,7 +58,7 @@ function ResolutionCell({
   value,
   onChange,
 }: {
-  session: AffectedSession;
+  session: MaintenanceAffectedSession;
   value: SessionResolution | undefined;
   onChange: (next: SessionResolution | undefined) => void;
 }) {
@@ -177,12 +173,12 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const preview = useMaintenancePreview();
   const create = useCreateMaintenance();
   const [step, setStep] = useState(0);
-  const [request, setRequest] = useState<MaintenanceRequest | null>(null);
+  const [request, setRequest] = useState<MaintenanceWindow | null>(null);
   const [data, setData] = useState<MaintenancePreview | null>(null);
   const [resolutions, setResolutions] = useState<Resolutions>({});
   const [moves, setMoves] = useState<Moves>({});
-  const [blocked, setBlocked] = useState<{ bookings: BlockedBooking[]; sessions: BlockedSession[] }>(NOTHING_BLOCKED);
-  const [result, setResult] = useState<CreateMaintenanceResult | null>(null);
+  const [blocked, setBlocked] = useState<MaintenanceAffectedBooking[]>([]);
+  const [result, setResult] = useState<MaintenanceResult | null>(null);
 
   const facilityName = (id: string) => facilities.data?.find((entry) => entry.id === id)?.name ?? '';
 
@@ -195,7 +191,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       setData(null);
       setResolutions({});
       setMoves({});
-      setBlocked(NOTHING_BLOCKED);
+      setBlocked([]);
       setResult(null);
       form.resetFields();
       preview.reset();
@@ -204,7 +200,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   };
 
   const submitWindow = (values: { facilityId: string; range: [Dayjs, Dayjs]; reason: string }) => {
-    const next: MaintenanceRequest = {
+    const next: MaintenanceWindow = {
       facilityId: values.facilityId,
       startAt: toIso(values.range[0]),
       endAt: toIso(values.range[1]),
@@ -218,7 +214,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
         setMoves(
           Object.fromEntries(affected.affectedBookings.map((booking) => [booking.id, booking.alternatives[0]?.id])),
         );
-        setBlocked(NOTHING_BLOCKED);
+        setBlocked([]);
         setStep(1);
       },
     });
@@ -231,11 +227,11 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const unmoved = bookings.filter((booking) => !moves[booking.id]);
   const unresolved = sessions.filter((session) => resolutionError(resolutions[session.id]) !== null);
   const ready = unresolved.length === 0 && unmoved.length === 0;
-  const blockedCount = blocked.bookings.length + blocked.sessions.length;
+  const blockedCount = blocked.length;
 
   const confirm = () => {
     if (!request || !ready) return;
-    setBlocked(NOTHING_BLOCKED);
+    setBlocked([]);
     create.mutate(
       {
         ...request,
@@ -247,16 +243,12 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
           setResult(created);
           setStep(2);
         },
-        onError: (error) =>
-          setBlocked({
-            bookings: errorPayload<BlockedBooking[]>(error, 'bookings') ?? [],
-            sessions: errorPayload<BlockedSession[]>(error, 'sessions') ?? [],
-          }),
+        onError: (error) => setBlocked(errorPayload<MaintenanceAffectedBooking[]>(error, 'bookings') ?? []),
       },
     );
   };
 
-  const bookingColumns: TableColumnsType<AffectedBooking> = [
+  const bookingColumns: TableColumnsType<MaintenanceAffectedBooking> = [
     {
       title: 'Khách',
       key: 'who',
@@ -302,7 +294,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
     },
   ];
 
-  const sessionColumns: TableColumnsType<AffectedSession> = [
+  const sessionColumns: TableColumnsType<MaintenanceAffectedSession> = [
     {
       title: 'Buổi học',
       key: 'session',
@@ -437,15 +429,10 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               title={`Chưa ghi nhận bảo trì: ${blockedCount} mục không thể xử lý`}
               description={
                 <ul className="m-0 pl-5">
-                  {blocked.bookings.map((item) => (
-                    <li key={item.bookingId}>
-                      Booking của <b>{item.who}</b> · {formatDate(item.date)} {item.startTime}–{item.endTime}: không còn
-                      sân thay thế
-                    </li>
-                  ))}
-                  {blocked.sessions.map((item) => (
-                    <li key={item.sessionId}>
-                      <b>{item.className}</b> · {formatDate(item.date)} {item.startTime}–{item.endTime}: {item.reason}
+                  {blocked.map((item) => (
+                    <li key={item.id}>
+                      Booking của <b>{item.account?.fullName ?? item.guestName}</b> · {formatDate(item.date)}{' '}
+                      {item.startTime}–{item.endTime}: không còn sân thay thế
                     </li>
                   ))}
                 </ul>
@@ -496,7 +483,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
           )}
 
           <Card size="small" title={`Booking cần chuyển sân (${bookings.length})`}>
-            <Table<AffectedBooking>
+            <Table<MaintenanceAffectedBooking>
               rowKey="id"
               size="small"
               columns={bookingColumns}
@@ -513,7 +500,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
           </Card>
 
           <Card size="small" title={`Buổi học cần xử lý (${sessions.length})`}>
-            <Table<AffectedSession>
+            <Table<MaintenanceAffectedSession>
               rowKey="id"
               size="small"
               columns={sessionColumns}

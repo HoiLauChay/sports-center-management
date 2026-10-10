@@ -1,9 +1,8 @@
+import type { CreateMaintenanceBody, ListMaintenancesQuery, MaintenanceWindow } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { useCurrentUser } from '~/features/auth';
 import { describeApiError } from '~/lib/http-errors';
 import { maintenanceService } from '../services/maintenance.service';
-import type { CreateMaintenanceBody, ListMaintenancesQuery, MaintenanceRequest } from '../types';
 
 export function useMaintenances(query: ListMaintenancesQuery) {
   return useQuery({
@@ -15,7 +14,7 @@ export function useMaintenances(query: ListMaintenancesQuery) {
 
 /** `POST /maintenances/preview` writes nothing, so it is a mutation the wizard fires when the manager asks for it. */
 export function useMaintenancePreview() {
-  return useMutation({ mutationFn: (request: MaintenanceRequest) => maintenanceService.preview(request) });
+  return useMutation({ mutationFn: (body: MaintenanceWindow) => maintenanceService.preview(body) });
 }
 
 /** Everything a maintenance can change: facility schedules, bookings and class sessions. */
@@ -29,10 +28,9 @@ function useRefreshAfterMaintenance() {
 }
 
 export function useCreateMaintenance() {
-  const user = useCurrentUser();
   const refresh = useRefreshAfterMaintenance();
   return useMutation({
-    mutationFn: (body: CreateMaintenanceBody) => maintenanceService.create(user, body),
+    mutationFn: (body: CreateMaintenanceBody) => maintenanceService.create(body),
     onSuccess: refresh,
   });
 }
