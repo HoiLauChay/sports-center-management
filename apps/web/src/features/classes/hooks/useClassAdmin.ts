@@ -1,4 +1,4 @@
-import { PAGINATION, type AssignCoachBody, type UpdateClassBody } from '@sports-center/shared';
+import { PAGINATION, type AssignCoachBody, type UpdateClassBody, type UpdateSessionBody } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { specializationsService } from '~/features/specializations/services/specializations.service';
@@ -82,4 +82,16 @@ export function useApproveClassFromList() {
 
 export function useRejectClassFromList() {
   return useClassAction((classId: string) => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+}
+
+/** `PATCH /sessions/{id}`: moves one session to another time or facility; a clash is left to the caller. */
+export function useUpdateSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateSessionBody }) => classAdminService.updateSession(id, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['classes'] });
+      void queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    },
+  });
 }

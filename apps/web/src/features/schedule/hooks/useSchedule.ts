@@ -1,22 +1,19 @@
+import type { PersonalScheduleQuery } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useCurrentUser } from '~/features/auth';
 import { scheduleService } from '../services/schedule.service';
-import type { ScheduleRange } from '../types';
 
-export function useMySchedule(range: ScheduleRange) {
-  const user = useCurrentUser();
+export function useMySchedule(range: PersonalScheduleQuery) {
   return useQuery({
-    queryKey: ['schedule', 'mine', user.id, range],
-    queryFn: () => scheduleService.mine(user, range),
+    queryKey: ['schedule', 'mine', range],
+    queryFn: () => scheduleService.mine(range),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useCoachSchedule(range: ScheduleRange) {
-  const user = useCurrentUser();
+export function useCoachSchedule(range: PersonalScheduleQuery) {
   return useQuery({
-    queryKey: ['schedule', 'coach', user.id, range],
-    queryFn: () => scheduleService.coach(user, range),
+    queryKey: ['schedule', 'coach', range],
+    queryFn: () => scheduleService.coach(range),
     placeholderData: keepPreviousData,
   });
 }

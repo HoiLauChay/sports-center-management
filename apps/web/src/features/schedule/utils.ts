@@ -1,12 +1,6 @@
+import type { CoachScheduleItem, MemberScheduleItem, PersonalScheduleQuery } from '@sports-center/shared';
 import { DATE_FORMAT, addDays, dayOfWeek, parseDate } from '~/lib/time';
-import type {
-  CalendarEvent,
-  CalendarView,
-  CoachScheduleEntry,
-  ScheduleEntry,
-  ScheduleKind,
-  ScheduleRange,
-} from './types';
+import type { CalendarEvent, CalendarView, ScheduleKind } from './types';
 
 /** Monday of the week the date falls in (weeks run Monday to Sunday). */
 export function weekStart(date: string) {
@@ -27,7 +21,7 @@ export function monthGrid(date: string) {
   return Array.from({ length: weeks * 7 }, (_, index) => addDays(start, index));
 }
 
-export function rangeOf(view: CalendarView, anchor: string): ScheduleRange {
+export function rangeOf(view: CalendarView, anchor: string): PersonalScheduleQuery {
   const days = view === 'week' ? weekDays(anchor) : monthGrid(anchor);
   return { from: days[0]!, to: days.at(-1)! };
 }
@@ -58,7 +52,7 @@ export const KIND_STYLE: Record<ScheduleKind, { label: string; chip: string; dot
   },
 };
 
-export function eventsOfMember(entries: ScheduleEntry[]): CalendarEvent[] {
+export function eventsOfMember(entries: MemberScheduleItem[]): CalendarEvent[] {
   return entries.map((entry) =>
     entry.kind === 'BOOKING'
       ? {
@@ -89,7 +83,7 @@ export function eventsOfMember(entries: ScheduleEntry[]): CalendarEvent[] {
   );
 }
 
-export function eventsOfCoach(entries: CoachScheduleEntry[]): CalendarEvent[] {
+export function eventsOfCoach(entries: CoachScheduleItem[]): CalendarEvent[] {
   return entries.map((entry) => ({
     key: `session-${entry.id}`,
     kind: 'CLASS_SESSION',

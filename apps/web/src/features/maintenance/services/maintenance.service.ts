@@ -1,44 +1,35 @@
-import type { Account } from '@sports-center/shared';
-import { loadCatalog } from '~/features/checkout/mocks/pricing';
-import { actorOf } from '~/features/checkout/services/checkout.service';
-import { ensureClassSeed } from '~/features/classes/mocks/classes';
-import { mockRequest } from '~/lib/mock/errors';
-import { createMaintenance, deleteMaintenance, listMaintenances, previewMaintenance } from '../mocks/maintenance';
-import type { CreateMaintenanceBody, ListMaintenancesQuery, MaintenanceRequest } from '../types';
-
-async function seeded() {
-  const catalog = await loadCatalog();
-  ensureClassSeed(catalog.facilities, catalog.settings);
-  return catalog;
-}
+import type {
+  ApiResponse,
+  CreateMaintenanceBody,
+  ListMaintenancesQuery,
+  Maintenance,
+  MaintenancePreview,
+  MaintenanceResult,
+  MaintenanceWindow,
+} from '@sports-center/shared';
+import { privateApi } from '~/lib/http';
 
 /**
  * Facility maintenance (`GET /maintenances`, `POST /maintenances/preview`, `POST /maintenances`,
- * `DELETE /maintenances/{id}`). Mock until #180 ships; the shapes follow `api.design.md`, so each body becomes a
- * `privateApi` call. A 409 `MAINTENANCE_BLOCKED` lists what cannot be handled in `bookings` and `sessions`.
+ * `DELETE /maintenances/{id}`). A 409 `MAINTENANCE_BLOCKED` lists the bookings with nowhere to go in `bookings`.
  */
 export const maintenanceService = {
-  list: (query: ListMaintenancesQuery) =>
-    mockRequest(async () => {
-      await seeded();
-      return listMaintenances(query);
-    }, 150),
+  list: async (query: ListMaintenancesQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Maintenance[]>>('/maintenances', { params: query });
+    return data.result;
+  },
 
-  preview: (request: MaintenanceRequest) =>
-    mockRequest(async () => {
-      const { facilities } = await seeded();
-      return previewMaintenance(request, facilities);
-    }, 300),
+  preview: async (body: MaintenanceWindow) => {
+    const { data } = await privateApi.post<ApiResponse<MaintenancePreview>>('/maintenances/preview', body);
+    return data.result;
+  },
 
-  create: (user: Account, body: CreateMaintenanceBody) =>
-    mockRequest(async () => {
-      const { facilities } = await seeded();
-      return createMaintenance(actorOf(user), body, facilities);
-    }, 500),
+  create: async (body: CreateMaintenanceBody) => {
+    const { data } = await privateApi.post<ApiResponse<MaintenanceResult>>('/maintenances', body);
+    return data.result;
+  },
 
-  remove: (id: string) =>
-    mockRequest(async () => {
-      await seeded();
-      return deleteMaintenance(id);
-    }, 250),
+  remove: async (id: string) => {
+    await privateApi.delete(`/maintenances/${encodeURIComponent(id)}`);
+  },
 };

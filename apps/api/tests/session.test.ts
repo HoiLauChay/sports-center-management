@@ -1,4 +1,4 @@
-import type { ClassSession } from '@sports-center/shared';
+import type { ClassSession, SessionDetail } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
 
@@ -127,5 +127,31 @@ describe('rescheduling a class session', () => {
     expect(results.map(({ status }) => status).sort()).toEqual([200, 409]);
     expect(await prisma.notification.count()).toBe(3);
     expect(await prisma.classSession.count({ where: { facilityId: room.id, sessionDate: new Date(date(5)) } })).toBe(1);
+  });
+});
+
+describe('viewing class sessions', () => {
+  test('reception lists the open sessions of a day; only the class coach or a manager opens one session', async () => {
+    const { manager, member, cls, first } = await setup();
+    const receptionist = await createAccount('RECEPTIONIST', 'reception@example.com');
+    const stranger = await createAccount('COACH', 'stranger@example.com');
+
+    const day = await readResult<SessionDetail[]>(await request('GET', `?date=${date(3)}`, receptionist));
+    expect(day).toEqual([
+      expect.objectContaining({
+        id: first.id,
+        class: expect.objectContaining({ id: cls.id, enrolledCount: 2, maxStudents: cls.maxStudents }),
+      }),
+    ]);
+    expect(await readResult<SessionDetail[]>(await request('GET', `?date=${date(4)}`, manager))).toEqual([]);
+
+    const coach = { id: cls.coachId!, role: 'COACH' as const };
+    expect(await readResult<SessionDetail>(await request('GET', `/${first.id}`, coach))).toMatchObject({
+      id: first.id,
+      date: date(3),
+      class: { id: cls.id, coach: { id: cls.coachId } },
+    });
+    expect((await request('GET', `/${first.id}`, stranger)).status).toBe(403);
+    expect((await request('GET', `/${first.id}`, member)).status).toBe(403);
   });
 });

@@ -1,3 +1,4 @@
+import type { SessionDetail } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Card, Progress, Table, Tag, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, GraduationCap, TriangleAlert, UserPlus } from 'lucide-react';
@@ -11,14 +12,13 @@ import { classStatusTag } from '~/features/classes/utils';
 import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/useReports';
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
 import { useSessionsOn } from '~/features/schedule';
-import type { DaySession } from '~/features/schedule/types';
 import { useCheckInsToday } from '~/features/training/hooks/useTraining';
 import { formatVND } from '~/lib/format';
 import { DATE_FORMAT, formatDayLabel, nowVN, todayVN } from '~/lib/time';
 
 const MONTHS = 6;
 
-const sessionColumns: TableColumnsType<DaySession> = [
+const sessionColumns: TableColumnsType<SessionDetail> = [
   {
     title: 'Giờ',
     key: 'time',
@@ -30,11 +30,12 @@ const sessionColumns: TableColumnsType<DaySession> = [
     key: 'class',
     render: (_, session) => (
       <div className="flex flex-col">
-        <Link to="/admin/classes/$classId" params={{ classId: session.classId }} className="font-semibold">
-          {session.className}
+        <Link to="/admin/classes/$classId" params={{ classId: session.class.id }} className="font-semibold">
+          {session.class.name}
         </Link>
         <span className="text-[12px] text-sc-muted">
-          {session.facility.name} · HLV {session.coach ?? '—'} · {session.enrolled}/{session.maxStudents} HV
+          {session.facility.name} · HLV {session.class.coach?.fullName ?? '—'} · {session.class.enrolledCount}/
+          {session.class.maxStudents} HV
         </span>
       </div>
     ),
@@ -200,7 +201,7 @@ export function ManagerDashboard() {
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
         <Card title="Buổi học hôm nay" styles={{ header: { minHeight: 52 }, body: { padding: 0 } }}>
-          <Table<DaySession>
+          <Table<SessionDetail>
             rowKey="id"
             size="middle"
             showHeader={false}

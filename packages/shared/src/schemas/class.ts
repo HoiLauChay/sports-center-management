@@ -102,6 +102,8 @@ export const listCoachRegistrationsQuerySchema = z.object({
 
 export const sessionIdParamsSchema = z.object({ id: z.uuid('Mã buổi học không hợp lệ') });
 
+export const listSessionsQuerySchema = z.object({ date: z.iso.date('Ngày không hợp lệ').optional() });
+
 export const updateSessionBodySchema = z
   .strictObject({
     date: z.iso.date('Ngày học không hợp lệ').optional(),
@@ -122,3 +124,4 @@ export type CancelClassBody = z.infer<typeof cancelClassBodySchema>;
 export type AssignCoachBody = z.infer<typeof assignCoachBodySchema>;
 export type ListCoachRegistrationsQuery = z.infer<typeof listCoachRegistrationsQuerySchema>;
 export type UpdateSessionBody = z.infer<typeof updateSessionBodySchema>;
+export type ListSessionsQuery = z.infer<typeof listSessionsQuerySchema>;

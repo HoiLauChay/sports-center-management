@@ -1,16 +1,29 @@
-import type { ApiResponse, AssignCoachBody, CancelClassResult, UpdateClassBody } from '@sports-center/shared';
-import { loadCatalog } from '~/features/checkout/mocks/pricing';
+import {
+  PAGINATION,
+  type ApiResponse,
+  type AssignCoachBody,
+  type CancelClassResult,
+  type ClassSession,
+  type ClassSummary,
+  type Paginated,
+  type UpdateClassBody,
+  type UpdateSessionBody,
+} from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
-import { mockRequest } from '~/lib/mock/errors';
-import { classOverview } from '../mocks/classAdmin';
-import { ensureClassSeed } from '../mocks/classes';
 import type { ClassAdminDetail } from '../types';
 
 const path = (id: string) => `/classes/${encodeURIComponent(id)}`;
 
+const listClasses = async (params: Record<string, unknown>) => {
+  const { data } = await privateApi.get<ApiResponse<Paginated<ClassSummary>>>('/classes', {
+    params: { page: 1, limit: PAGINATION.MAX_LIMIT, ...params },
+  });
+  return data.result.items;
+};
+
 /**
  * Manager class management: `GET /classes/{id}` (with coach registrations for a manager), `PATCH`, approve, reject,
- * cancel and `assign-coach`. The dashboard overview stays mock until the class figures have an endpoint.
+ * cancel, `assign-coach` and `PATCH /sessions/{id}`; the dashboard overview reads `GET /classes` by status.
  */
 export const classAdminService = {
   get: async (id: string) => {
@@ -18,12 +31,18 @@ export const classAdminService = {
     return { ...data.result, coachRegistrations: data.result.coachRegistrations ?? [] };
   },
 
-  overview: () =>
-    mockRequest(async () => {
-      const catalog = await loadCatalog();
-      ensureClassSeed(catalog.facilities, catalog.settings);
-      return classOverview();
-    }, 150),
+  overview: async () => {
+    const [pendingApproval, running] = await Promise.all([
+      listClasses({ status: 'PENDING_APPROVAL' }),
+      listClasses({ status: 'OPEN' }),
+    ]);
+    return {
+      pendingApproval,
+      running: running
+        .filter((item) => item.derivedStatus !== 'COMPLETED')
+        .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? '')),
+    };
+  },
 
   update: async (id: string, body: UpdateClassBody) => {
     const { data } = await privateApi.patch<ApiResponse<ClassAdminDetail>>(path(id), body);
@@ -47,6 +66,11 @@ export const classAdminService = {
 
   cancel: async (id: string, reason: string) => {
     const { data } = await privateApi.post<ApiResponse<CancelClassResult>>(`${path(id)}/cancel`, { reason });
+    return data.result;
+  },
+
+  updateSession: async (id: string, body: UpdateSessionBody) => {
+    const { data } = await privateApi.patch<ApiResponse<ClassSession>>(`/sessions/${encodeURIComponent(id)}`, body);
     return data.result;
   },
 };

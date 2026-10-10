@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useRef, useState } from 'react';
 import { errorPayload, toApiError } from '~/lib/http-errors';
-import { newId } from '~/lib/mock/store';
 import { checkoutService } from '../services/checkout.service';
 import type { CheckoutBody, CheckoutBuyer, CheckoutItemInput, Order, Quote } from '../types';
 
@@ -48,7 +47,7 @@ export function useCheckout({ onPaid, onQuote }: UseCheckoutOptions) {
       params.paymentMethod,
       params.expectedTotal,
     ]);
-    if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: newId() };
+    if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
     return keyRef.current.key;
   };
 

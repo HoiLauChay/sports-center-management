@@ -1,53 +1,48 @@
+import type {
+  ClassSummary,
+  CreateAnnouncementBody,
+  CreateEvaluationBody,
+  ListMyCheckInsQuery,
+  SaveAttendanceBody,
+  SaveSessionNoteBody,
+} from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { useCurrentUser } from '~/features/auth';
+import { useMemo } from 'react';
+import { useMyEnrollments } from '~/features/classes/hooks/useClasses';
 import { describeApiError } from '~/lib/http-errors';
 import { trainingService } from '../services/training.service';
-import type { AttendanceInput, EvaluationInput, SessionNoteInput } from '../types';
 
 const sessionKey = (sessionId: string, part: string) => ['training', 'session', sessionId, part] as const;
 
 export function useTrainingSession(sessionId: string) {
-  const user = useCurrentUser();
   return useQuery({
     queryKey: sessionKey(sessionId, 'info'),
-    queryFn: () => trainingService.session(user, sessionId),
+    queryFn: () => trainingService.session(sessionId),
     retry: false,
   });
 }
 
 export function useAttendance(sessionId: string) {
-  const user = useCurrentUser();
   return useQuery({
     queryKey: sessionKey(sessionId, 'attendance'),
-    queryFn: () => trainingService.attendance(user, sessionId),
+    queryFn: () => trainingService.attendance(sessionId),
   });
 }
 
 export function useSessionNote(sessionId: string | undefined) {
-  const user = useCurrentUser();
   return useQuery({
     queryKey: sessionKey(sessionId ?? '', 'note'),
-    queryFn: () => trainingService.note(user, sessionId!),
+    queryFn: () => trainingService.note(sessionId!),
     enabled: Boolean(sessionId),
     retry: false,
   });
 }
 
 export function useSessionEvaluations(sessionId: string) {
-  const user = useCurrentUser();
   return useQuery({
     queryKey: sessionKey(sessionId, 'evaluations'),
-    queryFn: () => trainingService.evaluations(user, sessionId),
-  });
-}
-
-export function useClassAnnouncements(classId: string | undefined) {
-  const user = useCurrentUser();
-  return useQuery({
-    queryKey: ['training', 'announcements', classId],
-    queryFn: () => trainingService.announcements(user, classId!),
-    enabled: Boolean(classId),
+    queryFn: () => trainingService.evaluations(sessionId),
   });
 }
 
@@ -72,11 +67,10 @@ function useSessionAction<V, R>(
 }
 
 export function useSaveAttendance(sessionId: string) {
-  const user = useCurrentUser();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (records: AttendanceInput[]) => trainingService.saveAttendance(user, sessionId, records),
+    mutationFn: (body: SaveAttendanceBody) => trainingService.saveAttendance(sessionId, body),
     onSuccess: (records) => {
       queryClient.setQueryData(sessionKey(sessionId, 'attendance'), records);
       void queryClient.invalidateQueries({ queryKey: ['training', 'mine'] });
@@ -87,90 +81,83 @@ export function useSaveAttendance(sessionId: string) {
 }
 
 export function useSaveNote(sessionId: string) {
-  const user = useCurrentUser();
   return useSessionAction(
     sessionId,
-    (input: SessionNoteInput) => trainingService.saveNote(user, sessionId, input),
+    (body: SaveSessionNoteBody) => trainingService.saveNote(sessionId, body),
     'Đã lưu ghi chú buổi học.',
     ['note'],
   );
 }
 
 export function useCreateEvaluation(sessionId: string) {
-  const user = useCurrentUser();
   return useSessionAction(
     sessionId,
-    (input: EvaluationInput) => trainingService.createEvaluation(user, sessionId, input),
+    (body: CreateEvaluationBody) => trainingService.createEvaluation(sessionId, body),
     'Đã lưu đánh giá.',
     ['evaluations'],
   );
 }
 
 export function useUpdateEvaluation(sessionId: string) {
-  const user = useCurrentUser();
   return useSessionAction(
     sessionId,
-    (input: { id: string; rating: number; comment: string }) =>
-      trainingService.updateEvaluation(user, input.id, { rating: input.rating, comment: input.comment }),
+    ({ id, ...body }: { id: string; rating: number; comment: string }) => trainingService.updateEvaluation(id, body),
     'Đã cập nhật đánh giá.',
     ['evaluations'],
   );
 }
 
 export function useDeleteEvaluation(sessionId: string) {
-  const user = useCurrentUser();
-  return useSessionAction(sessionId, (id: string) => trainingService.deleteEvaluation(user, id), 'Đã xóa đánh giá.', [
+  return useSessionAction(sessionId, (id: string) => trainingService.deleteEvaluation(id), 'Đã xóa đánh giá.', [
     'evaluations',
   ]);
 }
 
 export function useSendAnnouncement(classId: string) {
-  const user = useCurrentUser();
   const { message } = App.useApp();
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { title: string; body: string }) => trainingService.announce(user, classId, input),
-    onSuccess: ({ recipients }) => {
-      void queryClient.invalidateQueries({ queryKey: ['training', 'announcements', classId] });
-      message.success(`Đã gửi thông báo cho ${recipients} học viên.`);
-    },
+    mutationFn: (body: CreateAnnouncementBody) => trainingService.announce(classId, body),
+    onSuccess: ({ recipients }) => message.success(`Đã gửi thông báo cho ${recipients} học viên.`),
     onError: (error) => message.error(describeApiError(error)),
   });
 }
 
+/** The classes I joined (also ones I left), newest enrollment first, for the training history. */
 export function useMyTrainingClasses() {
-  const user = useCurrentUser();
-  return useQuery({
-    queryKey: ['training', 'mine', 'classes', user.id],
-    queryFn: () => trainingService.myClasses(user),
-  });
+  const enrollments = useMyEnrollments();
+  const data = useMemo(() => {
+    if (!enrollments.data) return undefined;
+    const byClass = new Map<string, ClassSummary>();
+    for (const entry of [...enrollments.data].sort((a, b) => b.enrolledAt.localeCompare(a.enrolledAt))) {
+      if (!byClass.has(entry.class.id)) byClass.set(entry.class.id, entry.class);
+    }
+    return [...byClass.values()];
+  }, [enrollments.data]);
+  return { ...enrollments, data };
 }
 
 export function useMyAttendance(classId: string | undefined) {
-  const user = useCurrentUser();
   return useQuery({
-    queryKey: ['training', 'mine', 'attendance', user.id, classId],
-    queryFn: () => trainingService.myAttendance(user, classId),
+    queryKey: ['training', 'mine', 'attendance', classId],
+    queryFn: () => trainingService.myAttendance(classId!),
     enabled: Boolean(classId),
     placeholderData: keepPreviousData,
   });
 }
 
 export function useMyEvaluations(classId: string | undefined) {
-  const user = useCurrentUser();
   return useQuery({
-    queryKey: ['training', 'mine', 'evaluations', user.id, classId],
-    queryFn: () => trainingService.myEvaluations(user, classId),
+    queryKey: ['training', 'mine', 'evaluations', classId],
+    queryFn: () => trainingService.myEvaluations(classId!),
     enabled: Boolean(classId),
     placeholderData: keepPreviousData,
   });
 }
 
-export function useMyCheckIns(range: { from?: string; to?: string }) {
-  const user = useCurrentUser();
+export function useMyCheckIns(range: ListMyCheckInsQuery) {
   return useQuery({
-    queryKey: ['training', 'mine', 'checkins', user.id, range],
-    queryFn: () => trainingService.myCheckIns(user, range),
+    queryKey: ['training', 'mine', 'checkins', range],
+    queryFn: () => trainingService.myCheckIns(range),
     placeholderData: keepPreviousData,
   });
 }
@@ -183,26 +170,10 @@ export function useCheckInsToday() {
   });
 }
 
-export function useCheckInCheck(memberId: string | undefined) {
-  const user = useCurrentUser();
-  return useQuery({
-    queryKey: ['training', 'checkin-check', memberId],
-    queryFn: () => trainingService.checkInCheck(user, memberId!),
-    enabled: Boolean(memberId),
-    retry: false,
-    gcTime: 0,
-  });
-}
-
 export function useCheckIn() {
-  const user = useCurrentUser();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (memberId: string) => trainingService.checkIn(user, memberId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['training', 'checkins'] });
-      void queryClient.invalidateQueries({ queryKey: ['training', 'checkin-check'] });
-      void queryClient.invalidateQueries({ queryKey: ['training', 'mine'] });
-    },
+    mutationFn: (accountId: string) => trainingService.checkIn(accountId),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['training', 'checkins'] }),
   });
 }

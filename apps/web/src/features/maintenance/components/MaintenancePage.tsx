@@ -1,3 +1,4 @@
+import type { Maintenance } from '@sports-center/shared';
 import { Button, Card, Table, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
@@ -9,7 +10,7 @@ import { useConfirm } from '~/hooks/useConfirm';
 import { VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useDeleteMaintenance, useMaintenances } from '../hooks/useMaintenance';
-import type { Maintenance, MaintenancePhase } from '../types';
+import type { MaintenancePhase } from '../types';
 import { phaseOf } from '../utils';
 import { MaintenanceWizard } from './MaintenanceWizard';
 
@@ -46,7 +47,6 @@ export function MaintenancePage() {
       key: 'phase',
       render: (_, item) => <MappedTag value={phaseOf(item)} map={PHASE_TAG} />,
     },
-    { title: 'Người đặt', dataIndex: ['createdBy', 'fullName'], render: (name?: string) => name ?? '—' },
     {
       title: '',
       key: 'actions',

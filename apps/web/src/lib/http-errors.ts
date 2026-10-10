@@ -1,6 +1,5 @@
 import type { ApiErrorBody, ApiFieldError, ScheduleConflict, SessionConflict } from '@sports-center/shared';
 import axios from 'axios';
-import { MockApiError } from './mock/errors';
 
 export const CLIENT_ERROR_CODE = {
   NETWORK: 'NETWORK_ERROR',
@@ -19,9 +18,6 @@ export interface ApiError {
 const FALLBACK = 'Có lỗi xảy ra, vui lòng thử lại.';
 
 export function toApiError(err: unknown, fallback = FALLBACK): ApiError {
-  if (err instanceof MockApiError) {
-    return { status: err.status, code: err.code, message: err.message, errors: err.errors };
-  }
   if (axios.isAxiosError<ApiErrorBody>(err)) {
     if (err.response) {
       const body = err.response.data;
@@ -49,7 +45,6 @@ export function describeApiError(err: unknown, fallback?: string): string {
 
 /** Extra payload an error response carries next to `code`/`message` (e.g. the fresh `quote` of a `PRICE_CHANGED`). */
 export function errorPayload<T>(err: unknown, key: string): T | undefined {
-  if (err instanceof MockApiError) return err.body[key] as T | undefined;
   if (axios.isAxiosError<Record<string, unknown>>(err)) return err.response?.data?.[key] as T | undefined;
   return undefined;
 }

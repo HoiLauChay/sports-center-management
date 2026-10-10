@@ -2,10 +2,6 @@ import type { Account, ApiResponse, Invoice, Paginated } from '@sports-center/sh
 import { privateApi } from '~/lib/http';
 import type { CheckoutBody, CheckoutQuoteBody, CounterInvoiceBody, ListOrdersQuery, Order, Quote } from '../types';
 
-export function actorOf(user: Pick<Account, 'id' | 'role' | 'fullName'>) {
-  return { id: user.id, role: user.role, fullName: user.fullName };
-}
-
 const invoicePath = (id: string) => `/invoices/${encodeURIComponent(id)}`;
 const orderPath = (id: string) => `/orders/${encodeURIComponent(id)}`;
 

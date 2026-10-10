@@ -1,4 +1,4 @@
-import type { Booking } from '@sports-center/shared';
+import type { Booking, SessionDetail } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, LifeBuoy, LogIn } from 'lucide-react';
@@ -8,7 +8,6 @@ import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
 import { refundedOf } from '~/features/checkout/utils';
 import { useOrders } from '~/features/orders/hooks/useOrders';
 import { useSessionsOn } from '~/features/schedule';
-import type { DaySession } from '~/features/schedule/types';
 import { useSupportRequests } from '~/features/support/hooks/useSupport';
 import { useCheckInsToday } from '~/features/training/hooks/useTraining';
 import { formatVND } from '~/lib/format';
@@ -20,7 +19,7 @@ const BENEFIT_TAG: Partial<Record<Booking['benefit'], string>> = {
   GYM_ACCESS: 'Gym miễn phí',
 };
 
-const sessionColumns: TableColumnsType<DaySession> = [
+const sessionColumns: TableColumnsType<SessionDetail> = [
   {
     title: 'Giờ',
     key: 'time',
@@ -31,9 +30,9 @@ const sessionColumns: TableColumnsType<DaySession> = [
       </span>
     ),
   },
-  { title: 'Lớp', dataIndex: 'className' },
+  { title: 'Lớp', dataIndex: ['class', 'name'] },
   { title: 'Facility', dataIndex: ['facility', 'name'], render: (name: string) => <Tag>{name}</Tag> },
-  { title: 'HLV', dataIndex: 'coach', render: (name: string | null) => name ?? '—' },
+  { title: 'HLV', dataIndex: ['class', 'coach', 'fullName'], render: (name?: string) => name ?? '—' },
 ];
 
 const bookingColumns: TableColumnsType<Booking> = [
@@ -143,7 +142,7 @@ export function ReceptionistDashboard() {
       </div>
 
       <Card title="Buổi học hôm nay" className="!mt-4" styles={{ header: { minHeight: 52 }, body: { padding: 0 } }}>
-        <Table<DaySession>
+        <Table<SessionDetail>
           rowKey="id"
           size="middle"
           columns={sessionColumns}
