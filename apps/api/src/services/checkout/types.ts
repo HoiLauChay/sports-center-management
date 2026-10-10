@@ -84,6 +84,7 @@ export interface PreparedLine {
   input: CheckoutItemInput;
   result: LineResult<unknown, LineSnapshot>;
   couponDiscount: number;
+  couponId: string | null;
 }
 
 export interface AppliedCoupon {
@@ -91,13 +92,15 @@ export interface AppliedCoupon {
   code: string;
   name: string | null;
   valid: boolean;
+  applied: boolean;
   discount: number;
+  lineNumbers: number[];
   error?: string;
 }
 
 export interface PreparedOrder {
   lines: PreparedLine[];
-  coupon: AppliedCoupon | null;
+  coupons: AppliedCoupon[];
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;

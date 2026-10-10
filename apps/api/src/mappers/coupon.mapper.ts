@@ -4,7 +4,7 @@ import type { CouponRow } from '~/repositories/coupon.repository';
 
 const money = (value: CouponRow['maxDiscount']) => (value === null ? null : Number(value));
 
-export const toCouponResponse = (row: CouponRow): Coupon => ({
+export const toCouponResponse = (row: CouponRow, usedCount: number): Coupon => ({
   id: row.id,
   code: row.code,
   name: row.name,
@@ -18,5 +18,5 @@ export const toCouponResponse = (row: CouponRow): Coupon => ({
   minOrderAmount: money(row.minOrderAmount),
   applicableTypes: row.applicableTypes.length ? row.applicableTypes : null,
   isActive: row.isActive,
-  usedCount: row._count.orders,
+  usedCount,
 });

@@ -81,12 +81,22 @@ export interface QuoteLine {
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;
+  couponCode: string | null;
   total: number;
+}
+
+export interface QuoteCoupon {
+  code: string;
+  valid: boolean;
+  applied: boolean;
+  discount: number;
+  lineNumbers: number[];
+  error?: string;
 }
 
 export interface Quote {
   items: QuoteLine[];
-  coupon: { code: string; valid: boolean; discount: number; error?: string } | null;
+  coupons: QuoteCoupon[];
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;
@@ -103,6 +113,7 @@ export interface OrderItem {
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;
+  couponCode: string | null;
   totalAmount: number;
   refundedAt: string | null;
   refId: string | null;
@@ -126,7 +137,7 @@ export interface Order {
   createdBy: Person | null;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
-  coupon: { code: string; discount: number } | null;
+  coupons: { code: string; discount: number }[];
   subtotal: number;
   membershipDiscount: number;
   couponDiscount: number;

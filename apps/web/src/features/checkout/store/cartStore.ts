@@ -7,12 +7,12 @@ export type DraftBuyer =
 
 export interface CartState {
   lines: CartLine[];
-  couponCode: string;
+  couponCodes: string[];
   /** Only used by the counter draft (receptionist); members always buy for themselves. */
   buyer: DraftBuyer | null;
 }
 
-const EMPTY: CartState = { lines: [], couponCode: '', buyer: null };
+const EMPTY: CartState = { lines: [], couponCodes: [], buyer: null };
 
 type Listener = () => void;
 
@@ -55,7 +55,7 @@ export class CartStore {
       this.snapshot = parsed
         ? {
             lines: Array.isArray(parsed.lines) ? parsed.lines : [],
-            couponCode: typeof parsed.couponCode === 'string' ? parsed.couponCode : '',
+            couponCodes: Array.isArray(parsed.couponCodes) ? parsed.couponCodes : [],
             buyer: parsed.buyer ?? null,
           }
         : EMPTY;
@@ -111,8 +111,14 @@ export class CartStore {
     this.write({ ...EMPTY, buyer: state.buyer });
   };
 
-  setCoupon = (couponCode: string) => {
-    this.write({ ...this.read(), couponCode: couponCode.trim().toUpperCase() });
+  addCoupon = (code: string) => {
+    const state = this.read();
+    if (!state.couponCodes.includes(code)) this.write({ ...state, couponCodes: [...state.couponCodes, code] });
+  };
+
+  removeCoupon = (code: string) => {
+    const state = this.read();
+    this.write({ ...state, couponCodes: state.couponCodes.filter((entry) => entry !== code) });
   };
 
   /** Changing the buyer resets the draft: services and coupons are validated per buyer. */
@@ -122,7 +128,7 @@ export class CartStore {
       this.write({ ...state, buyer });
       return;
     }
-    this.write({ lines: [], couponCode: '', buyer });
+    this.write({ lines: [], couponCodes: [], buyer });
   };
 
   reset = () => this.write(EMPTY);

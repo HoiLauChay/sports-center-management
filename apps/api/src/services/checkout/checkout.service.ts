@@ -59,11 +59,11 @@ const MAX_PENDING_INVOICES = 3;
 interface LockScope {
   buyerId?: string;
   items: CheckoutItemInput[];
-  couponId?: string;
+  couponIds?: string[];
   invoiceId?: string;
 }
 
-const lockCheckout = async (tx: Prisma.TransactionClient, { buyerId, items, couponId, invoiceId }: LockScope) => {
+const lockCheckout = async (tx: Prisma.TransactionClient, { buyerId, items, couponIds = [], invoiceId }: LockScope) => {
   const handlers = items.map((input) => ({ input, handler: lineHandlers[input.type] }));
   const targets = handlers.map(({ input, handler }) => handler?.lockTargets(input) ?? {});
 
@@ -75,7 +75,7 @@ const lockCheckout = async (tx: Prisma.TransactionClient, { buyerId, items, coup
     classes: unique(targets.flatMap((target) => target.classes ?? [])),
     facilities: unique(targets.flatMap((target) => target.facilities ?? [])),
     memberMemberships: unique(targets.flatMap((target) => target.memberMemberships ?? [])),
-    coupons: unique([couponId]),
+    coupons: unique(couponIds),
     invoices: unique([invoiceId]),
   });
 };
@@ -117,10 +117,10 @@ const prepareLocked = async (
   actor: Actor,
   body: CheckoutQuoteBody & { expectedTotal: number },
 ) => {
-  const coupon = body.couponCode ? await couponRepository.findByCode(body.couponCode, tx) : null;
-  await lockCheckout(tx, { buyerId: buyerIdOf(actor, body), items: body.items, couponId: coupon?.id });
+  const couponIds = body.couponCodes?.length ? await couponRepository.findIdsByCodes(body.couponCodes, tx) : [];
+  await lockCheckout(tx, { buyerId: buyerIdOf(actor, body), items: body.items, couponIds });
   const ctx = await buildContext(tx, actor, body.buyer);
-  const prepared = await prepareOrder(tx, ctx, body.items, body.couponCode);
+  const prepared = await prepareOrder(tx, ctx, body.items, body.couponCodes);
 
   if (!prepared.valid) {
     const linesValid = prepared.lines.every(({ result }) => result.ok);
@@ -154,7 +154,7 @@ class CheckoutService {
   quote = async (actor: Actor, body: CheckoutQuoteBody) => {
     const ctx = await buildContext(prisma, actor, body.buyer);
     const [prepared, wallet] = await Promise.all([
-      prepareOrder(prisma, ctx, body.items, body.couponCode),
+      prepareOrder(prisma, ctx, body.items, body.couponCodes),
       ctx.buyer.kind === 'MEMBER' ? walletRepository.findBalance(ctx.buyer.accountId) : null,
     ]);
     return toQuoteResponse(prepared, wallet ? Number(wallet.walletBalance) : null);
@@ -233,7 +233,7 @@ class CheckoutService {
     await lockCheckout(tx, {
       buyerId: found.accountId ?? undefined,
       items: prepared.lines.map(({ input }) => input),
-      couponId: prepared.coupon?.id ?? undefined,
+      couponIds: prepared.coupons.flatMap(({ id, applied }) => (applied && id ? [id] : [])),
       invoiceId: found.id,
     });
 

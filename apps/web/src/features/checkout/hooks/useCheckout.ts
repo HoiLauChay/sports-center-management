@@ -10,7 +10,7 @@ interface CheckoutParams {
   user: Account;
   buyer?: CheckoutBuyer;
   items: CheckoutItemInput[];
-  couponCode?: string;
+  couponCodes?: string[];
   paymentMethod: CheckoutBody['paymentMethod'];
   /** Quote total the person is looking at; the server refuses (PRICE_CHANGED) when it no longer matches. */
   expectedTotal: number;
@@ -43,7 +43,7 @@ export function useCheckout({ onPaid, onQuote }: UseCheckoutOptions) {
     const fingerprint = JSON.stringify([
       params.buyer ?? null,
       params.items,
-      params.couponCode ?? null,
+      params.couponCodes ?? [],
       params.paymentMethod,
       params.expectedTotal,
     ]);
@@ -56,7 +56,7 @@ export function useCheckout({ onPaid, onQuote }: UseCheckoutOptions) {
       checkoutService.checkout({
         buyer: params.buyer,
         items: params.items,
-        couponCode: params.couponCode || undefined,
+        couponCodes: params.couponCodes,
         paymentMethod: params.paymentMethod,
         expectedTotal: params.expectedTotal,
         idempotencyKey: keyFor(params),

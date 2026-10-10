@@ -90,39 +90,101 @@ describe('coupon at checkout', () => {
     const items = [line(court.id, '08:00', '09:00'), line(court.id, '10:00', '12:00')];
 
     const small = await readResult<Quote>(
-      await checkout('POST', '/quote', member, { items: items.slice(0, 1), couponCode: 'sale10' }),
+      await checkout('POST', '/quote', member, { items: items.slice(0, 1), couponCodes: ['sale10'] }),
     );
-    expect(small.coupon).toMatchObject({ code: 'SALE10', valid: false });
+    expect(small.coupons[0]).toMatchObject({ code: 'SALE10', valid: false });
 
-    const other = await readResult<Quote>(await checkout('POST', '/quote', member, { items, couponCode: 'LOP20' }));
-    expect(other.coupon).toMatchObject({ valid: false, discount: 0 });
+    const other = await readResult<Quote>(await checkout('POST', '/quote', member, { items, couponCodes: ['LOP20'] }));
+    expect(other.coupons[0]).toMatchObject({ valid: false, discount: 0 });
 
-    const quote = await readResult<Quote>(await checkout('POST', '/quote', member, { items, couponCode: 'SALE10' }));
+    const quote = await readResult<Quote>(await checkout('POST', '/quote', member, { items, couponCodes: ['SALE10'] }));
     expect(quote.items.map(({ couponDiscount, total }) => ({ couponDiscount, total }))).toEqual([
       { couponDiscount: 8_333, total: 91_667 },
       { couponDiscount: 16_667, total: 183_333 },
     ]);
-    expect(quote).toMatchObject({ coupon: { valid: true, discount: 25_000 }, total: 275_000, canCheckout: true });
+    expect(quote).toMatchObject({
+      coupons: [{ valid: true, applied: true, discount: 25_000 }],
+      total: 275_000,
+      canCheckout: true,
+    });
 
     const paid = await checkout('POST', '/', member, {
       items,
-      couponCode: 'SALE10',
+      couponCodes: ['SALE10'],
       paymentMethod: 'WALLET',
       expectedTotal: 275_000,
       idempotencyKey: 'coupon-key-1',
     });
     expect(paid.status).toBe(201);
     const order = await readResult<Order>(paid);
-    expect(order).toMatchObject({ coupon: { code: 'SALE10', discount: 25_000 }, totalAmount: 275_000 });
+    expect(order).toMatchObject({ coupons: [{ code: 'SALE10', discount: 25_000 }], totalAmount: 275_000 });
     await expectOrderConsistent(order.id);
 
     const again = await readResult<Quote>(
       await checkout('POST', '/quote', member, {
         items: [line(court.id, '13:00', '16:00')],
-        couponCode: 'SALE10',
+        couponCodes: ['SALE10'],
       }),
     );
-    expect(again.coupon).toMatchObject({ valid: false, error: 'Người mua đã dùng hết lượt của mã này' });
+    expect(again.coupons[0]).toMatchObject({ valid: false, error: 'Người mua đã dùng hết lượt của mã này' });
+  });
+
+  test('codes never share a line: the non-overlapping set with the largest discount wins', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await seedBalance(member.id, 1_000_000);
+    const court = await seedFacility(1);
+    const pkg = await prisma.membership.create({ data: { name: 'Gold', price: 400_000, durationDays: 30 } });
+    await request('POST', '/', manager, couponBody({ code: 'ALL100', discountType: 'FIXED', discountValue: 100_000 }));
+    await request(
+      'POST',
+      '/',
+      manager,
+      couponBody({ code: 'GOI50', discountValue: 50, applicableTypes: ['MEMBERSHIP'] }),
+    );
+    await request(
+      'POST',
+      '/',
+      manager,
+      couponBody({ code: 'SAN20', discountValue: 20, applicableTypes: ['FACILITY_BOOKING'] }),
+    );
+    const items = [line(court.id, '08:00', '10:00'), { type: 'MEMBERSHIP', packageId: pkg.id }];
+
+    const pair = await readResult<Quote>(
+      await checkout('POST', '/quote', member, { items, couponCodes: ['all100', 'GOI50'] }),
+    );
+    expect(pair.coupons).toMatchObject([
+      { code: 'ALL100', valid: true, applied: false, discount: 0 },
+      { code: 'GOI50', valid: true, applied: true, discount: 200_000, lineNumbers: [2] },
+    ]);
+    expect(pair.items.map(({ couponCode, couponDiscount }) => [couponCode, couponDiscount])).toEqual([
+      [null, 0],
+      ['GOI50', 200_000],
+    ]);
+    expect(pair).toMatchObject({ total: 400_000, canCheckout: true });
+
+    const body = { items, couponCodes: ['ALL100', 'GOI50', 'SAN20'] };
+    const quote = await readResult<Quote>(await checkout('POST', '/quote', member, body));
+    expect(quote.coupons.map(({ code, applied, discount }) => [code, applied, discount])).toEqual([
+      ['ALL100', false, 0],
+      ['GOI50', true, 200_000],
+      ['SAN20', true, 40_000],
+    ]);
+    expect(quote).toMatchObject({ couponDiscount: 240_000, total: 360_000, canCheckout: true });
+
+    const paid = await checkout('POST', '/', member, {
+      ...body,
+      paymentMethod: 'WALLET',
+      expectedTotal: 360_000,
+      idempotencyKey: 'coupon-set-1',
+    });
+    const order = await readResult<Order>(paid);
+    expect(order.coupons).toEqual([
+      { code: 'SAN20', discount: 40_000 },
+      { code: 'GOI50', discount: 200_000 },
+    ]);
+    expect(order.items.map(({ couponCode }) => couponCode)).toEqual(['SAN20', 'GOI50']);
+    await expectOrderConsistent(order.id);
   });
 
   test('two orders racing for the last use: only one gets the discount', async () => {
@@ -138,7 +200,7 @@ describe('coupon at checkout', () => {
       members.map((member, index) =>
         checkout('POST', '/', member, {
           items: [line(courts[index]!.id, '18:00', '19:00')],
-          couponCode: 'SALE10',
+          couponCodes: ['SALE10'],
           paymentMethod: 'WALLET',
           expectedTotal: 90_000,
           idempotencyKey: `coupon-race-${index}`,
@@ -148,6 +210,6 @@ describe('coupon at checkout', () => {
 
     expect(responses.map(({ status }) => status).sort()).toEqual([201, 409]);
     expect(await readCode(responses.find(({ status }) => status === 409)!)).toBe('COUPON_INVALID');
-    expect(await prisma.order.count({ where: { coupon: { code: 'SALE10' } } })).toBe(1);
+    expect(await prisma.order.count({ where: { items: { some: { coupon: { code: 'SALE10' } } } } })).toBe(1);
   });
 });

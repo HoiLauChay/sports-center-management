@@ -30,7 +30,7 @@ interface UseQuoteParams {
   user: Account;
   buyer?: CheckoutBuyer;
   items: CheckoutItemInput[];
-  couponCode?: string;
+  couponCodes?: string[];
   enabled?: boolean;
 }
 
@@ -38,14 +38,14 @@ export const quoteQueryKey = (
   userId: string,
   buyer: CheckoutBuyer | undefined,
   items: CheckoutItemInput[],
-  couponCode?: string,
-) => ['quote', userId, buyer ?? null, items, couponCode || null] as const;
+  couponCodes: string[] = [],
+) => ['quote', userId, buyer ?? null, items, couponCodes] as const;
 
 /** Prices the draft on the server every time its lines, buyer or coupon change (UC_3.18). */
-export function useQuote({ user, buyer, items, couponCode, enabled = true }: UseQuoteParams) {
+export function useQuote({ user, buyer, items, couponCodes = [], enabled = true }: UseQuoteParams) {
   return useQuery<Quote>({
-    queryKey: quoteQueryKey(user.id, buyer, items, couponCode),
-    queryFn: () => checkoutService.quote({ buyer, items, couponCode: couponCode || undefined }),
+    queryKey: quoteQueryKey(user.id, buyer, items, couponCodes),
+    queryFn: () => checkoutService.quote({ buyer, items, couponCodes }),
     enabled: enabled && items.length > 0,
     placeholderData: keepPreviousData,
     staleTime: 0,

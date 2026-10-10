@@ -12,7 +12,8 @@ interface ReceiptSnapshot {
     | { guest: { name: string; phone: string } };
   paymentMethod: 'WALLET' | 'CASH' | 'CARD' | 'TRANSFER';
   membership: { packageName: string } | null;
-  coupon: { code: string; name: string; discount: number } | null;
+  coupons?: { code: string; name: string; discount: number }[];
+  coupon?: { code: string; name: string; discount: number } | null;
 }
 
 export interface ReceiptRow {
@@ -74,6 +75,11 @@ const rowOf = (item: OrderRow['items'][number], amount: number): ReceiptRow => {
   };
 };
 
+const couponLabel = ({ coupons, coupon }: ReceiptSnapshot) => {
+  const codes = (coupons ?? (coupon ? [coupon] : [])).map(({ code }) => code);
+  return codes.length ? `Coupon (${codes.join(', ')})` : 'Coupon';
+};
+
 export const buildPaymentReceipt = (order: OrderRow): ReceiptView => {
   const snapshot = order.receiptSnapshot as unknown as ReceiptSnapshot;
   const membershipDiscount = Number(order.membershipDiscountAmount);
@@ -100,7 +106,7 @@ export const buildPaymentReceipt = (order: OrderRow): ReceiptView => {
         amount: membershipDiscount,
         sign: '-',
       },
-      { label: snapshot.coupon ? `Coupon (${snapshot.coupon.code})` : 'Coupon', amount: couponDiscount, sign: '-' },
+      { label: couponLabel(snapshot), amount: couponDiscount, sign: '-' },
     ],
     total: { label: 'Tổng thanh toán', amount: Number(order.totalAmount) },
     detailTitle: 'Chi tiết dịch vụ',

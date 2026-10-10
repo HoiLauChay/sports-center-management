@@ -11,7 +11,9 @@ import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { quoteQueryKey, useMemberCart, useQuote } from '../hooks/useCart';
 import { useCheckout } from '../hooks/useCheckout';
+import { checkoutService } from '../services/checkout.service';
 import type { Quote } from '../types';
+import { blockedReason } from '../utils';
 import { CouponInput } from './CouponInput';
 import { PriceChangeModal } from './PriceChangeModal';
 import { QuoteLines } from './QuoteLines';
@@ -24,7 +26,7 @@ export function CartPage() {
   const queryClient = useQueryClient();
   const { store, cart } = useMemberCart();
   const items = cart.lines.map((line) => line.selection);
-  const quoteQuery = useQuote({ user, items, couponCode: cart.couponCode });
+  const quoteQuery = useQuote({ user, items, couponCodes: cart.couponCodes });
   const quote = cart.lines.length ? quoteQuery.data : undefined;
 
   const checkout = useCheckout({
@@ -33,13 +35,13 @@ export function CartPage() {
       message.success(`Đã thanh toán ${formatVND(order.totalAmount)}, mã đơn ${order.orderNumber}`);
       void navigate({ to: '/orders/$orderId', params: { orderId: order.id } });
     },
-    onQuote: (fresh) => queryClient.setQueryData(quoteQueryKey(user.id, undefined, items, cart.couponCode), fresh),
+    onQuote: (fresh) => queryClient.setQueryData(quoteQueryKey(user.id, undefined, items, cart.couponCodes), fresh),
   });
 
   const insufficient = quote?.walletBalance !== null && quote !== undefined && (quote.walletBalance ?? 0) < quote.total;
   const shortBy = quote ? quote.total - (quote.walletBalance ?? 0) : 0;
   const pay = (expectedTotal: number) =>
-    checkout.pay({ user, items, couponCode: cart.couponCode, paymentMethod: 'WALLET', expectedTotal });
+    checkout.pay({ user, items, couponCodes: cart.couponCodes, paymentMethod: 'WALLET', expectedTotal });
 
   return (
     <>
@@ -110,10 +112,11 @@ export function CartPage() {
             </Card>
             <Card>
               <CouponInput
-                key={cart.couponCode}
-                code={cart.couponCode}
+                codes={cart.couponCodes}
                 quote={quote}
-                onApply={store.setCoupon}
+                check={(couponCodes) => checkoutService.quote({ items, couponCodes })}
+                onAdd={store.addCoupon}
+                onRemove={store.removeCoupon}
                 disabled={checkout.isPaying}
               />
             </Card>
@@ -158,9 +161,7 @@ export function CartPage() {
                     Thanh toán bằng ví · {formatVND(quote.total)}
                   </Button>
                   {!quote.canCheckout && (
-                    <p className="mt-2 mb-0 text-xs text-sc-error">
-                      Còn dịch vụ không hợp lệ: xóa hoặc sửa dòng báo lỗi để thanh toán.
-                    </p>
+                    <p className="mt-2 mb-0 text-xs text-sc-error">{blockedReason(quote)} để thanh toán.</p>
                   )}
                   <p className="mt-3 mb-0 text-xs text-sc-muted-2">
                     Hệ thống kiểm tra lại chỗ trống, mã giảm giá và số dư khi thanh toán. Một dòng lỗi thì cả đơn không

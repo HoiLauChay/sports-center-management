@@ -14,13 +14,16 @@ function Row({ label, value, tone }: { label: ReactNode; value: ReactNode; tone?
   );
 }
 
+const couponLabel = (coupons: { code: string }[]) =>
+  coupons.length ? `Mã giảm giá ${coupons.map(({ code }) => code).join(', ')}` : 'Mã giảm giá';
+
 export function QuoteTotals({ quote }: { quote: Quote }) {
   return (
     <div className="text-[14px]">
       <Row label="Tạm tính" value={formatVND(quote.subtotal)} />
       <Row label="Ưu đãi gói thành viên" value={`−${formatVND(quote.membershipDiscount)}`} tone="discount" />
       <Row
-        label={quote.coupon?.valid ? `Mã giảm giá ${quote.coupon.code}` : 'Mã giảm giá'}
+        label={couponLabel(quote.coupons.filter(({ applied }) => applied))}
         value={`−${formatVND(quote.couponDiscount)}`}
         tone="discount"
       />

@@ -167,7 +167,7 @@ export function InvoiceSheet({ order }: { order: Order }) {
       <SummaryRow label="Tổng giá gốc dịch vụ" value={money(order.subtotal)} />
       <SummaryRow label="Ưu đãi gói thành viên" value={money(order.membershipDiscount, '−')} />
       <SummaryRow
-        label={order.coupon ? `Coupon ${order.coupon.code}` : 'Coupon'}
+        label={order.coupons.length ? `Coupon ${order.coupons.map(({ code }) => code).join(', ')}` : 'Coupon'}
         value={money(order.couponDiscount, '−')}
       />
       <div className="flex items-center justify-between border-0 border-y border-solid border-[#14130f] py-4 text-[20px] font-bold">

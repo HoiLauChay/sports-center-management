@@ -81,7 +81,10 @@ class InvoiceRepository {
     tx.invoice.count({ where: { ...heldOrders(now), ...buyer } });
 
   countHeldCoupon = async (couponId: string, accountId: string, now: Date, tx: Prisma.TransactionClient = prisma) => {
-    const where = { ...heldOrders(now), requestPayload: { path: ['prepared', 'coupon', 'id'], equals: couponId } };
+    const where = {
+      ...heldOrders(now),
+      requestPayload: { path: ['prepared', 'coupons'], array_contains: [{ id: couponId, applied: true }] },
+    };
     const total = await tx.invoice.count({ where });
     const mine = await tx.invoice.count({ where: { ...where, accountId } });
     return [total, mine] as const;
