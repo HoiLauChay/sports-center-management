@@ -15,7 +15,6 @@ const couponSelect = {
   validFrom: true,
   validTo: true,
   isActive: true,
-  _count: { select: { orders: true } },
 } satisfies Prisma.CouponSelect;
 
 export type CouponRow = Prisma.CouponGetPayload<{ select: typeof couponSelect }>;
@@ -31,9 +30,17 @@ class CouponRepository {
     tx.coupon.findFirst({ where: { code, deletedAt: null }, select: couponSelect });
 
   countUses = async (couponId: string, accountId: string, tx: Prisma.TransactionClient = prisma) => {
-    const total = await tx.order.count({ where: { couponId } });
-    const mine = await tx.order.count({ where: { couponId, accountId } });
+    const used = { items: { some: { couponId } } } satisfies Prisma.OrderWhereInput;
+    const total = await tx.order.count({ where: used });
+    const mine = await tx.order.count({ where: { ...used, accountId } });
     return [total, mine] as const;
+  };
+
+  countOrders = async (couponIds: string[], tx: Prisma.TransactionClient = prisma) => {
+    const pairs = await tx.orderItem.groupBy({ by: ['couponId', 'orderId'], where: { couponId: { in: couponIds } } });
+    const counts = new Map<string, number>();
+    for (const { couponId } of pairs) counts.set(couponId!, (counts.get(couponId!) ?? 0) + 1);
+    return counts;
   };
 
   create = (data: Prisma.CouponCreateInput, tx: Prisma.TransactionClient = prisma) =>

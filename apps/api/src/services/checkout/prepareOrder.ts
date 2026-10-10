@@ -62,11 +62,15 @@ export const prepareOrder = async (
         data: result.data,
         uses: result.uses ?? [],
       });
-    lines.push({ lineNumber, input, result, couponDiscount: 0 });
+    lines.push({ lineNumber, input, result, couponDiscount: 0, couponId: null });
   }
 
   const applied = couponCode ? await applyCoupon(db, ctx, lines, couponCode) : null;
-  for (const line of lines) line.couponDiscount = applied?.discounts.get(line.lineNumber) ?? 0;
+  for (const line of lines) {
+    const share = applied?.discounts.get(line.lineNumber);
+    line.couponDiscount = share ?? 0;
+    line.couponId = share === undefined ? null : applied!.coupon.id;
+  }
 
   const priced = lines.map(({ result }) => result).filter((result) => result.ok);
   const subtotal = priced.reduce((sum, result) => sum + result.subtotal, 0);

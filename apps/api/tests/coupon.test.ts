@@ -148,6 +148,6 @@ describe('coupon at checkout', () => {
 
     expect(responses.map(({ status }) => status).sort()).toEqual([201, 409]);
     expect(await readCode(responses.find(({ status }) => status === 409)!)).toBe('COUPON_INVALID');
-    expect(await prisma.order.count({ where: { coupon: { code: 'SALE10' } } })).toBe(1);
+    expect(await prisma.order.count({ where: { items: { some: { coupon: { code: 'SALE10' } } } } })).toBe(1);
   });
 });

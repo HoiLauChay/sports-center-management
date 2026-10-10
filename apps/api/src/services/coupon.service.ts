@@ -62,7 +62,11 @@ const withCodeCheck = async <T>(fn: () => Promise<T>) => {
 };
 
 class CouponService {
-  list = async () => (await couponRepository.findAll()).map(toCouponResponse);
+  list = async () => {
+    const rows = await couponRepository.findAll();
+    const used = await couponRepository.countOrders(rows.map(({ id }) => id));
+    return rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
+  };
 
   create = async (managerId: string, body: CreateCouponBody, ip?: string) => {
     assertConsistent(null, body);
@@ -83,7 +87,7 @@ class CouponService {
         return created;
       }),
     );
-    return toCouponResponse(coupon);
+    return toCouponResponse(coupon, 0);
   };
 
   update = async (managerId: string, id: string, body: UpdateCouponBody, ip?: string) => {
@@ -109,7 +113,7 @@ class CouponService {
         return updated;
       }),
     );
-    return toCouponResponse(coupon);
+    return toCouponResponse(coupon, (await couponRepository.countOrders([id])).get(id) ?? 0);
   };
 
   remove = async (managerId: string, id: string, ip?: string) => {

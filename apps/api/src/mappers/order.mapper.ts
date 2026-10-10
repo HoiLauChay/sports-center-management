@@ -12,6 +12,11 @@ const statusOf = (items: ItemRow[]): OrderStatus => {
   return items.some((item) => !item.refundedAt && Number(item.totalAmount) > 0) ? 'PARTIALLY_REFUNDED' : 'REFUNDED';
 };
 
+const couponOf = (row: OrderRow) => {
+  const code = row.items.find((item) => item.coupon)?.coupon?.code;
+  return code ? { code, discount: Number(row.couponDiscountAmount) } : null;
+};
+
 export const toOrderResponse = (row: OrderRow): Order => ({
   id: row.id,
   orderNumber: row.orderNumber,
@@ -21,7 +26,7 @@ export const toOrderResponse = (row: OrderRow): Order => ({
   createdBy: row.createdBy,
   status: statusOf(row.items),
   paymentMethod: row.paymentMethod,
-  coupon: row.coupon ? { code: row.coupon.code, discount: Number(row.couponDiscountAmount) } : null,
+  coupon: couponOf(row),
   subtotal: Number(row.subtotal),
   membershipDiscount: Number(row.membershipDiscountAmount),
   couponDiscount: Number(row.couponDiscountAmount),

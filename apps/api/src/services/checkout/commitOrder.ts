@@ -41,13 +41,14 @@ export const commitOrder = async (
       ? null
       : { id: ctx.actor.id, fullName: (await accountRepository.findById(ctx.actor.id, undefined, tx))!.fullName };
 
-  const lines = prepared.lines.map(({ lineNumber, input, result, couponDiscount }) => {
+  const lines = prepared.lines.map(({ lineNumber, input, result, couponDiscount, couponId }) => {
     if (!result.ok) throw new Error(`commitOrder called with invalid line ${lineNumber}`);
     return {
       lineNumber,
       input,
       result,
       couponDiscount,
+      couponId,
       total: result.subtotal - result.membershipDiscount - couponDiscount,
     };
   });
@@ -62,7 +63,6 @@ export const commitOrder = async (
       guestName: ctx.buyer.kind === 'GUEST' ? ctx.buyer.name : null,
       guestPhone: ctx.buyer.kind === 'GUEST' ? ctx.buyer.phone : null,
       createdById: createdBy?.id,
-      couponId: coupon?.id,
       receiptSnapshot: {
         schema_version: SCHEMA_VERSION,
         orderNumber: number,
@@ -80,13 +80,14 @@ export const commitOrder = async (
       totalAmount: prepared.total,
       paymentMethod: payment.method,
       items: {
-        create: lines.map(({ lineNumber, input, result, couponDiscount, total }) => ({
+        create: lines.map(({ lineNumber, input, result, couponDiscount, couponId, total }) => ({
           lineNumber,
           type: input.type,
           itemSnapshot: { schema_version: SCHEMA_VERSION, ...result.snapshot } as Prisma.InputJsonObject,
           subtotal: result.subtotal,
           membershipDiscountAmount: result.membershipDiscount,
           couponDiscountAmount: couponDiscount,
+          couponId,
           totalAmount: total,
         })),
       },

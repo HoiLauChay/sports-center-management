@@ -84,6 +84,7 @@ export interface PreparedLine {
   input: CheckoutItemInput;
   result: LineResult<unknown, LineSnapshot>;
   couponDiscount: number;
+  couponId: string | null;
 }
 
 export interface AppliedCoupon {

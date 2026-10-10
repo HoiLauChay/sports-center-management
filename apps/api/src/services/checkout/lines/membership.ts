@@ -77,6 +77,7 @@ export const renewalOrder = (membership: MembershipRow, membershipId: string, st
           start,
         }),
         couponDiscount: 0,
+        couponId: null,
       },
     ],
     coupon: null,

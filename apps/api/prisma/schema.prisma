@@ -410,27 +410,27 @@ model Course {
 }
 
 model Class {
-  id                  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  courseId            String      @map("course_id") @db.Uuid
-  course              Course      @relation(fields: [courseId], references: [id], onDelete: Restrict)
-  coachId             String?     @map("coach_id") @db.Uuid
-  coach               Account?    @relation("ClassCoach", fields: [coachId], references: [id], onDelete: Restrict)
-  facilityId          String      @map("facility_id") @db.Uuid
-  facility            Facility    @relation(fields: [facilityId], references: [id], onDelete: Restrict)
-  name                String      @db.VarChar(100)
-  minStudents         Int         @default(1) @map("min_students")
-  maxStudents         Int         @map("max_students")
-  startDate           DateTime?   @map("start_date") @db.Date
-  endDate             DateTime?   @map("end_date") @db.Date
-  weeklySchedule      Json        @map("weekly_schedule")
-  status              ClassStatus @default(DRAFT)
-  approvedById        String?     @map("approved_by") @db.Uuid
-  approvedBy          Account?    @relation("ClassApprover", fields: [approvedById], references: [id], onDelete: Restrict)
-  approvedAt          DateTime?   @map("approved_at") @db.Timestamptz()
-  cancelReason        String?     @map("cancel_reason") @db.VarChar(500)
-  deletedAt           DateTime?   @map("deleted_at") @db.Timestamptz()
-  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt           DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  courseId       String      @map("course_id") @db.Uuid
+  course         Course      @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  coachId        String?     @map("coach_id") @db.Uuid
+  coach          Account?    @relation("ClassCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  facilityId     String      @map("facility_id") @db.Uuid
+  facility       Facility    @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  name           String      @db.VarChar(100)
+  minStudents    Int         @default(1) @map("min_students")
+  maxStudents    Int         @map("max_students")
+  startDate      DateTime?   @map("start_date") @db.Date
+  endDate        DateTime?   @map("end_date") @db.Date
+  weeklySchedule Json        @map("weekly_schedule")
+  status         ClassStatus @default(DRAFT)
+  approvedById   String?     @map("approved_by") @db.Uuid
+  approvedBy     Account?    @relation("ClassApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt     DateTime?   @map("approved_at") @db.Timestamptz()
+  cancelReason   String?     @map("cancel_reason") @db.VarChar(500)
+  deletedAt      DateTime?   @map("deleted_at") @db.Timestamptz()
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   coachRegistrations ClassCoachRegistration[]
   sessions           ClassSession[]
@@ -520,8 +520,6 @@ model Order {
   membershipDiscountAmount Decimal       @default(0) @map("membership_discount_amount") @db.Decimal(12, 0)
   couponDiscountAmount     Decimal       @default(0) @map("coupon_discount_amount") @db.Decimal(12, 0)
   totalAmount              Decimal       @map("total_amount") @db.Decimal(12, 0)
-  couponId                 String?       @map("coupon_id") @db.Uuid
-  coupon                   Coupon?       @relation(fields: [couponId], references: [id], onDelete: Restrict)
   paymentMethod            PaymentMethod @map("payment_method")
   guestName                String?       @map("guest_name") @db.VarChar(255)
   guestPhone               String?       @map("guest_phone") @db.VarChar(20)
@@ -534,7 +532,6 @@ model Order {
 
   @@index([accountId], map: "idx_orders_account")
   @@index([createdAt], map: "idx_orders_date")
-  @@index([couponId, accountId], map: "idx_orders_coupon_account")
   @@index([guestPhone], map: "idx_orders_guest_phone")
   @@map("orders")
 }
@@ -550,6 +547,8 @@ model OrderItem {
   membershipDiscountAmount Decimal       @default(0) @map("membership_discount_amount") @db.Decimal(12, 0)
   couponDiscountAmount     Decimal       @default(0) @map("coupon_discount_amount") @db.Decimal(12, 0)
   totalAmount              Decimal       @map("total_amount") @db.Decimal(12, 0)
+  couponId                 String?       @map("coupon_id") @db.Uuid
+  coupon                   Coupon?       @relation(fields: [couponId], references: [id], onDelete: Restrict)
   refundedAt               DateTime?     @map("refunded_at") @db.Timestamptz()
   createdAt                DateTime      @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt                DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
@@ -562,6 +561,7 @@ model OrderItem {
 
   @@unique([orderId, lineNumber], map: "uq_order_item_line")
   @@unique([orderId], map: "uq_order_one_membership", where: raw("type = 'MEMBERSHIP'"))
+  @@index([couponId], map: "idx_order_items_coupon")
   @@index([type, createdAt], map: "idx_order_items_type_date")
   @@map("order_items")
 }
@@ -584,7 +584,7 @@ model Coupon {
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
-  orders Order[]
+  orderItems OrderItem[]
 
   @@unique([code], map: "uq_coupons_code", where: raw("deleted_at IS NULL"))
   @@map("coupons")
@@ -714,11 +714,11 @@ model WalletTransaction {
   description       String?          @db.VarChar(500)
   createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@unique([orderItemId], map: "uq_wtx_refund_item", where: raw("type = 'REFUND'"))
   @@index([accountId, createdAt], map: "idx_wtx_account_date")
   @@index([type, createdAt], map: "idx_wtx_type_date")
   @@index([orderId], map: "idx_wtx_order")
   @@index([orderItemId], map: "idx_wtx_order_item")
-  @@unique([orderItemId], map: "uq_wtx_refund_item", where: raw("type = 'REFUND'"))
   @@map("wallet_transactions")
 }
 
