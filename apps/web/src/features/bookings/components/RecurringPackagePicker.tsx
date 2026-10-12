@@ -36,7 +36,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const [facilityId, setFacilityId] = useState<string>();
   const [startDate, setStartDate] = useState(addDays(todayVN(), 1));
   const [slotIndex, setSlotIndex] = useState<number>();
-  const [weeks, setWeeks] = useState(4);
+  const [weeks, setWeeks] = useState<number | null>(4);
   const [days, setDays] = useState<number[]>([2, 5]);
 
   const slots = useMemo(
@@ -48,7 +48,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const bookable = (facilities.data ?? []).filter((facility) => facility.isActive);
 
   const request: PackagePreviewRequest | null =
-    facilityId && slot && days.length > 0 && weeks >= 1
+    facilityId && slot && days.length > 0 && weeks && weeks >= 1
       ? { facilityId, startDate, daysOfWeek: [...days].sort(), startTime: slot.startTime, endTime: slot.endTime, weeks }
       : null;
   const accountId = buyer && 'accountId' in buyer ? buyer.accountId : undefined;
@@ -128,7 +128,8 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
               max={12}
               precision={0}
               value={weeks}
-              onChange={(value) => setWeeks(value ?? 1)}
+              onChange={setWeeks}
+              placeholder="1–12"
             />
           </div>
         </div>

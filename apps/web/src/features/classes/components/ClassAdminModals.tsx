@@ -44,7 +44,7 @@ export function EditClassModal({ open, item, onClose }: ModalProps) {
         </Form.Item>
         <div className="grid grid-cols-2 gap-4">
           <Form.Item name="minStudents" label="Sĩ số tối thiểu" rules={[{ required: true, message: 'Bắt buộc' }]}>
-            <InputNumber min={1} className="!w-full" />
+            <InputNumber min={1} max={1000} precision={0} className="!w-full" />
           </Form.Item>
           <Form.Item
             name="maxStudents"
@@ -66,7 +66,7 @@ export function EditClassModal({ open, item, onClose }: ModalProps) {
               }),
             ]}
           >
-            <InputNumber min={1} className="!w-full" />
+            <InputNumber min={1} max={1000} precision={0} className="!w-full" />
           </Form.Item>
         </div>
       </Form>

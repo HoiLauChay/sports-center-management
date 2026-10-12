@@ -106,7 +106,22 @@ export function SessionEditModal({ item, session, onClose }: SessionEditModalPro
           <Form.Item name="startTime" label="Bắt đầu" rules={[{ required: true, message: 'Chọn giờ bắt đầu' }]}>
             <Select options={grid.map((slot) => ({ value: slot.startTime, label: slot.startTime }))} />
           </Form.Item>
-          <Form.Item name="endTime" label="Kết thúc" rules={[{ required: true, message: 'Chọn giờ kết thúc' }]}>
+          <Form.Item
+            name="endTime"
+            label="Kết thúc"
+            dependencies={['startTime']}
+            rules={[
+              { required: true, message: 'Chọn giờ kết thúc' },
+              ({ getFieldValue }) => ({
+                validator: (_, value: string | undefined) => {
+                  const start = getFieldValue('startTime') as string | undefined;
+                  return !value || !start || value > start
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('Giờ kết thúc phải sau giờ bắt đầu'));
+                },
+              }),
+            ]}
+          >
             <Select
               options={grid
                 .filter((slot) => !startTime || slot.endTime > startTime)

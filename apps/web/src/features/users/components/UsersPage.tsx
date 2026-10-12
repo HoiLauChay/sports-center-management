@@ -95,6 +95,7 @@ export function UsersPage() {
             key={search.q ?? ''}
             defaultValue={search.q}
             placeholder="Tìm theo tên, email, SĐT"
+            maxLength={255}
             allowClear
             onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}
             className="w-full sm:!w-72"

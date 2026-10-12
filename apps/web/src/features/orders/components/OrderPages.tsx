@@ -1,3 +1,4 @@
+import { phoneSchema } from '@sports-center/shared';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { Card, DatePicker, Input, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
@@ -33,13 +34,15 @@ export function ReceptionOrdersPage() {
   const [status, setStatus] = useState<OrderStatus | undefined>();
   const [range, setRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
-  const looksLikePhone = /^\+?\d{6,}$/.test(term);
+  // Order numbers start with "DH", so anything that parses as a phone number is a guest phone.
+  const parsedPhone = phoneSchema.safeParse(term);
+  const guestPhone = parsedPhone.success ? (parsedPhone.data ?? undefined) : undefined;
   const orders = useOrders({
     page,
     limit,
     status,
-    orderNumber: term && !looksLikePhone ? term : undefined,
-    guestPhone: term && looksLikePhone ? term : undefined,
+    orderNumber: term && !guestPhone ? term : undefined,
+    guestPhone,
     from: range?.[0]?.format(DATE_FORMAT),
     to: range?.[1]?.format(DATE_FORMAT),
   });
@@ -57,6 +60,7 @@ export function ReceptionOrdersPage() {
           <Input.Search
             allowClear
             placeholder="Số hóa đơn hoặc SĐT khách"
+            maxLength={50}
             className="w-full sm:!w-72"
             onSearch={(value) => {
               setTerm(value.trim());

@@ -41,6 +41,7 @@ export function MembersPage() {
           key={search.q ?? ''}
           defaultValue={search.q}
           placeholder="Nhập tên, email hoặc SĐT"
+          maxLength={255}
           allowClear
           enterButton
           onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}

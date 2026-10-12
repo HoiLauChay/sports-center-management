@@ -216,6 +216,7 @@ export function ReceptionSupportPage() {
           <Input.Search
             allowClear
             placeholder="Tiêu đề hoặc tên thành viên"
+            maxLength={255}
             className="w-full sm:!w-64"
             onSearch={(value) => {
               setQ(value.trim());

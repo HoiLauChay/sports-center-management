@@ -4,30 +4,40 @@ import {
   ERROR_CODE,
   MAX_MONEY,
   type CreateMembershipBody,
-  type CreateMembershipInput,
   type MembershipPackage,
 } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App, Col, Form, Input, InputNumber, Modal, Row, Switch } from 'antd';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { cacheMembershipPackage, membershipsQueryOptions } from '../hooks/useMemberships';
 import { membershipsService } from '../services/memberships.service';
 
 const ERROR_FIELDS: ErrorFieldMap = { [ERROR_CODE.NAME_TAKEN]: 'name' };
-const EMPTY: CreateMembershipInput = {
+const membershipFormSchema = createMembershipBodySchema.extend({
+  price: createMembershipBodySchema.shape.price.default(0),
+});
+type MembershipFormInput = z.input<typeof membershipFormSchema>;
+
+// Zero-valued fields stay empty behind a "0" placeholder, so typing replaces the zero instead of appending to it.
+const EMPTY: MembershipFormInput = {
   name: '',
   description: '',
-  price: 0,
   durationDays: 30,
   gymAccess: false,
-  bookingDiscountPct: 0,
-  classDiscountPct: 0,
-  freeBookingSlotsPerMonth: 0,
   isActive: true,
 };
+const toFormValues = (membership: MembershipPackage): MembershipFormInput => ({
+  ...membership,
+  description: membership.description ?? '',
+  price: membership.price || undefined,
+  bookingDiscountPct: membership.bookingDiscountPct || undefined,
+  classDiscountPct: membership.classDiscountPct || undefined,
+  freeBookingSlotsPerMonth: membership.freeBookingSlotsPerMonth || undefined,
+});
 const moneyFormatter = (value: number | string | undefined) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const moneyParser = (value: string | undefined) => {
   const digits = (value ?? '').replace(/\./g, '').replace(/\s/g, '');
@@ -52,8 +62,8 @@ interface MembershipFormModalProps {
 export function MembershipFormModal({ open, membership, onClose }: MembershipFormModalProps) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
-  const form = useForm<CreateMembershipInput, unknown, CreateMembershipBody>({
-    resolver: zodResolver(createMembershipBodySchema),
+  const form = useForm<MembershipFormInput, unknown, CreateMembershipBody>({
+    resolver: zodResolver(membershipFormSchema),
     mode: 'onTouched',
     defaultValues: EMPTY,
   });
@@ -61,7 +71,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
   const handleApiError = useFormApiError(form, ERROR_FIELDS);
 
   useEffect(() => {
-    if (open) form.reset(membership ? { ...membership, description: membership.description ?? '' } : EMPTY);
+    if (open) form.reset(membership ? toFormValues(membership) : EMPTY);
   }, [open, membership, form]);
 
   const mutation = useMutation({
@@ -137,7 +147,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
             <FormField
               control={control}
               name="price"
-              label={<Required>Giá (₫)</Required>}
+              label="Giá (₫)"
               render={(field, invalid) => (
                 <InputNumber<number>
                   ref={field.ref}
@@ -152,6 +162,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   formatter={moneyFormatter}
                   parser={moneyParser}
                   changeOnBlur={false}
+                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -200,6 +211,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={100}
                   precision={0}
+                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -220,6 +232,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={100}
                   precision={0}
+                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -240,6 +253,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={2147483647}
                   precision={0}
+                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />

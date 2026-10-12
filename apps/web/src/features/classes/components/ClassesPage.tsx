@@ -27,6 +27,7 @@ export function ClassesPage() {
         <Input.Search
           allowClear
           placeholder="Tên lớp hoặc huấn luyện viên"
+          maxLength={100}
           className="w-full sm:!w-72"
           onSearch={(value) => {
             setQ(value.trim());

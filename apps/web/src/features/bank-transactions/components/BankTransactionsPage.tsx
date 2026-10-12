@@ -153,6 +153,7 @@ function TransactionsTab() {
         <Input.Search
           allowClear
           placeholder="Nội dung, mã thanh toán hoặc mã tham chiếu"
+          maxLength={100}
           className="w-full sm:!w-64"
           onSearch={(value) => {
             setQ(value.trim());

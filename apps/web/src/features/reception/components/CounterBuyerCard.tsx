@@ -1,3 +1,4 @@
+import { phoneSchema } from '@sports-center/shared';
 import { Alert, Button, Card, Input, Radio, Tag } from 'antd';
 import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
@@ -5,8 +6,6 @@ import { SectionTitle } from '~/components/ui/SectionTitle';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import { formatDate, formatVND } from '~/lib/format';
 import { useMemberMemberships } from '../hooks/useCounter';
-
-const PHONE_PATTERN = /^(\+84|0)\d{8,10}$/;
 
 function MemberSummary({
   buyer,
@@ -65,14 +64,14 @@ export function CounterBuyerCard({ buyer, onChange, balance, disabled }: Counter
   });
   const [touched, setTouched] = useState(false);
 
+  const parsedPhone = phoneSchema.safeParse(guest.phone);
+  const phone = parsedPhone.success ? parsedPhone.data : null;
   const nameError = touched && !guest.name.trim() ? 'Vui lòng nhập tên khách' : undefined;
-  const phoneError =
-    touched && !PHONE_PATTERN.test(guest.phone.trim().replace(/\s/g, '')) ? 'Số điện thoại không hợp lệ' : undefined;
+  const phoneError = touched && !phone ? 'Số điện thoại không hợp lệ' : undefined;
 
   const confirmGuest = () => {
     setTouched(true);
-    const phone = guest.phone.trim().replace(/\s/g, '');
-    if (!guest.name.trim() || !PHONE_PATTERN.test(phone)) return;
+    if (!guest.name.trim() || !phone) return;
     onChange({ kind: 'GUEST', name: guest.name.trim(), phone });
   };
 
@@ -129,6 +128,7 @@ export function CounterBuyerCard({ buyer, onChange, balance, disabled }: Counter
             <Input
               placeholder="Tên khách"
               value={guest.name}
+              maxLength={255}
               disabled={disabled}
               status={nameError ? 'error' : undefined}
               onChange={(event) => setGuest({ ...guest, name: event.target.value })}

@@ -89,6 +89,7 @@ export function CheckInPage() {
                 allowClear
                 value={input}
                 placeholder="SĐT, email hoặc tên thành viên"
+                maxLength={255}
                 className="!rounded-r-none"
                 onChange={(event) => setInput(event.target.value)}
                 onPressEnter={() => reset(input.trim())}

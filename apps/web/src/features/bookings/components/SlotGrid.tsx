@@ -1,5 +1,5 @@
 import type { Facility, FacilitySchedule, FacilitySlot, FacilitySlotStatus } from '@sports-center/shared';
-import { Tooltip } from 'antd';
+import { Grid, Tooltip } from 'antd';
 import { formatVND } from '~/lib/format';
 import type { SlotSelection } from '../types';
 import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<SlotTone, string> = {
 };
 
 const CELL_STYLE: Record<SlotTone, string> = {
-  AVAILABLE: 'bg-white hover:bg-sc-primary-soft hover:border-sc-primary-border cursor-pointer',
+  AVAILABLE: 'bg-white text-sc-ink hover:bg-sc-primary-soft hover:border-sc-primary-border cursor-pointer',
   PARTIAL: 'bg-[#fff7e0] border-[#f3dfa3] hover:bg-[#ffefbd] cursor-pointer text-[#8a6100]',
   FULL: 'bg-sc-paper-2 text-sc-muted-2 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(20,19,15,.06)_5px_6px)]',
   CLASS: 'bg-sc-primary-soft text-sc-primary cursor-not-allowed',
@@ -52,6 +52,7 @@ interface SlotGridProps {
   selection?: SlotSelection | null;
   onSelect?: (selection: SlotSelection | null) => void;
   maxSlots?: number;
+  /** `table` still turns into cards on phones, where a wide grid would need sideways scrolling. */
   layout?: 'table' | 'cards';
 }
 
@@ -65,6 +66,7 @@ export function SlotGrid({
   maxSlots = 3,
   layout = 'table',
 }: SlotGridProps) {
+  const isMobile = Grid.useBreakpoint().md === false;
   const reference = facilities.map((facility) => schedules[facility.id]).find(Boolean);
   const columns = reference?.slots ?? [];
 
@@ -81,7 +83,7 @@ export function SlotGrid({
     );
   }
 
-  if (layout === 'cards') {
+  if (layout === 'cards' || isMobile) {
     return (
       <div className="flex flex-col gap-4" aria-busy={loading}>
         {facilities.map((facility) => (
@@ -92,7 +94,7 @@ export function SlotGrid({
                 {formatVND(facility.pricePerSlot)}/slot · {facility.capacityPerSlot} chỗ
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-6">
               {(schedules[facility.id]?.slots ?? []).map((slot, index) => {
                 const selected =
                   currentSelection?.facilityId === facility.id &&
@@ -107,17 +109,19 @@ export function SlotGrid({
                       aria-pressed={selected}
                       aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-xl border border-sc-border-soft px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot)]}`}
+                      className={`flex items-center justify-between gap-3 rounded-xl border border-sc-border-soft px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 md:flex-col md:justify-center md:gap-1 md:px-2 md:text-center ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot)]}`}
                     >
                       <span className="block text-sm font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
-                      <span className="block text-xs">{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot)]}</span>
-                      {available && (
-                        <span className="block text-xs">
-                          Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
-                        </span>
-                      )}
+                      <span className="flex flex-col items-end gap-0.5 text-xs md:items-center md:gap-1">
+                        <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot)]}</span>
+                        {available && (
+                          <span>
+                            Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
+                          </span>
+                        )}
+                      </span>
                     </button>
                   </Tooltip>
                 );
