@@ -1,6 +1,7 @@
 import type { Paginated } from '@sports-center/shared';
 import { Button, Tag, type TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
+import { Highlight } from '~/components/ui/Highlight';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, type Order } from '~/features/checkout/types';
@@ -15,17 +16,21 @@ interface OrdersTableProps {
   page: number;
   limit: number;
   onPageChange: (page: number, limit: number) => void;
-  /** Staff see who bought; members only see their own orders. */
   showBuyer?: boolean;
   onOpen: (order: Order) => void;
+  keyword?: string;
 }
 
-export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTableProps) {
+export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: OrdersTableProps) {
   const columns: TableColumnsType<Order> = [
     {
       title: 'Số hóa đơn',
       dataIndex: 'orderNumber',
-      render: (value: string) => <span className="font-mono text-[13px] font-semibold whitespace-nowrap">{value}</span>,
+      render: (value: string) => (
+        <span className="font-mono text-[13px] font-semibold whitespace-nowrap">
+          <Highlight keyword={keyword}>{value}</Highlight>
+        </span>
+      ),
     },
     {
       title: 'Thời gian',
@@ -44,7 +49,11 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
                 <span className="inline-flex flex-wrap items-center gap-1.5">
                   <Tag className="!m-0">Khách</Tag>
                   {order.guestName}
-                  {order.guestPhone && <span className="text-sc-muted">· {order.guestPhone}</span>}
+                  {order.guestPhone && (
+                    <span className="text-sc-muted">
+                      · <Highlight keyword={keyword}>{order.guestPhone}</Highlight>
+                    </span>
+                  )}
                 </span>
               ),
           },

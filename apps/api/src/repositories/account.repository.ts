@@ -40,7 +40,7 @@ class AccountRepository {
               OR: [
                 { fullName: { contains: q, mode: 'insensitive' } },
                 { email: { contains: q, mode: 'insensitive' } },
-                { phone: { contains: q } },
+                { phone: { startsWith: q } },
               ],
             }
           : {},

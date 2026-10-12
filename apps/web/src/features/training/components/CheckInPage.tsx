@@ -5,6 +5,7 @@ import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { InfoTable } from '~/components/data/InfoTable';
 import { EmptyState } from '~/components/feedback/States';
+import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
 import { usersService } from '~/features/users/services/users.service';
@@ -26,10 +27,6 @@ const columns: TableColumnsType<CheckIn> = [
   { title: 'Nhân viên', dataIndex: ['checkedBy', 'fullName'] },
 ];
 
-/**
- * `/reception/checkin`: find a member and check them in. The server allows it for an active member with a booking or
- * a class session today (BR_4.1) and explains a refusal, which the page shows as is.
- */
 export function CheckInPage() {
   const { message } = App.useApp();
   const [input, setInput] = useState('');
@@ -119,7 +116,9 @@ export function CheckInPage() {
                 </span>
                 {candidates.map((entry) => (
                   <Button key={entry.id} block className="!justify-start" onClick={() => setPicked(entry.id)}>
-                    {entry.fullName} · {entry.phone ?? entry.email}
+                    <Highlight keyword={term}>{entry.fullName}</Highlight>
+                    {' · '}
+                    <Highlight keyword={term}>{entry.phone ?? entry.email}</Highlight>
                   </Button>
                 ))}
               </div>

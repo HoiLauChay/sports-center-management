@@ -24,7 +24,6 @@ export function ReceptionOrderDetailPage() {
   return <OrderDetailView orderId={orderId} back={{ to: '/reception/orders', label: 'Danh sách hóa đơn' }} />;
 }
 
-/** `/reception/orders`: look up any order by number, guest phone, status or date. */
 export function ReceptionOrdersPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -87,6 +86,7 @@ export function ReceptionOrdersPage() {
         </div>
         <OrdersTable
           showBuyer
+          keyword={term}
           data={orders.data}
           isLoading={orders.isFetching}
           error={orders.error}
