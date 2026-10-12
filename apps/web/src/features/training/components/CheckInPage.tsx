@@ -25,14 +25,15 @@ const matchCandidate = (entry: AccountSummary, query: string): boolean => {
   const name = entry.fullName.toLowerCase();
 
   // Digits: match against phone numbers directly.
-  if (/^\d+$/.test(q)) {
+  const rawDigits = q.replace(/[\s.\-()]/g, '');
+  if (rawDigits.length > 0 && /^\d+$/.test(rawDigits)) {
     // Short numbers (< 4 digits): match prefix only (e.g. "098" matches "098...").
     // Non-prefix inputs like "21" won't match because phone numbers start with "0".
-    if (q.length < 4) {
-      return phone.startsWith(q);
+    if (rawDigits.length < 4) {
+      return phone.startsWith(rawDigits);
     }
     // 4+ digits: allow matching the full phone or the last digits (e.g. "4321").
-    return phone.includes(q);
+    return phone.includes(rawDigits);
   }
 
   // Contains '@': look up strictly by email.

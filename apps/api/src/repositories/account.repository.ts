@@ -1,4 +1,4 @@
-import type { ListUsersQuery } from '@sports-center/shared';
+import { normalizePhone, type ListUsersQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { AccountStatus, Prisma, Role } from '~/generated/prisma/client';
@@ -31,20 +31,45 @@ class AccountRepository {
     tx.account.findUnique({ where: { id, role }, include: accountProfileInclude });
 
   findPage = ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
+    const trimmed = q?.trim();
+    let searchFilter: Prisma.AccountWhereInput | undefined;
+
+    if (trimmed) {
+      // Normalize potential phone inputs (strip spaces, dots, dashes, parentheses).
+      const rawDigits = trimmed.replace(/[\s.\-()]/g, '');
+      const normalizedPhone = normalizePhone(rawDigits);
+      const isDigitsOnly = normalizedPhone.length > 0 && /^\d+$/.test(normalizedPhone);
+      const isEmail = trimmed.includes('@');
+
+      if (isEmail) {
+        // Query contains '@': strictly search by email.
+        searchFilter = { email: { contains: trimmed, mode: 'insensitive' } };
+      } else if (isDigitsOnly) {
+        // Query is pure digits: search primarily by phone number.
+        // Short numbers (< 4 digits): match prefix only (e.g. "098" matches "098...").
+        // 4+ digits: allow matching prefix or last digits (e.g. "4321").
+        const orConditions: Prisma.AccountWhereInput[] = [
+          normalizedPhone.length < 4
+            ? { phone: { startsWith: normalizedPhone } }
+            : { phone: { contains: normalizedPhone } },
+        ];
+        // Allow fallback to fullName or email in case name or email username contains digits.
+        orConditions.push({ fullName: { contains: trimmed, mode: 'insensitive' } });
+        orConditions.push({ email: { contains: trimmed, mode: 'insensitive' } });
+        searchFilter = { OR: orConditions };
+      } else {
+        // Text query: search by fullName or email.
+        searchFilter = {
+          OR: [
+            { fullName: { contains: trimmed, mode: 'insensitive' } },
+            { email: { contains: trimmed, mode: 'insensitive' } },
+          ],
+        };
+      }
+    }
+
     const where: Prisma.AccountWhereInput = {
-      AND: [
-        { role: visibleRole },
-        { role, status },
-        q
-          ? {
-              OR: [
-                { fullName: { contains: q, mode: 'insensitive' } },
-                { email: { contains: q, mode: 'insensitive' } },
-                { phone: { contains: q } },
-              ],
-            }
-          : {},
-      ],
+      AND: [{ role: visibleRole }, { role, status }, searchFilter ?? {}],
     };
 
     return Promise.all([
