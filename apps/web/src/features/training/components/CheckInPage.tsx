@@ -1,4 +1,4 @@
-import { ERROR_CODE, type CheckIn } from '@sports-center/shared';
+import { ERROR_CODE, type AccountSummary, type CheckIn } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, App, Button, Card, Input, Result, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import { TriangleAlert } from 'lucide-react';
@@ -14,6 +14,35 @@ import { todayVN } from '~/lib/time';
 import { useCheckIn, useCheckInsToday } from '../hooks/useTraining';
 
 const timeOf = (iso: string) => formatDateTime(iso).slice(0, 5);
+
+/** Matches candidates against user intent (phone number, email, or full name). */
+const matchCandidate = (entry: AccountSummary, query: string): boolean => {
+  const q = query.trim().toLowerCase();
+  if (!q) return false;
+
+  const phone = (entry.phone ?? '').replace(/[\s.\-()]/g, '');
+  const email = entry.email.toLowerCase();
+  const name = entry.fullName.toLowerCase();
+
+  // Digits: match against phone numbers directly.
+  if (/^\d+$/.test(q)) {
+    // Short numbers (< 4 digits): match prefix only (e.g. "098" matches "098...").
+    // Non-prefix inputs like "21" won't match because phone numbers start with "0".
+    if (q.length < 4) {
+      return phone.startsWith(q);
+    }
+    // 4+ digits: allow matching the full phone or the last digits (e.g. "4321").
+    return phone.includes(q);
+  }
+
+  // Contains '@': look up strictly by email.
+  if (q.includes('@')) {
+    return email.includes(q);
+  }
+
+  // Text: look up by member name or email username.
+  return name.includes(q) || email.includes(q);
+};
 
 const columns: TableColumnsType<CheckIn> = [
   {
@@ -40,11 +69,11 @@ export function CheckInPage() {
 
   const found = useQuery({
     queryKey: ['training', 'checkin-find', term],
-    queryFn: () => usersService.list({ q: term, role: 'MEMBER', page: 1, limit: 5 }),
+    queryFn: () => usersService.list({ q: term, role: 'MEMBER', page: 1, limit: 15 }),
     enabled: term.length > 0,
     staleTime: 0,
   });
-  const candidates = found.data?.items ?? [];
+  const candidates = (found.data?.items ?? []).filter((entry) => matchCandidate(entry, term));
   const member =
     candidates.find((entry) => entry.id === picked) ?? (candidates.length === 1 ? candidates[0] : undefined);
 
