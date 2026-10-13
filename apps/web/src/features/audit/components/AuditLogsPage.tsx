@@ -9,7 +9,13 @@ import { formatDateTime, initialsOf, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useAuditActors } from '../hooks/useAuditActors';
 import { useAuditLogs, type AuditLogFilters } from '../hooks/useAuditLogs';
-import { AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, auditFieldLabel, summaryFields } from '../utils/labels';
+import {
+  AUDIT_ACTION_COLOR,
+  AUDIT_ACTION_LABEL,
+  AUDIT_ENTITY_LABEL,
+  auditFieldLabel,
+  summaryFields,
+} from '../utils/labels';
 import { AuditLogDetailDrawer } from './AuditLogDetailDrawer';
 
 interface FilterForm {
@@ -82,6 +88,7 @@ export function AuditLogsPage() {
       title: '#',
       key: 'index',
       width: 56,
+      fixed: 'left',
       render: (_, __, index) => (
         <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String(index + 1).padStart(2, '0')}
@@ -91,19 +98,22 @@ export function AuditLogsPage() {
     {
       title: 'Thời gian',
       key: 'createdAt',
-      width: 150,
+      width: 145,
       render: (_, log) => <span className="whitespace-nowrap">{formatDateTime(log.createdAt)}</span>,
     },
     {
       title: 'Người thực hiện',
       key: 'account',
+      width: 180,
       render: (_, log) =>
         log.account ? (
           <div className="flex min-w-0 items-center gap-2.5">
-            <Avatar size={34} className="!shrink-0 !bg-sc-primary-soft !font-semibold !text-sc-primary">
+            <Avatar size={32} className="!shrink-0 !bg-sc-primary-soft !font-semibold !text-sc-primary">
               {initialsOf(log.account.fullName)}
             </Avatar>
-            <span className="min-w-0 font-semibold [overflow-wrap:anywhere]">{log.account.fullName}</span>
+            <span className="min-w-0 font-semibold truncate" title={log.account.fullName}>
+              {log.account.fullName}
+            </span>
           </div>
         ) : (
           <Tag className="!m-0">Hệ thống / tự động</Tag>
@@ -112,34 +122,43 @@ export function AuditLogsPage() {
     {
       title: 'Hành động',
       key: 'action',
+      width: 120,
       render: (_, log) => (
-        <Tag className="!m-0 !font-mono !text-[11.5px] whitespace-nowrap">
-          {log.action}_{log.entityType}
+        <Tag color={AUDIT_ACTION_COLOR[log.action]} className="!m-0 font-medium">
+          {AUDIT_ACTION_LABEL[log.action]}
         </Tag>
       ),
     },
     {
       title: 'Đối tượng',
       key: 'entity',
+      width: 170,
       render: (_, log) => (
-        <span title={log.entityId} className="whitespace-nowrap">
-          {AUDIT_ENTITY_LABEL[log.entityType]} #{log.entityId.slice(0, 8)}
-        </span>
+        <div className="flex flex-col text-xs leading-tight">
+          <span className="font-semibold text-sc-ink">{AUDIT_ENTITY_LABEL[log.entityType]}</span>
+          <span title={log.entityId} className="font-mono text-[11px] text-sc-muted">
+            #{log.entityId.slice(0, 8)}
+          </span>
+        </div>
       ),
     },
     {
       title: 'Chi tiết',
       key: 'details',
+      render: (_, log) => <span className="text-xs [overflow-wrap:anywhere]">{summarize(log)}</span>,
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 48,
+      align: 'right',
       render: (_, log) => (
-        <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 [overflow-wrap:anywhere]">{summarize(log)}</span>
-          <Button
-            size="small"
-            icon={<Eye size={14} />}
-            aria-label="Xem chi tiết thao tác"
-            onClick={() => setSelected(log)}
-          />
-        </div>
+        <Button
+          size="small"
+          icon={<Eye size={14} />}
+          aria-label="Xem chi tiết thao tác"
+          onClick={() => setSelected(log)}
+        />
       ),
     },
   ];
