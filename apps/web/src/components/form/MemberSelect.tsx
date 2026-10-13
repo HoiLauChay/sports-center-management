@@ -35,6 +35,7 @@ export function MemberSelect({
   return (
     <Select
       {...rest}
+      className={`w-full ${rest.className ?? ''}`}
       showSearch={{ filterOption: false, onSearch: setTerm }}
       allowClear
       value={value ?? undefined}
