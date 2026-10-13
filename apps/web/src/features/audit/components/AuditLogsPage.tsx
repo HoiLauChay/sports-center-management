@@ -79,6 +79,16 @@ export function AuditLogsPage() {
 
   const columns: TableColumnsType<AuditLog> = [
     {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
+    {
       title: 'Thời gian',
       key: 'createdAt',
       width: 150,
@@ -229,7 +239,7 @@ export function AuditLogsPage() {
               dataSource={logs.items}
               loading={logs.isPending}
               pagination={false}
-              scroll={{ x: 960 }}
+              scroll={{ x: 'max-content' }}
               locale={{
                 emptyText: logs.isPending ? (
                   ' '

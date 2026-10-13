@@ -66,6 +66,16 @@ export function ManagerSpecializationsPage() {
   const pending = useSpecializations({ page: 1, limit: 1, status: 'PENDING' });
 
   const columns: TableColumnsType<Specialization> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String((page - 1) * limit + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     { title: 'HLV', key: 'coach', render: (_, entry) => <b>{entry.coach.fullName}</b> },
     {
       title: 'Bộ môn',
