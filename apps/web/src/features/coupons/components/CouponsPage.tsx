@@ -36,9 +36,9 @@ export function CouponsPage() {
       render: (_, coupon) => {
         const state = STATE_TAG[couponState(coupon)];
         return (
-          <div className="flex min-w-44 flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <b className="font-mono text-[14px]">{coupon.code}</b>
-            <span className="text-[13px] text-sc-muted">{coupon.name}</span>
+            <span className="text-[13px] text-sc-muted line-clamp-1">{coupon.name}</span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
             </Tag>
@@ -74,10 +74,10 @@ export function CouponsPage() {
       title: 'Áp dụng',
       key: 'types',
       render: (_, coupon) =>
-        coupon.applicableTypes ? (
-          <div className="flex max-w-56 flex-wrap gap-1">
+        coupon.applicableTypes && coupon.applicableTypes.length < 4 ? (
+          <div className="flex flex-wrap gap-1">
             {coupon.applicableTypes.map((type) => (
-              <Tag key={type} className="!m-0">
+              <Tag key={type} className="!m-0 text-xs">
                 {ORDER_ITEM_TYPE_LABEL[type]}
               </Tag>
             ))}
@@ -87,7 +87,7 @@ export function CouponsPage() {
         ),
     },
     {
-      title: 'Ngưỡng tối thiểu',
+      title: 'Đơn tối thiểu',
       dataIndex: 'minOrderAmount',
       align: 'right',
       render: (value: number | null) =>
@@ -96,11 +96,10 @@ export function CouponsPage() {
     {
       title: 'Lượt dùng',
       key: 'uses',
-      width: 180,
       render: (_, coupon) => (
-        <div className="min-w-32">
+        <div>
           {coupon.maxUses === null ? (
-            <span className="tabular-nums">{coupon.usedCount} / không giới hạn</span>
+            <span className="tabular-nums text-sm">{coupon.usedCount} / không giới hạn</span>
           ) : (
             <Progress
               percent={Math.min(100, Math.round((coupon.usedCount / coupon.maxUses) * 100))}
@@ -115,6 +114,8 @@ export function CouponsPage() {
     {
       title: 'Bật',
       key: 'isActive',
+      width: 65,
+      align: 'center',
       render: (_, coupon) => (
         <Switch
           checked={coupon.isActive}
@@ -128,9 +129,10 @@ export function CouponsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      width: 110,
       align: 'right',
       render: (_, coupon) => (
-        <Space>
+        <Space size="small">
           <Button size="small" onClick={() => openForm(coupon)}>
             Sửa
           </Button>
@@ -185,7 +187,7 @@ export function CouponsPage() {
             columns={columns}
             dataSource={coupons.data}
             loading={coupons.isFetching}
-            scroll={{ x: 1100 }}
+            scroll={coupons.data && coupons.data.length > 0 ? { x: 800 } : undefined}
             pagination={{ pageSize: 10, hideOnSinglePage: true, showSizeChanger: true }}
             locale={{ emptyText: coupons.isPending ? ' ' : <EmptyState title="Chưa có mã giảm giá" /> }}
           />

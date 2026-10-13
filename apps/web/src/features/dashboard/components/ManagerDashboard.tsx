@@ -8,7 +8,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
 import type { GymClass } from '~/features/classes/types';
-import { classStatusTag } from '~/features/classes/utils';
+import { classStatusTag, weeklyText } from '~/features/classes/utils';
 import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/useReports';
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
 import { useSessionsOn } from '~/features/schedule';
@@ -55,49 +55,91 @@ const classColumns: TableColumnsType<GymClass> = [
   {
     title: 'Lớp',
     key: 'class',
+    minWidth: 280,
     render: (_, item) => {
       const tag = classStatusTag(item);
       return (
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to="/admin/classes/$classId" params={{ classId: item.id }} className="font-semibold">
-            {item.name}
-          </Link>
-          <Tag color={tag.color}>{tag.label}</Tag>
+        <div className="flex flex-col gap-2 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/admin/classes/$classId"
+              params={{ classId: item.id }}
+              className="text-[14.5px] font-bold text-sc-ink hover:text-sc-primary hover:underline"
+            >
+              {item.name}
+            </Link>
+            <Tag color={tag.color} className="!m-0 px-2 py-0.5 text-xs font-medium">
+              {tag.label}
+            </Tag>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-sc-muted">
+            <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+              {item.course.sport.name}
+            </Tag>
+            <span>·</span>
+            <span>{item.facility.name}</span>
+            {item.weeklySchedule?.length > 0 && (
+              <>
+                <span>·</span>
+                <span>{weeklyText(item.weeklySchedule)}</span>
+              </>
+            )}
+          </div>
         </div>
       );
     },
   },
-  { title: 'Huấn luyện viên', dataIndex: ['coach', 'fullName'], render: (name?: string) => name ?? '—' },
+  {
+    title: 'Huấn luyện viên',
+    dataIndex: ['coach', 'fullName'],
+    width: 180,
+    render: (name?: string) => <div className="py-3 font-medium text-sc-ink">{name ?? '—'}</div>,
+  },
   {
     title: 'Đã đăng ký',
     key: 'enrolled',
+    width: 180,
     render: (_, item) => (
-      <span className="whitespace-nowrap">
-        {item.enrolledCount} / {item.maxStudents}{' '}
-        <span className={item.enrolledCount < item.minStudents ? 'text-sc-accent' : 'text-sc-muted-2'}>
-          (min {item.minStudents})
+      <div className="flex flex-col gap-1 py-3">
+        <span className="text-[13.5px] font-bold text-sc-ink tabular-nums">
+          {item.enrolledCount} / {item.maxStudents} HV
         </span>
-      </span>
+        <span
+          className={`text-xs ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+        >
+          (Tối thiểu: {item.minStudents} HV)
+        </span>
+      </div>
     ),
   },
   {
     title: 'Tỷ lệ lấp đầy',
     key: 'fill',
-    width: 240,
+    width: 200,
     render: (_, item) => (
-      <Progress
-        percent={Math.round((item.enrolledCount / item.maxStudents) * 100)}
-        size="small"
-        strokeColor={fillState(item).bar}
-      />
+      <div className="py-3">
+        <Progress
+          percent={Math.round((item.enrolledCount / (item.maxStudents || 1)) * 100)}
+          size="small"
+          strokeColor={fillState(item).bar}
+          className="!m-0"
+        />
+      </div>
     ),
   },
   {
     title: 'Đánh giá',
     key: 'state',
+    width: 130,
     render: (_, item) => {
       const state = fillState(item);
-      return <Tag color={state.color}>{state.label}</Tag>;
+      return (
+        <div className="py-3">
+          <Tag color={state.color} className="!m-0 px-2 py-0.5 font-medium text-xs">
+            {state.label}
+          </Tag>
+        </div>
+      );
     },
   },
 ];
@@ -249,12 +291,11 @@ export function ManagerDashboard() {
 
       <Card
         title="Tình trạng đăng ký lớp (OPEN / ONGOING)"
-        className="!mt-4"
-        styles={{ header: { minHeight: 52 }, body: { padding: 0 } }}
+        className="!mt-6"
+        styles={{ header: { minHeight: 54 }, body: { padding: '12px 24px 24px' } }}
       >
         <Table<GymClass>
           rowKey="id"
-          size="middle"
           columns={classColumns}
           dataSource={classes.data?.running}
           loading={classes.isPending}
