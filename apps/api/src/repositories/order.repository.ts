@@ -83,12 +83,27 @@ class OrderRepository {
     tx.order.findUnique({ where: { idempotencyKey }, select: orderSelect });
 
   findPage = ({ from, to, page, limit, ...filters }: ListOrdersQuery) => {
+    const q = filters.q?.trim();
+    const qCondition: Prisma.OrderWhereInput | undefined = q
+      ? {
+          OR: [
+            { orderNumber: { contains: q, mode: 'insensitive' } },
+            { account: { fullName: { contains: q, mode: 'insensitive' } } },
+            { account: { phone: { contains: q } } },
+            { account: { email: { contains: q, mode: 'insensitive' } } },
+            { guestName: { contains: q, mode: 'insensitive' } },
+            { guestPhone: { contains: q } },
+          ],
+        }
+      : undefined;
+
     const where: Prisma.OrderWhereInput = {
       accountId: filters.accountId,
       guestPhone: filters.guestPhone ?? undefined,
       ...(filters.status && statusFilter[filters.status]),
-      orderNumber: filters.orderNumber,
+      orderNumber: filters.orderNumber ? { contains: filters.orderNumber, mode: 'insensitive' } : undefined,
       createdAt: dayRange(from, to),
+      ...(qCondition ? { AND: [qCondition] } : {}),
     };
     return Promise.all([
       prisma.order.findMany({

@@ -2,7 +2,7 @@ import type { PaymentMethod } from '@sports-center/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, getRouteApi } from '@tanstack/react-router';
 import { Alert, Button, Card, Popconfirm, Radio, Result } from 'antd';
-import { Printer } from 'lucide-react';
+import { CreditCard, LayoutGrid, Printer, UserCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -113,6 +113,80 @@ function TransferPhase({
           trạng thái hóa đơn.
         </div>
       )}
+    </Card>
+  );
+}
+
+function CounterGuideSteps() {
+  return (
+    <Card className="overflow-hidden border border-sc-border bg-white shadow-xs">
+      <div className="py-2">
+        <div className="text-center max-w-xl mx-auto mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sc-paper text-xs font-semibold text-sc-ink border border-sc-border mb-2.5">
+            <span className="size-2 rounded-full bg-emerald-600 animate-pulse" />
+            Quy trình bán hàng tại quầy
+          </div>
+          <h3 className="m-0 font-display text-lg font-bold text-sc-ink">3 bước hoàn tất đơn hàng nhanh chóng</h3>
+          <p className="mt-1 text-xs text-sc-muted">
+            Vui lòng chọn thông tin khách hàng ở Bước 1 phía trên để kích hoạt danh mục dịch vụ và giỏ hàng.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          {/* Bước 1 */}
+          <div className="relative rounded-xl border border-sc-border bg-sc-paper/60 p-4 transition-all">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-ink text-xs font-bold text-sc-lime">
+                1
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                Đang thực hiện
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <UserCheck className="size-4 text-sc-ink" />
+              <h4 className="m-0 font-bold text-sm text-sc-ink">Chọn người mua</h4>
+            </div>
+            <p className="m-0 text-xs text-sc-muted leading-relaxed">
+              Tìm kiếm hội viên bằng tên/SĐT hoặc chọn khách vãng lai để bắt đầu lập đơn.
+            </p>
+          </div>
+
+          {/* Bước 2 */}
+          <div className="relative rounded-xl border border-sc-border/60 bg-sc-paper/30 p-4 opacity-75">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-xs font-bold text-sc-muted">
+                2
+              </span>
+              <span className="text-[11px] font-medium text-sc-muted">Chờ bước 1</span>
+            </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <LayoutGrid className="size-4 text-sc-muted" />
+              <h4 className="m-0 font-bold text-sm text-sc-ink">Thêm dịch vụ</h4>
+            </div>
+            <p className="m-0 text-xs text-sc-muted leading-relaxed">
+              Đặt sân lẻ, mua gói sân định kỳ, ghi danh lớp thể thao hoặc đăng ký gói tập.
+            </p>
+          </div>
+
+          {/* Bước 3 */}
+          <div className="relative rounded-xl border border-sc-border/60 bg-sc-paper/30 p-4 opacity-75">
+            <div className="flex items-center justify-between mb-3">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-xs font-bold text-sc-muted">
+                3
+              </span>
+              <span className="text-[11px] font-medium text-sc-muted">Chờ bước 2</span>
+            </div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <CreditCard className="size-4 text-sc-muted" />
+              <h4 className="m-0 font-bold text-sm text-sc-ink">Thu tiền & Xuất hóa đơn</h4>
+            </div>
+            <p className="m-0 text-xs text-sc-muted leading-relaxed">
+              Áp dụng mã giảm giá, thu tiền mặt, quẹt thẻ POS hoặc tạo mã QR chuyển khoản.
+            </p>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
@@ -229,7 +303,7 @@ export function CounterOrderPage() {
         <CounterBuyerCard buyer={cart.buyer} onChange={store.setBuyer} balance={quote?.walletBalance} disabled={busy} />
 
         {!hasBuyer ? (
-          <Alert type="info" showIcon title="Chọn người mua trước, sau đó thêm dịch vụ vào đơn." />
+          <CounterGuideSteps />
         ) : (
           <>
             <CounterServicePicker

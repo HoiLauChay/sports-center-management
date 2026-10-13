@@ -1,5 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { App, Checkbox, Col, DatePicker, Form, Input, InputNumber, Modal, Row, Segmented, Switch } from 'antd';
+import {
+  App,
+  Button,
+  Checkbox,
+  Col,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Row,
+  Segmented,
+  Space,
+  Switch,
+} from 'antd';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -114,16 +128,41 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
     <Modal
       open={open}
       title={coupon ? `Sửa mã ${coupon.code}` : 'Tạo mã giảm giá'}
-      okText="Lưu"
-      cancelText="Hủy"
       width={640}
+      centered
       mask={{ closable: false }}
-      confirmLoading={save.isPending}
-      onOk={() => void submit()}
       onCancel={() => !save.isPending && onClose()}
       destroyOnHidden
+      footer={
+        <div className="flex items-center justify-between">
+          <FormField
+            control={control}
+            name="isActive"
+            render={(field) => (
+              <div className="flex items-center gap-2">
+                <Switch checked={field.value} onChange={field.onChange} />
+                <span className="text-sm font-medium text-sc-text">{field.value ? 'Đang bật' : 'Tắt'}</span>
+              </div>
+            )}
+          />
+          <Space>
+            <Button onClick={onClose} disabled={save.isPending}>
+              Hủy
+            </Button>
+            <Button type="primary" loading={save.isPending} onClick={() => void submit()}>
+              Lưu
+            </Button>
+          </Space>
+        </div>
+      }
     >
-      <Form layout="vertical" requiredMark={false} onFinish={() => void submit()} disabled={save.isPending}>
+      <Form
+        layout="vertical"
+        requiredMark={false}
+        onFinish={() => void submit()}
+        disabled={save.isPending}
+        className="[&_.ant-form-item]:!mb-3"
+      >
         <FormRootError message={form.formState.errors.root?.message} />
         <Row gutter={16}>
           <Col xs={24} sm={10}>
@@ -213,7 +252,6 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                 control={control}
                 name="maxDiscount"
                 label="Giảm tối đa"
-                extra="Để trống = không giới hạn"
                 render={(field, invalid) => (
                   <MoneyInput
                     ref={field.ref}
@@ -222,6 +260,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                     onBlur={field.onBlur}
                     min={1}
                     step={50_000}
+                    placeholder="Không giới hạn"
                     status={invalid ? 'error' : undefined}
                   />
                 )}
@@ -254,7 +293,6 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               control={control}
               name="maxUses"
               label="Tổng lượt dùng"
-              extra="Để trống = không giới hạn"
               render={(field, invalid) => (
                 <InputNumber
                   ref={field.ref}
@@ -263,6 +301,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   onBlur={field.onBlur}
                   min={1}
                   precision={0}
+                  placeholder="Không giới hạn"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -292,8 +331,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
             <FormField
               control={control}
               name="minOrderAmount"
-              label="Ngưỡng tối thiểu"
-              extra="Tổng giá gốc các dịch vụ áp dụng"
+              label="Đơn tối thiểu"
               render={(field, invalid) => (
                 <MoneyInput
                   ref={field.ref}
@@ -301,6 +339,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   onChange={(value) => field.onChange(value ?? null)}
                   onBlur={field.onBlur}
                   step={50_000}
+                  placeholder="0 ₫"
                   status={invalid ? 'error' : undefined}
                 />
               )}
@@ -311,26 +350,26 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
         <FormField
           control={control}
           name="applicableTypes"
-          label="Loại dịch vụ áp dụng"
-          extra="Không chọn = áp dụng mọi loại dịch vụ. Không áp dụng cho nạp ví."
+          label={
+            <span className="flex items-center gap-1.5">
+              <span>Dịch vụ áp dụng</span>
+              <span className="text-xs font-normal text-sc-muted">(để trống = áp dụng cho mọi dịch vụ)</span>
+            </span>
+          }
           render={(field) => (
-            <Checkbox.Group
-              value={field.value}
-              onChange={(value) => field.onChange(value)}
-              options={ORDER_ITEM_TYPES.map((type) => ({ value: type, label: ORDER_ITEM_TYPE_LABEL[type] }))}
-            />
+            <Checkbox.Group value={field.value} onChange={(value) => field.onChange(value)} className="!w-full">
+              <Row gutter={[12, 8]}>
+                {ORDER_ITEM_TYPES.map((type) => (
+                  <Col xs={12} sm={6} key={type}>
+                    <Checkbox value={type} className="!w-full whitespace-nowrap">
+                      {ORDER_ITEM_TYPE_LABEL[type]}
+                    </Checkbox>
+                  </Col>
+                ))}
+              </Row>
+            </Checkbox.Group>
           )}
         />
-        <FormField
-          control={control}
-          name="isActive"
-          label="Đang bật"
-          render={(field) => <Switch checked={field.value} onChange={field.onChange} />}
-        />
-        <p className="m-0 text-xs text-sc-muted-2">
-          Mỗi đơn dùng một mã, không cộng dồn, chỉ dành cho thành viên có tài khoản. Giảm tính một lần trên tổng sau ưu
-          đãi gói của các dịch vụ áp dụng rồi phân bổ về từng dòng.
-        </p>
         <button type="submit" hidden />
       </Form>
     </Modal>

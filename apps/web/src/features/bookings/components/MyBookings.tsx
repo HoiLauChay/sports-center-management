@@ -25,23 +25,27 @@ function BookingsTab() {
     {
       title: 'Sân / phòng',
       key: 'facility',
+      width: '36%',
       render: (_, booking) => (
-        <div className="flex min-w-36 flex-col gap-0.5">
-          <b>{booking.facility.name}</b>
-          <span className="flex flex-wrap gap-1">
-            {booking.packageId && <Tag className="!m-0">Gói định kỳ</Tag>}
-            {BENEFIT_TEXT[booking.benefit] && (
-              <Tag color="success" className="!m-0">
-                {BENEFIT_TEXT[booking.benefit]}
-              </Tag>
-            )}
-          </span>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold text-sc-ink">{booking.facility.name}</span>
+          {(booking.packageId || BENEFIT_TEXT[booking.benefit]) && (
+            <span className="flex flex-wrap gap-1">
+              {booking.packageId && <Tag className="!m-0">Gói định kỳ</Tag>}
+              {BENEFIT_TEXT[booking.benefit] && (
+                <Tag color="success" className="!m-0">
+                  {BENEFIT_TEXT[booking.benefit]}
+                </Tag>
+              )}
+            </span>
+          )}
         </div>
       ),
     },
     {
       title: 'Thời gian',
       key: 'time',
+      width: '34%',
       render: (_, booking) => (
         <span className="whitespace-nowrap">
           {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
@@ -52,6 +56,7 @@ function BookingsTab() {
       title: 'Đã trả',
       dataIndex: 'paidAmount',
       align: 'right',
+      width: '15%',
       render: (value: number | null) =>
         value === null ? (
           <span className="whitespace-nowrap text-sc-muted">Theo gói</span>
@@ -62,6 +67,7 @@ function BookingsTab() {
     {
       title: 'Trạng thái',
       key: 'status',
+      width: '15%',
       render: (_, booking) => (
         <div className="flex flex-col items-start gap-0.5">
           <Tag color={booking.status === 'CONFIRMED' ? 'success' : 'default'} className="!m-0">
@@ -102,7 +108,7 @@ function BookingsTab() {
         columns={columns}
         dataSource={bookings.data?.items}
         loading={bookings.isFetching}
-        scroll={{ x: 'max-content' }}
+        scroll={{ x: 650 }}
         locale={{ emptyText: bookings.isFetching ? ' ' : <EmptyState title="Chưa có lượt đặt nào" /> }}
         pagination={{
           current: page,
@@ -120,10 +126,16 @@ function PackagesTab() {
   const packages = useMyPackages();
 
   const columns: TableColumnsType<FacilityPackage> = [
-    { title: 'Sân / phòng', key: 'facility', render: (_, item) => <b>{item.facility.name}</b> },
+    {
+      title: 'Sân / phòng',
+      key: 'facility',
+      width: '28%',
+      render: (_, item) => <span className="font-semibold text-sc-ink">{item.facility.name}</span>,
+    },
     {
       title: 'Lịch',
       key: 'schedule',
+      width: '22%',
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
@@ -136,6 +148,7 @@ function PackagesTab() {
     {
       title: 'Thời gian',
       key: 'range',
+      width: '24%',
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {formatDate(item.startDate)} – {formatDate(item.endDate)}
@@ -145,12 +158,14 @@ function PackagesTab() {
     {
       title: 'Buổi',
       key: 'sessions',
+      width: '14%',
       render: (_, item) =>
         `${item.bookings.filter((booking) => booking.status === 'CONFIRMED').length}/${item.bookings.length} còn hiệu lực`,
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
+      width: '12%',
       render: (value: FacilityPackage['status']) => (
         <Tag color={value === 'ACTIVE' ? 'success' : 'default'} className="!m-0">
           {value === 'ACTIVE' ? 'Đang hiệu lực' : 'Đã hủy'}
@@ -166,7 +181,7 @@ function PackagesTab() {
       columns={columns}
       dataSource={packages.data}
       loading={packages.isFetching}
-      scroll={{ x: 'max-content' }}
+      scroll={{ x: 650 }}
       pagination={false}
       locale={{ emptyText: packages.isFetching ? ' ' : <EmptyState title="Chưa có gói định kỳ nào" /> }}
     />

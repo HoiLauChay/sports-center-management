@@ -7,10 +7,11 @@ import {
 } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Button, Card, Dropdown, Input, Select, type TableColumnsType } from 'antd';
+import { Button, Card, Dropdown, Select, type TableColumnsType } from 'antd';
 import { Ellipsis, Eye, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
 import { useCurrentUser } from '~/features/auth';
@@ -18,7 +19,7 @@ import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { CreateUserModal } from './CreateUserModal';
-import { USER_COLUMNS } from './userColumns';
+import { userColumns } from './userColumns';
 import { UserStatusModal } from './UserStatusModal';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/users/');
@@ -44,12 +45,13 @@ export function UsersPage() {
 
   const openDetail = (id: string) => void navigateTo({ to: '/admin/users/$userId', params: { userId: id } });
 
+  const cols = userColumns(search.q);
   const columns: TableColumnsType<AccountSummary> = [
-    USER_COLUMNS.user,
-    USER_COLUMNS.phone,
-    USER_COLUMNS.role,
-    USER_COLUMNS.status,
-    USER_COLUMNS.createdAt,
+    cols.user,
+    cols.phone,
+    cols.role,
+    cols.status,
+    cols.createdAt,
     {
       title: 'Thao tác',
       key: 'actions',
@@ -91,14 +93,13 @@ export function UsersPage() {
       />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
-          <Input.Search
-            key={search.q ?? ''}
-            defaultValue={search.q}
-            placeholder="Tìm theo tên, email, SĐT"
+          <SearchInput
+            value={search.q ?? ''}
+            placeholder="Tìm theo tên, email, SĐT..."
             maxLength={255}
-            allowClear
-            onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}
             className="w-full sm:!w-72"
+            onChange={(q) => updateSearch({ q: q || undefined, page: undefined })}
+            loading={users.isFetching}
           />
           <Select
             value={search.role}

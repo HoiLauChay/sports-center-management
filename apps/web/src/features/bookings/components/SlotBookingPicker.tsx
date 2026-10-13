@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Segmented, Select } from 'antd';
+import { Alert, Button, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
@@ -114,7 +114,12 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Segmented
+        <Select
+          aria-label="Chọn bộ môn"
+          showSearch
+          optionFilterProp="label"
+          placeholder="Chọn bộ môn"
+          className="w-full sm:!w-44"
           value={sportId}
           options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
           onChange={(value) => {
@@ -125,6 +130,8 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         />
         <Select
           aria-label="Chọn sân / phòng"
+          showSearch
+          optionFilterProp="label"
           className="!min-w-48"
           value={facilityId}
           options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
@@ -219,17 +226,17 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                 </div>
               </div>
               <div className="text-[14px]">
-                <div className="flex justify-between border-b border-dashed border-sc-border py-1">
+                <div className="flex justify-between border-b border-sc-border-soft py-1.5">
                   <span>Giá niêm yết</span>
-                  <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
+                  <span className="font-medium tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
                 </div>
                 {line && line.membershipDiscount > 0 && (
-                  <div className="flex justify-between border-b border-dashed border-sc-border py-1 text-sc-success">
+                  <div className="flex justify-between border-b border-sc-border-soft py-1.5 text-sc-success">
                     <span>{BENEFIT_TEXT[String(line.snapshot?.benefit)] ?? 'Ưu đãi gói'}</span>
-                    <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                    <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between py-1.5 text-[17px] font-extrabold">
+                <div className="flex justify-between border-t border-sc-border pt-2 pb-1 text-[17px] font-extrabold text-sc-ink">
                   <span>Tạm tính</span>
                   <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.total)}</span>
                 </div>

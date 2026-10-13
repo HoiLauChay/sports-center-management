@@ -19,21 +19,23 @@ const STATUS_LABEL: Record<SlotTone, string> = {
 };
 
 const CELL_STYLE: Record<SlotTone, string> = {
-  AVAILABLE: 'bg-white text-sc-ink hover:bg-sc-primary-soft hover:border-sc-primary-border cursor-pointer',
-  PARTIAL: 'bg-[#fff7e0] border-[#f3dfa3] hover:bg-[#ffefbd] cursor-pointer text-[#8a6100]',
-  FULL: 'bg-sc-paper-2 text-sc-muted-2 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(20,19,15,.06)_5px_6px)]',
-  CLASS: 'bg-sc-primary-soft text-sc-primary cursor-not-allowed',
-  MAINTENANCE: 'bg-[#fbe9e4] text-sc-accent cursor-not-allowed',
-  CLOSED: 'bg-sc-paper text-sc-muted-2 cursor-not-allowed opacity-70',
+  AVAILABLE:
+    'bg-white text-emerald-800 border-slate-200/90 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-xs cursor-pointer',
+  PARTIAL:
+    'bg-amber-50/90 border-amber-200/90 text-amber-900 hover:bg-amber-100 hover:border-amber-300 cursor-pointer shadow-xs',
+  FULL: 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(0,0,0,.03)_5px_6px)]',
+  CLASS: 'bg-emerald-50/90 border-emerald-200 text-emerald-800 cursor-not-allowed',
+  MAINTENANCE: 'bg-rose-50/90 border-rose-200 text-rose-800 cursor-not-allowed',
+  CLOSED: 'bg-slate-50/80 border-slate-100 text-slate-300 cursor-not-allowed',
 };
 
-const LEGEND_STYLE: Record<SlotTone, string> = {
-  AVAILABLE: 'bg-white',
-  PARTIAL: 'bg-[#fff7e0] !border-[#f3dfa3]',
-  FULL: 'bg-sc-paper-2',
-  CLASS: 'bg-sc-primary-soft',
-  MAINTENANCE: 'bg-[#fbe9e4]',
-  CLOSED: 'bg-sc-paper opacity-70',
+const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
+  AVAILABLE: { bg: 'bg-white', border: 'border-slate-300' },
+  PARTIAL: { bg: 'bg-amber-100', border: 'border-amber-300' },
+  FULL: { bg: 'bg-slate-200', border: 'border-slate-300' },
+  CLASS: { bg: 'bg-emerald-100', border: 'border-emerald-300' },
+  MAINTENANCE: { bg: 'bg-rose-100', border: 'border-rose-300' },
+  CLOSED: { bg: 'bg-slate-100', border: 'border-slate-200' },
 };
 
 function tooltipOf(slot: FacilitySlot) {
@@ -136,7 +138,7 @@ export function SlotGrid({
     );
   }
 
-  const template = `minmax(112px,190px) repeat(${columns.length}, minmax(76px, 1fr))`;
+  const template = `minmax(200px, 250px) repeat(${columns.length}, minmax(72px, 1fr))`;
 
   return (
     <div>
@@ -146,67 +148,101 @@ export function SlotGrid({
         role="region"
         aria-label="Lịch slot, cuộn ngang để xem các giờ"
       >
-        <div role="grid" aria-label="Lịch sân theo khung giờ" aria-busy={loading} className="min-w-[720px]">
-          <div role="row" className="grid gap-1" style={{ gridTemplateColumns: template }}>
-            <div className="sticky left-0 z-[1] bg-white" />
+        <div role="grid" aria-label="Lịch sân theo khung giờ" aria-busy={loading} className="min-w-[760px]">
+          {/* Header Row */}
+          <div role="row" className="grid gap-1.5" style={{ gridTemplateColumns: template }}>
+            <div className="sticky left-0 z-10 flex items-end bg-white pb-1 pl-1 pr-3 border-r border-slate-200/90 shadow-[3px_0_8px_-3px_rgba(0,0,0,0.05)]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sân / Phòng</span>
+            </div>
             {columns.map((slot) => (
               <div
                 key={slot.startTime}
                 role="columnheader"
-                className="pb-1 text-center text-[11.5px] font-semibold text-sc-muted tabular-nums"
+                className="flex items-center justify-center py-1.5 px-1 rounded-md bg-slate-100/80 text-center font-mono text-[11.5px] font-semibold text-sc-ink tabular-nums"
               >
                 {slot.startTime}
               </div>
             ))}
           </div>
+
+          {/* Facility Rows */}
           {facilities.map((facility) => {
             const schedule = schedules[facility.id];
             return (
-              <div key={facility.id} role="row" className="mt-1 grid gap-1" style={{ gridTemplateColumns: template }}>
-                <div className="sticky left-0 z-[1] flex min-w-0 flex-col justify-center bg-white pr-2">
-                  <b className="truncate text-[13.5px]">{facility.name}</b>
-                  <span className="truncate text-[11.5px] text-sc-muted">
+              <div
+                key={facility.id}
+                role="row"
+                className="mt-1.5 grid gap-1.5"
+                style={{ gridTemplateColumns: template }}
+              >
+                {/* Sticky Facility Column */}
+                <div className="sticky left-0 z-10 flex min-w-0 flex-col justify-center bg-white py-1 pl-1 pr-3 border-r border-slate-200/90 shadow-[3px_0_8px_-3px_rgba(0,0,0,0.05)]">
+                  <span className="font-semibold text-sc-ink text-[13.5px] truncate" title={facility.name}>
+                    {facility.name}
+                  </span>
+                  <span className="text-[11.5px] text-sc-muted truncate">
                     {formatVND(facility.pricePerSlot)}/slot
                     {facility.capacityPerSlot > 1 ? ` · ${facility.capacityPerSlot} chỗ` : ''}
                   </span>
                 </div>
+
+                {/* Time Slots */}
                 {columns.map((column, index) => {
                   const slot = schedule?.slots[index];
                   if (!slot) {
-                    return <div key={column.startTime} className="h-10 animate-pulse rounded-md bg-sc-paper-2" />;
+                    return <div key={column.startTime} className="h-11 animate-pulse rounded-lg bg-slate-100" />;
                   }
                   const selected =
                     currentSelection?.facilityId === facility.id &&
                     index >= currentSelection.startIndex &&
                     index < currentSelection.startIndex + currentSelection.count;
                   const selectable = isSelectableSlot(slot);
-                  const label =
-                    selected && index === currentSelection.startIndex && currentSelection.count > 1
-                      ? `${slot.startTime}`
-                      : slot.status === 'CLASS'
-                        ? 'Lớp'
-                        : slot.status === 'MAINTENANCE'
-                          ? 'BT'
-                          : slot.capacity > 1 && slot.status !== 'CLOSED'
-                            ? `${slot.booked}/${slot.capacity}`
-                            : '';
+                  const tone = toneOf(slot);
+
                   return (
-                    <Tooltip key={slot.startTime} title={tooltipOf(slot)} mouseEnterDelay={0.3}>
+                    <Tooltip key={slot.startTime} title={tooltipOf(slot)} mouseEnterDelay={0.25}>
                       <button
                         type="button"
                         role="gridcell"
                         disabled={loading || !onSelect || !selectable}
                         aria-pressed={selected}
-                        aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
+                        aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[tone]}${selected ? ', đang chọn' : ''}`}
                         onClick={() => click(facility.id, index)}
-                        className={`h-10 rounded-md border border-sc-border-soft text-[11.5px] font-semibold tabular-nums [transition:background_0.12s,border-color_0.12s] disabled:opacity-100 ${
-                          selected ? '!border-sc-primary !bg-sc-primary !text-sc-lime' : CELL_STYLE[toneOf(slot)]
+                        className={`group/cell relative flex flex-col items-center justify-center h-11 rounded-lg border text-xs tabular-nums transition-all disabled:opacity-100 ${
+                          selected
+                            ? '!border-sc-primary !bg-sc-primary !text-white shadow-sm font-semibold'
+                            : CELL_STYLE[tone]
                         }`}
                       >
-                        <span>{slot.startTime}</span>
-                        <span className="text-[10px]">
-                          {selected ? '✓ Đang chọn' : label || STATUS_LABEL[toneOf(slot)]}
-                        </span>
+                        {selected ? (
+                          <span className="font-bold text-[11.5px] text-white">✓ Chọn</span>
+                        ) : slot.status === 'CLASS' ? (
+                          <span className="font-semibold text-[11px] text-emerald-800">Có lớp</span>
+                        ) : slot.status === 'MAINTENANCE' ? (
+                          <span className="font-semibold text-[11px] text-rose-700">Bảo trì</span>
+                        ) : slot.status === 'CLOSED' ? (
+                          <span className="text-[11px] text-slate-300">Đóng</span>
+                        ) : slot.status === 'FULL' ? (
+                          <span className="font-medium text-[11px] text-slate-400">Hết chỗ</span>
+                        ) : tone === 'PARTIAL' ? (
+                          <div className="flex flex-col items-center justify-center leading-none">
+                            <span className="font-bold text-xs text-amber-900">
+                              {slot.booked}/{slot.capacity}
+                            </span>
+                            <span className="text-[9.5px] text-amber-700/80 mt-0.5">
+                              còn {slot.capacity - slot.booked}
+                            </span>
+                          </div>
+                        ) : slot.capacity > 1 ? (
+                          <div className="flex flex-col items-center justify-center leading-none">
+                            <span className="font-medium text-xs text-emerald-700">0/{slot.capacity}</span>
+                            <span className="text-[9.5px] text-emerald-600/70 mt-0.5">Trống</span>
+                          </div>
+                        ) : (
+                          <span className="font-medium text-[11.5px] text-emerald-700 group-hover/cell:scale-105 transition-transform">
+                            Trống
+                          </span>
+                        )}
                       </button>
                     </Tooltip>
                   );
@@ -216,17 +252,22 @@ export function SlotGrid({
           })}
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-sc-muted">
+
+      {/* Legend */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-xs text-sc-muted">
+        <span className="font-semibold text-sc-ink-2">Chú thích:</span>
         {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotTone[]).map((status) => (
-          <span key={status} className="inline-flex items-center gap-1.5">
-            <i className={`inline-block size-3.5 rounded-sm border border-sc-border-soft ${LEGEND_STYLE[status]}`} />
+          <span key={status} className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
+            <span
+              className={`inline-block size-3 rounded border ${LEGEND_BADGE[status].bg} ${LEGEND_BADGE[status].border}`}
+            />
             {STATUS_LABEL[status]}
           </span>
         ))}
         {onSelect && (
           <>
-            <span className="inline-flex items-center gap-1.5">
-              <i className="inline-block size-3.5 rounded-sm bg-sc-primary" />
+            <span className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
+              <span className="inline-block size-3 rounded bg-sc-primary" />
               Đang chọn
             </span>
             <span className="text-sc-muted-2">Bấm ô kề bên để kéo dài, tối đa {maxSlots} slot.</span>

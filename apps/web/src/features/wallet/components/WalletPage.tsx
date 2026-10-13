@@ -72,19 +72,20 @@ function TransactionsTab() {
   const wallet = useMyWallet({ page, limit, type });
 
   return (
-    <>
-      <Segmented
-        className="mb-4"
-        value={type ?? 'ALL'}
-        onChange={(value) => {
-          setType(value === 'ALL' ? undefined : (value as WalletTransactionType));
-          setPage(1);
-        }}
-        options={[
-          { value: 'ALL', label: 'Tất cả' },
-          ...WALLET_TRANSACTION_TYPES.map((value) => ({ value, label: WALLET_TX_TAG[value].label })),
-        ]}
-      />
+    <div className="pt-2">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Segmented
+          value={type ?? 'ALL'}
+          onChange={(value) => {
+            setType(value === 'ALL' ? undefined : (value as WalletTransactionType));
+            setPage(1);
+          }}
+          options={[
+            { value: 'ALL', label: 'Tất cả' },
+            ...WALLET_TRANSACTION_TYPES.map((value) => ({ value, label: WALLET_TX_TAG[value].label })),
+          ]}
+        />
+      </div>
       <WalletTransactionsTable
         data={wallet.data?.transactions}
         isLoading={wallet.isFetching}
@@ -97,7 +98,7 @@ function TransactionsTab() {
           setLimit(nextLimit);
         }}
       />
-    </>
+    </div>
   );
 }
 
@@ -112,18 +113,20 @@ function TopUpInvoicesTab() {
   });
 
   return (
-    <>
-      <Select
-        allowClear
-        placeholder="Mọi trạng thái"
-        className="mb-4 w-full sm:!w-56"
-        value={status}
-        onChange={(value: Invoice['status'] | undefined) => {
-          setStatus(value);
-          setPage(1);
-        }}
-        options={INVOICE_STATUSES.map((value) => ({ value, label: INVOICE_STATUS_TAG[value].label }))}
-      />
+    <div className="pt-2">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Select
+          allowClear
+          placeholder="Mọi trạng thái"
+          className="w-full sm:!w-56"
+          value={status}
+          onChange={(value: Invoice['status'] | undefined) => {
+            setStatus(value);
+            setPage(1);
+          }}
+          options={INVOICE_STATUSES.map((value) => ({ value, label: INVOICE_STATUS_TAG[value].label }))}
+        />
+      </div>
       <DataTable<Invoice>
         columns={invoiceColumns}
         data={invoices.data}
@@ -139,7 +142,7 @@ function TopUpInvoicesTab() {
         emptyTitle="Chưa có hóa đơn nạp ví"
         emptyDescription="Mỗi lần bạn tạo yêu cầu nạp tiền sẽ có một hóa đơn."
       />
-    </>
+    </div>
   );
 }
 
