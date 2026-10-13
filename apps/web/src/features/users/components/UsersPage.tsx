@@ -7,10 +7,11 @@ import {
 } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Button, Card, Dropdown, Input, Select, type TableColumnsType } from 'antd';
+import { Button, Card, Dropdown, Select, type TableColumnsType } from 'antd';
 import { Ellipsis, Eye, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
 import { useCurrentUser } from '~/features/auth';
@@ -91,14 +92,13 @@ export function UsersPage() {
       />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
-          <Input.Search
-            key={search.q ?? ''}
-            defaultValue={search.q}
-            placeholder="Tìm theo tên, email, SĐT"
+          <SearchInput
+            value={search.q ?? ''}
+            placeholder="Tìm theo tên, email, SĐT..."
             maxLength={255}
-            allowClear
-            onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}
             className="w-full sm:!w-72"
+            onChange={(q) => updateSearch({ q: q || undefined, page: undefined })}
+            loading={users.isFetching}
           />
           <Select
             value={search.role}

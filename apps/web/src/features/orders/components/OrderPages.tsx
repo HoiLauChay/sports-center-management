@@ -1,8 +1,9 @@
 import { phoneSchema } from '@sports-center/shared';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Card, DatePicker, Input, Select } from 'antd';
+import { Card, DatePicker, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ORDER_STATUS_TAG } from '~/constants/payment';
 import type { OrderStatus } from '~/features/checkout/types';
@@ -57,15 +58,16 @@ export function ReceptionOrdersPage() {
       />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
-          <Input.Search
-            allowClear
-            placeholder="Số hóa đơn hoặc SĐT khách"
+          <SearchInput
+            placeholder="Số hóa đơn hoặc SĐT khách..."
             maxLength={50}
             className="w-full sm:!w-72"
-            onSearch={(value) => {
-              setTerm(value.trim());
+            value={term}
+            onChange={(value) => {
+              setTerm(value);
               reset();
             }}
+            loading={orders.isFetching}
           />
           <Select
             allowClear

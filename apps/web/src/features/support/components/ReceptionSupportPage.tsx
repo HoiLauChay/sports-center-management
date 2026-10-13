@@ -1,6 +1,7 @@
 import { Button, Card, Drawer, Input, Segmented, Select, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDateTime, formatRelative } from '~/lib/format';
@@ -213,15 +214,16 @@ export function ReceptionSupportPage() {
             }}
             options={SUPPORT_CATEGORIES.map((value) => ({ value, label: SUPPORT_CATEGORY_LABEL[value] }))}
           />
-          <Input.Search
-            allowClear
-            placeholder="Tiêu đề hoặc tên thành viên"
+          <SearchInput
+            placeholder="Tiêu đề hoặc tên thành viên..."
             maxLength={255}
             className="w-full sm:!w-64"
-            onSearch={(value) => {
-              setQ(value.trim());
+            value={q}
+            onChange={(value) => {
+              setQ(value);
               reset();
             }}
+            loading={requests.isFetching}
           />
         </div>
         <DataTable<SupportRequest>

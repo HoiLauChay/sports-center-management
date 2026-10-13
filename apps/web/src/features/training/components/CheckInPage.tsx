@@ -1,10 +1,11 @@
 import { ERROR_CODE, type AccountSummary, type CheckIn } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, App, Button, Card, Input, Result, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, App, Button, Card, Result, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { InfoTable } from '~/components/data/InfoTable';
 import { EmptyState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
 import { usersService } from '~/features/users/services/users.service';
@@ -62,7 +63,6 @@ const columns: TableColumnsType<CheckIn> = [
  */
 export function CheckInPage() {
   const { message } = App.useApp();
-  const [input, setInput] = useState('');
   const [term, setTerm] = useState('');
   const [picked, setPicked] = useState<string | undefined>();
   const [done, setDone] = useState<CheckIn | null>(null);
@@ -113,26 +113,15 @@ export function CheckInPage() {
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <Card styles={{ body: { padding: 20 } }}>
           <div className="flex flex-col gap-3.5">
-            <div className="flex">
-              <Input
-                size="large"
-                allowClear
-                value={input}
-                placeholder="SĐT, email hoặc tên thành viên"
-                maxLength={255}
-                className="!rounded-r-none"
-                onChange={(event) => setInput(event.target.value)}
-                onPressEnter={() => reset(input.trim())}
-              />
-              <Button
-                type="primary"
-                size="large"
-                className="!rounded-l-none !px-[18px]"
-                onClick={() => reset(input.trim())}
-              >
-                Tìm
-              </Button>
-            </div>
+            <SearchInput
+              size="large"
+              allowClear
+              value={term}
+              placeholder="SĐT, email hoặc tên thành viên"
+              maxLength={255}
+              onChange={reset}
+              loading={found.isFetching}
+            />
 
             {found.isFetching && (
               <div className="flex justify-center py-2">
@@ -164,7 +153,6 @@ export function CheckInPage() {
                 extra={
                   <Button
                     onClick={() => {
-                      setInput('');
                       reset('');
                     }}
                   >

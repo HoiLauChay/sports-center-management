@@ -4,23 +4,12 @@ import {
   type BankTransactionStatus,
   type ReconciliationDay,
 } from '@sports-center/shared';
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Input,
-  Segmented,
-  Space,
-  Table,
-  Tabs,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Alert, Button, Card, DatePicker, Segmented, Space, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -150,15 +139,16 @@ function TransactionsTab() {
             reset();
           }}
         />
-        <Input.Search
-          allowClear
-          placeholder="Nội dung, mã thanh toán hoặc mã tham chiếu"
+        <SearchInput
+          placeholder="Nội dung, mã thanh toán hoặc mã tham chiếu..."
           maxLength={100}
           className="w-full sm:!w-64"
-          onSearch={(value) => {
-            setQ(value.trim());
+          value={q}
+          onChange={(value) => {
+            setQ(value);
             reset();
           }}
+          loading={transactions.isFetching}
         />
       </div>
       <DataTable<BankTransaction>

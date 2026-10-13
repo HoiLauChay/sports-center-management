@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Input, Pagination, Select } from 'antd';
+import { Card, Pagination, Select } from 'antd';
 import { useState } from 'react';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { toApiError } from '~/lib/http-errors';
@@ -24,15 +25,16 @@ export function ClassesPage() {
     <>
       <PageHeader title="Lớp học" description="Các lớp đang nhận đăng ký. Bấm vào lớp để xem lịch và thêm vào đơn." />
       <div className="mb-4 flex flex-wrap gap-3">
-        <Input.Search
-          allowClear
-          placeholder="Tên lớp hoặc huấn luyện viên"
+        <SearchInput
+          placeholder="Tên lớp hoặc huấn luyện viên..."
           maxLength={100}
           className="w-full sm:!w-72"
-          onSearch={(value) => {
-            setQ(value.trim());
+          value={q}
+          onChange={(value) => {
+            setQ(value);
             setPage(1);
           }}
+          loading={classes.isFetching}
         />
         <Select
           allowClear

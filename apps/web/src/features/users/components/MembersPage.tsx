@@ -1,8 +1,9 @@
 import type { AccountSummary } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Card, Input, type TableColumnsType } from 'antd';
+import { Card, type TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
@@ -37,14 +38,11 @@ export function MembersPage() {
     <>
       <PageHeader title="Tra cứu hội viên" description="Tìm hội viên theo tên, email hoặc số điện thoại." />
       <Card>
-        <Input.Search
-          key={search.q ?? ''}
-          defaultValue={search.q}
-          placeholder="Nhập tên, email hoặc SĐT"
-          maxLength={255}
-          allowClear
-          enterButton
-          onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}
+        <SearchInput
+          value={search.q ?? ''}
+          placeholder="Tìm theo tên, email hoặc SĐT..."
+          onChange={(q) => updateSearch({ q: q || undefined, page: undefined })}
+          loading={members.isFetching}
           className="mb-4 w-full sm:!w-96"
         />
         <DataTable
