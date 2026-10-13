@@ -59,7 +59,7 @@ export function CoursesPage() {
     {
       title: '#',
       key: 'index',
-      width: 56,
+      width: 50,
       render: (_, __, index) => (
         <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
@@ -68,28 +68,48 @@ export function CoursesPage() {
     },
     {
       title: 'Khóa học',
+      key: 'name',
       render: (_, record) => (
-        <div className="max-w-md">
+        <div className="min-w-[140px] max-w-sm">
           <div className="font-semibold text-sc-ink">{record.name}</div>
           {record.description && <div className="line-clamp-2 text-xs text-sc-muted">{record.description}</div>}
         </div>
       ),
     },
-    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.sport.name}</Tag> },
-    { title: 'Số buổi', dataIndex: 'totalSessions', align: 'center' },
+    {
+      title: 'Bộ môn',
+      key: 'sport',
+      width: 110,
+      render: (_, record) => (
+        <Tag color="green" className="!m-0">
+          {record.sport.name}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Số buổi',
+      dataIndex: 'totalSessions',
+      key: 'totalSessions',
+      width: 85,
+      align: 'center',
+    },
     {
       title: 'Học phí',
       dataIndex: 'price',
+      key: 'price',
+      width: 120,
       align: 'right',
       render: (price: number) => <span className="whitespace-nowrap font-semibold">{formatVND(price)}</span>,
     },
     {
       title: 'Lớp',
+      key: 'classes',
+      width: 220,
       render: (_, record) => {
         const list = classesOf.get(record.id) ?? [];
         if (!list.length) return <span className="text-sc-muted">—</span>;
         return (
-          <Space wrap size={[4, 4]} className="max-w-xs">
+          <Space wrap size={[4, 4]} className="max-w-[220px]">
             {list.map((item) => (
               <Tag key={item.id} className="!m-0">
                 {item.name}
@@ -100,11 +120,13 @@ export function CoursesPage() {
       },
     },
     {
+      title: 'Thao tác',
       key: 'actions',
+      width: 115,
       align: 'right',
       render: (_, record) => {
         return (
-          <Space>
+          <Space size="small">
             <Button size="small" onClick={() => openModal(record)}>
               Sửa
             </Button>
@@ -172,7 +194,7 @@ export function CoursesPage() {
             columns={columns}
             dataSource={filteredCourses}
             loading={courses.isPending}
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 860 }}
             pagination={{
               current: page,
               pageSize,

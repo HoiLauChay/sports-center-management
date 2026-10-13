@@ -89,9 +89,10 @@ export function ManageMembershipsPage() {
     {
       title: '#',
       key: 'index',
-      width: 56,
+      width: 50,
+      className: '!pl-5',
       render: (_, __, index) => (
-        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+        <span className="font-mono text-xs font-semibold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
         </span>
       ),
@@ -100,15 +101,18 @@ export function ManageMembershipsPage() {
       title: 'Tên gói',
       key: 'name',
       render: (_, membership) => (
-        <div className="flex max-w-xs min-w-40 flex-col gap-0.5 [overflow-wrap:anywhere]">
-          <span className="font-semibold">{membership.name}</span>
-          {membership.description && <span className="text-[12.5px] text-sc-muted">{membership.description}</span>}
+        <div className="flex min-w-[150px] flex-col gap-0.5">
+          <span className="font-semibold text-sc-ink">{membership.name}</span>
+          {membership.description && (
+            <span className="text-[12px] text-sc-muted line-clamp-2">{membership.description}</span>
+          )}
         </div>
       ),
     },
     {
       title: 'Giá',
       key: 'price',
+      width: 110,
       align: 'right',
       render: (_, membership) => <b className="whitespace-nowrap">{formatVND(membership.price)}</b>,
       sorter: (a, b) => a.price - b.price,
@@ -116,12 +120,15 @@ export function ManageMembershipsPage() {
     {
       title: 'Thời hạn',
       key: 'durationDays',
+      width: 90,
+      align: 'center',
       render: (_, membership) => <span className="whitespace-nowrap">{membership.durationDays} ngày</span>,
       sorter: (a, b) => a.durationDays - b.durationDays,
     },
     {
       title: 'Gym',
       key: 'gymAccess',
+      width: 80,
       align: 'center',
       render: (_, membership) =>
         membership.gymAccess ? (
@@ -129,12 +136,13 @@ export function ManageMembershipsPage() {
             Miễn phí
           </Tag>
         ) : (
-          <Tag className="!m-0">—</Tag>
+          <span className="text-sc-muted-2">—</span>
         ),
     },
     {
-      title: 'Giảm đặt sân',
+      title: 'Giảm sân',
       key: 'bookingDiscountPct',
+      width: 90,
       align: 'center',
       render: (_, membership) =>
         membership.bookingDiscountPct ? (
@@ -142,12 +150,13 @@ export function ManageMembershipsPage() {
             −{membership.bookingDiscountPct}%
           </Tag>
         ) : (
-          '—'
+          <span className="text-sc-muted-2">—</span>
         ),
     },
     {
-      title: 'Giảm học phí',
+      title: 'Giảm lớp',
       key: 'classDiscountPct',
+      width: 90,
       align: 'center',
       render: (_, membership) =>
         membership.classDiscountPct ? (
@@ -155,18 +164,26 @@ export function ManageMembershipsPage() {
             −{membership.classDiscountPct}%
           </Tag>
         ) : (
-          '—'
+          <span className="text-sc-muted-2">—</span>
         ),
     },
     {
-      title: 'Slot miễn phí / tháng',
+      title: 'Slot free/tháng',
       key: 'freeBookingSlotsPerMonth',
+      width: 105,
       align: 'center',
-      render: (_, membership) => membership.freeBookingSlotsPerMonth || '—',
+      render: (_, membership) =>
+        membership.freeBookingSlotsPerMonth ? (
+          <span className="font-semibold text-sc-ink">{membership.freeBookingSlotsPerMonth}</span>
+        ) : (
+          <span className="text-sc-muted-2">—</span>
+        ),
     },
     {
       title: 'Đang bán',
       key: 'isActive',
+      width: 90,
+      align: 'center',
       render: (_, membership) => (
         <Popconfirm
           title={`Ngừng bán ${membership.name}?`}
@@ -195,9 +212,11 @@ export function ManageMembershipsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      width: 110,
       align: 'right',
+      className: '!pr-5',
       render: (_, membership) => (
-        <Space>
+        <Space size={4}>
           <Button size="small" disabled={remove.isPending || toggle.isPending} onClick={() => openForm(membership)}>
             Sửa
           </Button>
@@ -280,7 +299,7 @@ export function ManageMembershipsPage() {
         ) : (
           <Table<MembershipPackage>
             rowKey="id"
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 960 }}
             columns={columns}
             dataSource={rows}
             loading={packages.isFetching}
