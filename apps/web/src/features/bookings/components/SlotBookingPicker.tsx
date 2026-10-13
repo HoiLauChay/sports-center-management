@@ -219,17 +219,17 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                 </div>
               </div>
               <div className="text-[14px]">
-                <div className="flex justify-between border-b border-dashed border-sc-border py-1">
+                <div className="flex justify-between border-b border-sc-border-soft py-1.5">
                   <span>Giá niêm yết</span>
-                  <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
+                  <span className="font-medium tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
                 </div>
                 {line && line.membershipDiscount > 0 && (
-                  <div className="flex justify-between border-b border-dashed border-sc-border py-1 text-sc-success">
+                  <div className="flex justify-between border-b border-sc-border-soft py-1.5 text-sc-success">
                     <span>{BENEFIT_TEXT[String(line.snapshot?.benefit)] ?? 'Ưu đãi gói'}</span>
-                    <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                    <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between py-1.5 text-[17px] font-extrabold">
+                <div className="flex justify-between border-t border-sc-border pt-2 pb-1 text-[17px] font-extrabold text-sc-ink">
                   <span>Tạm tính</span>
                   <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.total)}</span>
                 </div>

@@ -49,6 +49,12 @@ export const checkoutService = {
     return data.result;
   },
 
+  /** Fetches the raw PDF receipt blob rendered by the server. */
+  getReceiptBlob: async (orderId: string) => {
+    const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
+    return data;
+  },
+
   /** Saves the PDF receipt the server renders for the order. */
   downloadReceipt: async (orderId: string, orderNumber: string) => {
     const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
@@ -60,5 +66,50 @@ export const checkoutService = {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
+  /** Prints the exact server-rendered PDF receipt. */
+  printReceipt: async (orderId: string) => {
+    const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
+    const url = URL.createObjectURL(data);
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    return new Promise<void>((resolve, reject) => {
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            resolve();
+          } catch {
+            const w = window.open(url, '_blank');
+            if (w) {
+              w.focus();
+              w.onload = () => w.print();
+              resolve();
+            } else {
+              reject(new Error('Trình duyệt đã chặn cửa sổ in ấn'));
+            }
+          }
+          setTimeout(() => {
+            iframe.remove();
+            URL.revokeObjectURL(url);
+          }, 60_000);
+        }, 500);
+      };
+      iframe.onerror = (e) => {
+        iframe.remove();
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+    });
   },
 };

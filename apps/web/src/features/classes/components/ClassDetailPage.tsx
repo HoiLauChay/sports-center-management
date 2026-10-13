@@ -108,17 +108,17 @@ export function ClassDetailPage() {
         <Card className="xl:sticky xl:top-20">
           <SectionTitle>Đăng ký</SectionTitle>
           <div className="text-[14px]">
-            <div className="flex justify-between border-b border-dashed border-sc-border py-1.5">
+            <div className="flex justify-between border-b border-sc-border-soft py-2">
               <span>Học phí</span>
-              <span className="tabular-nums">{formatVND(item.course.price)}</span>
+              <span className="font-medium tabular-nums">{formatVND(item.course.price)}</span>
             </div>
             {line && line.membershipDiscount > 0 && (
-              <div className="flex justify-between border-b border-dashed border-sc-border py-1.5 text-sc-success">
+              <div className="flex justify-between border-b border-sc-border-soft py-2 text-sc-success">
                 <span>Ưu đãi gói thành viên</span>
-                <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
               </div>
             )}
-            <div className="flex justify-between py-2 text-[18px] font-extrabold">
+            <div className="flex justify-between border-t border-sc-border pt-2.5 pb-1 text-[18px] font-extrabold text-sc-ink">
               <span>Tạm tính</span>
               <span className="tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
             </div>

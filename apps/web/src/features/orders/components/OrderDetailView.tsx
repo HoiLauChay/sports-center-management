@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { App, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft, Download, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { App, Button, Card, Segmented, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { ArrowLeft, Download, ExternalLink, FileText, LayoutGrid, Printer } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -14,23 +14,28 @@ import { describeLine, refundedOf } from '~/features/checkout/utils';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { describeApiError, toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
-import { InvoiceSheet } from './InvoiceSheet';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
 const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
-  { title: '#', dataIndex: 'lineNumber', width: 48 },
+  {
+    title: '#',
+    dataIndex: 'lineNumber',
+    width: 40,
+    align: 'center',
+    render: (val: number) => <span className="text-xs font-medium text-sc-muted">{val}</span>,
+  },
   {
     title: 'Dịch vụ',
     key: 'service',
     render: (_, item) => {
       const { title, detail } = describeLine(item.type, item.snapshot);
       return (
-        <div className="flex min-w-56 flex-col gap-1">
+        <div className="flex flex-col gap-1 py-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
-            <b className="[overflow-wrap:anywhere]">{title}</b>
+            <Tag className="!m-0 text-xs">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
+            <b className="text-sc-ink [overflow-wrap:anywhere]">{title}</b>
           </div>
-          {detail && <span className="text-[13px] text-sc-muted">{detail}</span>}
+          {detail && <span className="text-[12.5px] leading-relaxed text-sc-muted">{detail}</span>}
         </div>
       );
     },
@@ -39,40 +44,53 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
     title: 'Giá gốc',
     dataIndex: 'subtotal',
     align: 'right',
-    render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
+    width: 95,
+    render: (value: number) => <span className="whitespace-nowrap tabular-nums text-sc-ink-2">{formatVND(value)}</span>,
   },
   {
     title: 'Ưu đãi gói',
     dataIndex: 'membershipDiscount',
     align: 'right',
+    width: 95,
     render: (value: number) =>
-      value ? <span className="whitespace-nowrap text-sc-success tabular-nums">−{formatVND(value)}</span> : '—',
+      value ? (
+        <span className="whitespace-nowrap font-medium text-sc-success tabular-nums">−{formatVND(value)}</span>
+      ) : (
+        <span className="text-sc-muted-2">—</span>
+      ),
   },
   {
     title: 'Mã giảm giá',
     dataIndex: 'couponDiscount',
     align: 'right',
+    width: 95,
     render: (value: number) =>
-      value ? <span className="whitespace-nowrap text-sc-success tabular-nums">−{formatVND(value)}</span> : '—',
+      value ? (
+        <span className="whitespace-nowrap font-medium text-sc-success tabular-nums">−{formatVND(value)}</span>
+      ) : (
+        <span className="text-sc-muted-2">—</span>
+      ),
   },
   {
     title: 'Thành tiền',
     dataIndex: 'totalAmount',
     align: 'right',
-    render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+    width: 105,
+    render: (value: number) => <b className="whitespace-nowrap tabular-nums text-sc-ink">{formatVND(value)}</b>,
   },
   {
     title: 'Đã hoàn',
     key: 'refunded',
     align: 'right',
+    width: 95,
     render: (_, item) => {
       const value = refundedOf(order, item.id);
       return value ? (
-        <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0">
+        <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0 font-medium">
           −{formatVND(value)}
         </Tag>
       ) : (
-        '—'
+        <span className="text-sc-muted-2">—</span>
       );
     },
   },
@@ -102,14 +120,20 @@ interface OrderDetailViewProps {
   back: { to: '/orders' | '/reception/orders'; label: string };
 }
 
-/**
- * Order detail with the printable invoice. "Tải PDF" saves the invoice through the browser's print dialog until
- * `GET /orders/{id}/invoice` (#114) is live; then it becomes a blob download of the server-built PDF.
- */
 export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const order = useOrder(orderId);
   const { message } = App.useApp();
   const [downloading, setDownloading] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [viewMode, setViewMode] = useState<'details' | 'pdf'>('details');
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
 
   if (order.isPending) return <PageLoading />;
   if (order.isError) {
@@ -126,6 +150,30 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const buyer = data.account?.fullName ?? data.guestName ?? '—';
   const refunded = refundedOf(data);
 
+  const loadPdf = async () => {
+    if (pdfUrl) return pdfUrl;
+    try {
+      setLoadingPdf(true);
+      const blob = await checkoutService.getReceiptBlob(data.id);
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      return url;
+    } catch (error) {
+      message.error(describeApiError(error));
+      return null;
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
+  const handleToggleView = async (mode?: 'details' | 'pdf') => {
+    const target = mode ?? (viewMode === 'pdf' ? 'details' : 'pdf');
+    setViewMode(target);
+    if (target === 'pdf') {
+      await loadPdf();
+    }
+  };
+
   const handleDownloadPdf = async () => {
     try {
       setDownloading(true);
@@ -137,32 +185,129 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
     }
   };
 
+  const handlePrintPdf = async () => {
+    try {
+      setPrinting(true);
+      await checkoutService.printReceipt(data.id);
+    } catch (error) {
+      message.error(describeApiError(error));
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <>
-      <div className="no-print">
-        <PageHeader
-          title={`Hóa đơn ${data.orderNumber}`}
-          description={
-            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
-              <MappedTag value={data.status} map={ORDER_STATUS_TAG} />
-              <span>{formatDateTime(data.paidAt)}</span>
-              <span>{PAYMENT_METHOD_LABEL[data.paymentMethod]}</span>
-            </span>
-          }
-          extra={
-            <div className="flex flex-wrap gap-2">
-              <Link to={back.to}>
-                <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
-              </Link>
-              <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
-                Tải PDF
-              </Button>
-              <Button type="primary" icon={<Printer size={16} />} onClick={() => window.print()}>
-                In hóa đơn
-              </Button>
+      <PageHeader
+        title={`Hóa đơn ${data.orderNumber}`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <MappedTag value={data.status} map={ORDER_STATUS_TAG} />
+            <span>{formatDateTime(data.paidAt)}</span>
+            <span>{PAYMENT_METHOD_LABEL[data.paymentMethod]}</span>
+          </span>
+        }
+        extra={
+          <div className="flex flex-wrap gap-2">
+            <Link to={back.to}>
+              <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
+            </Link>
+            <Button
+              icon={viewMode === 'pdf' ? <LayoutGrid size={16} /> : <FileText size={16} />}
+              onClick={() => void handleToggleView()}
+            >
+              {viewMode === 'pdf' ? 'Xem chi tiết đơn' : 'Xem hóa đơn PDF'}
+            </Button>
+            <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
+              Tải PDF
+            </Button>
+            <Button
+              type="primary"
+              icon={<Printer size={16} />}
+              loading={printing}
+              onClick={() => void handlePrintPdf()}
+            >
+              In hóa đơn
+            </Button>
+          </div>
+        }
+      />
+
+      <Segmented
+        value={viewMode}
+        onChange={(val) => void handleToggleView(val as 'details' | 'pdf')}
+        options={[
+          {
+            value: 'details',
+            label: (
+              <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
+                <LayoutGrid size={15} />
+                Chi tiết đơn hàng
+              </span>
+            ),
+          },
+          {
+            value: 'pdf',
+            label: (
+              <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
+                <FileText size={15} />
+                Bản in hóa đơn (PDF)
+              </span>
+            ),
+          },
+        ]}
+        className="!mb-4 !p-1 bg-sc-paper-2"
+      />
+
+      {viewMode === 'pdf' ? (
+        loadingPdf ? (
+          <Card className="flex h-[750px] items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <Spin size="large" />
+              <span className="text-sm text-sc-muted">Đang tải hóa đơn PDF...</span>
             </div>
-          }
-        />
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sc-border-soft bg-white px-4 py-2.5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <Tag color="green" className="!m-0 font-medium">
+                  Bản in chính thức
+                </Tag>
+                <span className="text-sm font-semibold text-sc-ink">Hóa đơn {data.orderNumber}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button icon={<Download size={14} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
+                  Tải PDF
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<Printer size={14} />}
+                  loading={printing}
+                  onClick={() => void handlePrintPdf()}
+                >
+                  In hóa đơn này
+                </Button>
+                {pdfUrl && (
+                  <Button icon={<ExternalLink size={14} />} onClick={() => window.open(pdfUrl, '_blank')}>
+                    Mở toàn màn hình
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-center overflow-hidden rounded-xl border border-sc-border bg-stone-100 p-4 shadow-sm">
+              {pdfUrl ? (
+                <iframe
+                  id="order-receipt-pdf-frame"
+                  src={pdfUrl}
+                  className="h-[820px] w-full max-w-4xl rounded-lg border-0 bg-white shadow-md"
+                  title={`Hóa đơn ${data.orderNumber}`}
+                />
+              ) : null}
+            </div>
+          </div>
+        )
+      ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Card>
             <SectionTitle>Dịch vụ</SectionTitle>
@@ -172,28 +317,47 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               columns={columnsOf(data)}
               dataSource={data.items}
               pagination={false}
-              scroll={{ x: 'max-content' }}
+              scroll={{ x: 600 }}
             />
           </Card>
           <div className="flex flex-col gap-4">
             <Card>
               <SectionTitle>Người mua</SectionTitle>
-              <div className="flex flex-col gap-1">
-                <b>{buyer}</b>
-                {data.guestPhone && <span className="text-sc-muted">{data.guestPhone}</span>}
-                {!data.account && <Tag className="!m-0 w-fit">Khách vãng lai</Tag>}
-                {data.createdBy && <span className="text-xs text-sc-muted-2">Lập bởi {data.createdBy.fullName}</span>}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-semibold text-sc-ink">{buyer}</span>
+                  {!data.account && (
+                    <Tag color="orange" className="!m-0">
+                      Khách vãng lai
+                    </Tag>
+                  )}
+                </div>
+                {data.guestPhone && (
+                  <div className="flex items-center gap-1.5 text-xs text-sc-muted">
+                    <span>Số ĐT:</span>
+                    <span className="font-mono font-medium text-sc-ink-2">{data.guestPhone}</span>
+                  </div>
+                )}
+                {data.createdBy && (
+                  <div className="mt-1 border-t border-sc-border-soft pt-2 text-xs text-sc-muted-2">
+                    Lập bởi <span className="font-medium text-sc-ink-2">{data.createdBy.fullName}</span>
+                  </div>
+                )}
               </div>
             </Card>
             <Card>
               <SectionTitle>Thanh toán</SectionTitle>
               <QuoteTotals quote={toTotals(data)} />
-              {refunded > 0 && <p className="mt-2 mb-0 text-sc-error">Đã hoàn về ví: {formatVND(refunded)}</p>}
+              {refunded > 0 && (
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-xs text-red-700">
+                  <span className="font-medium">Đã hoàn về ví</span>
+                  <span className="font-bold tabular-nums">−{formatVND(refunded)}</span>
+                </div>
+              )}
             </Card>
           </div>
         </div>
-      </div>
-      <InvoiceSheet order={data} />
+      )}
     </>
   );
 }
