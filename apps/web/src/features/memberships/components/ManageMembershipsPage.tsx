@@ -14,8 +14,9 @@ import {
   type TableColumnsType,
 } from 'antd';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -34,6 +35,9 @@ export function ManageMembershipsPage() {
   const queryClient = useQueryClient();
   const packages = useQuery(membershipsQueryOptions);
   const [filter, setFilter] = useState<SaleFilter>('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editing, setEditing] = useState<MembershipPackage | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -67,9 +71,31 @@ export function ManageMembershipsPage() {
     setFormOpen(true);
   };
 
-  const rows = packages.data?.filter((membership) => filter === 'ALL' || membership.isActive === (filter === 'ACTIVE'));
+  const rows = useMemo(() => {
+    if (!packages.data) return [];
+    const q = search.trim().toLowerCase();
+    return packages.data.filter((membership) => {
+      if (filter !== 'ALL' && membership.isActive !== (filter === 'ACTIVE')) return false;
+      if (q) {
+        const matchName = membership.name.toLowerCase().includes(q);
+        const matchDesc = membership.description?.toLowerCase().includes(q);
+        if (!matchName && !matchDesc) return false;
+      }
+      return true;
+    });
+  }, [packages.data, filter, search]);
 
   const columns: TableColumnsType<MembershipPackage> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Tên gói',
       key: 'name',
@@ -204,23 +230,38 @@ export function ManageMembershipsPage() {
         title="Gói thành viên"
         description="Không cần gói vẫn đặt sân / đăng ký lớp được. Gói chỉ thêm quyền lợi: vào gym, giảm giá đặt sân, giảm học phí, slot sân miễn phí mỗi tháng."
         extra={
-          <Space wrap>
+          <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm(null)}>
+            Tạo gói
+          </Button>
+        }
+      />
+      <Card>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <SearchInput
+            placeholder="Tìm theo tên gói, mô tả..."
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-72"
+          />
+          <div className="overflow-x-auto">
             <Segmented
               value={filter}
-              onChange={(value) => setFilter(value as SaleFilter)}
+              onChange={(value) => {
+                setFilter(value as SaleFilter);
+                setPage(1);
+              }}
               options={[
                 { value: 'ALL', label: 'Tất cả' },
                 { value: 'ACTIVE', label: 'Đang bán' },
                 { value: 'INACTIVE', label: 'Ngừng bán' },
               ]}
             />
-            <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm(null)}>
-              Tạo gói
-            </Button>
-          </Space>
-        }
-      />
-      <Card>
+          </div>
+        </div>
+
         {packages.error && packages.data && (
           <Alert
             type="error"
@@ -239,16 +280,29 @@ export function ManageMembershipsPage() {
         ) : (
           <Table<MembershipPackage>
             rowKey="id"
-            scroll={{ x: 1000 }}
+            scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={rows}
             loading={packages.isFetching}
-            pagination={{ pageSize: 10, hideOnSinglePage: true, showSizeChanger: true }}
+            pagination={{
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} gói thành viên`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
+            }}
             locale={{
               emptyText: packages.isPending ? (
                 ' '
               ) : (
-                <EmptyState title={filter !== 'ALL' ? 'Không có gói phù hợp' : 'Chưa có gói thành viên'} />
+                <EmptyState
+                  title={search || filter !== 'ALL' ? 'Không có gói phù hợp' : 'Chưa có gói thành viên'}
+                  description={search || filter !== 'ALL' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : undefined}
+                />
               ),
             }}
           />
