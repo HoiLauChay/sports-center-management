@@ -1,16 +1,11 @@
 import type { Account } from '@sports-center/shared';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Avatar, Tooltip } from 'antd';
-import dayjs from 'dayjs';
-import { LogOut, X } from 'lucide-react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { Tooltip } from 'antd';
+import { X } from 'lucide-react';
 import { Fragment, useMemo } from 'react';
 import logoMark from '~/assets/brand/logo-mark.svg';
 import { navGroupsFor } from '~/config/navigation';
 import { PATHS } from '~/constants/paths';
-import { ROLE_LABEL } from '~/constants/roles';
-import { useLogout } from '~/features/auth';
-import { initialsOf } from '~/lib/format';
-import { ROLE_COLOR_ON_DARK } from '~/styles/antd-theme';
 
 function isActive(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(`${path}/`);
@@ -26,10 +21,7 @@ interface SidebarNavProps {
 
 export function SidebarNav({ user, collapsed = false, mobile = false, onClose, onNavigate }: SidebarNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navigate = useNavigate();
-  const logout = useLogout();
   const groups = useMemo(() => navGroupsFor(user.role), [user.role]);
-  const roleColor = ROLE_COLOR_ON_DARK[user.role];
 
   const activePath = useMemo(
     () =>
@@ -39,11 +31,6 @@ export function SidebarNav({ user, collapsed = false, mobile = false, onClose, o
         .sort((a, b) => b.length - a.length)[0],
     [groups, pathname],
   );
-
-  const openProfile = () => {
-    onNavigate?.();
-    void navigate({ to: PATHS.profile });
-  };
 
   return (
     <div
@@ -75,22 +62,9 @@ export function SidebarNav({ user, collapsed = false, mobile = false, onClose, o
         </button>
       )}
 
-      {!collapsed && (
-        <div className="mx-4 mt-[14px] mb-1 flex items-center gap-2 rounded-lg border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.05)] px-3 py-2 font-display text-[13px] font-bold tracking-[0.06em] text-[#ece8df] uppercase">
-          <span
-            className="size-2 shrink-0 rounded-[999px]"
-            style={{ background: roleColor, boxShadow: `0 0 0 3px ${roleColor}33` }}
-          />
-          {ROLE_LABEL[user.role]}
-          <span className="ml-auto font-body text-[12px] font-medium tracking-[0] text-[rgba(255,255,255,0.4)] capitalize">
-            {dayjs().format('ddd, DD/MM')}
-          </span>
-        </div>
-      )}
-
       <nav
         aria-label="Menu chính"
-        className="flex-1 overflow-y-auto px-3 pt-2 pb-3 [scrollbar-color:transparent_transparent] [scrollbar-width:thin] hover:[scrollbar-color:rgba(255,255,255,0.15)_transparent]"
+        className="flex-1 overflow-y-auto px-3 py-3 [scrollbar-color:transparent_transparent] [scrollbar-width:thin] hover:[scrollbar-color:rgba(255,255,255,0.15)_transparent]"
       >
         {groups.map((group, index) => (
           <div key={group.title ?? index} className="mt-[10px]">
@@ -128,51 +102,6 @@ export function SidebarNav({ user, collapsed = false, mobile = false, onClose, o
           </div>
         ))}
       </nav>
-
-      <div
-        className={`mx-3 mt-2 mb-3 flex cursor-pointer items-center gap-2.5 rounded-[10px] border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.05)] [transition:background_0.15s] hover:bg-[rgba(255,255,255,0.07)] ${collapsed ? 'justify-center p-2' : 'p-2.5'}`}
-        role="button"
-        tabIndex={0}
-        aria-label="Mở hồ sơ"
-        onClick={openProfile}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openProfile();
-          }
-        }}
-      >
-        <Avatar
-          src={user.avatarUrl ?? undefined}
-          size={collapsed ? 34 : 38}
-          className="shrink-0 !text-[13px] !font-bold"
-          style={{ background: `${roleColor}26`, color: roleColor, border: `1px solid ${roleColor}55` }}
-        >
-          {initialsOf(user.fullName)}
-        </Avatar>
-        {!collapsed && (
-          <>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-white">{user.fullName}</div>
-              <div className="truncate text-[11px] text-[rgba(255,255,255,0.4)]">{user.email}</div>
-            </div>
-            <Tooltip title="Đăng xuất">
-              <button
-                type="button"
-                aria-label="Đăng xuất"
-                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg [border:none] bg-transparent text-[rgba(255,255,255,0.45)] hover:bg-[rgba(239,68,68,0.15)] hover:text-[#f87171]"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate?.();
-                  void logout();
-                }}
-              >
-                <LogOut size={16} />
-              </button>
-            </Tooltip>
-          </>
-        )}
-      </div>
     </div>
   );
 }

@@ -49,16 +49,71 @@ export const checkoutService = {
     return data.result;
   },
 
-  /** Saves the PDF receipt the server renders for the order. */
-  downloadReceipt: async (orderId: string, orderNumber: string) => {
+  /** Fetches the raw PDF receipt blob rendered by the server. */
+  getReceiptBlob: async (orderId: string) => {
     const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
-    const url = URL.createObjectURL(data);
+    return data;
+  },
+
+  /** Saves the PDF receipt the server renders for the order. */
+  downloadReceipt: async (orderId: string, orderNumber: string, existingBlob?: Blob | null) => {
+    const data =
+      existingBlob ?? (await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' })).data;
+    const pdfBlob = new Blob([data], { type: 'application/pdf' });
+    const fileName = `hoa-don-${orderNumber}.pdf`;
+    const url = URL.createObjectURL(pdfBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `receipt-${orderNumber}.pdf`;
+    link.setAttribute('download', fileName);
+    link.download = fileName;
     document.body.append(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+
+  /** Prints the exact server-rendered PDF receipt. */
+  printReceipt: async (orderId: string) => {
+    const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
+    const url = URL.createObjectURL(data);
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    return new Promise<void>((resolve, reject) => {
+      iframe.onload = () => {
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            resolve();
+          } catch {
+            const w = window.open(url, '_blank');
+            if (w) {
+              w.focus();
+              w.onload = () => w.print();
+              resolve();
+            } else {
+              reject(new Error('Trình duyệt đã chặn cửa sổ in ấn'));
+            }
+          }
+          setTimeout(() => {
+            iframe.remove();
+            URL.revokeObjectURL(url);
+          }, 60_000);
+        }, 500);
+      };
+      iframe.onerror = (e) => {
+        iframe.remove();
+        URL.revokeObjectURL(url);
+        reject(e);
+      };
+    });
   },
 };

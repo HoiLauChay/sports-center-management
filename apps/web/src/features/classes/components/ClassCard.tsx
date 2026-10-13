@@ -12,7 +12,7 @@ export function ClassCard({ item, keyword }: { item: GymClass; keyword?: string 
     <Link
       to="/classes/$classId"
       params={{ classId: item.id }}
-      className="flex min-w-0 flex-col gap-3 rounded-xl border border-sc-border-soft bg-white p-5 !text-sc-ink no-underline shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)] [transition:border-color_0.15s,transform_0.15s] hover:-translate-y-0.5 hover:border-sc-primary-border"
+      className="flex min-w-0 flex-col gap-3 rounded-xl border border-sc-border !bg-white p-5 !text-sc-ink no-underline shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)] [transition:border-color_0.15s,transform_0.15s,box-shadow_0.15s] hover:-translate-y-0.5 hover:!border-sc-primary-border hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <Tag color="processing" className="!m-0">

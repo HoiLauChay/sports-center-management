@@ -1,7 +1,20 @@
-import { Alert, Button, Card, Popconfirm, Progress, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Popconfirm,
+  Progress,
+  Segmented,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  type TableColumnsType,
+} from 'antd';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
 import { formatDateTime, formatVND } from '~/lib/format';
@@ -18,27 +31,67 @@ const STATE_TAG: Record<CouponState, { label: string; color?: string }> = {
   OFF: { label: 'Đang tắt', color: 'error' },
 };
 
+type CouponStatusFilter = 'ALL' | CouponState;
+
+const STATUS_OPTIONS: { value: CouponStatusFilter; label: string }[] = [
+  { value: 'ALL', label: 'Tất cả' },
+  { value: 'LIVE', label: 'Đang chạy' },
+  { value: 'SCHEDULED', label: 'Sắp hiệu lực' },
+  { value: 'EXPIRED', label: 'Hết hạn' },
+  { value: 'USED_UP', label: 'Hết lượt' },
+  { value: 'OFF', label: 'Đang tắt' },
+];
+
 export function CouponsPage() {
   const coupons = useCoupons();
   const { toggle, remove } = useCouponMutations();
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<CouponStatusFilter>('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const openForm = (coupon: Coupon | null) => {
     setEditing(coupon);
     setFormOpen(true);
   };
 
+  const filteredCoupons = useMemo(() => {
+    if (!coupons.data) return [];
+    const q = search.trim().toLowerCase();
+    return coupons.data.filter((c) => {
+      const st = couponState(c);
+      if (statusFilter !== 'ALL' && st !== statusFilter) return false;
+      if (q) {
+        const matchCode = c.code.toLowerCase().includes(q);
+        const matchName = c.name.toLowerCase().includes(q);
+        if (!matchCode && !matchName) return false;
+      }
+      return true;
+    });
+  }, [coupons.data, statusFilter, search]);
+
   const columns: TableColumnsType<Coupon> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Mã',
       key: 'code',
       render: (_, coupon) => {
         const state = STATE_TAG[couponState(coupon)];
         return (
-          <div className="flex min-w-44 flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <b className="font-mono text-[14px]">{coupon.code}</b>
-            <span className="text-[13px] text-sc-muted">{coupon.name}</span>
+            <span className="text-[13px] text-sc-muted line-clamp-1">{coupon.name}</span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
             </Tag>
@@ -74,10 +127,10 @@ export function CouponsPage() {
       title: 'Áp dụng',
       key: 'types',
       render: (_, coupon) =>
-        coupon.applicableTypes ? (
-          <div className="flex max-w-56 flex-wrap gap-1">
+        coupon.applicableTypes && coupon.applicableTypes.length < 4 ? (
+          <div className="flex flex-wrap gap-1">
             {coupon.applicableTypes.map((type) => (
-              <Tag key={type} className="!m-0">
+              <Tag key={type} className="!m-0 text-xs">
                 {ORDER_ITEM_TYPE_LABEL[type]}
               </Tag>
             ))}
@@ -87,7 +140,7 @@ export function CouponsPage() {
         ),
     },
     {
-      title: 'Ngưỡng tối thiểu',
+      title: 'Đơn tối thiểu',
       dataIndex: 'minOrderAmount',
       align: 'right',
       render: (value: number | null) =>
@@ -96,11 +149,10 @@ export function CouponsPage() {
     {
       title: 'Lượt dùng',
       key: 'uses',
-      width: 180,
       render: (_, coupon) => (
-        <div className="min-w-32">
+        <div>
           {coupon.maxUses === null ? (
-            <span className="tabular-nums">{coupon.usedCount} / không giới hạn</span>
+            <span className="tabular-nums text-sm">{coupon.usedCount} / không giới hạn</span>
           ) : (
             <Progress
               percent={Math.min(100, Math.round((coupon.usedCount / coupon.maxUses) * 100))}
@@ -115,6 +167,8 @@ export function CouponsPage() {
     {
       title: 'Bật',
       key: 'isActive',
+      width: 65,
+      align: 'center',
       render: (_, coupon) => (
         <Switch
           checked={coupon.isActive}
@@ -128,9 +182,10 @@ export function CouponsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      width: 110,
       align: 'right',
       render: (_, coupon) => (
-        <Space>
+        <Space size="small">
           <Button size="small" onClick={() => openForm(coupon)}>
             Sửa
           </Button>
@@ -164,6 +219,28 @@ export function CouponsPage() {
         }
       />
       <Card>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <SearchInput
+            placeholder="Tìm theo mã, tên ưu đãi..."
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-72"
+          />
+          <div className="overflow-x-auto">
+            <Segmented
+              value={statusFilter}
+              onChange={(val) => {
+                setStatusFilter(val as CouponStatusFilter);
+                setPage(1);
+              }}
+              options={STATUS_OPTIONS}
+            />
+          </div>
+        </div>
+
         {coupons.error && coupons.data && (
           <Alert
             type="error"
@@ -183,11 +260,34 @@ export function CouponsPage() {
           <Table<Coupon>
             rowKey="id"
             columns={columns}
-            dataSource={coupons.data}
+            dataSource={filteredCoupons}
             loading={coupons.isFetching}
-            scroll={{ x: 1100 }}
-            pagination={{ pageSize: 10, hideOnSinglePage: true, showSizeChanger: true }}
-            locale={{ emptyText: coupons.isPending ? ' ' : <EmptyState title="Chưa có mã giảm giá" /> }}
+            scroll={{ x: 'max-content' }}
+            pagination={{
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} mã giảm giá`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
+            }}
+            locale={{
+              emptyText: coupons.isPending ? (
+                ' '
+              ) : (
+                <EmptyState
+                  title={
+                    search || statusFilter !== 'ALL' ? 'Không tìm thấy mã giảm giá phù hợp' : 'Chưa có mã giảm giá'
+                  }
+                  description={
+                    search || statusFilter !== 'ALL' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : undefined
+                  }
+                />
+              ),
+            }}
           />
         )}
       </Card>

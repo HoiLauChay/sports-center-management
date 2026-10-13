@@ -12,7 +12,10 @@ import type {
 import { privateApi } from '~/lib/http';
 
 export type ListClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'sportId' | 'coachId' | 'q'>;
-export type ManagerClassesQuery = Pick<ClassesQuery, 'page' | 'limit' | 'status' | 'derivedStatus' | 'courseId'>;
+export type ManagerClassesQuery = Pick<
+  ClassesQuery,
+  'page' | 'limit' | 'status' | 'derivedStatus' | 'courseId' | 'sportId' | 'q'
+>;
 
 /** Classes (catalog, detail, manager list, create), my enrollments and their cancellation. */
 export const classesService = {

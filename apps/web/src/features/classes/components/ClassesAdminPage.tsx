@@ -1,10 +1,13 @@
 import type { ClassSummary } from '@sports-center/shared';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Popconfirm, Segmented, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Button, Card, Popconfirm, Segmented, Select, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
@@ -12,8 +15,6 @@ import type { ManagerClassesQuery } from '../services/classes.service';
 import { classDateRange, weeklyLines } from '../utils';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
-
-const LIMIT = 10;
 
 type Phase = 'ALL' | 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 
@@ -29,19 +30,41 @@ const PHASE_QUERY: Record<Phase, Pick<ManagerClassesQuery, 'status' | 'derivedSt
 /** `/admin/classes` (UC_2.12, UC_2.15): every class by phase; pending ones are approved or rejected from the list. */
 export function ClassesAdminPage() {
   const [phase, setPhase] = useState<Phase>('ALL');
+  const [q, setQ] = useState('');
+  const [sportId, setSportId] = useState<string | undefined>();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
-  const classes = useManagerClasses({ page, limit: LIMIT, ...PHASE_QUERY[phase] });
+
+  const sports = useQuery(sportsQueryOptions);
+  const classes = useManagerClasses({
+    page,
+    limit: pageSize,
+    ...PHASE_QUERY[phase],
+    sportId: sportId || undefined,
+    q: q.trim() || undefined,
+  });
   const pending = useManagerClasses({ page: 1, limit: 1, ...PHASE_QUERY.PENDING });
   const approve = useApproveClassFromList();
   const reject = useRejectClassFromList();
 
   const columns: TableColumnsType<ClassSummary> = [
     {
+      title: '#',
+      key: 'index',
+      width: 56,
+      fixed: 'left',
+      render: (_, __, index) => (
+        <span className="whitespace-nowrap font-display text-lg font-extrabold text-sc-muted-2">
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
+    {
       title: 'Tên lớp',
-      width: 220,
+      dataIndex: 'name',
       render: (_, record) => (
-        <div>
+        <div className="min-w-[160px]">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -55,32 +78,49 @@ export function ClassesAdminPage() {
         </div>
       ),
     },
-    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag> },
-    { title: 'Phòng / sân', render: (_, record) => record.facility.name },
+    {
+      title: 'Bộ môn',
+      width: 75,
+      render: (_, record) => (
+        <Tag color="green" className="!m-0">
+          {record.course.sport.name}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Phòng / sân',
+      width: 135,
+      render: (_, record) => (
+        <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.facility.name}</span>
+      ),
+    },
     {
       title: 'HLV',
+      width: 115,
       render: (_, record) =>
         record.coach ? (
-          <span className="whitespace-nowrap">{record.coach.fullName}</span>
+          <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.coach.fullName}</span>
         ) : (
-          <span className="whitespace-nowrap text-orange-500">Chưa có HLV</span>
+          <span className="whitespace-nowrap text-xs font-medium text-orange-500">Chưa có HLV</span>
         ),
     },
     {
       title: 'Sĩ số',
+      width: 85,
       render: (_, record) => (
         <div className="leading-tight">
-          <div className="font-semibold">
+          <div className="font-semibold text-sc-ink">
             {record.enrolledCount}/{record.maxStudents}
           </div>
-          <div className="text-xs text-sc-muted">tối thiểu {record.minStudents}</div>
+          <div className="whitespace-nowrap text-[11px] text-sc-muted">tối thiểu {record.minStudents}</div>
         </div>
       ),
     },
     {
       title: 'Lịch',
+      width: 110,
       render: (_, record) => (
-        <div className="whitespace-nowrap text-xs">
+        <div className="whitespace-nowrap text-xs text-sc-ink">
           {weeklyLines(record.weeklySchedule).map((line) => (
             <div key={line}>{line}</div>
           ))}
@@ -89,13 +129,19 @@ export function ClassesAdminPage() {
     },
     {
       title: 'Thời gian',
-      render: (_, record) => <span className="whitespace-nowrap text-xs">{classDateRange(record)}</span>,
+      width: 125,
+      render: (_, record) => <span className="whitespace-nowrap text-xs text-sc-muted">{classDateRange(record)}</span>,
     },
-    { title: 'Trạng thái', render: (_, record) => <ClassStatusTag item={record} /> },
+    {
+      title: 'Trạng thái',
+      width: 95,
+      render: (_, record) => <ClassStatusTag item={record} />,
+    },
     {
       key: 'actions',
       align: 'right',
-      width: 190,
+      width: 110,
+      fixed: 'right',
       render: (_, record) =>
         record.status === 'PENDING_APPROVAL' ? (
           <Space size={4}>
@@ -107,7 +153,7 @@ export function ClassesAdminPage() {
                 loading={approve.isPending && approve.variables === record.id}
                 onClick={() => approve.mutate(record.id)}
               >
-                Duyệt mở
+                Duyệt
               </Button>
             </Tooltip>
             <Popconfirm
@@ -158,7 +204,32 @@ export function ClassesAdminPage() {
         ]}
       />
 
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <SearchInput
+            placeholder="Tìm theo tên lớp, HLV..."
+            value={q}
+            onChange={(val) => {
+              setQ(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-72"
+          />
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Tất cả bộ môn"
+            value={sportId}
+            onChange={(val) => {
+              setSportId(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-52"
+            options={(sports.data ?? []).map((s) => ({ value: s.id, label: s.name }))}
+          />
+        </div>
+
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />
         ) : (
@@ -167,18 +238,29 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={{ x: 1100 }}
+            scroll={{ x: 1000 }}
             pagination={{
               current: page,
-              pageSize: LIMIT,
+              pageSize,
               total: classes.data?.total ?? 0,
-              showSizeChanger: false,
-              hideOnSinglePage: true,
-              onChange: setPage,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} lớp học`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
             }}
             locale={{
               emptyText: (
-                <EmptyState title="Không có lớp nào" description="Bấm 'Tạo lớp' để mở lớp cho một khóa học." />
+                <EmptyState
+                  title={q || sportId || phase !== 'ALL' ? 'Không tìm thấy lớp học phù hợp' : 'Không có lớp nào'}
+                  description={
+                    q || sportId || phase !== 'ALL'
+                      ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                      : "Bấm 'Tạo lớp' để mở lớp cho một khóa học."
+                  }
+                />
               ),
             }}
           />

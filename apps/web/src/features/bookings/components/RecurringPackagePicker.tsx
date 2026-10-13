@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Checkbox, DatePicker, InputNumber, Select, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, DatePicker, InputNumber, Select, Table, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
@@ -9,7 +9,7 @@ import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types
 import { useSettings } from '~/features/settings';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { DATE_FORMAT, DAY_LABEL, WEEK_ORDER, addDays, formatDayLabel, slotGrid, todayVN } from '~/lib/time';
+import { DATE_FORMAT, DAY_LABEL, DAY_SHORT, WEEK_ORDER, addDays, formatDayLabel, slotGrid, todayVN } from '~/lib/time';
 import { usePackagePreview } from '../hooks/useBookings';
 import type { PackageConflict, PackagePreviewBooking, PackagePreviewRequest } from '../types';
 
@@ -36,7 +36,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const [facilityId, setFacilityId] = useState<string>();
   const [startDate, setStartDate] = useState(addDays(todayVN(), 1));
   const [slotIndex, setSlotIndex] = useState<number>();
-  const [weeks, setWeeks] = useState(4);
+  const [weeks, setWeeks] = useState<number | null>(4);
   const [days, setDays] = useState<number[]>([2, 5]);
 
   const slots = useMemo(
@@ -48,7 +48,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const bookable = (facilities.data ?? []).filter((facility) => facility.isActive);
 
   const request: PackagePreviewRequest | null =
-    facilityId && slot && days.length > 0 && weeks >= 1
+    facilityId && slot && days.length > 0 && weeks && weeks >= 1
       ? { facilityId, startDate, daysOfWeek: [...days].sort(), startTime: slot.startTime, endTime: slot.endTime, weeks }
       : null;
   const accountId = buyer && 'accountId' in buyer ? buyer.accountId : undefined;
@@ -128,17 +128,54 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
               max={12}
               precision={0}
               value={weeks}
-              onChange={(value) => setWeeks(value ?? 1)}
+              onChange={setWeeks}
+              placeholder="1–12"
             />
           </div>
         </div>
         <div>
-          <div className="mb-1 font-semibold">Thứ trong tuần</div>
-          <Checkbox.Group
-            value={days}
-            onChange={(value) => setDays(value as number[])}
-            options={WEEK_ORDER.map((day) => ({ value: day, label: DAY_LABEL[day] }))}
-          />
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-semibold text-sc-ink">Thứ trong tuần</span>
+            <span className="text-xs text-sc-muted">
+              {days.length === 0 ? (
+                <span className="font-medium text-sc-error">Chưa chọn thứ nào</span>
+              ) : (
+                <span>
+                  {WEEK_ORDER.filter((d) => days.includes(d))
+                    .map((d) => DAY_SHORT[d])
+                    .join(', ')}{' '}
+                  · <b className="text-sc-primary">{days.length} buổi/tuần</b>
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            {WEEK_ORDER.map((day) => {
+              const isSelected = days.includes(day);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => {
+                    setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
+                  }}
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border py-2.5 px-1 text-center transition-all ${
+                    isSelected
+                      ? 'border-sc-primary bg-sc-primary text-white shadow-xs font-semibold ring-2 ring-sc-primary/15'
+                      : 'border-sc-border bg-white text-sc-ink hover:border-sc-primary-border hover:bg-sc-paper'
+                  }`}
+                >
+                  <span className="font-display text-base font-bold uppercase leading-none sm:text-lg">
+                    {DAY_SHORT[day]}
+                  </span>
+                  <span className={`mt-1 text-[11px] leading-none ${isSelected ? 'text-white/85' : 'text-sc-muted'}`}>
+                    {DAY_LABEL[day]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <Alert
           type="info"

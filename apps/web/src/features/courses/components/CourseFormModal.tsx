@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { MoneyInput } from '~/components/form/MoneyInput';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { useCreateCourse, useUpdateCourse } from '../hooks/useCourses';
@@ -119,22 +120,28 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
             name="totalSessions"
             label="Số buổi"
             render={(field, invalid) => (
-              <InputNumber {...field} status={invalid ? 'error' : undefined} className="!w-full" min={1} max={100} />
+              <InputNumber
+                {...field}
+                status={invalid ? 'error' : undefined}
+                className="!w-full"
+                min={1}
+                max={100}
+                precision={0}
+              />
             )}
           />
           <FormField
             control={control}
             name="price"
-            label="Học phí (₫)"
+            label="Học phí"
             render={(field, invalid) => (
-              <InputNumber
-                {...field}
+              <MoneyInput
+                ref={field.ref}
+                value={field.value}
+                onChange={(value) => field.onChange(value ?? undefined)}
+                onBlur={field.onBlur}
                 status={invalid ? 'error' : undefined}
-                className="!w-full"
-                min={0}
                 step={50_000}
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                parser={(value) => Number(value?.replace(/\./g, '') || 0)}
               />
             )}
           />

@@ -23,6 +23,7 @@
     "db:studio": "bun --filter @sports-center/api db:studio",
     "db:seed": "bun --filter @sports-center/api db:seed",
     "db:seed:demo": "bun --filter @sports-center/api db:seed:demo",
+    "db:seed:today": "bun --filter @sports-center/api db:seed:today",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky"
   },

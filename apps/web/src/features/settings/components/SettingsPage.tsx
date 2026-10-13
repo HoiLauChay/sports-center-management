@@ -9,6 +9,7 @@ import type { z } from 'zod';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { MoneyInput } from '~/components/form/MoneyInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { useFormApiError } from '~/hooks/useFormApiError';
@@ -84,22 +85,21 @@ function NumberInputField({ control, name, label, unit, step = 1, money }: Numbe
       control={control}
       name={name}
       label={label}
-      render={(field, invalid) => (
-        <InputNumber<number>
-          ref={field.ref}
-          value={field.value}
-          onChange={(value) => field.onChange(value ?? undefined)}
-          onBlur={field.onBlur}
-          status={invalid ? 'error' : undefined}
-          min={0}
-          step={step}
-          precision={0}
-          suffix={unit}
-          formatter={money ? (value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : undefined}
-          parser={money ? (value) => Number((value ?? '').replace(/\D/g, '')) : undefined}
-          className="!w-full"
-        />
-      )}
+      render={(field, invalid) => {
+        const props = {
+          ref: field.ref,
+          value: field.value,
+          onChange: (value: number | null) => field.onChange(value ?? undefined),
+          onBlur: field.onBlur,
+          status: invalid ? ('error' as const) : undefined,
+          step,
+        };
+        return money ? (
+          <MoneyInput {...props} />
+        ) : (
+          <InputNumber<number> {...props} min={0} precision={0} suffix={unit} className="!w-full" />
+        );
+      }}
     />
   );
 }

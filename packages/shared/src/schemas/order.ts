@@ -17,10 +17,11 @@ export const listMyOrdersQuerySchema = pageQuerySchema.extend(dateRange).refine(
 export const listOrdersQuerySchema = pageQuerySchema
   .extend({
     ...dateRange,
+    q: z.string().trim().max(100).optional(),
     accountId: z.uuid('Mã thành viên không hợp lệ').optional(),
     guestPhone: phoneSchema.optional(),
     status: z.enum(ORDER_STATUSES, 'Trạng thái không hợp lệ').optional(),
-    orderNumber: z.string().trim().toUpperCase().min(1).max(50).optional(),
+    orderNumber: z.string().trim().min(1).max(50).optional(),
   })
   .refine(validRange, rangeIssue);
 

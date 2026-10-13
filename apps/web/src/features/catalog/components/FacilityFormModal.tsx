@@ -4,7 +4,6 @@ import {
   ERROR_CODE,
   FACILITY_TYPES,
   type CreateFacilityBody,
-  type CreateFacilityInput,
   type Facility,
   type Sport,
 } from '@sports-center/shared';
@@ -12,8 +11,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App, Col, Form, Input, InputNumber, Modal, Row, Segmented, Select, Switch } from 'antd';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import type { z } from 'zod';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { MoneyInput } from '~/components/form/MoneyInput';
 import { FACILITY_TYPE_LABEL } from '~/constants/facility';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { scheduleConflictsOf, toApiError } from '~/lib/http-errors';
@@ -22,28 +23,29 @@ import { facilitiesService } from '../services/facilities.service';
 
 const ERROR_FIELDS: ErrorFieldMap = { [ERROR_CODE.NAME_TAKEN]: 'name' };
 
-const EMPTY: CreateFacilityInput = {
+const facilityFormSchema = createFacilityBodySchema.extend({
+  pricePerSlot: createFacilityBodySchema.shape.pricePerSlot.default(0),
+});
+type FacilityFormInput = z.input<typeof facilityFormSchema>;
+
+const EMPTY: FacilityFormInput = {
   name: '',
   type: 'COURT',
   description: '',
   capacityPerSlot: 1,
-  pricePerSlot: 0,
   isActive: true,
   sportIds: [],
 };
 
-const toFormValues = (facility: Facility): CreateFacilityInput => ({
+const toFormValues = (facility: Facility): FacilityFormInput => ({
   name: facility.name,
   type: facility.type,
   description: facility.description ?? '',
   capacityPerSlot: facility.capacityPerSlot,
-  pricePerSlot: facility.pricePerSlot,
+  pricePerSlot: facility.pricePerSlot || undefined,
   isActive: facility.isActive,
   sportIds: facility.sports.map(({ id }) => id),
 });
-
-const moneyFormatter = (value: number | string | undefined) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-const moneyParser = (value: string | undefined) => Number((value ?? '').replace(/\D/g, ''));
 
 interface FacilityFormModalProps {
   open: boolean;
@@ -56,8 +58,8 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateFacilityInput, unknown, CreateFacilityBody>({
-    resolver: zodResolver(createFacilityBodySchema),
+  const form = useForm<FacilityFormInput, unknown, CreateFacilityBody>({
+    resolver: zodResolver(facilityFormSchema),
     mode: 'onTouched',
     defaultValues: EMPTY,
   });
@@ -180,19 +182,13 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
               name="pricePerSlot"
               label="Giá / slot"
               render={(field, invalid) => (
-                <InputNumber<number>
+                <MoneyInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
                   onBlur={field.onBlur}
                   status={invalid ? 'error' : undefined}
-                  min={0}
-                  step={10000}
-                  precision={0}
-                  formatter={moneyFormatter}
-                  parser={moneyParser}
-                  suffix="₫"
-                  className="!w-full"
+                  placeholder="0"
                 />
               )}
             />
