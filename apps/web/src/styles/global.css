@@ -108,6 +108,16 @@ a {
 .ant-table-wrapper .ant-table-thead > tr > th::before {
   display: none;
 }
+.ant-table-wrapper .ant-table-thead > tr > th:first-child,
+.ant-table-wrapper .ant-table-tbody > tr > td:first-child,
+.ant-table-wrapper .ant-table-summary > tr > td:first-child {
+  padding-left: 16px !important;
+}
+.ant-table-wrapper .ant-table-thead > tr > th:last-child,
+.ant-table-wrapper .ant-table-tbody > tr > td:last-child,
+.ant-table-wrapper .ant-table-summary > tr > td:last-child {
+  padding-right: 16px !important;
+}
 
 /* Figma status pills: borderless, 6px radius, 11px semibold. */
 html .ant-tag {
