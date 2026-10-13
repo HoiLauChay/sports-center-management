@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Segmented, Select } from 'antd';
+import { Alert, Button, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
@@ -114,7 +114,12 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Segmented
+        <Select
+          aria-label="Chọn bộ môn"
+          showSearch
+          optionFilterProp="label"
+          placeholder="Chọn bộ môn"
+          className="w-full sm:!w-44"
           value={sportId}
           options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
           onChange={(value) => {
@@ -125,6 +130,8 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         />
         <Select
           aria-label="Chọn sân / phòng"
+          showSearch
+          optionFilterProp="label"
           className="!min-w-48"
           value={facilityId}
           options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}

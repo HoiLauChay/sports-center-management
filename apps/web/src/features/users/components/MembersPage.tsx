@@ -1,21 +1,15 @@
 import type { AccountSummary } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Card, Input, type TableColumnsType } from 'antd';
+import { Card, type TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
-import { USER_COLUMNS } from './userColumns';
+import { userColumns } from './userColumns';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/');
-
-const columns: TableColumnsType<AccountSummary> = [
-  USER_COLUMNS.user,
-  USER_COLUMNS.phone,
-  USER_COLUMNS.status,
-  { ...USER_COLUMNS.createdAt, title: 'Ngày tham gia' },
-];
 
 export function MembersPage() {
   const search = routeApi.useSearch();
@@ -23,6 +17,14 @@ export function MembersPage() {
   const navigateTo = useNavigate();
   const { page, limit } = withPaginationDefaults(search);
   const query = { q: search.q, page, limit };
+
+  const cols = userColumns(search.q);
+  const columns: TableColumnsType<AccountSummary> = [
+    cols.user,
+    cols.phone,
+    cols.status,
+    { ...cols.createdAt, title: 'Ngày tham gia' },
+  ];
 
   const members = useQuery({
     queryKey: ['users', 'members', query],
@@ -37,14 +39,11 @@ export function MembersPage() {
     <>
       <PageHeader title="Tra cứu hội viên" description="Tìm hội viên theo tên, email hoặc số điện thoại." />
       <Card>
-        <Input.Search
-          key={search.q ?? ''}
-          defaultValue={search.q}
-          placeholder="Nhập tên, email hoặc SĐT"
-          maxLength={255}
-          allowClear
-          enterButton
-          onSearch={(q) => updateSearch({ q: q.trim() || undefined, page: undefined })}
+        <SearchInput
+          value={search.q ?? ''}
+          placeholder="Tìm theo tên, email hoặc SĐT..."
+          onChange={(q) => updateSearch({ q: q || undefined, page: undefined })}
+          loading={members.isFetching}
           className="mb-4 w-full sm:!w-96"
         />
         <DataTable

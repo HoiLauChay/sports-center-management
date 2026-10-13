@@ -4,6 +4,7 @@ import { App, Avatar, Button, Card, Popconfirm, Space, Switch, Table, Tag, type 
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
 import { facilitiesQueryOptions, sportsQueryOptions } from '../hooks/useCatalog';
@@ -17,6 +18,9 @@ export function SportsPage() {
   const facilities = useQuery(facilitiesQueryOptions);
   const [editing, setEditing] = useState<Sport | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const facilitiesBySport = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -25,6 +29,13 @@ export function SportsPage() {
     }
     return map;
   }, [facilities.data]);
+
+  const filteredSports = useMemo(() => {
+    if (!sports.data) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return sports.data;
+    return sports.data.filter((s) => s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q));
+  }, [sports.data, search]);
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: sportsQueryOptions.queryKey });
@@ -64,7 +75,7 @@ export function SportsPage() {
       width: 56,
       render: (_, __, index) => (
         <span className="font-display text-xl font-extrabold text-sc-muted-2">
-          {String(index + 1).padStart(2, '0')}
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
         </span>
       ),
     },
@@ -152,6 +163,17 @@ export function SportsPage() {
         }
       />
       <Card>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <SearchInput
+            placeholder="Tìm theo tên bộ môn, mô tả..."
+            value={search}
+            onChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-80"
+          />
+        </div>
         {sports.error && !sports.data ? (
           <ErrorState message={toApiError(sports.error).message} onRetry={() => void sports.refetch()} />
         ) : (
@@ -159,10 +181,29 @@ export function SportsPage() {
             rowKey="id"
             scroll={{ x: 'max-content' }}
             columns={columns}
-            dataSource={sports.data}
+            dataSource={filteredSports}
             loading={sports.isPending}
-            pagination={false}
-            locale={{ emptyText: sports.isPending ? ' ' : <EmptyState title="Chưa có bộ môn nào" /> }}
+            pagination={{
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} bộ môn`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
+            }}
+            locale={{
+              emptyText: sports.isPending ? (
+                ' '
+              ) : (
+                <EmptyState
+                  title={search ? 'Không tìm thấy bộ môn phù hợp' : 'Chưa có bộ môn nào'}
+                  description={search ? 'Thử tìm với từ khóa khác' : undefined}
+                />
+              ),
+            }}
           />
         )}
       </Card>

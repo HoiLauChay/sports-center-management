@@ -54,6 +54,8 @@ export function ReceptionBookingsPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             <Select
               aria-label="Lọc bộ môn"
+              showSearch
+              optionFilterProp="label"
               className="!w-44"
               placeholder="Tất cả bộ môn"
               allowClear
