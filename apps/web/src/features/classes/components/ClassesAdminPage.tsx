@@ -1,10 +1,13 @@
 import type { ClassSummary } from '@sports-center/shared';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Popconfirm, Segmented, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Button, Card, Popconfirm, Segmented, Select, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
@@ -12,8 +15,6 @@ import type { ManagerClassesQuery } from '../services/classes.service';
 import { classDateRange, weeklyLines } from '../utils';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
-
-const LIMIT = 10;
 
 type Phase = 'ALL' | 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 
@@ -29,14 +30,35 @@ const PHASE_QUERY: Record<Phase, Pick<ManagerClassesQuery, 'status' | 'derivedSt
 /** `/admin/classes` (UC_2.12, UC_2.15): every class by phase; pending ones are approved or rejected from the list. */
 export function ClassesAdminPage() {
   const [phase, setPhase] = useState<Phase>('ALL');
+  const [q, setQ] = useState('');
+  const [sportId, setSportId] = useState<string | undefined>();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
-  const classes = useManagerClasses({ page, limit: LIMIT, ...PHASE_QUERY[phase] });
+
+  const sports = useQuery(sportsQueryOptions);
+  const classes = useManagerClasses({
+    page,
+    limit: pageSize,
+    ...PHASE_QUERY[phase],
+    sportId: sportId || undefined,
+    q: q.trim() || undefined,
+  });
   const pending = useManagerClasses({ page: 1, limit: 1, ...PHASE_QUERY.PENDING });
   const approve = useApproveClassFromList();
   const reject = useRejectClassFromList();
 
   const columns: TableColumnsType<ClassSummary> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Tên lớp',
       width: 220,
@@ -159,6 +181,31 @@ export function ClassesAdminPage() {
       />
 
       <Card>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <SearchInput
+            placeholder="Tìm theo tên lớp, HLV..."
+            value={q}
+            onChange={(val) => {
+              setQ(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-72"
+          />
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Tất cả bộ môn"
+            value={sportId}
+            onChange={(val) => {
+              setSportId(val);
+              setPage(1);
+            }}
+            className="w-full sm:!w-52"
+            options={(sports.data ?? []).map((s) => ({ value: s.id, label: s.name }))}
+          />
+        </div>
+
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />
         ) : (
@@ -167,18 +214,29 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={classes.data?.items?.length ? { x: 1000 } : undefined}
+            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
-              pageSize: LIMIT,
+              pageSize,
               total: classes.data?.total ?? 0,
-              showSizeChanger: false,
-              hideOnSinglePage: true,
-              onChange: setPage,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} lớp học`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
             }}
             locale={{
               emptyText: (
-                <EmptyState title="Không có lớp nào" description="Bấm 'Tạo lớp' để mở lớp cho một khóa học." />
+                <EmptyState
+                  title={q || sportId || phase !== 'ALL' ? 'Không tìm thấy lớp học phù hợp' : 'Không có lớp nào'}
+                  description={
+                    q || sportId || phase !== 'ALL'
+                      ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
+                      : "Bấm 'Tạo lớp' để mở lớp cho một khóa học."
+                  }
+                />
               ),
             }}
           />
