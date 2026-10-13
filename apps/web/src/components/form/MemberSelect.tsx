@@ -1,23 +1,15 @@
 import type { AccountSummary } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Select, type SelectProps } from 'antd';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { usersService } from '~/features/users/services/users.service';
+import { useDebounce } from '~/hooks/useDebounce';
 
 interface MemberSelectProps extends Pick<SelectProps, 'placeholder' | 'status' | 'disabled' | 'className' | 'style'> {
   value?: string | null;
   onChange?: (memberId: string | undefined, member: AccountSummary | undefined) => void;
   /** Members shown as the initial options (e.g. the one that is already selected). */
   initial?: AccountSummary[];
-}
-
-function useDebounced<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), delay);
-    return () => window.clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
 }
 
 /** Server-side searchable member picker (name / email / phone). */
@@ -29,7 +21,7 @@ export function MemberSelect({
   ...rest
 }: MemberSelectProps) {
   const [term, setTerm] = useState('');
-  const q = useDebounced(term.trim());
+  const q = useDebounce(term.trim());
   const members = useQuery({
     queryKey: ['users', 'member-select', q],
     queryFn: () => usersService.list({ q: q || undefined, role: 'MEMBER', status: 'ACTIVE', page: 1, limit: 20 }),
