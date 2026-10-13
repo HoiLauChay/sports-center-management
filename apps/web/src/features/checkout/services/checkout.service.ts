@@ -56,16 +56,20 @@ export const checkoutService = {
   },
 
   /** Saves the PDF receipt the server renders for the order. */
-  downloadReceipt: async (orderId: string, orderNumber: string) => {
-    const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
-    const url = URL.createObjectURL(data);
+  downloadReceipt: async (orderId: string, orderNumber: string, existingBlob?: Blob | null) => {
+    const data =
+      existingBlob ?? (await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' })).data;
+    const pdfBlob = new Blob([data], { type: 'application/pdf' });
+    const fileName = `hoa-don-${orderNumber}.pdf`;
+    const url = URL.createObjectURL(pdfBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `receipt-${orderNumber}.pdf`;
+    link.setAttribute('download', fileName);
+    link.download = fileName;
     document.body.append(link);
     link.click();
     link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 
   /** Prints the exact server-rendered PDF receipt. */

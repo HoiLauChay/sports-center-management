@@ -180,7 +180,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const handleDownloadPdf = async () => {
     try {
       setDownloading(true);
-      await checkoutService.downloadReceipt(data.id, data.orderNumber);
+      await checkoutService.downloadReceipt(data.id, data.orderNumber, pdfBlob);
     } catch (error) {
       message.error(describeApiError(error));
     } finally {
