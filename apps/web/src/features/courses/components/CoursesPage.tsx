@@ -105,7 +105,7 @@ export function CoursesPage() {
         }
       />
 
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card>
         {courses.isError ? (
           <ErrorState message={toApiError(courses.error).message} onRetry={() => void courses.refetch()} />
         ) : (

@@ -158,7 +158,7 @@ export function ClassesAdminPage() {
         ]}
       />
 
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card>
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />
         ) : (
@@ -167,7 +167,7 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={{ x: 1100 }}
+            scroll={classes.data?.items?.length ? { x: 1000 } : undefined}
             pagination={{
               current: page,
               pageSize: LIMIT,
