@@ -53,17 +53,18 @@ export function ClassesAdminPage() {
       title: '#',
       key: 'index',
       width: 56,
+      fixed: 'left',
       render: (_, __, index) => (
-        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+        <span className="whitespace-nowrap font-display text-lg font-extrabold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
         </span>
       ),
     },
     {
       title: 'Tên lớp',
-      width: 220,
+      dataIndex: 'name',
       render: (_, record) => (
-        <div>
+        <div className="min-w-[160px]">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -77,32 +78,49 @@ export function ClassesAdminPage() {
         </div>
       ),
     },
-    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag> },
-    { title: 'Phòng / sân', render: (_, record) => record.facility.name },
+    {
+      title: 'Bộ môn',
+      width: 75,
+      render: (_, record) => (
+        <Tag color="green" className="!m-0">
+          {record.course.sport.name}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Phòng / sân',
+      width: 135,
+      render: (_, record) => (
+        <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.facility.name}</span>
+      ),
+    },
     {
       title: 'HLV',
+      width: 115,
       render: (_, record) =>
         record.coach ? (
-          <span className="whitespace-nowrap">{record.coach.fullName}</span>
+          <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.coach.fullName}</span>
         ) : (
-          <span className="whitespace-nowrap text-orange-500">Chưa có HLV</span>
+          <span className="whitespace-nowrap text-xs font-medium text-orange-500">Chưa có HLV</span>
         ),
     },
     {
       title: 'Sĩ số',
+      width: 85,
       render: (_, record) => (
         <div className="leading-tight">
-          <div className="font-semibold">
+          <div className="font-semibold text-sc-ink">
             {record.enrolledCount}/{record.maxStudents}
           </div>
-          <div className="text-xs text-sc-muted">tối thiểu {record.minStudents}</div>
+          <div className="whitespace-nowrap text-[11px] text-sc-muted">tối thiểu {record.minStudents}</div>
         </div>
       ),
     },
     {
       title: 'Lịch',
+      width: 110,
       render: (_, record) => (
-        <div className="whitespace-nowrap text-xs">
+        <div className="whitespace-nowrap text-xs text-sc-ink">
           {weeklyLines(record.weeklySchedule).map((line) => (
             <div key={line}>{line}</div>
           ))}
@@ -111,13 +129,19 @@ export function ClassesAdminPage() {
     },
     {
       title: 'Thời gian',
-      render: (_, record) => <span className="whitespace-nowrap text-xs">{classDateRange(record)}</span>,
+      width: 125,
+      render: (_, record) => <span className="whitespace-nowrap text-xs text-sc-muted">{classDateRange(record)}</span>,
     },
-    { title: 'Trạng thái', render: (_, record) => <ClassStatusTag item={record} /> },
+    {
+      title: 'Trạng thái',
+      width: 95,
+      render: (_, record) => <ClassStatusTag item={record} />,
+    },
     {
       key: 'actions',
       align: 'right',
-      width: 190,
+      width: 110,
+      fixed: 'right',
       render: (_, record) =>
         record.status === 'PENDING_APPROVAL' ? (
           <Space size={4}>
@@ -129,7 +153,7 @@ export function ClassesAdminPage() {
                 loading={approve.isPending && approve.variables === record.id}
                 onClick={() => approve.mutate(record.id)}
               >
-                Duyệt mở
+                Duyệt
               </Button>
             </Tooltip>
             <Popconfirm
@@ -214,7 +238,7 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 1000 }}
             pagination={{
               current: page,
               pageSize,
