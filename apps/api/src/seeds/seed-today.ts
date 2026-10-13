@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { prisma } from '~/configs/db';
 import { addDays, parseTime, toDbTime, todayInCenter } from '~/utils/time';
 
@@ -36,10 +37,10 @@ async function seedTodayData() {
 
   // 2. Create courses if not exist
   const yogaCourse = await prisma.course.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
+    where: { id: 'c0000000-0000-4000-8000-000000000001' },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000001',
+      id: 'c0000000-0000-4000-8000-000000000001',
       name: 'Yoga Thanh Lọc & Cân Bằng',
       sportId: yogaSport.id,
       price: 500000,
@@ -49,10 +50,10 @@ async function seedTodayData() {
   });
 
   const swimCourse = await prisma.course.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000002' },
+    where: { id: 'c0000000-0000-4000-8000-000000000002' },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000002',
+      id: 'c0000000-0000-4000-8000-000000000002',
       name: 'Bơi Lội Kỹ Thuật Ếch & Sải',
       sportId: swimSport.id,
       price: 1200000,
@@ -62,10 +63,10 @@ async function seedTodayData() {
   });
 
   const badCourse = await prisma.course.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000003' },
+    where: { id: 'c0000000-0000-4000-8000-000000000003' },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000003',
+      id: 'c0000000-0000-4000-8000-000000000003',
       name: 'Cầu Lông Chiến Thuật Đôi',
       sportId: badSport.id,
       price: 800000,
@@ -76,13 +77,13 @@ async function seedTodayData() {
 
   // 3. Create classes for today
   const class1 = await prisma.class.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000011' },
+    where: { id: 'c1000000-0000-4000-8000-000000000011' },
     update: {
       status: 'OPEN',
       deletedAt: null,
     },
     create: {
-      id: '00000000-0000-0000-0000-000000000011',
+      id: 'c1000000-0000-4000-8000-000000000011',
       name: 'Yoga Sáng Năng Lượng K01',
       courseId: yogaCourse.id,
       facilityId: yogaFacility.id,
@@ -99,13 +100,13 @@ async function seedTodayData() {
   });
 
   const class2 = await prisma.class.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000012' },
+    where: { id: 'c1000000-0000-4000-8000-000000000012' },
     update: {
       status: 'OPEN',
       deletedAt: null,
     },
     create: {
-      id: '00000000-0000-0000-0000-000000000012',
+      id: 'c1000000-0000-4000-8000-000000000012',
       name: 'Bơi Sải Nâng Cao K03',
       courseId: swimCourse.id,
       facilityId: poolFacility.id,
@@ -122,13 +123,13 @@ async function seedTodayData() {
   });
 
   const class3 = await prisma.class.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000013' },
+    where: { id: 'c1000000-0000-4000-8000-000000000013' },
     update: {
       status: 'OPEN',
       deletedAt: null,
     },
     create: {
-      id: '00000000-0000-0000-0000-000000000013',
+      id: 'c1000000-0000-4000-8000-000000000013',
       name: 'Cầu Lông Thi Đấu Chuyên Sâu',
       courseId: badCourse.id,
       facilityId: bad1Facility.id,
