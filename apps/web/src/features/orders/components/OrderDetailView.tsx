@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { App, Button, Card, Segmented, Spin, Table, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft, Download, ExternalLink, FileText, LayoutGrid, Printer } from 'lucide-react';
+import { ArrowLeft, Download, FileText, LayoutGrid, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -14,6 +14,7 @@ import { describeLine, refundedOf } from '~/features/checkout/utils';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { describeApiError, toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
+import { PdfReceiptCanvas } from './PdfReceiptCanvas';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
 const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
@@ -126,6 +127,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [viewMode, setViewMode] = useState<'details' | 'pdf'>('details');
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
 
@@ -151,13 +153,14 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const refunded = refundedOf(data);
 
   const loadPdf = async () => {
-    if (pdfUrl) return pdfUrl;
+    if (pdfBlob) return pdfBlob;
     try {
       setLoadingPdf(true);
       const blob = await checkoutService.getReceiptBlob(data.id);
       const url = URL.createObjectURL(blob);
+      setPdfBlob(blob);
       setPdfUrl(url);
-      return url;
+      return blob;
     } catch (error) {
       message.error(describeApiError(error));
       return null;
@@ -207,57 +210,47 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <span>{PAYMENT_METHOD_LABEL[data.paymentMethod]}</span>
           </span>
         }
-        extra={
-          <div className="flex flex-wrap gap-2">
-            <Link to={back.to}>
-              <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
-            </Link>
-            <Button
-              icon={viewMode === 'pdf' ? <LayoutGrid size={16} /> : <FileText size={16} />}
-              onClick={() => void handleToggleView()}
-            >
-              {viewMode === 'pdf' ? 'Xem chi tiết đơn' : 'Xem hóa đơn PDF'}
-            </Button>
-            <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
-              Tải PDF
-            </Button>
-            <Button
-              type="primary"
-              icon={<Printer size={16} />}
-              loading={printing}
-              onClick={() => void handlePrintPdf()}
-            >
-              In hóa đơn
-            </Button>
-          </div>
-        }
       />
 
-      <Segmented
-        value={viewMode}
-        onChange={(val) => void handleToggleView(val as 'details' | 'pdf')}
-        options={[
-          {
-            value: 'details',
-            label: (
-              <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
-                <LayoutGrid size={15} />
-                Chi tiết đơn hàng
-              </span>
-            ),
-          },
-          {
-            value: 'pdf',
-            label: (
-              <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
-                <FileText size={15} />
-                Bản in hóa đơn (PDF)
-              </span>
-            ),
-          },
-        ]}
-        className="!mb-4 !p-1 bg-sc-paper-2"
-      />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          value={viewMode}
+          onChange={(val) => void handleToggleView(val as 'details' | 'pdf')}
+          options={[
+            {
+              value: 'details',
+              label: (
+                <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
+                  <LayoutGrid size={15} />
+                  Chi tiết đơn hàng
+                </span>
+              ),
+            },
+            {
+              value: 'pdf',
+              label: (
+                <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
+                  <FileText size={15} />
+                  Bản in hóa đơn (PDF)
+                </span>
+              ),
+            },
+          ]}
+          className="!p-1 bg-sc-paper-2"
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={back.to}>
+            <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
+          </Link>
+          <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
+            Tải PDF
+          </Button>
+          <Button type="primary" icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
+            In hóa đơn
+          </Button>
+        </div>
+      </div>
 
       {viewMode === 'pdf' ? (
         loadingPdf ? (
@@ -268,43 +261,8 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             </div>
           </Card>
         ) : (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sc-border-soft bg-white px-4 py-2.5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <Tag color="green" className="!m-0 font-medium">
-                  Bản in chính thức
-                </Tag>
-                <span className="text-sm font-semibold text-sc-ink">Hóa đơn {data.orderNumber}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button icon={<Download size={14} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
-                  Tải PDF
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<Printer size={14} />}
-                  loading={printing}
-                  onClick={() => void handlePrintPdf()}
-                >
-                  In hóa đơn này
-                </Button>
-                {pdfUrl && (
-                  <Button icon={<ExternalLink size={14} />} onClick={() => window.open(pdfUrl, '_blank')}>
-                    Mở toàn màn hình
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-center overflow-hidden rounded-xl border border-sc-border bg-stone-100 p-4 shadow-sm">
-              {pdfUrl ? (
-                <iframe
-                  id="order-receipt-pdf-frame"
-                  src={pdfUrl}
-                  className="h-[820px] w-full max-w-4xl rounded-lg border-0 bg-white shadow-md"
-                  title={`Hóa đơn ${data.orderNumber}`}
-                />
-              ) : null}
-            </div>
+          <div className="flex justify-center">
+            <PdfReceiptCanvas blob={pdfBlob} className="w-full max-w-4xl" />
           </div>
         )
       ) : (

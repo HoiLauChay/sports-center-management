@@ -1,6 +1,7 @@
 import type { Paginated } from '@sports-center/shared';
 import { Button, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
+import { Eye } from 'lucide-react';
 import { DataTable } from '~/components/data/DataTable';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
@@ -136,21 +137,20 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
       ),
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'open',
-      width: 60,
+      width: 90,
       align: 'right',
       render: (_, order) => (
         <Button
           size="small"
-          type="link"
-          className="text-xs font-medium !p-0 text-emerald-700 hover:text-emerald-800"
+          icon={<Eye size={13} />}
           onClick={(e) => {
             e.stopPropagation();
             onOpen(order);
           }}
         >
-          Xem →
+          Xem
         </Button>
       ),
     },
