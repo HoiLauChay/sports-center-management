@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
+import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -57,10 +58,25 @@ function TransactionsTab() {
       key: 'content',
       render: (_, transaction) => (
         <div className="flex max-w-xs min-w-44 flex-col gap-0.5">
-          <span className="[overflow-wrap:anywhere]">{transaction.content}</span>
+          <span className="[overflow-wrap:anywhere]">
+            <Highlight keyword={q}>{transaction.content}</Highlight>
+          </span>
           <span className="text-xs text-sc-muted-2">
-            {transaction.paymentCode ? `Mã ${transaction.paymentCode} · ` : ''}
-            {transaction.referenceCode ?? (transaction.sepayId ? `SePay #${transaction.sepayId}` : '')}
+            {transaction.paymentCode ? (
+              <>
+                <Highlight keyword={q}>{`Mã ${transaction.paymentCode}`}</Highlight>
+                {' · '}
+              </>
+            ) : (
+              ''
+            )}
+            {transaction.referenceCode ? (
+              <Highlight keyword={q}>{transaction.referenceCode}</Highlight>
+            ) : transaction.sepayId ? (
+              `SePay #${transaction.sepayId}`
+            ) : (
+              ''
+            )}
           </span>
         </div>
       ),
@@ -302,7 +318,6 @@ function ReconciliationTab() {
   );
 }
 
-/** `/admin/bank-transactions`: incoming SePay transactions, unmatched ones to assign or ignore, daily reconciliation. */
 export function BankTransactionsPage() {
   return (
     <>

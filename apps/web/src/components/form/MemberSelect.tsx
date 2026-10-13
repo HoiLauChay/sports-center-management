@@ -2,13 +2,13 @@ import type { AccountSummary } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Select, type SelectProps } from 'antd';
 import { useState } from 'react';
+import { Highlight } from '~/components/ui/Highlight';
 import { usersService } from '~/features/users/services/users.service';
 import { useDebounce } from '~/hooks/useDebounce';
 
 interface MemberSelectProps extends Pick<SelectProps, 'placeholder' | 'status' | 'disabled' | 'className' | 'style'> {
   value?: string | null;
   onChange?: (memberId: string | undefined, member: AccountSummary | undefined) => void;
-  /** Members shown as the initial options (e.g. the one that is already selected). */
   initial?: AccountSummary[];
 }
 
@@ -44,7 +44,21 @@ export function MemberSelect({
       notFoundContent={members.isFetching ? 'Đang tìm…' : 'Không tìm thấy thành viên'}
       options={[...options.values()].map((member) => ({
         value: member.id,
-        label: `${member.fullName}${member.phone ? ` · ${member.phone}` : ''} · ${member.email}`,
+        label: (
+          <span>
+            <Highlight keyword={q}>{member.fullName}</Highlight>
+            {member.phone ? (
+              <>
+                {' · '}
+                <Highlight keyword={q}>{member.phone}</Highlight>
+              </>
+            ) : (
+              ''
+            )}
+            {' · '}
+            <Highlight keyword={q}>{member.email}</Highlight>
+          </span>
+        ),
       }))}
       onChange={(id: string | undefined) => onChange?.(id, id ? options.get(id) : undefined)}
     />

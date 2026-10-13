@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { Tag } from 'antd';
 import { CalendarDays, Clock, MapPin, UserRound, Users } from 'lucide-react';
+import { Highlight } from '~/components/ui/Highlight';
 import { formatDate, formatVND } from '~/lib/format';
 import type { GymClass } from '../types';
 import { weeklyText } from '../utils';
 
-export function ClassCard({ item }: { item: GymClass }) {
+export function ClassCard({ item, keyword }: { item: GymClass; keyword?: string }) {
   const seatsLeft = item.maxStudents - item.enrolledCount;
   return (
     <Link
@@ -22,11 +23,12 @@ export function ClassCard({ item }: { item: GymClass }) {
         </Tag>
       </div>
       <h3 className="m-0 font-display text-[22px] leading-tight font-extrabold uppercase [overflow-wrap:anywhere]">
-        {item.name}
+        <Highlight keyword={keyword}>{item.name}</Highlight>
       </h3>
       <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[13px] text-sc-muted">
         <li className="flex items-center gap-2">
-          <UserRound size={14} /> HLV {item.coach?.fullName ?? 'đang cập nhật'}
+          <UserRound size={14} /> HLV{' '}
+          {item.coach?.fullName ? <Highlight keyword={keyword}>{item.coach.fullName}</Highlight> : 'đang cập nhật'}
         </li>
         <li className="flex items-center gap-2">
           <Clock size={14} /> {weeklyText(item.weeklySchedule)}

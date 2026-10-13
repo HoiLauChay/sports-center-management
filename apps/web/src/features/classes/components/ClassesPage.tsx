@@ -11,7 +11,6 @@ import { ClassCard } from './ClassCard';
 
 const LIMIT = 9;
 
-/** `/classes`: classes open for enrollment, filterable by sport and coach. */
 export function ClassesPage() {
   const sports = useQuery(sportsQueryOptions);
   const coaches = useClassCoaches();
@@ -82,7 +81,7 @@ export function ClassesPage() {
         <>
           <div className="grid grid-cols-1 gap-4 min-[601px]:grid-cols-2 min-[1001px]:grid-cols-3">
             {classes.data.items.map((item) => (
-              <ClassCard key={item.id} item={item} />
+              <ClassCard key={item.id} item={item} keyword={q} />
             ))}
           </div>
           <Pagination

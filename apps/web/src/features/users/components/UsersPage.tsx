@@ -19,7 +19,7 @@ import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { CreateUserModal } from './CreateUserModal';
-import { USER_COLUMNS } from './userColumns';
+import { userColumns } from './userColumns';
 import { UserStatusModal } from './UserStatusModal';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/users/');
@@ -45,12 +45,13 @@ export function UsersPage() {
 
   const openDetail = (id: string) => void navigateTo({ to: '/admin/users/$userId', params: { userId: id } });
 
+  const cols = userColumns(search.q);
   const columns: TableColumnsType<AccountSummary> = [
-    USER_COLUMNS.user,
-    USER_COLUMNS.phone,
-    USER_COLUMNS.role,
-    USER_COLUMNS.status,
-    USER_COLUMNS.createdAt,
+    cols.user,
+    cols.phone,
+    cols.role,
+    cols.status,
+    cols.createdAt,
     {
       title: 'Thao tác',
       key: 'actions',

@@ -3,6 +3,7 @@ import { Button, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Eye } from 'lucide-react';
 import { DataTable } from '~/components/data/DataTable';
+import { Highlight } from '~/components/ui/Highlight';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, type Order } from '~/features/checkout/types';
@@ -17,9 +18,9 @@ interface OrdersTableProps {
   page: number;
   limit: number;
   onPageChange: (page: number, limit: number) => void;
-  /** Staff see who bought; members only see their own orders. */
   showBuyer?: boolean;
   onOpen: (order: Order) => void;
+  keyword?: string;
 }
 
 const ITEM_TYPE_COLOR: Record<string, string> = {
@@ -36,7 +37,7 @@ const PAYMENT_COLOR: Record<string, string> = {
   CARD: 'purple',
 };
 
-export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTableProps) {
+export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: OrdersTableProps) {
   const columns: TableColumnsType<Order> = [
     {
       title: 'Số hóa đơn',
@@ -44,7 +45,7 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
       width: 180,
       render: (value: string) => (
         <span className="font-mono text-[12.5px] font-semibold text-sc-ink" title={value}>
-          {value}
+          <Highlight keyword={keyword}>{value}</Highlight>
         </span>
       ),
     },
@@ -71,7 +72,7 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
             render: (_: unknown, order: Order) =>
               order.account ? (
                 <span className="font-medium text-sc-ink block truncate max-w-[170px]" title={order.account.fullName}>
-                  {order.account.fullName}
+                  <Highlight keyword={keyword}>{order.account.fullName}</Highlight>
                 </span>
               ) : (
                 <div className="flex flex-col gap-0.5 text-xs">
@@ -80,10 +81,14 @@ export function OrdersTable({ showBuyer = false, onOpen, ...table }: OrdersTable
                       Khách
                     </Tag>
                     <span className="font-medium text-sc-ink truncate max-w-[120px]" title={order.guestName ?? ''}>
-                      {order.guestName}
+                      <Highlight keyword={keyword}>{order.guestName ?? ''}</Highlight>
                     </span>
                   </div>
-                  {order.guestPhone && <span className="text-[11px] text-sc-muted">{order.guestPhone}</span>}
+                  {order.guestPhone && (
+                    <span className="text-[11px] text-sc-muted">
+                      <Highlight keyword={keyword}>{order.guestPhone}</Highlight>
+                    </span>
+                  )}
                 </div>
               ),
           },

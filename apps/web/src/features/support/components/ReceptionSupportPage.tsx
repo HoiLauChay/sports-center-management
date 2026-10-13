@@ -2,6 +2,7 @@ import { Button, Card, Drawer, Input, Segmented, Select, Tag, type TableColumnsT
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { SearchInput } from '~/components/form/SearchInput';
+import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDateTime, formatRelative } from '~/lib/format';
@@ -31,7 +32,6 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
   const next = NEXT_SUPPORT_STATUS[request.status];
   const closed = request.status === 'CLOSED';
   const reply = note.trim();
-  // The API keeps the last reply once one is saved, so an emptied box is never sent.
   const dirty = reply !== '' && reply !== (request.resolutionNote ?? '');
   const tag = SUPPORT_STATUS_TAG[request.status];
 
@@ -109,13 +109,11 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
   );
 }
 
-/** Remounts the panel whenever the request changes on the server, so the reply box always shows the saved text. */
 function RequestDrawer({ request, onClose }: { request: SupportRequest | null; onClose: () => void }) {
   if (!request) return null;
   return <RequestPanel key={`${request.id}:${request.updatedAt}`} request={request} onClose={onClose} />;
 }
 
-/** `/reception/support`: list, filter, update status and reply to members' tickets. */
 export function ReceptionSupportPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
@@ -130,14 +128,20 @@ export function ReceptionSupportPage() {
     {
       title: 'Thành viên',
       key: 'account',
-      render: (_, request) => <b>{request.account.fullName}</b>,
+      render: (_, request) => (
+        <b>
+          <Highlight keyword={q}>{request.account.fullName}</Highlight>
+        </b>
+      ),
     },
     {
       title: 'Yêu cầu',
       key: 'subject',
       render: (_, request) => (
         <div className="flex max-w-md min-w-48 flex-col gap-0.5">
-          <b className="[overflow-wrap:anywhere]">{request.subject}</b>
+          <b className="[overflow-wrap:anywhere]">
+            <Highlight keyword={q}>{request.subject}</Highlight>
+          </b>
           <span className="truncate text-[13px] text-sc-muted">{request.description}</span>
         </div>
       ),

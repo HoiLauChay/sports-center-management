@@ -7,16 +7,9 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
-import { USER_COLUMNS } from './userColumns';
+import { userColumns } from './userColumns';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/');
-
-const columns: TableColumnsType<AccountSummary> = [
-  USER_COLUMNS.user,
-  USER_COLUMNS.phone,
-  USER_COLUMNS.status,
-  { ...USER_COLUMNS.createdAt, title: 'Ngày tham gia' },
-];
 
 export function MembersPage() {
   const search = routeApi.useSearch();
@@ -24,6 +17,14 @@ export function MembersPage() {
   const navigateTo = useNavigate();
   const { page, limit } = withPaginationDefaults(search);
   const query = { q: search.q, page, limit };
+
+  const cols = userColumns(search.q);
+  const columns: TableColumnsType<AccountSummary> = [
+    cols.user,
+    cols.phone,
+    cols.status,
+    { ...cols.createdAt, title: 'Ngày tham gia' },
+  ];
 
   const members = useQuery({
     queryKey: ['users', 'members', query],

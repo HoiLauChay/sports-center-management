@@ -38,6 +38,7 @@
     "pdfjs-dist": "^6.4.299",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-highlight-words": "^1.0.0",
     "react-hook-form": "^7.88.0",
     "tailwindcss": "^4.3.3",
     "zod": "^4.6.5"
@@ -51,6 +52,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@types/react-highlight-words": "^0.20.1",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^10.10.0",
     "typescript": "~6.0.2",
