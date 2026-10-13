@@ -38,6 +38,8 @@ export function ClassesPage() {
         />
         <Select
           allowClear
+          showSearch
+          optionFilterProp="label"
           placeholder="Mọi bộ môn"
           className="w-full sm:!w-56"
           loading={sports.isPending}

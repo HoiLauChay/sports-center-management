@@ -114,17 +114,37 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Segmented
-          value={sportId}
-          options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
-          onChange={(value) => {
-            setSportChoice(value);
-            setFacilityChoice(undefined);
-            setSelection(null);
-          }}
-        />
+        {sportOptions.length > 5 ? (
+          <Select
+            aria-label="Chọn bộ môn"
+            showSearch
+            optionFilterProp="label"
+            placeholder="Chọn bộ môn"
+            className="!min-w-44"
+            value={sportId}
+            options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
+            onChange={(value) => {
+              setSportChoice(value);
+              setFacilityChoice(undefined);
+              setSelection(null);
+            }}
+          />
+        ) : (
+          <Segmented
+            value={sportId}
+            options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
+            onChange={(value) => {
+              setSportChoice(value);
+              setFacilityChoice(undefined);
+              setSelection(null);
+            }}
+            className="max-w-full overflow-x-auto"
+          />
+        )}
         <Select
           aria-label="Chọn sân / phòng"
+          showSearch
+          optionFilterProp="label"
           className="!min-w-48"
           value={facilityId}
           options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
