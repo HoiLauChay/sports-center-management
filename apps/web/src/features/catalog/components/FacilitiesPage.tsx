@@ -1,10 +1,23 @@
 import { FACILITY_TYPES, type Facility, type FacilityType } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Button, Card, Popconfirm, Segmented, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Popconfirm,
+  Segmented,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  type TableColumnsType,
+} from 'antd';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { FACILITY_TYPE_LABEL } from '~/constants/facility';
 import { formatVND } from '~/lib/format';
@@ -26,6 +39,10 @@ export function FacilitiesPage() {
   const facilities = useQuery(facilitiesQueryOptions);
   const sports = useQuery(sportsQueryOptions);
   const [type, setType] = useState<TypeFilter>('ALL');
+  const [sportId, setSportId] = useState<string | undefined>();
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editing, setEditing] = useState<Facility | null>(null);
   const [formOpen, setFormOpen] = useState(false);
 
@@ -69,9 +86,33 @@ export function FacilitiesPage() {
     setFormOpen(true);
   };
 
-  const rows = facilities.data?.filter((facility) => type === 'ALL' || facility.type === type);
+  const filteredFacilities = useMemo(() => {
+    if (!facilities.data) return [];
+    const q = search.trim().toLowerCase();
+    return facilities.data.filter((facility) => {
+      if (type !== 'ALL' && facility.type !== type) return false;
+      if (sportId && !facility.sports.some((s) => s.id === sportId)) return false;
+      if (q) {
+        const matchName = facility.name.toLowerCase().includes(q);
+        const matchDesc = facility.description?.toLowerCase().includes(q);
+        const matchSport = facility.sports.some((s) => s.name.toLowerCase().includes(q));
+        if (!matchName && !matchDesc && !matchSport) return false;
+      }
+      return true;
+    });
+  }, [facilities.data, type, sportId, search]);
 
   const columns: TableColumnsType<Facility> = [
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Tên',
       key: 'name',
@@ -165,8 +206,41 @@ export function FacilitiesPage() {
         }
       />
       <Card>
-        <div className="mb-4 overflow-x-auto">
-          <Segmented value={type} onChange={(value) => setType(value as TypeFilter)} options={TYPE_FILTERS} />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchInput
+              placeholder="Tìm theo tên sân, phòng..."
+              value={search}
+              onChange={(val) => {
+                setSearch(val);
+                setPage(1);
+              }}
+              className="w-full sm:!w-72"
+            />
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="Tất cả bộ môn"
+              value={sportId}
+              onChange={(val) => {
+                setSportId(val);
+                setPage(1);
+              }}
+              className="w-full sm:!w-52"
+              options={(sports.data ?? []).map((s) => ({ value: s.id, label: s.name }))}
+            />
+          </div>
+          <div className="overflow-x-auto">
+            <Segmented
+              value={type}
+              onChange={(value) => {
+                setType(value as TypeFilter);
+                setPage(1);
+              }}
+              options={TYPE_FILTERS}
+            />
+          </div>
         </div>
         {facilities.error && !facilities.data ? (
           <ErrorState message={toApiError(facilities.error).message} onRetry={() => void facilities.refetch()} />
@@ -175,10 +249,35 @@ export function FacilitiesPage() {
             rowKey="id"
             scroll={{ x: 'max-content' }}
             columns={columns}
-            dataSource={rows}
+            dataSource={filteredFacilities}
             loading={facilities.isPending}
-            pagination={false}
-            locale={{ emptyText: facilities.isPending ? ' ' : <EmptyState title="Chưa có sân hoặc phòng nào" /> }}
+            pagination={{
+              current: page,
+              pageSize,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total) => `${total} sân & phòng`,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
+            }}
+            locale={{
+              emptyText: facilities.isPending ? (
+                ' '
+              ) : (
+                <EmptyState
+                  title={
+                    search || sportId || type !== 'ALL'
+                      ? 'Không tìm thấy sân/phòng phù hợp'
+                      : 'Chưa có sân hoặc phòng nào'
+                  }
+                  description={
+                    search || sportId || type !== 'ALL' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : undefined
+                  }
+                />
+              ),
+            }}
           />
         )}
       </Card>

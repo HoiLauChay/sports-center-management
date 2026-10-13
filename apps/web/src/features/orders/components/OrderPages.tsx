@@ -1,4 +1,3 @@
-import { phoneSchema } from '@sports-center/shared';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { Card, DatePicker, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
@@ -26,7 +25,6 @@ export function ReceptionOrderDetailPage() {
   return <OrderDetailView orderId={orderId} back={{ to: '/reception/orders', label: 'Danh sách hóa đơn' }} />;
 }
 
-/** `/reception/orders`: look up any order by number, guest phone, status or date. */
 export function ReceptionOrdersPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -35,15 +33,11 @@ export function ReceptionOrdersPage() {
   const [status, setStatus] = useState<OrderStatus | undefined>();
   const [range, setRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
-  // Order numbers start with "DH", so anything that parses as a phone number is a guest phone.
-  const parsedPhone = phoneSchema.safeParse(term);
-  const guestPhone = parsedPhone.success ? (parsedPhone.data ?? undefined) : undefined;
   const orders = useOrders({
     page,
     limit,
     status,
-    orderNumber: term && !guestPhone ? term : undefined,
-    guestPhone,
+    q: term || undefined,
     from: range?.[0]?.format(DATE_FORMAT),
     to: range?.[1]?.format(DATE_FORMAT),
   });
@@ -54,13 +48,13 @@ export function ReceptionOrdersPage() {
     <>
       <PageHeader
         title="Hóa đơn"
-        description="Tra cứu hóa đơn theo số hóa đơn hoặc số điện thoại khách, xem và in lại biên lai."
+        description="Tra cứu hóa đơn theo số hóa đơn, tên người mua hoặc số điện thoại, xem và in lại biên lai."
       />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
           <SearchInput
-            placeholder="Số hóa đơn hoặc SĐT khách..."
-            maxLength={50}
+            placeholder="Số hóa đơn, người mua hoặc SĐT..."
+            maxLength={100}
             className="w-full sm:!w-72"
             value={term}
             onChange={(value) => {
@@ -93,6 +87,7 @@ export function ReceptionOrdersPage() {
         </div>
         <OrdersTable
           showBuyer
+          keyword={term}
           data={orders.data}
           isLoading={orders.isFetching}
           error={orders.error}

@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Segmented, Select } from 'antd';
+import { Alert, Button, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
@@ -114,33 +114,20 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        {sportOptions.length > 5 ? (
-          <Select
-            aria-label="Chọn bộ môn"
-            showSearch
-            optionFilterProp="label"
-            placeholder="Chọn bộ môn"
-            className="!min-w-44"
-            value={sportId}
-            options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
-            onChange={(value) => {
-              setSportChoice(value);
-              setFacilityChoice(undefined);
-              setSelection(null);
-            }}
-          />
-        ) : (
-          <Segmented
-            value={sportId}
-            options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
-            onChange={(value) => {
-              setSportChoice(value);
-              setFacilityChoice(undefined);
-              setSelection(null);
-            }}
-            className="max-w-full overflow-x-auto"
-          />
-        )}
+        <Select
+          aria-label="Chọn bộ môn"
+          showSearch
+          optionFilterProp="label"
+          placeholder="Chọn bộ môn"
+          className="w-full sm:!w-44"
+          value={sportId}
+          options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
+          onChange={(value) => {
+            setSportChoice(value);
+            setFacilityChoice(undefined);
+            setSelection(null);
+          }}
+        />
         <Select
           aria-label="Chọn sân / phòng"
           showSearch

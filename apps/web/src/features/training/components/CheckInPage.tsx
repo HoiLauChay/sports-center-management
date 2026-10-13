@@ -5,6 +5,7 @@ import { Calendar, CheckCircle2, Clock, History, TriangleAlert, UserCheck } from
 import { useMemo, useState } from 'react';
 import { EmptyState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
+import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
 import { usersService } from '~/features/users/services/users.service';
@@ -73,10 +74,6 @@ const columns: TableColumnsType<CheckIn> = [
   },
 ];
 
-/**
- * `/reception/checkin`: find a member and check them in. The server allows it for an active member with a booking or
- * a class session today (BR_4.1) and explains a refusal, which the page shows as is.
- */
 export function CheckInPage() {
   const { message } = App.useApp();
   const [term, setTerm] = useState('');
@@ -328,12 +325,18 @@ export function CheckInPage() {
                         </div>
                         <div className="min-w-0">
                           <div className="font-semibold text-sm text-sc-ink truncate group-hover:text-primary transition-colors">
-                            {entry.fullName}
+                            <Highlight keyword={term}>{entry.fullName}</Highlight>
                           </div>
                           <div className="text-xs text-sc-muted flex items-center gap-2">
-                            {entry.phone && <span className="tabular-nums">{entry.phone}</span>}
+                            {entry.phone && (
+                              <span className="tabular-nums">
+                                <Highlight keyword={term}>{entry.phone}</Highlight>
+                              </span>
+                            )}
                             {entry.phone && <span>·</span>}
-                            <span className="truncate">{entry.email}</span>
+                            <span className="truncate">
+                              <Highlight keyword={term}>{entry.email}</Highlight>
+                            </span>
                           </div>
                         </div>
                       </div>
