@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { BarChart, type ChartDatum } from '~/components/charts/BarChart';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
@@ -32,26 +33,22 @@ const MONTHS = 6;
 function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
   const total = bucket?.revenue ?? 0;
   return (
-    <div className="flex flex-col gap-4 border-t border-solid border-sc-border-soft pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+    <div className="flex flex-col gap-5 border-0 border-t border-solid border-sc-border-soft pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
       <div>
         <div className="text-[13px] font-semibold tracking-wide text-sc-muted uppercase">Tháng này</div>
-        <div className="mt-1.5 font-display text-[32px] leading-none font-extrabold tabular-nums">
-          {formatVND(total)}
+        <div className="mt-2 font-display text-[34px] leading-none font-extrabold tabular-nums">
+          <MoneyFigure amount={total} />
         </div>
       </div>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+      <ul className="m-0 flex list-none flex-col gap-4 p-0">
         {REVENUE_SERIES.map((series) => {
           const value = bucket?.byType[series.key as keyof RevenueBucket['byType']] ?? 0;
           return (
-            <li key={series.key} className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between gap-3 text-[14px]">
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: series.color }} />
-                  <span className="truncate">{series.label}</span>
-                </span>
-                <b className="tabular-nums">{formatVND(value)}</b>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-sc-paper">
+            <li key={series.key} className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2">
+              <span className="size-2.5 rounded-full" style={{ background: series.color }} />
+              <span className="truncate text-[14px]">{series.label}</span>
+              <b className="text-[14px] tabular-nums">{formatVND(value)}</b>
+              <div className="col-span-2 col-start-2 h-1.5 overflow-hidden rounded-full bg-sc-paper">
                 <div
                   className="h-full rounded-full"
                   style={{ width: `${total > 0 ? (value / total) * 100 : 0}%`, background: series.color }}
@@ -207,7 +204,7 @@ export function ManagerDashboard() {
           icon={Banknote}
           label="Doanh thu hôm nay"
           loading={overview.isPending}
-          value={formatVND(data?.revenueToday ?? 0)}
+          value={<MoneyFigure amount={data?.revenueToday ?? 0} />}
         />
         <StatCard
           icon={UserPlus}
@@ -234,7 +231,7 @@ export function ManagerDashboard() {
       {(pending.length > 0 || unmatched > 0) && (
         <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[14px]">
           <TriangleAlert size={15} className="text-[#d48806]" />
-          <b>Cần Manager xử lý:</b>
+          <b>Cần xử lý:</b>
           {pending.length > 0 && (
             <Link to="/admin/classes/$classId" params={{ classId: pending[0]!.id }} className="font-medium">
               {pending.length} lớp chờ duyệt mở
@@ -302,9 +299,6 @@ export function ManagerDashboard() {
                 <CalendarCheck size={24} />
               </div>
               <span className="text-[15px] font-semibold text-sc-ink">Hôm nay không có buổi học nào</span>
-              <span className="mt-1 text-[13px] text-sc-muted max-w-xs">
-                Không có lớp học nào được xếp lịch diễn ra trong ngày hôm nay.
-              </span>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-y-auto max-h-[380px]">
@@ -410,9 +404,6 @@ export function ManagerDashboard() {
                 <CheckCircle2 size={24} />
               </div>
               <span className="text-[15px] font-semibold text-sc-ink">Không có lớp nào chờ duyệt</span>
-              <span className="mt-1 text-[13px] text-sc-muted max-w-xs">
-                Tất cả yêu cầu mở lớp đã được xử lý hoặc chưa có lớp học mới cần xét duyệt.
-              </span>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-y-auto max-h-[380px]">
@@ -473,7 +464,7 @@ export function ManagerDashboard() {
                       params={{ classId: item.id }}
                       className="hidden sm:inline-flex items-center justify-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors"
                     >
-                      Duyệt
+                      {item.coach ? 'Duyệt' : 'Phân công'}
                     </Link>
                   </div>
                 </div>
@@ -484,7 +475,7 @@ export function ManagerDashboard() {
       </div>
 
       <Card
-        title="Tình trạng đăng ký lớp (OPEN / ONGOING)"
+        title="Sĩ số các lớp đang mở"
         className="!mt-6"
         styles={{ header: { minHeight: 54 }, body: { padding: '12px 24px 24px' } }}
       >
