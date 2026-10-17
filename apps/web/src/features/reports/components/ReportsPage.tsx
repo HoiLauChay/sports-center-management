@@ -1,5 +1,4 @@
 import { PAYMENT_METHODS } from '@sports-center/shared';
-import { Link } from '@tanstack/react-router';
 import { Card, Col, Row, Table, Tabs, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -45,7 +44,6 @@ export function OverviewTab() {
           icon={Banknote}
           label="Doanh thu hôm nay"
           value={formatVND(data?.revenueToday ?? 0)}
-          hint="Không gồm nạp ví, đã trừ hoàn tiền"
         />
       </Col>
       <Col xs={24} sm={12} xl={8}>
@@ -87,11 +85,6 @@ export function OverviewTab() {
           tone={data && data.unmatchedBankTransactions > 0 ? 'warning' : 'default'}
           label="Giao dịch ngân hàng chưa khớp"
           value={data?.unmatchedBankTransactions ?? 0}
-          hint={
-            <Link to="/admin/bank-transactions" className="font-semibold underline underline-offset-2">
-              Đối soát ngay
-            </Link>
-          }
         />
       </Col>
     </Row>
@@ -124,7 +117,9 @@ function RevenueTab({ range }: { range: ReportRange }) {
     {
       title: 'Kỳ',
       dataIndex: 'period',
-      render: (period: string) => <b className="whitespace-nowrap">{periodText(period, range.granularity)}</b>,
+      render: (period: string) => (
+        <span className="whitespace-nowrap font-semibold">{periodText(period, range.granularity)}</span>
+      ),
     },
     ...ORDER_ITEM_TYPES.map((type) => ({
       title: ORDER_ITEM_TYPE_LABEL[type],
@@ -138,7 +133,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
       title: 'Doanh thu',
       dataIndex: 'revenue',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
     {
       title: 'Hoàn tiền',
@@ -152,7 +147,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
       title: 'Thực thu',
       dataIndex: 'net',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
   ];
 
@@ -164,20 +159,10 @@ function RevenueTab({ range }: { range: ReportRange }) {
     <div className={report.isFetching ? 'opacity-70 [transition:opacity_0.15s]' : undefined}>
       <Row gutter={[16, 16]} className="!mb-4">
         <Col xs={24} md={8}>
-          <StatCard
-            loading={report.isPending}
-            label="Doanh thu"
-            value={formatVND(totals.revenue)}
-            hint="Tính theo thời điểm thanh toán · không gồm nạp ví"
-          />
+          <StatCard loading={report.isPending} label="Doanh thu" value={formatVND(totals.revenue)} />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard
-            loading={report.isPending}
-            label="Hoàn tiền"
-            value={formatVND(totals.refunds)}
-            hint="Tính tại thời điểm hoàn"
-          />
+          <StatCard loading={report.isPending} label="Hoàn tiền" value={formatVND(totals.refunds)} />
         </Col>
         <Col xs={24} md={8}>
           <StatCard loading={report.isPending} label="Thực thu" value={formatVND(totals.revenue - totals.refunds)} />
@@ -259,7 +244,9 @@ function WalletTab({ range }: { range: ReportRange }) {
     {
       title: 'Kỳ',
       dataIndex: 'period',
-      render: (period: string) => <b className="whitespace-nowrap">{periodText(period, range.granularity)}</b>,
+      render: (period: string) => (
+        <span className="whitespace-nowrap font-semibold">{periodText(period, range.granularity)}</span>
+      ),
     },
     {
       title: 'Nạp chuyển khoản',
@@ -294,10 +281,12 @@ function WalletTab({ range }: { range: ReportRange }) {
       dataIndex: 'netChange',
       align: 'right',
       render: (value: number) => (
-        <b className={`whitespace-nowrap tabular-nums ${value < 0 ? 'text-sc-error' : 'text-sc-success'}`}>
+        <span
+          className={`whitespace-nowrap font-medium tabular-nums ${value < 0 ? 'text-sc-error' : 'text-sc-success'}`}
+        >
           {value > 0 ? '+' : ''}
           {formatVND(value)}
-        </b>
+        </span>
       ),
     },
   ];
@@ -314,7 +303,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             loading={report.isPending}
             label="Tổng số dư ví"
             value={formatVND(report.data?.totalBalance ?? 0)}
-            hint="Của mọi thành viên, tại thời điểm xem"
           />
         </Col>
         <Col xs={24} md={8}>
@@ -322,7 +310,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             loading={report.isPending}
             label="Biến động ròng trong kỳ"
             value={`${net > 0 ? '+' : ''}${formatVND(net)}`}
-            hint="Nạp − thanh toán + hoàn"
           />
         </Col>
         <Col xs={24} md={8}>
@@ -331,14 +318,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             tone={report.data && report.data.unmatched.count > 0 ? 'warning' : 'default'}
             label="Tiền vào chưa khớp"
             value={formatVND(report.data?.unmatched.amount ?? 0)}
-            hint={
-              <>
-                {report.data?.unmatched.count ?? 0} giao dịch ·{' '}
-                <Link to="/admin/bank-transactions" className="font-semibold underline underline-offset-2">
-                  Đối soát
-                </Link>
-              </>
-            }
           />
         </Col>
       </Row>
@@ -369,10 +348,7 @@ export function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Báo cáo"
-        description="Doanh thu tính theo thời điểm thanh toán, không gồm nạp ví. Báo cáo thành viên, sân, khóa học và xuất file sẽ bổ sung sau."
-      />
+      <PageHeader title="Báo cáo" />
       <Card>
         <Tabs
           activeKey={tab}

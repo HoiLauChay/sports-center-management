@@ -188,7 +188,6 @@ export function CoachSpecializationsPage() {
     <>
       <PageHeader
         title="Chuyên môn của tôi"
-        description="Chỉ được đăng ký dạy / được phân công lớp thuộc bộ môn đã duyệt. Bị từ chối thì có thể cập nhật và gửi lại."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => setOpen(true)}>
             Đăng ký bộ môn
@@ -211,9 +210,6 @@ export function CoachSpecializationsPage() {
                 label="Bộ môn được phép dạy"
                 loading={specializations.isPending}
                 value={approved.length}
-                hint={
-                  approved.length > 0 ? approved.map((e) => e.sport.name).join(', ') : 'Chưa có bộ môn nào được duyệt'
-                }
               />
             </Col>
             <Col xs={24} sm={8}>
@@ -222,7 +218,6 @@ export function CoachSpecializationsPage() {
                 label="Yêu cầu chờ duyệt"
                 loading={specializations.isPending}
                 value={pending.length}
-                hint={pending.length > 0 ? 'Đang đợi Quản lý xử lý' : 'Không có yêu cầu chờ'}
                 tone={pending.length > 0 ? 'warning' : 'default'}
               />
             </Col>
@@ -232,7 +227,6 @@ export function CoachSpecializationsPage() {
                 label="Cần bổ sung hồ sơ"
                 loading={specializations.isPending}
                 value={rejected.length}
-                hint={rejected.length > 0 ? 'Có yêu cầu bị từ chối' : 'Hồ sơ đầy đủ'}
                 tone={rejected.length > 0 ? 'warning' : 'default'}
               />
             </Col>

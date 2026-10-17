@@ -66,14 +66,12 @@ export function ReceptionistDashboard() {
           label="Thu tại quầy hôm nay"
           loading={orders.isPending}
           value={formatVND(counterTotal)}
-          hint={`${counterOrders.length} hóa đơn`}
         />
         <StatCard
           icon={CalendarCheck}
           label="Booking hôm nay"
           loading={bookings.isPending}
           value={bookings.data?.length ?? 0}
-          hint={`${upcoming.length} lượt sắp tới`}
         />
         <StatCard
           icon={LifeBuoy}
@@ -81,11 +79,6 @@ export function ReceptionistDashboard() {
           label="Yêu cầu chờ xử lý"
           loading={support.isPending}
           value={openRequests}
-          hint={
-            <Link to="/reception/support" className="font-semibold underline underline-offset-2">
-              Xử lý yêu cầu
-            </Link>
-          }
         />
       </div>
 

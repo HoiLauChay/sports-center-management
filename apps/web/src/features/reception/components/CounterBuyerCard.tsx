@@ -1,6 +1,5 @@
 import { phoneSchema } from '@sports-center/shared';
 import { Alert, Button, Card, Input, Radio, Tag } from 'antd';
-import { Info } from 'lucide-react';
 import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
 import { SectionTitle } from '~/components/ui/SectionTitle';
@@ -127,12 +126,6 @@ export function CounterBuyerCard({ buyer, onChange, balance, disabled }: Counter
                 )
               }
             />
-            {!buyer && (
-              <p className="mt-2 mb-0 text-xs text-sc-muted flex items-center gap-1.5">
-                <Info className="size-3 text-sc-muted shrink-0" />
-                <span>Tìm theo họ tên, số điện thoại hoặc email hội viên để lập đơn.</span>
-              </p>
-            )}
             {buyer?.kind === 'MEMBER' && <MemberSummary buyer={buyer} balance={balance} />}
           </div>
         ) : (

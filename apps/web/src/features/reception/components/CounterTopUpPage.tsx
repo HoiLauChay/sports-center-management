@@ -200,10 +200,7 @@ export function CounterTopUpPage() {
 
   return (
     <>
-      <PageHeader
-        title="Nạp ví tại quầy"
-        description="Ghi nhận nạp tiền trực tiếp vào tài khoản hội viên qua tiền mặt, quẹt thẻ POS hoặc mã QR chuyển khoản."
-      />
+      <PageHeader title="Nạp ví tại quầy" />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
           {/* 1. Chọn & thông tin thành viên */}
@@ -266,10 +263,6 @@ export function CounterTopUpPage() {
                   className="w-full"
                   placeholder="Nhập tên, SĐT hoặc email để tìm…"
                 />
-                <p className="mt-2 mb-0 text-xs text-sc-muted flex items-center gap-1.5">
-                  <Info className="size-3 text-sc-muted shrink-0" />
-                  <span>Tìm theo họ tên, số điện thoại hoặc email hội viên.</span>
-                </p>
               </div>
             )}
           </Card>

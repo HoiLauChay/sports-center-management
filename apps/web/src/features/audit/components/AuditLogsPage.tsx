@@ -1,7 +1,6 @@
 import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES, listAuditLogsQuerySchema, type AuditLog } from '@sports-center/shared';
 import { Alert, Avatar, Button, Card, DatePicker, Form, Select, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
-import { Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -88,7 +87,6 @@ export function AuditLogsPage() {
       title: '#',
       key: 'index',
       width: 56,
-      fixed: 'left',
       render: (_, __, index) => (
         <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String(index + 1).padStart(2, '0')}
@@ -134,8 +132,8 @@ export function AuditLogsPage() {
       key: 'entity',
       width: 170,
       render: (_, log) => (
-        <div className="flex flex-col text-xs leading-tight">
-          <span className="font-semibold text-sc-ink">{AUDIT_ENTITY_LABEL[log.entityType]}</span>
+        <div className="flex flex-col text-[13px] leading-tight">
+          <span className="text-sc-ink">{AUDIT_ENTITY_LABEL[log.entityType]}</span>
           <span title={log.entityId} className="font-mono text-[11px] text-sc-muted">
             #{log.entityId.slice(0, 8)}
           </span>
@@ -145,21 +143,7 @@ export function AuditLogsPage() {
     {
       title: 'Chi tiết',
       key: 'details',
-      render: (_, log) => <span className="text-xs [overflow-wrap:anywhere]">{summarize(log)}</span>,
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 48,
-      align: 'right',
-      render: (_, log) => (
-        <Button
-          size="small"
-          icon={<Eye size={14} />}
-          aria-label="Xem chi tiết thao tác"
-          onClick={() => setSelected(log)}
-        />
-      ),
+      render: (_, log) => <span className="text-[13px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
     },
   ];
 
@@ -169,7 +153,7 @@ export function AuditLogsPage() {
     <>
       <PageHeader
         title="Lịch sử thao tác hệ thống"
-        description={`Audit log ${rangeLabel} · ${logs.items.length}${logs.hasNextPage ? '+' : ''} bản ghi · không chứa mật khẩu / OTP / token`}
+        description={`Audit log ${rangeLabel} · ${logs.items.length}${logs.hasNextPage ? '+' : ''} bản ghi`}
       />
       <Card>
         <Form<FilterForm>
@@ -259,6 +243,7 @@ export function AuditLogsPage() {
               loading={logs.isPending}
               pagination={false}
               scroll={{ x: 'max-content' }}
+              onRow={(log) => ({ onClick: () => setSelected(log), className: 'cursor-pointer' })}
               locale={{
                 emptyText: logs.isPending ? (
                   ' '

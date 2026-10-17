@@ -46,10 +46,7 @@ export function ReceptionOrdersPage() {
 
   return (
     <>
-      <PageHeader
-        title="Hóa đơn"
-        description="Tra cứu hóa đơn theo số hóa đơn, tên người mua hoặc số điện thoại, xem và in lại biên lai."
-      />
+      <PageHeader title="Hóa đơn" />
       <Card>
         <div className="mb-4 flex flex-wrap gap-3">
           <SearchInput

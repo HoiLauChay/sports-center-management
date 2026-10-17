@@ -171,10 +171,7 @@ export function CheckInPage() {
 
   return (
     <>
-      <PageHeader
-        title="Check-in thành viên"
-        description="Tra cứu và xác nhận lượt vào sân, phòng tập hoặc lớp học hôm nay cho hội viên."
-      />
+      <PageHeader title="Check-in thành viên" />
       <div className="grid items-start gap-5 lg:grid-cols-2">
         {/* Cột trái: Quầy Check-in */}
         <Card className="shadow-sm border border-slate-200/80 dark:border-slate-800" styles={{ body: { padding: 20 } }}>

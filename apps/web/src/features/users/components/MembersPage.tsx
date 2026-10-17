@@ -37,7 +37,7 @@ export function MembersPage() {
 
   return (
     <>
-      <PageHeader title="Tra cứu hội viên" description="Tìm hội viên theo tên, email hoặc số điện thoại." />
+      <PageHeader title="Tra cứu hội viên" />
       <Card>
         <SearchInput
           value={search.q ?? ''}

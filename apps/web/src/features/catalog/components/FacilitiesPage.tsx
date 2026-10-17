@@ -1,25 +1,15 @@
 import { FACILITY_TYPES, type Facility, type FacilityType } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  App,
-  Button,
-  Card,
-  Popconfirm,
-  Segmented,
-  Select,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { App, Button, Card, Segmented, Select, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { FACILITY_TYPE_LABEL } from '~/constants/facility';
+import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { scheduleConflictsOf, toApiError } from '~/lib/http-errors';
 import { facilitiesQueryOptions, sportsQueryOptions } from '../hooks/useCatalog';
@@ -34,6 +24,7 @@ const TYPE_FILTERS = [
 ];
 
 export function FacilitiesPage() {
+  const confirm = useConfirm();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const facilities = useQuery(facilitiesQueryOptions);
@@ -120,7 +111,7 @@ export function FacilitiesPage() {
         <div className="flex min-w-0 flex-col">
           <span className="font-semibold">{facility.name}</span>
           {facility.description && (
-            <span className="max-w-xs text-xs text-sc-muted [overflow-wrap:anywhere]">{facility.description}</span>
+            <span className="max-w-xs text-[13px] text-sc-muted [overflow-wrap:anywhere]">{facility.description}</span>
           )}
         </div>
       ),
@@ -150,13 +141,13 @@ export function FacilitiesPage() {
       title: 'Sức chứa / slot',
       dataIndex: 'capacityPerSlot',
       align: 'center',
-      render: (value: number) => <b>{value}</b>,
+      render: (value: number) => <span className="tabular-nums">{value}</span>,
     },
     {
       title: 'Giá / slot',
       dataIndex: 'pricePerSlot',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
     {
       title: 'Nhận đặt',
@@ -170,26 +161,27 @@ export function FacilitiesPage() {
       ),
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
       render: (_, facility) => (
-        <Space>
-          <Button size="small" onClick={() => openForm(facility)}>
-            Sửa
-          </Button>
-          <Popconfirm
-            title={`Xóa ${facility.name}?`}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => remove.mutateAsync(facility).catch(() => undefined)}
-          >
-            <Button size="small" danger>
-              Xóa
-            </Button>
-          </Popconfirm>
-        </Space>
+        <RowActions
+          label={`Thao tác với ${facility.name}`}
+          actions={[
+            { key: 'edit', label: 'Sửa', onClick: () => openForm(facility) },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              onClick: () =>
+                confirm({
+                  title: `Xóa ${facility.name}?`,
+                  okText: 'Xóa',
+                  onOk: () => remove.mutateAsync(facility).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];

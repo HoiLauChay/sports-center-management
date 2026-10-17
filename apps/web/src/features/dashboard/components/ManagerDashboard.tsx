@@ -1,3 +1,4 @@
+import type { RevenueBucket } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Badge, Card, Progress, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import {
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { BarChart, type ChartDatum } from '~/components/charts/BarChart';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
@@ -27,6 +29,38 @@ import { formatVND } from '~/lib/format';
 import { DATE_FORMAT, formatDayLabel, nowVN, todayVN } from '~/lib/time';
 
 const MONTHS = 6;
+
+function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
+  const total = bucket?.revenue ?? 0;
+  return (
+    <div className="flex flex-col gap-5 border-0 border-t border-solid border-sc-border-soft pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+      <div>
+        <div className="text-[13px] font-semibold tracking-wide text-sc-muted uppercase">Tháng này</div>
+        <div className="mt-2 font-display text-[34px] leading-none font-extrabold tabular-nums">
+          <MoneyFigure amount={total} />
+        </div>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-4 p-0">
+        {REVENUE_SERIES.map((series) => {
+          const value = bucket?.byType[series.key as keyof RevenueBucket['byType']] ?? 0;
+          return (
+            <li key={series.key} className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2">
+              <span className="size-2.5 rounded-full" style={{ background: series.color }} />
+              <span className="truncate text-[14px]">{series.label}</span>
+              <b className="text-[14px] tabular-nums">{formatVND(value)}</b>
+              <div className="col-span-2 col-start-2 h-1.5 overflow-hidden rounded-full bg-sc-paper">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${total > 0 ? (value / total) * 100 : 0}%`, background: series.color }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 /** How well a running class is filling up: the manager's cue to push enrollments or step in. */
 function fillState(item: GymClass) {
@@ -50,7 +84,7 @@ const classColumns: TableColumnsType<GymClass> = [
             <Link
               to="/admin/classes/$classId"
               params={{ classId: item.id }}
-              className="text-[14.5px] font-bold text-sc-ink hover:text-sc-primary hover:underline"
+              className="text-[15.5px] font-bold text-sc-ink hover:text-sc-primary hover:underline"
             >
               {item.name}
             </Link>
@@ -58,8 +92,8 @@ const classColumns: TableColumnsType<GymClass> = [
               {tag.label}
             </Tag>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-sc-muted">
-            <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+          <div className="flex flex-wrap items-center gap-2 text-[13px] text-sc-muted">
+            <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
               {item.course.sport.name}
             </Tag>
             <span>·</span>
@@ -87,11 +121,11 @@ const classColumns: TableColumnsType<GymClass> = [
     width: 180,
     render: (_, item) => (
       <div className="flex flex-col gap-1 py-3">
-        <span className="text-[13.5px] font-bold text-sc-ink tabular-nums">
+        <span className="text-[15px] font-bold text-sc-ink tabular-nums">
           {item.enrolledCount} / {item.maxStudents} HV
         </span>
         <span
-          className={`text-xs ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+          className={`text-[13px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
         >
           (Tối thiểu: {item.minStudents} HV)
         </span>
@@ -170,15 +204,13 @@ export function ManagerDashboard() {
           icon={Banknote}
           label="Doanh thu hôm nay"
           loading={overview.isPending}
-          value={formatVND(data?.revenueToday ?? 0)}
-          hint="Không gồm nạp ví, đã trừ hoàn tiền"
+          value={<MoneyFigure amount={data?.revenueToday ?? 0} />}
         />
         <StatCard
           icon={UserPlus}
           label="Thành viên mới"
           loading={overview.isPending}
           value={data?.newMembersToday ?? 0}
-          hint={`${data?.activeMemberships ?? 0} gói đang hiệu lực`}
         />
         <StatCard
           icon={CalendarCheck}
@@ -191,14 +223,13 @@ export function ManagerDashboard() {
           label="Lớp đang diễn ra"
           loading={overview.isPending}
           value={data?.ongoingClasses ?? 0}
-          hint={`${sessions.data?.length ?? 0} buổi hôm nay`}
         />
       </div>
 
       {(pending.length > 0 || unmatched > 0) && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-2.5 text-[13.5px]">
+        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[14px]">
           <TriangleAlert size={15} className="text-[#d48806]" />
-          <b>Cần Manager xử lý:</b>
+          <b>Cần xử lý:</b>
           {pending.length > 0 && (
             <Link to="/admin/classes/$classId" params={{ classId: pending[0]!.id }} className="font-medium">
               {pending.length} lớp chờ duyệt mở
@@ -224,7 +255,10 @@ export function ManagerDashboard() {
           </Link>
         }
       >
-        <BarChart data={chart} series={REVENUE_SERIES} mode="stacked" ariaLabel="Doanh thu theo tháng" />
+        <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <BarChart data={chart} series={REVENUE_SERIES} mode="stacked" ariaLabel="Doanh thu theo tháng" />
+          <MonthBreakdown bucket={revenue.data?.buckets.at(-1)} />
+        </div>
       </Card>
 
       <div className="mt-4 grid items-stretch gap-4 lg:grid-cols-2">
@@ -262,10 +296,7 @@ export function ManagerDashboard() {
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                 <CalendarCheck size={24} />
               </div>
-              <span className="text-sm font-semibold text-sc-ink">Hôm nay không có buổi học nào</span>
-              <span className="mt-1 text-xs text-sc-muted max-w-xs">
-                Không có lớp học nào được xếp lịch diễn ra trong ngày hôm nay.
-              </span>
+              <span className="text-[15px] font-semibold text-sc-ink">Hôm nay không có buổi học nào</span>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-y-auto max-h-[380px]">
@@ -276,10 +307,10 @@ export function ManagerDashboard() {
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="flex flex-col items-center justify-center shrink-0 w-[76px] py-1.5 px-1 rounded-lg bg-emerald-50/90 border border-emerald-200/80 text-center">
-                      <span className="font-mono text-[13px] font-bold text-emerald-800 tracking-tight">
+                      <span className="font-mono text-[14px] font-bold text-emerald-800 tracking-tight">
                         {session.startTime}
                       </span>
-                      <span className="text-[11px] font-medium text-emerald-600/90">đến {session.endTime}</span>
+                      <span className="text-xs font-medium text-emerald-600/90">đến {session.endTime}</span>
                     </div>
 
                     <div className="flex flex-col gap-1 min-w-0">
@@ -287,17 +318,17 @@ export function ManagerDashboard() {
                         <Link
                           to="/admin/classes/$classId"
                           params={{ classId: session.class.id }}
-                          className="font-semibold text-sc-ink text-[14px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
+                          className="font-semibold text-sc-ink text-[15px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
                         >
                           {session.class.name}
                         </Link>
                         {session.class.sport && (
-                          <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
                             {session.class.sport.name}
                           </Tag>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span className="flex items-center gap-1 text-slate-600">
                           <MapPin size={12} className="text-slate-400 shrink-0" />
                           <span className="truncate">{session.facility.name}</span>
@@ -318,10 +349,10 @@ export function ManagerDashboard() {
 
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="hidden sm:flex flex-col items-end text-right">
-                      <span className="text-xs font-bold text-sc-ink tabular-nums">
+                      <span className="text-[13px] font-bold text-sc-ink tabular-nums">
                         {session.class.enrolledCount} / {session.class.maxStudents} HV
                       </span>
-                      <span className="text-[11px] text-sc-muted">Sĩ số</span>
+                      <span className="text-xs text-sc-muted">Sĩ số</span>
                     </div>
                     <Link
                       to="/admin/classes/$classId"
@@ -370,10 +401,7 @@ export function ManagerDashboard() {
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600">
                 <CheckCircle2 size={24} />
               </div>
-              <span className="text-sm font-semibold text-sc-ink">Không có lớp nào chờ duyệt</span>
-              <span className="mt-1 text-xs text-sc-muted max-w-xs">
-                Tất cả yêu cầu mở lớp đã được xử lý hoặc chưa có lớp học mới cần xét duyệt.
-              </span>
+              <span className="text-[15px] font-semibold text-sc-ink">Không có lớp nào chờ duyệt</span>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-y-auto max-h-[380px]">
@@ -391,17 +419,17 @@ export function ManagerDashboard() {
                         <Link
                           to="/admin/classes/$classId"
                           params={{ classId: item.id }}
-                          className="font-semibold text-sc-ink text-[14px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
+                          className="font-semibold text-sc-ink text-[15px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
                         >
                           {item.name}
                         </Link>
                         {item.course?.sport && (
-                          <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
                             {item.course.sport.name}
                           </Tag>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span>
                           HLV:{' '}
                           <strong className={item.coach ? 'font-medium text-sc-ink' : 'font-medium text-amber-600'}>
@@ -434,7 +462,7 @@ export function ManagerDashboard() {
                       params={{ classId: item.id }}
                       className="hidden sm:inline-flex items-center justify-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors"
                     >
-                      Duyệt
+                      {item.coach ? 'Duyệt' : 'Phân công'}
                     </Link>
                   </div>
                 </div>
@@ -445,7 +473,7 @@ export function ManagerDashboard() {
       </div>
 
       <Card
-        title="Tình trạng đăng ký lớp (OPEN / ONGOING)"
+        title="Sĩ số các lớp đang mở"
         className="!mt-6"
         styles={{ header: { minHeight: 54 }, body: { padding: '12px 24px 24px' } }}
       >

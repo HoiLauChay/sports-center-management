@@ -69,7 +69,7 @@ export function CoachClassesPage() {
 
   return (
     <>
-      <PageHeader title="Lớp phụ trách" description="Lớp bạn đang là HLV hiện tại." />
+      <PageHeader title="Lớp phụ trách" />
       <Card>
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />

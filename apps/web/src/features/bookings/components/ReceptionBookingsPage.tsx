@@ -41,10 +41,7 @@ export function ReceptionBookingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Lịch sân / phòng"
-        description="Xem tình trạng sân và phòng theo ngày trước khi đặt tại quầy."
-      />
+      <PageHeader title="Lịch sân / phòng" />
       <Card
         className="overflow-hidden rounded-xl border border-slate-200/80 shadow-sm"
         styles={{ body: { padding: '20px 24px' } }}

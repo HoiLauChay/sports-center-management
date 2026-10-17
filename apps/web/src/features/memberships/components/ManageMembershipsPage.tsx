@@ -1,23 +1,13 @@
 import type { MembershipPackage } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Alert,
-  App,
-  Button,
-  Card,
-  Popconfirm,
-  Segmented,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Alert, App, Button, Card, Popconfirm, Segmented, Switch, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import {
@@ -31,6 +21,7 @@ import { MembershipFormModal } from './MembershipFormModal';
 type SaleFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 
 export function ManageMembershipsPage() {
+  const confirm = useConfirm();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const packages = useQuery(membershipsQueryOptions);
@@ -89,10 +80,9 @@ export function ManageMembershipsPage() {
     {
       title: '#',
       key: 'index',
-      width: 50,
-      className: '!pl-5',
+      width: 56,
       render: (_, __, index) => (
-        <span className="font-mono text-xs font-semibold text-sc-muted-2">
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
         </span>
       ),
@@ -114,7 +104,7 @@ export function ManageMembershipsPage() {
       key: 'price',
       width: 110,
       align: 'right',
-      render: (_, membership) => <b className="whitespace-nowrap">{formatVND(membership.price)}</b>,
+      render: (_, membership) => <span className="whitespace-nowrap tabular-nums">{formatVND(membership.price)}</span>,
       sorter: (a, b) => a.price - b.price,
     },
     {
@@ -174,7 +164,7 @@ export function ManageMembershipsPage() {
       align: 'center',
       render: (_, membership) =>
         membership.freeBookingSlotsPerMonth ? (
-          <span className="font-semibold text-sc-ink">{membership.freeBookingSlotsPerMonth}</span>
+          <span className="text-sc-ink tabular-nums">{membership.freeBookingSlotsPerMonth}</span>
         ) : (
           <span className="text-sc-muted-2">—</span>
         ),
@@ -212,33 +202,34 @@ export function ManageMembershipsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 110,
       align: 'right',
-      className: '!pr-5',
       render: (_, membership) => (
-        <Space size={4}>
-          <Button size="small" disabled={remove.isPending || toggle.isPending} onClick={() => openForm(membership)}>
-            Sửa
-          </Button>
-          <Popconfirm
-            title={`Xóa ${membership.name}?`}
-            description="Gói sẽ ngừng bán và bị xóa khỏi danh sách. Các kỳ đã thanh toán vẫn giữ nguyên quyền lợi đến hết hạn."
-            okText="Xóa gói"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-            styles={{ container: { maxWidth: 340 } }}
-            onConfirm={() => remove.mutateAsync(membership).catch(() => undefined)}
-          >
-            <Button
-              size="small"
-              danger
-              disabled={remove.isPending || toggle.isPending}
-              loading={remove.isPending && remove.variables.id === membership.id}
-            >
-              Xóa
-            </Button>
-          </Popconfirm>
-        </Space>
+        <RowActions
+          label={`Thao tác với ${membership.name}`}
+          actions={[
+            {
+              key: 'edit',
+              label: 'Sửa',
+              disabled: remove.isPending || toggle.isPending,
+              onClick: () => openForm(membership),
+            },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              disabled: remove.isPending || toggle.isPending,
+              loading: remove.isPending && remove.variables.id === membership.id,
+              onClick: () =>
+                confirm({
+                  title: `Xóa ${membership.name}?`,
+                  content:
+                    'Gói sẽ ngừng bán và bị xóa khỏi danh sách. Các kỳ đã thanh toán vẫn giữ nguyên quyền lợi đến hết hạn.',
+                  okText: 'Xóa gói',
+                  onOk: () => remove.mutateAsync(membership).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];
@@ -247,7 +238,6 @@ export function ManageMembershipsPage() {
     <>
       <PageHeader
         title="Gói thành viên"
-        description="Không cần gói vẫn đặt sân / đăng ký lớp được. Gói chỉ thêm quyền lợi: vào gym, giảm giá đặt sân, giảm học phí, slot sân miễn phí mỗi tháng."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm(null)}>
             Tạo gói

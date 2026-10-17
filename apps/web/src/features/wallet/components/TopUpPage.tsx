@@ -50,7 +50,6 @@ export function TopUpPage() {
     <>
       <PageHeader
         title="Nạp tiền vào ví"
-        description="Nhập số tiền, hệ thống tạo hóa đơn kèm mã QR chuyển khoản. Tiền về ví trong vài giây sau khi chuyển."
         extra={
           <Link to="/wallet">
             <Button icon={<ArrowLeft size={16} />}>Về ví</Button>

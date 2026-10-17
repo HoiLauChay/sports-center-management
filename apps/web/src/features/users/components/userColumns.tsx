@@ -21,7 +21,7 @@ export const userColumns = (q?: string) =>
             <span className="font-semibold">
               <Highlight keyword={q}>{user.fullName}</Highlight>
             </span>
-            <span className="text-xs text-sc-muted">
+            <span className="text-[13px] text-sc-muted">
               <Highlight keyword={q}>{user.email}</Highlight>
             </span>
           </div>

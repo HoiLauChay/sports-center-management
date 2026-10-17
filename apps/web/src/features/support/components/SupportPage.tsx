@@ -62,7 +62,6 @@ export function SupportPage() {
     <>
       <PageHeader
         title="Hỗ trợ"
-        description="Gửi yêu cầu cho lễ tân và theo dõi trạng thái xử lý. Trạng thái tự cập nhật khi lễ tân phản hồi."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => setOpen(true)}>
             Gửi yêu cầu

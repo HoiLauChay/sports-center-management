@@ -119,10 +119,7 @@ export function MembershipPlansPage() {
 
   return (
     <>
-      <PageHeader
-        title="Gói thành viên"
-        description="Không cần gói vẫn đặt sân và đăng ký lớp. Gói thêm quyền lợi: vào gym, giảm giá đặt sân & học phí, slot sân miễn phí."
-      />
+      <PageHeader title="Gói thành viên" />
       {packages.isPending ? (
         <PageLoading />
       ) : packages.error && !packages.data ? (

@@ -47,7 +47,6 @@ export function CartPage() {
     <>
       <PageHeader
         title="Giỏ hàng"
-        description="Thêm đặt sân, lớp học, gói thành viên vào cùng một đơn rồi thanh toán bằng ví. Giỏ chưa giữ chỗ, hệ thống kiểm tra lại khi thanh toán."
         extra={
           cart.lines.length > 0 && (
             <Popconfirm
@@ -163,10 +162,6 @@ export function CartPage() {
                   {!quote.canCheckout && (
                     <p className="mt-2 mb-0 text-xs text-sc-error">{blockedReason(quote)} để thanh toán.</p>
                   )}
-                  <p className="mt-3 mb-0 text-xs text-sc-muted-2">
-                    Hệ thống kiểm tra lại chỗ trống, mã giảm giá và số dư khi thanh toán. Một dòng lỗi thì cả đơn không
-                    được thanh toán.
-                  </p>
                 </>
               ) : (
                 <p className="m-0 text-sc-muted">Đang tính giá…</p>

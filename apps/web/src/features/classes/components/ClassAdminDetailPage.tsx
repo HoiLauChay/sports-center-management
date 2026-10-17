@@ -2,6 +2,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { Alert, Button, Card, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Banknote, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -27,8 +28,6 @@ const SOURCE_LABEL: Record<CoachRegistration['source'], string> = {
 };
 
 const DAY_NAME = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'] as const;
-
-const tableFrame = 'overflow-hidden rounded-lg border border-solid border-sc-border-soft';
 
 function Initial({ name }: { name: string }) {
   return (
@@ -79,9 +78,6 @@ export function ClassAdminDetailPage() {
   const status = classStatusTag(item);
   const liveSessions = item.sessions.filter((session) => session.status === 'SCHEDULED');
   const taught = liveSessions.filter((session) => isPast(session.date, session.startTime)).length;
-  const cancelledSessions = item.sessions.length - liveSessions.length;
-  const pendingRegistrations = item.coachRegistrations.filter((entry) => entry.status === 'PENDING').length;
-  const fill = Math.round((item.enrolledCount / item.maxStudents) * 100);
   const closeModal = () => setModal(null);
   const needsCoach = item.status === 'PENDING_APPROVAL' && !item.coach;
 
@@ -119,8 +115,8 @@ export function ClassAdminDetailPage() {
         <div className="flex min-w-48 items-center gap-2">
           <Initial name={registration.coach.fullName} />
           <div className="flex flex-col">
-            <b>{registration.coach.fullName}</b>
-            <span className="text-[11.5px] text-sc-muted">{SOURCE_LABEL[registration.source]}</span>
+            <span className="font-semibold">{registration.coach.fullName}</span>
+            <span className="text-[13px] text-sc-muted">{SOURCE_LABEL[registration.source]}</span>
           </div>
         </div>
       ),
@@ -132,20 +128,39 @@ export function ClassAdminDetailPage() {
       render: (value: CoachRegistration['status']) => <MappedTag value={value} map={REGISTRATION_TAG} />,
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      render: (_, registration) =>
-        can.assignCoach && registration.status === 'PENDING' ? (
-          <Button size="small" type="primary" loading={assign.isPending} onClick={() => askPick(registration)}>
-            Chọn HLV này
-          </Button>
-        ) : null,
+      render: (_, registration) => (
+        <RowActions
+          label={`Thao tác với đăng ký của ${registration.coach.fullName}`}
+          actions={
+            can.assignCoach && registration.status === 'PENDING'
+              ? [
+                  {
+                    key: 'pick',
+                    label: 'Chọn HLV này',
+                    primary: true,
+                    loading: assign.isPending,
+                    onClick: () => askPick(registration),
+                  },
+                ]
+              : []
+          }
+        />
+      ),
     },
   ];
 
   const sessionColumns: TableColumnsType<ClassSession> = [
-    { title: 'Buổi', dataIndex: 'sessionNumber', width: 70 },
+    {
+      title: 'Buổi',
+      dataIndex: 'sessionNumber',
+      width: 70,
+      render: (value: number) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">{String(value).padStart(2, '0')}</span>
+      ),
+    },
     {
       title: 'Ngày',
       dataIndex: 'date',
@@ -168,15 +183,19 @@ export function ClassAdminDetailPage() {
         ),
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      render: (_, session) =>
-        item.status !== 'CANCELLED' && session.status === 'SCHEDULED' && !isPast(session.date, session.startTime) ? (
-          <Button size="small" icon={<Pencil size={14} />} onClick={() => setEditing(session)}>
-            Sửa
-          </Button>
-        ) : null,
+      render: (_, session) => (
+        <RowActions
+          label={`Thao tác với buổi ${session.sessionNumber}`}
+          actions={
+            item.status !== 'CANCELLED' && session.status === 'SCHEDULED' && !isPast(session.date, session.startTime)
+              ? [{ key: 'edit', label: 'Sửa', onClick: () => setEditing(session) }]
+              : []
+          }
+        />
+      ),
     },
   ];
 
@@ -226,30 +245,10 @@ export function ClassAdminDetailPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={Users}
-          label="Sĩ số"
-          value={`${item.enrolledCount}/${item.maxStudents}`}
-          hint={`Tối thiểu ${item.minStudents} · lấp đầy ${fill}%`}
-        />
-        <StatCard
-          icon={CalendarDays}
-          label="Buổi đã dạy"
-          value={`${taught}/${item.course.totalSessions}`}
-          hint={`${cancelledSessions} buổi hủy`}
-        />
-        <StatCard
-          icon={UserCheck}
-          label="HLV"
-          value={item.coach?.fullName ?? '—'}
-          hint={`${pendingRegistrations} đăng ký chờ`}
-        />
-        <StatCard
-          icon={Banknote}
-          label="Học phí"
-          value={formatVND(item.course.price)}
-          hint={`${item.course.totalSessions} buổi · ${item.course.sport.name}`}
-        />
+        <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />
+        <StatCard icon={CalendarDays} label="Buổi đã dạy" value={`${taught}/${item.course.totalSessions}`} />
+        <StatCard icon={UserCheck} label="HLV" value={item.coach?.fullName ?? '—'} />
+        <StatCard icon={Banknote} label="Học phí" value={formatVND(item.course.price)} />
       </div>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,462px)_minmax(0,1fr)]">
@@ -320,19 +319,17 @@ export function ClassAdminDetailPage() {
               children: (
                 <Table<ClassSession>
                   rowKey="id"
-                  size="middle"
                   columns={sessionColumns}
                   dataSource={item.sessions}
                   pagination={{ pageSize: 10, hideOnSinglePage: true }}
                   scroll={{ x: 'max-content' }}
-                  className={tableFrame}
                 />
               ),
             },
             {
               key: 'students',
               label: `Học viên (${item.enrolledCount})`,
-              children: <ClassStudentsTable classId={item.id} showPayment className={tableFrame} />,
+              children: <ClassStudentsTable classId={item.id} showPayment />,
             },
             {
               key: 'coaches',
@@ -340,12 +337,10 @@ export function ClassAdminDetailPage() {
               children: (
                 <Table<CoachRegistration>
                   rowKey="id"
-                  size="middle"
                   columns={registrationColumns}
                   dataSource={item.coachRegistrations}
                   pagination={false}
                   scroll={{ x: 'max-content' }}
-                  className={tableFrame}
                   locale={{ emptyText: 'Chưa có HLV nào đăng ký dạy lớp này' }}
                 />
               ),

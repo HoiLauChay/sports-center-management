@@ -130,9 +130,6 @@ export function ClassDetailPage() {
             selection={selection}
             disabledReason={line && !line.valid ? line.error?.message : undefined}
           />
-          <p className="mt-3 mb-0 text-xs text-sc-muted-2">
-            Chỗ chỉ được giữ khi thanh toán. Hủy trước buổi đầu tiên đủ hạn sẽ được hoàn tiền về ví.
-          </p>
         </Card>
       </div>
     </>
