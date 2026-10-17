@@ -59,7 +59,7 @@ const classColumns: TableColumnsType<GymClass> = [
             </Tag>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-sc-muted">
-            <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+            <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
               {item.course.sport.name}
             </Tag>
             <span>·</span>
@@ -195,7 +195,7 @@ export function ManagerDashboard() {
       </div>
 
       {(pending.length > 0 || unmatched > 0) && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-2.5 text-[13.5px]">
+        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[14px]">
           <TriangleAlert size={15} className="text-[#d48806]" />
           <b>Cần Manager xử lý:</b>
           {pending.length > 0 && (
@@ -261,8 +261,8 @@ export function ManagerDashboard() {
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                 <CalendarCheck size={24} />
               </div>
-              <span className="text-sm font-semibold text-sc-ink">Hôm nay không có buổi học nào</span>
-              <span className="mt-1 text-xs text-sc-muted max-w-xs">
+              <span className="text-[15px] font-semibold text-sc-ink">Hôm nay không có buổi học nào</span>
+              <span className="mt-1 text-[13px] text-sc-muted max-w-xs">
                 Không có lớp học nào được xếp lịch diễn ra trong ngày hôm nay.
               </span>
             </div>
@@ -275,10 +275,10 @@ export function ManagerDashboard() {
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="flex flex-col items-center justify-center shrink-0 w-[76px] py-1.5 px-1 rounded-lg bg-emerald-50/90 border border-emerald-200/80 text-center">
-                      <span className="font-mono text-[13px] font-bold text-emerald-800 tracking-tight">
+                      <span className="font-mono text-[14px] font-bold text-emerald-800 tracking-tight">
                         {session.startTime}
                       </span>
-                      <span className="text-[11px] font-medium text-emerald-600/90">đến {session.endTime}</span>
+                      <span className="text-xs font-medium text-emerald-600/90">đến {session.endTime}</span>
                     </div>
 
                     <div className="flex flex-col gap-1 min-w-0">
@@ -286,17 +286,17 @@ export function ManagerDashboard() {
                         <Link
                           to="/admin/classes/$classId"
                           params={{ classId: session.class.id }}
-                          className="font-semibold text-sc-ink text-[14px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
+                          className="font-semibold text-sc-ink text-[15px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
                         >
                           {session.class.name}
                         </Link>
                         {session.class.sport && (
-                          <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
                             {session.class.sport.name}
                           </Tag>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span className="flex items-center gap-1 text-slate-600">
                           <MapPin size={12} className="text-slate-400 shrink-0" />
                           <span className="truncate">{session.facility.name}</span>
@@ -317,10 +317,10 @@ export function ManagerDashboard() {
 
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="hidden sm:flex flex-col items-end text-right">
-                      <span className="text-xs font-bold text-sc-ink tabular-nums">
+                      <span className="text-[13px] font-bold text-sc-ink tabular-nums">
                         {session.class.enrolledCount} / {session.class.maxStudents} HV
                       </span>
-                      <span className="text-[11px] text-sc-muted">Sĩ số</span>
+                      <span className="text-xs text-sc-muted">Sĩ số</span>
                     </div>
                     <Link
                       to="/admin/classes/$classId"
@@ -369,8 +369,8 @@ export function ManagerDashboard() {
               <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600">
                 <CheckCircle2 size={24} />
               </div>
-              <span className="text-sm font-semibold text-sc-ink">Không có lớp nào chờ duyệt</span>
-              <span className="mt-1 text-xs text-sc-muted max-w-xs">
+              <span className="text-[15px] font-semibold text-sc-ink">Không có lớp nào chờ duyệt</span>
+              <span className="mt-1 text-[13px] text-sc-muted max-w-xs">
                 Tất cả yêu cầu mở lớp đã được xử lý hoặc chưa có lớp học mới cần xét duyệt.
               </span>
             </div>
@@ -390,17 +390,17 @@ export function ManagerDashboard() {
                         <Link
                           to="/admin/classes/$classId"
                           params={{ classId: item.id }}
-                          className="font-semibold text-sc-ink text-[14px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
+                          className="font-semibold text-sc-ink text-[15px] hover:text-emerald-700 hover:underline transition-colors line-clamp-1"
                         >
                           {item.name}
                         </Link>
                         {item.course?.sport && (
-                          <Tag color="cyan" className="!m-0 text-[11px] leading-tight px-1.5 py-0.5">
+                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
                             {item.course.sport.name}
                           </Tag>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span>
                           HLV:{' '}
                           <strong className={item.coach ? 'font-medium text-sc-ink' : 'font-medium text-amber-600'}>

@@ -80,7 +80,7 @@ export function BarChart({
 
   return (
     <div ref={ref} className="relative w-full">
-      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-sc-muted">
+      <div className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-sc-muted">
         {series.map((item) => (
           <span key={item.key} className="inline-flex items-center gap-1.5">
             <i className="inline-block size-2.5 rounded-sm" style={{ background: item.color }} />
@@ -99,7 +99,7 @@ export function BarChart({
               stroke="var(--sc-border-soft)"
               strokeDasharray={tick ? '4 4' : undefined}
             />
-            <text x={PAD.left - 8} y={y(tick) + 4} textAnchor="end" fontSize={11} fill="var(--sc-muted)">
+            <text x={PAD.left - 8} y={y(tick) + 4} textAnchor="end" fontSize={12} fill="var(--sc-muted)">
               {compact(tick)}
             </text>
           </g>
@@ -147,7 +147,7 @@ export function BarChart({
                   x={PAD.left + slot * index + slot / 2}
                   y={height - 8}
                   textAnchor="middle"
-                  fontSize={11}
+                  fontSize={12}
                   fill="var(--sc-muted)"
                 >
                   {datum.label}
