@@ -1,3 +1,4 @@
+import type { RevenueBucket } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Badge, Card, Progress, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import {
@@ -27,6 +28,42 @@ import { formatVND } from '~/lib/format';
 import { DATE_FORMAT, formatDayLabel, nowVN, todayVN } from '~/lib/time';
 
 const MONTHS = 6;
+
+function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
+  const total = bucket?.revenue ?? 0;
+  return (
+    <div className="flex flex-col gap-4 border-t border-solid border-sc-border-soft pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+      <div>
+        <div className="text-[13px] font-semibold tracking-wide text-sc-muted uppercase">Tháng này</div>
+        <div className="mt-1.5 font-display text-[32px] leading-none font-extrabold tabular-nums">
+          {formatVND(total)}
+        </div>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        {REVENUE_SERIES.map((series) => {
+          const value = bucket?.byType[series.key as keyof RevenueBucket['byType']] ?? 0;
+          return (
+            <li key={series.key} className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3 text-[14px]">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: series.color }} />
+                  <span className="truncate">{series.label}</span>
+                </span>
+                <b className="tabular-nums">{formatVND(value)}</b>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-sc-paper">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${total > 0 ? (value / total) * 100 : 0}%`, background: series.color }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 /** How well a running class is filling up: the manager's cue to push enrollments or step in. */
 function fillState(item: GymClass) {
@@ -223,7 +260,10 @@ export function ManagerDashboard() {
           </Link>
         }
       >
-        <BarChart data={chart} series={REVENUE_SERIES} mode="stacked" ariaLabel="Doanh thu theo tháng" />
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <BarChart data={chart} series={REVENUE_SERIES} mode="stacked" ariaLabel="Doanh thu theo tháng" />
+          <MonthBreakdown bucket={revenue.data?.buckets.at(-1)} />
+        </div>
       </Card>
 
       <div className="mt-4 grid items-stretch gap-4 lg:grid-cols-2">
