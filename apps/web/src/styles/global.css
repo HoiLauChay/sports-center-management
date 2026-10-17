@@ -181,3 +181,17 @@ html .ant-tag.ant-tag-green {
 .ant-table-wrapper .ant-progress-indicator {
   font-size: 13px;
 }
+
+.ant-card .ant-card-head-wrapper {
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+
+.ant-card .ant-card-head {
+  padding-block: 8px;
+}
+
+.ant-card .ant-card-head-title {
+  flex: 1 0 auto;
+  max-width: 100%;
+}
