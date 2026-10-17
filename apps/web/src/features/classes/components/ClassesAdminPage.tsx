@@ -1,6 +1,6 @@
 import type { ClassSummary } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import { Button, Card, Segmented, Select, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { useCourses } from '~/features/courses/hooks/useCourses';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -29,6 +30,8 @@ const PHASE_QUERY: Record<Phase, Pick<ManagerClassesQuery, 'status' | 'derivedSt
   CANCELLED: { status: 'CANCELLED' },
 };
 
+const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/');
+
 /** `/admin/classes` (UC_2.12, UC_2.15): every class by phase; pending ones are approved or rejected from the list. */
 export function ClassesAdminPage() {
   const [phase, setPhase] = useState<Phase>('ALL');
@@ -38,6 +41,10 @@ export function ClassesAdminPage() {
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const confirm = useConfirm();
+  const { courseId } = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
+  const courses = useCourses();
+  const course = courses.data?.find((item) => item.id === courseId);
 
   const sports = useQuery(sportsQueryOptions);
   const classes = useManagerClasses({
@@ -45,9 +52,10 @@ export function ClassesAdminPage() {
     limit: pageSize,
     ...PHASE_QUERY[phase],
     sportId: sportId || undefined,
+    courseId,
     q: q.trim() || undefined,
   });
-  const pending = useManagerClasses({ page: 1, limit: 1, ...PHASE_QUERY.PENDING });
+  const pending = useManagerClasses({ page: 1, limit: 1, ...PHASE_QUERY.PENDING, courseId });
   const approve = useApproveClassFromList();
   const reject = useRejectClassFromList();
 
@@ -216,6 +224,18 @@ export function ClassesAdminPage() {
             className="w-full sm:!w-52"
             options={(sports.data ?? []).map((s) => ({ value: s.id, label: s.name }))}
           />
+          {courseId && (
+            <Tag
+              closable
+              className="!m-0"
+              onClose={() => {
+                setPage(1);
+                void navigate({ search: {}, replace: true });
+              }}
+            >
+              Khóa học: {course?.name ?? '…'}
+            </Tag>
+          )}
         </div>
 
         {classes.isError ? (

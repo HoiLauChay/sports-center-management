@@ -1,6 +1,7 @@
-import { PAGINATION, type ClassSummary, type Course } from '@sports-center/shared';
+import type { Course } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { Link } from '@tanstack/react-router';
+import { Button, Card, Select, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
@@ -8,7 +9,6 @@ import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
-import { useManagerClasses } from '~/features/classes/hooks/useClassAdmin';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -20,7 +20,6 @@ export function CoursesPage() {
   const confirm = useConfirm();
   const courses = useCourses();
   const sports = useQuery(sportsQueryOptions);
-  const classes = useManagerClasses({ page: 1, limit: PAGINATION.MAX_LIMIT });
   const deleteMutation = useDeleteCourse();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Course | null>(null);
@@ -28,15 +27,6 @@ export function CoursesPage() {
   const [sportId, setSportId] = useState<string | undefined>();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  const classesOf = useMemo(() => {
-    const map = new Map<string, ClassSummary[]>();
-    for (const item of classes.data?.items ?? []) {
-      if (item.status === 'CANCELLED') continue;
-      map.set(item.course.id, [...(map.get(item.course.id) ?? []), item]);
-    }
-    return map;
-  }, [classes.data]);
 
   const filteredCourses = useMemo(() => {
     if (!courses.data) return [];
@@ -107,20 +97,14 @@ export function CoursesPage() {
     {
       title: 'Lớp',
       key: 'classes',
-      width: 220,
-      render: (_, record) => {
-        const list = classesOf.get(record.id) ?? [];
-        if (!list.length) return <span className="text-sc-muted">—</span>;
-        return (
-          <Space wrap size={[4, 4]} className="max-w-[220px]">
-            {list.map((item) => (
-              <Tag key={item.id} className="!m-0">
-                {item.name}
-              </Tag>
-            ))}
-          </Space>
-        );
-      },
+      render: (_, record) =>
+        record.classCount ? (
+          <Link to="/admin/classes" search={{ courseId: record.id }} className="whitespace-nowrap">
+            {record.classCount} lớp
+          </Link>
+        ) : (
+          <span className="text-sc-muted">0 lớp</span>
+        ),
     },
     {
       title: 'Thao tác',
