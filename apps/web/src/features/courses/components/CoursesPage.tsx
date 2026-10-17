@@ -1,13 +1,15 @@
 import { PAGINATION, type ClassSummary, type Course } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Popconfirm, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useManagerClasses } from '~/features/classes/hooks/useClassAdmin';
+import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useCourses, useDeleteCourse } from '../hooks/useCourses';
@@ -15,6 +17,7 @@ import { CourseFormModal } from './CourseFormModal';
 
 /** `/admin/courses` (UC_2.11, BR_2.8): course templates (sport, sessions, fee); each course opens many classes. */
 export function CoursesPage() {
+  const confirm = useConfirm();
   const courses = useCourses();
   const sports = useQuery(sportsQueryOptions);
   const classes = useManagerClasses({ page: 1, limit: PAGINATION.MAX_LIMIT });
@@ -59,7 +62,7 @@ export function CoursesPage() {
     {
       title: '#',
       key: 'index',
-      width: 50,
+      width: 56,
       render: (_, __, index) => (
         <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
@@ -72,7 +75,7 @@ export function CoursesPage() {
       render: (_, record) => (
         <div className="min-w-[140px] max-w-sm">
           <div className="font-semibold text-sc-ink">{record.name}</div>
-          {record.description && <div className="line-clamp-2 text-xs text-sc-muted">{record.description}</div>}
+          {record.description && <div className="line-clamp-2 text-[13px] text-sc-muted">{record.description}</div>}
         </div>
       ),
     },
@@ -99,7 +102,7 @@ export function CoursesPage() {
       key: 'price',
       width: 120,
       align: 'right',
-      render: (price: number) => <span className="whitespace-nowrap font-semibold">{formatVND(price)}</span>,
+      render: (price: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(price)}</span>,
     },
     {
       title: 'Lớp',
@@ -122,29 +125,28 @@ export function CoursesPage() {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 115,
       align: 'right',
-      render: (_, record) => {
-        return (
-          <Space size="small">
-            <Button size="small" onClick={() => openModal(record)}>
-              Sửa
-            </Button>
-            <Popconfirm
-              title="Xóa khóa học?"
-              description="Lớp đã tạo và hóa đơn vẫn tham chiếu được khóa học này."
-              okText="Xóa"
-              cancelText="Hủy"
-              okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
-              onConfirm={() => deleteMutation.mutate(record.id)}
-            >
-              <Button size="small" danger>
-                Xóa
-              </Button>
-            </Popconfirm>
-          </Space>
-        );
-      },
+      render: (_, record) => (
+        <RowActions
+          label={`Thao tác với khóa học ${record.name}`}
+          actions={[
+            { key: 'edit', label: 'Sửa', onClick: () => openModal(record) },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              loading: deleteMutation.isPending && deleteMutation.variables === record.id,
+              onClick: () =>
+                confirm({
+                  title: 'Xóa khóa học?',
+                  content: 'Lớp đã tạo và hóa đơn vẫn tham chiếu được khóa học này.',
+                  okText: 'Xóa',
+                  onOk: () => deleteMutation.mutateAsync(record.id).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
+      ),
     },
   ];
 

@@ -1,17 +1,20 @@
 import type { Sport } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Avatar, Button, Card, Popconfirm, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Avatar, Button, Card, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useConfirm } from '~/hooks/useConfirm';
 import { toApiError } from '~/lib/http-errors';
 import { facilitiesQueryOptions, sportsQueryOptions } from '../hooks/useCatalog';
 import { sportsService } from '../services/sports.service';
 import { SportFormModal } from './SportFormModal';
 
 export function SportsPage() {
+  const confirm = useConfirm();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const sports = useQuery(sportsQueryOptions);
@@ -90,7 +93,7 @@ export function SportsPage() {
           <div className="flex min-w-0 flex-col">
             <span className="font-semibold">{sport.name}</span>
             {sport.description && (
-              <span className="max-w-md text-xs text-sc-muted [overflow-wrap:anywhere]">{sport.description}</span>
+              <span className="max-w-md text-[13px] text-sc-muted [overflow-wrap:anywhere]">{sport.description}</span>
             )}
           </div>
         </div>
@@ -127,26 +130,27 @@ export function SportsPage() {
       ),
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
       render: (_, sport) => (
-        <Space>
-          <Button size="small" onClick={() => openForm(sport)}>
-            Sửa
-          </Button>
-          <Popconfirm
-            title={`Xóa bộ môn ${sport.name}?`}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => remove.mutateAsync(sport).catch(() => undefined)}
-          >
-            <Button size="small" danger>
-              Xóa
-            </Button>
-          </Popconfirm>
-        </Space>
+        <RowActions
+          label={`Thao tác với bộ môn ${sport.name}`}
+          actions={[
+            { key: 'edit', label: 'Sửa', onClick: () => openForm(sport) },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              onClick: () =>
+                confirm({
+                  title: `Xóa bộ môn ${sport.name}?`,
+                  okText: 'Xóa',
+                  onOk: () => remove.mutateAsync(sport).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];

@@ -117,7 +117,9 @@ function RevenueTab({ range }: { range: ReportRange }) {
     {
       title: 'Kỳ',
       dataIndex: 'period',
-      render: (period: string) => <b className="whitespace-nowrap">{periodText(period, range.granularity)}</b>,
+      render: (period: string) => (
+        <span className="whitespace-nowrap font-semibold">{periodText(period, range.granularity)}</span>
+      ),
     },
     ...ORDER_ITEM_TYPES.map((type) => ({
       title: ORDER_ITEM_TYPE_LABEL[type],
@@ -131,7 +133,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
       title: 'Doanh thu',
       dataIndex: 'revenue',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
     {
       title: 'Hoàn tiền',
@@ -145,7 +147,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
       title: 'Thực thu',
       dataIndex: 'net',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
   ];
 
@@ -242,7 +244,9 @@ function WalletTab({ range }: { range: ReportRange }) {
     {
       title: 'Kỳ',
       dataIndex: 'period',
-      render: (period: string) => <b className="whitespace-nowrap">{periodText(period, range.granularity)}</b>,
+      render: (period: string) => (
+        <span className="whitespace-nowrap font-semibold">{periodText(period, range.granularity)}</span>
+      ),
     },
     {
       title: 'Nạp chuyển khoản',
@@ -277,10 +281,12 @@ function WalletTab({ range }: { range: ReportRange }) {
       dataIndex: 'netChange',
       align: 'right',
       render: (value: number) => (
-        <b className={`whitespace-nowrap tabular-nums ${value < 0 ? 'text-sc-error' : 'text-sc-success'}`}>
+        <span
+          className={`whitespace-nowrap font-medium tabular-nums ${value < 0 ? 'text-sc-error' : 'text-sc-success'}`}
+        >
           {value > 0 ? '+' : ''}
           {formatVND(value)}
-        </b>
+        </span>
       ),
     },
   ];

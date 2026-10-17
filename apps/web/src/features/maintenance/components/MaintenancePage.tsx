@@ -3,6 +3,7 @@ import { Button, Card, Segmented, Table, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
@@ -67,7 +68,11 @@ export function MaintenancePage() {
         </span>
       ),
     },
-    { title: 'Sân & phòng', dataIndex: ['facility', 'name'], render: (name: string) => <b>{name}</b> },
+    {
+      title: 'Sân & phòng',
+      dataIndex: ['facility', 'name'],
+      render: (name: string) => <span className="font-semibold">{name}</span>,
+    },
     {
       title: 'Từ',
       dataIndex: 'startAt',
@@ -85,27 +90,33 @@ export function MaintenancePage() {
       render: (_, item) => <MappedTag value={phaseOf(item)} map={PHASE_TAG} />,
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      render: (_, item) =>
-        phaseOf(item) === 'PLANNED' ? (
-          <Button
-            size="small"
-            danger
-            loading={remove.isPending && remove.variables === item.id}
-            onClick={() =>
-              confirm({
-                title: `Hủy lịch bảo trì ${item.facility.name}?`,
-                content: 'Các booking và buổi học đã được xử lý khi đặt lịch không được khôi phục.',
-                okText: 'Hủy lịch',
-                onOk: () => remove.mutateAsync(item.id).catch(() => undefined),
-              })
-            }
-          >
-            Hủy lịch
-          </Button>
-        ) : null,
+      render: (_, item) => (
+        <RowActions
+          label={`Thao tác với lịch bảo trì ${item.facility.name}`}
+          actions={
+            phaseOf(item) === 'PLANNED'
+              ? [
+                  {
+                    key: 'cancel',
+                    label: 'Hủy lịch',
+                    danger: true,
+                    loading: remove.isPending && remove.variables === item.id,
+                    onClick: () =>
+                      confirm({
+                        title: `Hủy lịch bảo trì ${item.facility.name}?`,
+                        content: 'Các booking và buổi học đã được xử lý khi đặt lịch không được khôi phục.',
+                        okText: 'Hủy lịch',
+                        onOk: () => remove.mutateAsync(item.id).catch(() => undefined),
+                      }),
+                  },
+                ]
+              : []
+          }
+        />
+      ),
     },
   ];
 
@@ -120,7 +131,7 @@ export function MaintenancePage() {
           </Button>
         }
       />
-      <Card styles={{ body: { padding: '16px 20px 20px' } }}>
+      <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <SearchInput
             placeholder="Tìm theo sân, phòng, lý do..."
@@ -163,7 +174,6 @@ export function MaintenancePage() {
                 setPageSize(ps);
               },
             }}
-            className="overflow-hidden rounded-lg border border-solid border-sc-border-soft"
             locale={{
               emptyText: maintenances.isFetching ? (
                 ' '

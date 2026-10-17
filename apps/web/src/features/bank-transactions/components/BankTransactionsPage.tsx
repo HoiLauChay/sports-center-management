@@ -4,10 +4,11 @@ import {
   type BankTransactionStatus,
   type ReconciliationDay,
 } from '@sports-center/shared';
-import { Alert, Button, Card, DatePicker, Segmented, Space, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Alert, Card, DatePicker, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
@@ -51,7 +52,7 @@ function TransactionsTab() {
       title: 'Số tiền',
       dataIndex: 'amount',
       align: 'right',
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
     {
       title: 'Nội dung chuyển khoản',
@@ -61,7 +62,7 @@ function TransactionsTab() {
           <span className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{transaction.content}</Highlight>
           </span>
-          <span className="text-xs text-sc-muted-2">
+          <span className="text-[13px] text-sc-muted-2">
             {transaction.paymentCode ? (
               <>
                 <Highlight keyword={q}>{`Mã ${transaction.paymentCode}`}</Highlight>
@@ -99,11 +100,15 @@ function TransactionsTab() {
         if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
           <div className="flex max-w-xs flex-col gap-0.5 text-[13px]">
-            {member ? <b>{member.fullName}</b> : invoice && <b>Khách vãng lai</b>}
-            {invoice && <span className="text-xs text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
+            {member ? (
+              <span className="font-medium">{member.fullName}</span>
+            ) : (
+              invoice && <span className="font-medium">Khách vãng lai</span>
+            )}
+            {invoice && <span className="text-[13px] text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
             {transaction.note && <span className="text-sc-muted [overflow-wrap:anywhere]">{transaction.note}</span>}
             {transaction.handledBy && (
-              <span className="text-xs text-sc-muted-2">
+              <span className="text-[13px] text-sc-muted-2">
                 {transaction.handledBy.fullName}
                 {transaction.handledAt ? ` · ${formatDateTime(transaction.handledAt)}` : ''}
               </span>
@@ -113,20 +118,22 @@ function TransactionsTab() {
       },
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      render: (_, transaction) =>
-        transaction.status === 'UNMATCHED' ? (
-          <Space>
-            <Button size="small" type="primary" onClick={() => setResolving(transaction)}>
-              Gán thành viên
-            </Button>
-            <Button size="small" onClick={() => setIgnoring(transaction)}>
-              Bỏ qua
-            </Button>
-          </Space>
-        ) : null,
+      render: (_, transaction) => (
+        <RowActions
+          label="Thao tác với giao dịch"
+          actions={
+            transaction.status === 'UNMATCHED'
+              ? [
+                  { key: 'resolve', label: 'Gán thành viên', primary: true, onClick: () => setResolving(transaction) },
+                  { key: 'ignore', label: 'Bỏ qua', onClick: () => setIgnoring(transaction) },
+                ]
+              : []
+          }
+        />
+      ),
     },
   ];
 
@@ -197,7 +204,7 @@ function ReconciliationTab() {
     {
       title: 'Ngày',
       dataIndex: 'date',
-      render: (date: string) => <b className="whitespace-nowrap">{formatDayLabel(date)}</b>,
+      render: (date: string) => <span className="whitespace-nowrap font-semibold">{formatDayLabel(date)}</span>,
     },
     {
       title: 'SePay',
@@ -227,11 +234,11 @@ function ReconciliationTab() {
         const amount = day.sepay.amount - day.system.amount;
         const count = day.sepay.count - day.system.count;
         return amount || count ? (
-          <b className="whitespace-nowrap text-sc-error tabular-nums">
+          <span className="whitespace-nowrap font-medium text-sc-error tabular-nums">
             {count ? `${count > 0 ? '+' : ''}${count} giao dịch · ` : ''}
             {amount > 0 ? '+' : ''}
             {formatVND(amount)}
-          </b>
+          </span>
         ) : (
           <span className="text-sc-muted-2">—</span>
         );
@@ -246,7 +253,7 @@ function ReconciliationTab() {
             {day.matched ? 'Khớp' : 'Lệch'}
           </Tag>
           {day.missingReferenceCodes.length > 0 && (
-            <span className="text-xs text-sc-muted">
+            <span className="text-[13px] text-sc-muted">
               Chưa ghi nhận: {day.missingReferenceCodes.join(', ')} (job đồng bộ sẽ bổ sung)
             </span>
           )}

@@ -7,10 +7,11 @@ import {
 } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getRouteApi, useNavigate } from '@tanstack/react-router';
-import { Button, Card, Dropdown, Select, type TableColumnsType } from 'antd';
-import { Ellipsis, Eye, UserPlus } from 'lucide-react';
+import { Button, Card, Select, type TableColumnsType } from 'antd';
+import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { RowActions } from '~/components/data/RowActions';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
@@ -55,27 +56,21 @@ export function UsersPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      align: 'right',
       render: (_, user) => (
-        <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button size="small" icon={<Eye size={14} />} onClick={() => openDetail(user.id)}>
-            Chi tiết
-          </Button>
-          {user.id !== viewer.id && user.role !== 'MANAGER' && (
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
+        <RowActions
+          label={`Thao tác với ${user.fullName}`}
+          actions={
+            user.id === viewer.id || user.role === 'MANAGER'
+              ? []
+              : ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
                   key: status,
                   label: STATUS_ACTION[status].label,
                   danger: status !== 'ACTIVE',
-                })),
-                onClick: ({ key }) => setStatusChange({ user, target: key as AccountStatus }),
-              }}
-            >
-              <Button size="small" icon={<Ellipsis size={14} />} aria-label={`Đổi trạng thái ${user.fullName}`} />
-            </Dropdown>
-          )}
-        </div>
+                  onClick: () => setStatusChange({ user, target: status }),
+                }))
+          }
+        />
       ),
     },
   ];

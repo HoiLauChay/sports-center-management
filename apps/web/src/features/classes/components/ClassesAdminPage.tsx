@@ -1,13 +1,15 @@
 import type { ClassSummary } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Popconfirm, Segmented, Select, Space, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Button, Card, Segmented, Select, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
@@ -35,6 +37,7 @@ export function ClassesAdminPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
+  const confirm = useConfirm();
 
   const sports = useQuery(sportsQueryOptions);
   const classes = useManagerClasses({
@@ -53,18 +56,17 @@ export function ClassesAdminPage() {
       title: '#',
       key: 'index',
       width: 56,
-      fixed: 'left',
       render: (_, __, index) => (
-        <span className="whitespace-nowrap font-display text-lg font-extrabold text-sc-muted-2">
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
           {String((page - 1) * pageSize + index + 1).padStart(2, '0')}
         </span>
       ),
     },
     {
-      title: 'Tên lớp',
+      title: 'Lớp',
       dataIndex: 'name',
       render: (_, record) => (
-        <div className="min-w-[160px]">
+        <div className="flex min-w-56 flex-col gap-1">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -72,106 +74,93 @@ export function ClassesAdminPage() {
           >
             {record.name}
           </Link>
-          <div className="text-xs text-sc-muted">
-            {record.course.name} · {formatVND(record.course.price)}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-sc-muted">
+            <Tag color="green" className="!m-0">
+              {record.course.sport.name}
+            </Tag>
+            <span>
+              {record.course.name} · {formatVND(record.course.price)}
+            </span>
           </div>
         </div>
       ),
     },
     {
-      title: 'Bộ môn',
-      width: 75,
-      render: (_, record) => (
-        <Tag color="green" className="!m-0">
-          {record.course.sport.name}
-        </Tag>
-      ),
-    },
-    {
       title: 'Phòng / sân',
-      width: 135,
-      render: (_, record) => (
-        <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.facility.name}</span>
-      ),
+      render: (_, record) => <span className="font-medium text-sc-ink">{record.facility.name}</span>,
     },
     {
       title: 'HLV',
-      width: 115,
       render: (_, record) =>
         record.coach ? (
-          <span className="whitespace-nowrap text-sm font-medium text-sc-ink">{record.coach.fullName}</span>
+          <span className="font-medium text-sc-ink">{record.coach.fullName}</span>
         ) : (
-          <span className="whitespace-nowrap text-xs font-medium text-orange-500">Chưa có HLV</span>
+          <span className="text-[13px] font-medium text-orange-500">Chưa có HLV</span>
         ),
     },
     {
       title: 'Sĩ số',
-      width: 85,
       render: (_, record) => (
         <div className="leading-tight">
-          <div className="font-semibold text-sc-ink">
+          <div className="text-sc-ink tabular-nums">
             {record.enrolledCount}/{record.maxStudents}
           </div>
-          <div className="whitespace-nowrap text-[11px] text-sc-muted">tối thiểu {record.minStudents}</div>
+          <div className="whitespace-nowrap text-[13px] text-sc-muted">tối thiểu {record.minStudents}</div>
         </div>
       ),
     },
     {
       title: 'Lịch',
-      width: 110,
       render: (_, record) => (
-        <div className="whitespace-nowrap text-xs text-sc-ink">
+        <div className="flex flex-col gap-0.5 whitespace-nowrap">
           {weeklyLines(record.weeklySchedule).map((line) => (
-            <div key={line}>{line}</div>
+            <span key={line}>{line}</span>
           ))}
+          <span className="text-[13px] text-sc-muted">{classDateRange(record)}</span>
         </div>
       ),
     },
     {
-      title: 'Thời gian',
-      width: 125,
-      render: (_, record) => <span className="whitespace-nowrap text-xs text-sc-muted">{classDateRange(record)}</span>,
-    },
-    {
       title: 'Trạng thái',
-      width: 95,
       render: (_, record) => <ClassStatusTag item={record} />,
     },
     {
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      width: 110,
-      fixed: 'right',
-      render: (_, record) =>
-        record.status === 'PENDING_APPROVAL' ? (
-          <Space size={4}>
-            <Tooltip title={record.coach ? undefined : 'Lớp chưa có HLV, phân công trong chi tiết lớp trước'}>
-              <Button
-                size="small"
-                type="primary"
-                disabled={!record.coach}
-                loading={approve.isPending && approve.variables === record.id}
-                onClick={() => approve.mutate(record.id)}
-              >
-                Duyệt
-              </Button>
-            </Tooltip>
-            <Popconfirm
-              title="Từ chối, lớp về trạng thái nháp?"
-              okText="Từ chối"
-              cancelText="Không"
-              onConfirm={() => reject.mutate(record.id)}
-            >
-              <Button size="small" loading={reject.isPending && reject.variables === record.id}>
-                Từ chối
-              </Button>
-            </Popconfirm>
-          </Space>
-        ) : (
-          <Link to="/admin/classes/$classId" params={{ classId: record.id }}>
-            <Button size="small">Chi tiết</Button>
-          </Link>
-        ),
+      render: (_, record) => (
+        <RowActions
+          label={`Thao tác với lớp ${record.name}`}
+          actions={
+            record.status === 'PENDING_APPROVAL'
+              ? [
+                  {
+                    key: 'approve',
+                    label: 'Duyệt',
+                    primary: true,
+                    disabled: !record.coach,
+                    hint: 'Lớp chưa có HLV, phân công trong chi tiết lớp trước',
+                    loading: approve.isPending && approve.variables === record.id,
+                    onClick: () => approve.mutate(record.id),
+                  },
+                  {
+                    key: 'reject',
+                    label: 'Từ chối',
+                    danger: true,
+                    loading: reject.isPending && reject.variables === record.id,
+                    onClick: () =>
+                      confirm({
+                        title: `Từ chối lớp ${record.name}?`,
+                        content: 'Lớp về trạng thái nháp.',
+                        okText: 'Từ chối',
+                        onOk: () => reject.mutate(record.id),
+                      }),
+                  },
+                ]
+              : []
+          }
+        />
+      ),
     },
   ];
 

@@ -1,22 +1,12 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Popconfirm,
-  Progress,
-  Segmented,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Alert, Button, Card, Progress, Segmented, Switch, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
+import { useConfirm } from '~/hooks/useConfirm';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { couponState, useCouponMutations, useCoupons } from '../hooks/useCoupons';
@@ -43,6 +33,7 @@ const STATUS_OPTIONS: { value: CouponStatusFilter; label: string }[] = [
 ];
 
 export function CouponsPage() {
+  const confirm = useConfirm();
   const coupons = useCoupons();
   const { toggle, remove } = useCouponMutations();
   const [editing, setEditing] = useState<Coupon | null>(null);
@@ -90,7 +81,7 @@ export function CouponsPage() {
         const state = STATE_TAG[couponState(coupon)];
         return (
           <div className="flex flex-col gap-1">
-            <b className="font-mono text-[14px]">{coupon.code}</b>
+            <span className="font-mono text-[14px] font-semibold">{coupon.code}</span>
             <span className="text-[13px] text-sc-muted line-clamp-1">{coupon.name}</span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
@@ -104,11 +95,11 @@ export function CouponsPage() {
       key: 'discount',
       render: (_, coupon) => (
         <div className="flex flex-col whitespace-nowrap">
-          <b className="tabular-nums">
+          <span className="tabular-nums">
             {coupon.discountType === 'PERCENT' ? `${coupon.discountValue}%` : formatVND(coupon.discountValue)}
-          </b>
+          </span>
           {coupon.maxDiscount !== null && (
-            <span className="text-xs text-sc-muted">tối đa {formatVND(coupon.maxDiscount)}</span>
+            <span className="text-[13px] text-sc-muted">tối đa {formatVND(coupon.maxDiscount)}</span>
           )}
         </div>
       ),
@@ -130,7 +121,7 @@ export function CouponsPage() {
         coupon.applicableTypes && coupon.applicableTypes.length < 4 ? (
           <div className="flex flex-wrap gap-1">
             {coupon.applicableTypes.map((type) => (
-              <Tag key={type} className="!m-0 text-xs">
+              <Tag key={type} className="!m-0">
                 {ORDER_ITEM_TYPE_LABEL[type]}
               </Tag>
             ))}
@@ -160,7 +151,7 @@ export function CouponsPage() {
               format={() => `${coupon.usedCount}/${coupon.maxUses}`}
             />
           )}
-          <div className="text-xs text-sc-muted">{coupon.maxUsesPerUser} lượt / người</div>
+          <div className="text-[13px] text-sc-muted">{coupon.maxUsesPerUser} lượt / người</div>
         </div>
       ),
     },
@@ -182,27 +173,27 @@ export function CouponsPage() {
     {
       title: 'Thao tác',
       key: 'actions',
-      width: 110,
       align: 'right',
       render: (_, coupon) => (
-        <Space size="small">
-          <Button size="small" onClick={() => openForm(coupon)}>
-            Sửa
-          </Button>
-          <Popconfirm
-            title={`Xóa mã ${coupon.code}?`}
-            description="Đơn đã dùng mã này vẫn giữ nguyên thông tin giảm giá."
-            okText="Xóa mã"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-            styles={{ container: { maxWidth: 320 } }}
-            onConfirm={() => remove.mutateAsync(coupon).catch(() => undefined)}
-          >
-            <Button size="small" danger loading={remove.isPending && remove.variables.id === coupon.id}>
-              Xóa
-            </Button>
-          </Popconfirm>
-        </Space>
+        <RowActions
+          label={`Thao tác với mã ${coupon.code}`}
+          actions={[
+            { key: 'edit', label: 'Sửa', onClick: () => openForm(coupon) },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              loading: remove.isPending && remove.variables.id === coupon.id,
+              onClick: () =>
+                confirm({
+                  title: `Xóa mã ${coupon.code}?`,
+                  content: 'Đơn đã dùng mã này vẫn giữ nguyên thông tin giảm giá.',
+                  okText: 'Xóa mã',
+                  onOk: () => remove.mutateAsync(coupon).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];
