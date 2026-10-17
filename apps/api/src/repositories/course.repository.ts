@@ -18,13 +18,18 @@ export const courseSelect = {
   },
 } satisfies Prisma.CourseSelect;
 
-export type CourseRow = Prisma.CourseGetPayload<{ select: typeof courseSelect }>;
+const classCountSelect = {
+  _count: { select: { classes: { where: { deletedAt: null, status: { not: 'CANCELLED' } } } } },
+} satisfies Prisma.CourseSelect;
+
+export type CourseRow = Prisma.CourseGetPayload<{ select: typeof courseSelect }> &
+  Partial<Prisma.CourseGetPayload<{ select: typeof classCountSelect }>>;
 
 class CourseRepository {
-  findAll = (includeInactiveSports: boolean) =>
+  findAll = (isManager: boolean): Promise<CourseRow[]> =>
     prisma.course.findMany({
-      where: { deletedAt: null, ...(!includeInactiveSports && { sport: { isActive: true, deletedAt: null } }) },
-      select: courseSelect,
+      where: { deletedAt: null, ...(!isManager && { sport: { isActive: true, deletedAt: null } }) },
+      select: { ...courseSelect, ...(isManager && classCountSelect) },
       orderBy: { name: 'asc' },
     });
 

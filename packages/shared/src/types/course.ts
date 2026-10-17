@@ -8,4 +8,5 @@ export interface Course {
   totalSessions: number;
   price: number;
   thumbnailUrl: string | null;
+  classCount?: number;
 }

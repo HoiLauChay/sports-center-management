@@ -13,4 +13,5 @@ export const toCourseResponse = (course: CourseRow): Course => ({
   totalSessions: course.totalSessions,
   price: Number(course.price),
   thumbnailUrl: course.thumbnailUrl,
+  ...(course._count && { classCount: course._count.classes }),
 });
