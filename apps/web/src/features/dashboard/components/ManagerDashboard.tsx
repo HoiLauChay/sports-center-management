@@ -84,7 +84,7 @@ const classColumns: TableColumnsType<GymClass> = [
             <Link
               to="/admin/classes/$classId"
               params={{ classId: item.id }}
-              className="text-[14.5px] font-bold text-sc-ink hover:text-sc-primary hover:underline"
+              className="text-[15.5px] font-bold text-sc-ink hover:text-sc-primary hover:underline"
             >
               {item.name}
             </Link>
@@ -92,7 +92,7 @@ const classColumns: TableColumnsType<GymClass> = [
               {tag.label}
             </Tag>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-sc-muted">
+          <div className="flex flex-wrap items-center gap-2 text-[13px] text-sc-muted">
             <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
               {item.course.sport.name}
             </Tag>
@@ -121,11 +121,11 @@ const classColumns: TableColumnsType<GymClass> = [
     width: 180,
     render: (_, item) => (
       <div className="flex flex-col gap-1 py-3">
-        <span className="text-[13.5px] font-bold text-sc-ink tabular-nums">
+        <span className="text-[15px] font-bold text-sc-ink tabular-nums">
           {item.enrolledCount} / {item.maxStudents} HV
         </span>
         <span
-          className={`text-xs ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+          className={`text-[13px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
         >
           (Tối thiểu: {item.minStudents} HV)
         </span>
