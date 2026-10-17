@@ -5,14 +5,13 @@ import type { ReactNode } from 'react';
 interface StatCardProps {
   label: string;
   value: ReactNode;
-  hint?: ReactNode;
   icon?: LucideIcon;
   /** `warning` highlights numbers that need attention (e.g. unmatched bank transactions). */
   tone?: 'default' | 'warning';
   loading?: boolean;
 }
 
-export function StatCard({ label, value, hint, icon: Icon, tone = 'default', loading }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = 'default', loading }: StatCardProps) {
   const warning = tone === 'warning';
   return (
     <Card loading={loading} styles={{ body: { padding: '18px 20px' } }} className="h-full">
@@ -34,7 +33,6 @@ export function StatCard({ label, value, hint, icon: Icon, tone = 'default', loa
         >
           {value}
         </div>
-        <div className="min-h-5 text-[13.5px] leading-5 text-sc-muted">{hint}</div>
       </div>
     </Card>
   );

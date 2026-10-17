@@ -10,7 +10,7 @@ import { useMyMemberships } from '~/features/memberships/hooks/useMyMemberships'
 import { useCoachSchedule, useMySchedule } from '~/features/schedule';
 import { eventsOfCoach, eventsOfMember } from '~/features/schedule/utils';
 import { useMyWallet } from '~/features/wallet';
-import { formatDate, formatVND } from '~/lib/format';
+import { formatVND } from '~/lib/format';
 import { addDays, nowVN, todayVN } from '~/lib/time';
 import { UpcomingList } from './UpcomingList';
 
@@ -47,11 +47,6 @@ export function MemberDashboard() {
             label="Số dư ví"
             loading={wallet.isPending}
             value={formatVND(wallet.data?.balance ?? 0)}
-            hint={
-              <Link to="/wallet/top-up" className="font-semibold underline underline-offset-2">
-                Nạp tiền
-              </Link>
-            }
           />
         </Col>
         <Col xs={24} md={8}>
@@ -62,29 +57,10 @@ export function MemberDashboard() {
             value={
               <span className="text-[clamp(18px,2vw,24px)]">{current ? current.package.name : 'Chưa có gói'}</span>
             }
-            hint={
-              current ? (
-                `Hết hạn ${formatDate(current.endDate)}`
-              ) : (
-                <Link to="/memberships" className="font-semibold underline underline-offset-2">
-                  Xem các gói
-                </Link>
-              )
-            }
           />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard
-            icon={CalendarDays}
-            label="Lịch trong 7 ngày tới"
-            loading={schedule.isPending}
-            value={thisWeek}
-            hint={
-              <Link to="/schedule" className="font-semibold underline underline-offset-2">
-                Xem lịch của tôi
-              </Link>
-            }
-          />
+          <StatCard icon={CalendarDays} label="Lịch trong 7 ngày tới" loading={schedule.isPending} value={thisWeek} />
         </Col>
       </Row>
       <Card className="!mt-4">
@@ -128,11 +104,6 @@ export function CoachDashboard() {
             label="Buổi dạy 14 ngày tới"
             loading={schedule.isPending}
             value={events.length}
-            hint={
-              <Link to="/coach/schedule" className="font-semibold underline underline-offset-2">
-                Xem lịch dạy
-              </Link>
-            }
           />
         </Col>
         <Col xs={24} md={8}>

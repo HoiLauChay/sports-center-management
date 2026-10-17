@@ -210,9 +210,6 @@ export function CoachSpecializationsPage() {
                 label="Bộ môn được phép dạy"
                 loading={specializations.isPending}
                 value={approved.length}
-                hint={
-                  approved.length > 0 ? approved.map((e) => e.sport.name).join(', ') : 'Chưa có bộ môn nào được duyệt'
-                }
               />
             </Col>
             <Col xs={24} sm={8}>

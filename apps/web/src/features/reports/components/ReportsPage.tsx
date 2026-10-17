@@ -1,5 +1,4 @@
 import { PAYMENT_METHODS } from '@sports-center/shared';
-import { Link } from '@tanstack/react-router';
 import { Card, Col, Row, Table, Tabs, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -86,11 +85,6 @@ export function OverviewTab() {
           tone={data && data.unmatchedBankTransactions > 0 ? 'warning' : 'default'}
           label="Giao dịch ngân hàng chưa khớp"
           value={data?.unmatchedBankTransactions ?? 0}
-          hint={
-            <Link to="/admin/bank-transactions" className="font-semibold underline underline-offset-2">
-              Đối soát ngay
-            </Link>
-          }
         />
       </Col>
     </Row>
@@ -318,14 +312,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             tone={report.data && report.data.unmatched.count > 0 ? 'warning' : 'default'}
             label="Tiền vào chưa khớp"
             value={formatVND(report.data?.unmatched.amount ?? 0)}
-            hint={
-              <>
-                {report.data?.unmatched.count ?? 0} giao dịch ·{' '}
-                <Link to="/admin/bank-transactions" className="font-semibold underline underline-offset-2">
-                  Đối soát
-                </Link>
-              </>
-            }
           />
         </Col>
       </Row>

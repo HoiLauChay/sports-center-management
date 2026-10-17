@@ -211,7 +211,6 @@ export function ManagerDashboard() {
           label="Thành viên mới"
           loading={overview.isPending}
           value={data?.newMembersToday ?? 0}
-          hint={`${data?.activeMemberships ?? 0} gói đang hiệu lực`}
         />
         <StatCard
           icon={CalendarCheck}
@@ -224,7 +223,6 @@ export function ManagerDashboard() {
           label="Lớp đang diễn ra"
           loading={overview.isPending}
           value={data?.ongoingClasses ?? 0}
-          hint={`${sessions.data?.length ?? 0} buổi hôm nay`}
         />
       </div>
 

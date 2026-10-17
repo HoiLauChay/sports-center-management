@@ -79,9 +79,6 @@ export function ClassAdminDetailPage() {
   const status = classStatusTag(item);
   const liveSessions = item.sessions.filter((session) => session.status === 'SCHEDULED');
   const taught = liveSessions.filter((session) => isPast(session.date, session.startTime)).length;
-  const cancelledSessions = item.sessions.length - liveSessions.length;
-  const pendingRegistrations = item.coachRegistrations.filter((entry) => entry.status === 'PENDING').length;
-  const fill = Math.round((item.enrolledCount / item.maxStudents) * 100);
   const closeModal = () => setModal(null);
   const needsCoach = item.status === 'PENDING_APPROVAL' && !item.coach;
 
@@ -226,30 +223,10 @@ export function ClassAdminDetailPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          icon={Users}
-          label="Sĩ số"
-          value={`${item.enrolledCount}/${item.maxStudents}`}
-          hint={`Tối thiểu ${item.minStudents} · lấp đầy ${fill}%`}
-        />
-        <StatCard
-          icon={CalendarDays}
-          label="Buổi đã dạy"
-          value={`${taught}/${item.course.totalSessions}`}
-          hint={`${cancelledSessions} buổi hủy`}
-        />
-        <StatCard
-          icon={UserCheck}
-          label="HLV"
-          value={item.coach?.fullName ?? '—'}
-          hint={`${pendingRegistrations} đăng ký chờ`}
-        />
-        <StatCard
-          icon={Banknote}
-          label="Học phí"
-          value={formatVND(item.course.price)}
-          hint={`${item.course.totalSessions} buổi · ${item.course.sport.name}`}
-        />
+        <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />
+        <StatCard icon={CalendarDays} label="Buổi đã dạy" value={`${taught}/${item.course.totalSessions}`} />
+        <StatCard icon={UserCheck} label="HLV" value={item.coach?.fullName ?? '—'} />
+        <StatCard icon={Banknote} label="Học phí" value={formatVND(item.course.price)} />
       </div>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,462px)_minmax(0,1fr)]">
