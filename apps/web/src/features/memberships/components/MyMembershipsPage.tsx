@@ -85,7 +85,6 @@ export function MyMembershipsPage() {
     <>
       <PageHeader
         title="Gói của tôi"
-        description="Thông tin gói thành viên hiện tại và lịch sử gia hạn."
         extra={
           <Link to={PATHS.memberships}>
             <Button type="primary">{current ? 'Gia hạn' : 'Đăng ký gói'}</Button>

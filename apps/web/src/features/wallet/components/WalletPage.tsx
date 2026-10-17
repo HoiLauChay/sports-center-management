@@ -153,7 +153,6 @@ export function WalletPage() {
     <>
       <PageHeader
         title="Ví của tôi"
-        description="Mua dịch vụ trực tuyến chỉ thanh toán bằng ví. Ví chỉ nạp, thanh toán và hoàn tiền, không rút."
         extra={
           <Link to="/wallet/top-up">
             <Button type="primary" icon={<Plus size={16} />}>

@@ -171,7 +171,6 @@ export function ManagerDashboard() {
           label="Doanh thu hôm nay"
           loading={overview.isPending}
           value={formatVND(data?.revenueToday ?? 0)}
-          hint="Không gồm nạp ví, đã trừ hoàn tiền"
         />
         <StatCard
           icon={UserPlus}

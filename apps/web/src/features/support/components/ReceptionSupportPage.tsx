@@ -101,9 +101,6 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
             )}
           </div>
         )}
-        <p className="m-0 text-xs text-sc-muted-2">
-          Trạng thái chỉ tiến theo thứ tự Mới → Đang xử lý → Đã xử lý → Đã đóng; thành viên được thông báo mỗi lần đổi.
-        </p>
       </div>
     </Drawer>
   );
@@ -190,10 +187,7 @@ export function ReceptionSupportPage() {
 
   return (
     <>
-      <PageHeader
-        title="Yêu cầu hỗ trợ"
-        description="Tiếp nhận, cập nhật trạng thái và phản hồi yêu cầu của thành viên."
-      />
+      <PageHeader title="Yêu cầu hỗ trợ" />
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <Segmented

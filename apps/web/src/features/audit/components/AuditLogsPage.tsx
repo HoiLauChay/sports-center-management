@@ -169,7 +169,7 @@ export function AuditLogsPage() {
     <>
       <PageHeader
         title="Lịch sử thao tác hệ thống"
-        description={`Audit log ${rangeLabel} · ${logs.items.length}${logs.hasNextPage ? '+' : ''} bản ghi · không chứa mật khẩu / OTP / token`}
+        description={`Audit log ${rangeLabel} · ${logs.items.length}${logs.hasNextPage ? '+' : ''} bản ghi`}
       />
       <Card>
         <Form<FilterForm>

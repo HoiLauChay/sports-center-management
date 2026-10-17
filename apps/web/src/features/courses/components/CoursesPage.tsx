@@ -152,7 +152,6 @@ export function CoursesPage() {
     <>
       <PageHeader
         title="Khóa học"
-        description="Mỗi khóa học có bộ môn, số buổi và học phí; từ một khóa mở được nhiều lớp."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => openModal(null)}>
             Tạo khóa học

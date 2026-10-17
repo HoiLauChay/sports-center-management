@@ -129,10 +129,7 @@ export function ManagerSpecializationsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Duyệt chuyên môn"
-        description="HLV chỉ đăng ký dạy và được phân công lớp thuộc bộ môn đã duyệt."
-      />
+      <PageHeader title="Duyệt chuyên môn" />
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <Segmented

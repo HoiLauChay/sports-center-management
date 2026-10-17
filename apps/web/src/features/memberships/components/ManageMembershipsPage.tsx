@@ -247,7 +247,6 @@ export function ManageMembershipsPage() {
     <>
       <PageHeader
         title="Gói thành viên"
-        description="Không cần gói vẫn đặt sân / đăng ký lớp được. Gói chỉ thêm quyền lợi: vào gym, giảm giá đặt sân, giảm học phí, slot sân miễn phí mỗi tháng."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm(null)}>
             Tạo gói

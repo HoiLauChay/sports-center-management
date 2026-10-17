@@ -22,7 +22,7 @@ export function ClassesPage() {
 
   return (
     <>
-      <PageHeader title="Lớp học" description="Các lớp đang nhận đăng ký. Bấm vào lớp để xem lịch và thêm vào đơn." />
+      <PageHeader title="Lớp học" />
       <div className="mb-4 flex flex-wrap gap-3">
         <SearchInput
           placeholder="Tên lớp hoặc huấn luyện viên..."

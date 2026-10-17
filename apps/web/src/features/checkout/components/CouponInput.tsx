@@ -105,9 +105,6 @@ export function CouponInput({ codes, quote, check, onAdd, onRemove, disabled }: 
               </div>
             );
           })}
-          <p className="m-0 text-xs text-sc-muted-2">
-            Mỗi dịch vụ chỉ áp một mã; hệ thống tự chọn các mã giảm nhiều nhất cho đơn.
-          </p>
         </div>
       )}
     </div>

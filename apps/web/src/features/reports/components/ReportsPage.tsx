@@ -45,7 +45,6 @@ export function OverviewTab() {
           icon={Banknote}
           label="Doanh thu hôm nay"
           value={formatVND(data?.revenueToday ?? 0)}
-          hint="Không gồm nạp ví, đã trừ hoàn tiền"
         />
       </Col>
       <Col xs={24} sm={12} xl={8}>
@@ -164,20 +163,10 @@ function RevenueTab({ range }: { range: ReportRange }) {
     <div className={report.isFetching ? 'opacity-70 [transition:opacity_0.15s]' : undefined}>
       <Row gutter={[16, 16]} className="!mb-4">
         <Col xs={24} md={8}>
-          <StatCard
-            loading={report.isPending}
-            label="Doanh thu"
-            value={formatVND(totals.revenue)}
-            hint="Tính theo thời điểm thanh toán · không gồm nạp ví"
-          />
+          <StatCard loading={report.isPending} label="Doanh thu" value={formatVND(totals.revenue)} />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard
-            loading={report.isPending}
-            label="Hoàn tiền"
-            value={formatVND(totals.refunds)}
-            hint="Tính tại thời điểm hoàn"
-          />
+          <StatCard loading={report.isPending} label="Hoàn tiền" value={formatVND(totals.refunds)} />
         </Col>
         <Col xs={24} md={8}>
           <StatCard loading={report.isPending} label="Thực thu" value={formatVND(totals.revenue - totals.refunds)} />
@@ -314,7 +303,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             loading={report.isPending}
             label="Tổng số dư ví"
             value={formatVND(report.data?.totalBalance ?? 0)}
-            hint="Của mọi thành viên, tại thời điểm xem"
           />
         </Col>
         <Col xs={24} md={8}>
@@ -322,7 +310,6 @@ function WalletTab({ range }: { range: ReportRange }) {
             loading={report.isPending}
             label="Biến động ròng trong kỳ"
             value={`${net > 0 ? '+' : ''}${formatVND(net)}`}
-            hint="Nạp − thanh toán + hoàn"
           />
         </Col>
         <Col xs={24} md={8}>
@@ -369,10 +356,7 @@ export function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Báo cáo"
-        description="Doanh thu tính theo thời điểm thanh toán, không gồm nạp ví. Báo cáo thành viên, sân, khóa học và xuất file sẽ bổ sung sau."
-      />
+      <PageHeader title="Báo cáo" />
       <Card>
         <Tabs
           activeKey={tab}

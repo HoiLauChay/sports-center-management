@@ -84,7 +84,6 @@ export function UsersPage() {
     <>
       <PageHeader
         title="Người dùng"
-        description="Tài khoản thành viên, huấn luyện viên và nhân viên."
         extra={
           <Button type="primary" icon={<UserPlus size={16} />} onClick={() => setCreating(true)}>
             Tạo tài khoản

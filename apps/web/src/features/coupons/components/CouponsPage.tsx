@@ -211,7 +211,6 @@ export function CouponsPage() {
     <>
       <PageHeader
         title="Mã giảm giá"
-        description="Mã nhập khi thanh toán · mỗi đơn một mã · không áp cho nạp ví · lượt dùng đếm theo đơn."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => openForm(null)}>
             Tạo mã

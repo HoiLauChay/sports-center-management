@@ -257,7 +257,6 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               <Button block type="text" onClick={() => setSelection(null)}>
                 Bỏ chọn
               </Button>
-              <p className="m-0 text-xs text-sc-muted-2">Giỏ chưa giữ chỗ: chỗ được xác nhận khi thanh toán.</p>
             </div>
           )}
         </aside>

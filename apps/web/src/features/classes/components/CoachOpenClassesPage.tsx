@@ -70,10 +70,7 @@ export function CoachOpenClassesPage() {
 
   return (
     <>
-      <PageHeader
-        title="Lớp cần HLV"
-        description={`Bộ môn đã duyệt: ${sportNames || 'chưa có'} — chỉ hiện lớp nháp / chờ duyệt chưa có HLV.`}
-      />
+      <PageHeader title="Lớp cần HLV" description={`Bộ môn đã duyệt: ${sportNames || 'chưa có'}`} />
       {specializations.isSuccess && approved.length === 0 && (
         <Alert
           type="warning"

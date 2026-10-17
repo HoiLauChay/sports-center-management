@@ -127,9 +127,6 @@ function CounterGuideSteps() {
             Quy trình bán hàng tại quầy
           </div>
           <h3 className="m-0 font-display text-lg font-bold text-sc-ink">3 bước hoàn tất đơn hàng nhanh chóng</h3>
-          <p className="mt-1 text-xs text-sc-muted">
-            Vui lòng chọn thông tin khách hàng ở Bước 1 phía trên để kích hoạt danh mục dịch vụ và giỏ hàng.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
@@ -147,9 +144,6 @@ function CounterGuideSteps() {
               <UserCheck className="size-4 text-sc-ink" />
               <h4 className="m-0 font-bold text-sm text-sc-ink">Chọn người mua</h4>
             </div>
-            <p className="m-0 text-xs text-sc-muted leading-relaxed">
-              Tìm kiếm hội viên bằng tên/SĐT hoặc chọn khách vãng lai để bắt đầu lập đơn.
-            </p>
           </div>
 
           {/* Bước 2 */}
@@ -164,9 +158,6 @@ function CounterGuideSteps() {
               <LayoutGrid className="size-4 text-sc-muted" />
               <h4 className="m-0 font-bold text-sm text-sc-ink">Thêm dịch vụ</h4>
             </div>
-            <p className="m-0 text-xs text-sc-muted leading-relaxed">
-              Đặt sân lẻ, mua gói sân định kỳ, ghi danh lớp thể thao hoặc đăng ký gói tập.
-            </p>
           </div>
 
           {/* Bước 3 */}
@@ -181,9 +172,6 @@ function CounterGuideSteps() {
               <CreditCard className="size-4 text-sc-muted" />
               <h4 className="m-0 font-bold text-sm text-sc-ink">Thu tiền & Xuất hóa đơn</h4>
             </div>
-            <p className="m-0 text-xs text-sc-muted leading-relaxed">
-              Áp dụng mã giảm giá, thu tiền mặt, quẹt thẻ POS hoặc tạo mã QR chuyển khoản.
-            </p>
           </div>
         </div>
       </div>
@@ -284,7 +272,6 @@ export function CounterOrderPage() {
     <>
       <PageHeader
         title="Bán tại quầy"
-        description="Một người mua, một đơn nhiều dịch vụ, một phương thức thanh toán. Mỗi tab trình duyệt có đơn nháp riêng."
         extra={
           (cart.lines.length > 0 || cart.buyer) && (
             <Popconfirm
@@ -374,10 +361,6 @@ export function CounterOrderPage() {
                             Đơn 0đ không cần chuyển khoản, hãy chọn tiền mặt hoặc thẻ.
                           </p>
                         )}
-                        <p className="m-0 text-xs text-sc-muted-2">
-                          Thu tiền mặt / thẻ ghi nhận ngay và không trừ ví khách. Hệ thống kiểm tra lại toàn bộ đơn khi
-                          thu.
-                        </p>
                       </>
                     ) : (
                       <p className="m-0 text-sc-muted">Đang tính giá…</p>

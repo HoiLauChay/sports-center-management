@@ -321,10 +321,7 @@ function ReconciliationTab() {
 export function BankTransactionsPage() {
   return (
     <>
-      <PageHeader
-        title="Giao dịch ngân hàng"
-        description="Tiền vào từ SePay. Giao dịch không tự khớp cần Manager gán cho thành viên hoặc bỏ qua kèm ghi chú."
-      />
+      <PageHeader title="Giao dịch ngân hàng" />
       <Card>
         <Tabs
           items={[

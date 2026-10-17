@@ -126,10 +126,7 @@ export function EnrollmentsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Lớp đã đăng ký"
-        description="Danh sách lớp bạn đã mua. Có thể hủy trước ngày khai giảng và được hoàn toàn bộ học phí về ví."
-      />
+      <PageHeader title="Lớp đã đăng ký" />
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <Segmented

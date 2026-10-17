@@ -179,7 +179,6 @@ export function ClassesAdminPage() {
     <>
       <PageHeader
         title="Lớp học"
-        description="Các lớp mở từ khóa học. Lớp cần có HLV và được duyệt mới nhận đăng ký."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>
             Tạo lớp
