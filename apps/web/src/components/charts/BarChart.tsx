@@ -58,7 +58,7 @@ export function BarChart({
   data,
   series,
   mode = 'stacked',
-  height = 300,
+  height = 260,
   format = formatVND,
   ariaLabel,
 }: BarChartProps) {

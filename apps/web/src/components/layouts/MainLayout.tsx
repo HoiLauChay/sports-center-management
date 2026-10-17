@@ -97,7 +97,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
         </Layout.Header>
 
         <Layout.Content className="p-4 md:p-9">
-          <div className="mx-auto w-full max-w-[1280px]">{children ?? <Outlet />}</div>
+          <div className="mx-auto w-full max-w-[1120px]">{children ?? <Outlet />}</div>
         </Layout.Content>
       </Layout>
     </Layout>
