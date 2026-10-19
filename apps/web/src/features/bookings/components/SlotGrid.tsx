@@ -1,13 +1,16 @@
 import type { Facility, FacilitySchedule, FacilitySlot, FacilitySlotStatus } from '@sports-center/shared';
 import { Grid, Tooltip } from 'antd';
 import { formatVND } from '~/lib/format';
+import { isPast } from '~/lib/time';
 import type { SlotSelection } from '../types';
 import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
 
-type SlotTone = FacilitySlotStatus | 'PARTIAL';
+type SlotTone = FacilitySlotStatus | 'PARTIAL' | 'PAST';
 
-const toneOf = (slot: FacilitySlot): SlotTone =>
-  slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status;
+const toneOf = (slot: FacilitySlot, date: string): SlotTone => {
+  if (slot.status === 'CLOSED' && isPast(date, slot.startTime)) return 'PAST';
+  return slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status;
+};
 
 const STATUS_LABEL: Record<SlotTone, string> = {
   AVAILABLE: 'Trống',
@@ -15,7 +18,8 @@ const STATUS_LABEL: Record<SlotTone, string> = {
   FULL: 'Đã đầy',
   CLASS: 'Có lớp',
   MAINTENANCE: 'Bảo trì',
-  CLOSED: 'Đóng',
+  CLOSED: 'Sân đóng',
+  PAST: 'Đã qua',
 };
 
 const CELL_STYLE: Record<SlotTone, string> = {
@@ -27,6 +31,7 @@ const CELL_STYLE: Record<SlotTone, string> = {
   CLASS: 'bg-emerald-50/90 border-emerald-200 text-emerald-800 cursor-not-allowed',
   MAINTENANCE: 'bg-rose-50/90 border-rose-200 text-rose-800 cursor-not-allowed',
   CLOSED: 'bg-slate-50/80 border-slate-100 text-slate-300 cursor-not-allowed',
+  PAST: 'bg-slate-50/80 border-slate-100 text-slate-300 cursor-not-allowed',
 };
 
 const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
@@ -36,15 +41,17 @@ const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
   CLASS: { bg: 'bg-emerald-100', border: 'border-emerald-300' },
   MAINTENANCE: { bg: 'bg-rose-100', border: 'border-rose-300' },
   CLOSED: { bg: 'bg-slate-100', border: 'border-slate-200' },
+  PAST: { bg: 'bg-slate-50', border: 'border-slate-100' },
 };
 
-function tooltipOf(slot: FacilitySlot) {
+function tooltipOf(slot: FacilitySlot, date: string) {
+  if (toneOf(slot, date) === 'PAST') return 'Khung giờ đã bắt đầu';
   if (slot.status === 'CLASS') return `Lớp ${slot.classSession?.className ?? ''}`.trim();
   if (slot.status === 'MAINTENANCE') return `Bảo trì: ${slot.maintenance?.reason ?? ''}`;
-  if (slot.status === 'CLOSED') return 'Sân đóng hoặc khung giờ đã bắt đầu';
+  if (slot.status === 'CLOSED') return 'Sân không mở cửa khung giờ này';
   if (slot.capacity > 1)
     return `${slot.startTime}–${slot.endTime} · Đã đặt ${slot.booked}/${slot.capacity}, còn ${Math.max(0, slot.capacity - slot.booked)} chỗ`;
-  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[toneOf(slot)]}`;
+  return `${slot.startTime}–${slot.endTime} · ${STATUS_LABEL[toneOf(slot, date)]}`;
 }
 
 interface SlotGridProps {
@@ -71,6 +78,7 @@ export function SlotGrid({
   const isMobile = Grid.useBreakpoint().md === false;
   const reference = facilities.map((facility) => schedules[facility.id]).find(Boolean);
   const columns = reference?.slots ?? [];
+  const date = reference?.date ?? '';
 
   const currentSelection = isValidSelection(selection, schedules, maxSlots) ? selection : null;
   const click = (facilityId: string, index: number) => {
@@ -104,20 +112,20 @@ export function SlotGrid({
                   index < currentSelection.startIndex + currentSelection.count;
                 const available = isSelectableSlot(slot);
                 return (
-                  <Tooltip key={slot.startTime} title={tooltipOf(slot)}>
+                  <Tooltip key={slot.startTime} title={tooltipOf(slot, date)}>
                     <button
                       type="button"
                       disabled={loading || !onSelect || !available}
                       aria-pressed={selected}
-                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot)]}${selected ? ', đang chọn' : ''}`}
+                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot, date)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex items-center justify-between gap-3 rounded-xl border border-sc-border-soft px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 md:flex-col md:justify-center md:gap-1 md:px-2 md:text-center ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot)]}`}
+                      className={`flex items-center justify-between gap-3 rounded-xl border border-sc-border-soft px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 md:flex-col md:justify-center md:gap-1 md:px-2 md:text-center ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
                     >
                       <span className="block text-sm font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
                       <span className="flex flex-col items-end gap-0.5 text-xs md:items-center md:gap-1">
-                        <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot)]}</span>
+                        <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot, date)]}</span>
                         {available && (
                           <span>
                             Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
@@ -197,10 +205,10 @@ export function SlotGrid({
                     index >= currentSelection.startIndex &&
                     index < currentSelection.startIndex + currentSelection.count;
                   const selectable = isSelectableSlot(slot);
-                  const tone = toneOf(slot);
+                  const tone = toneOf(slot, date);
 
                   return (
-                    <Tooltip key={slot.startTime} title={tooltipOf(slot)} mouseEnterDelay={0.25}>
+                    <Tooltip key={slot.startTime} title={tooltipOf(slot, date)} mouseEnterDelay={0.25}>
                       <button
                         type="button"
                         role="gridcell"
@@ -221,7 +229,7 @@ export function SlotGrid({
                         ) : slot.status === 'MAINTENANCE' ? (
                           <span className="font-semibold text-[11px] text-rose-700">Bảo trì</span>
                         ) : slot.status === 'CLOSED' ? (
-                          <span className="text-[11px] text-slate-300">Đóng</span>
+                          <span className="text-[11px] text-slate-300">{STATUS_LABEL[tone]}</span>
                         ) : slot.status === 'FULL' ? (
                           <span className="font-medium text-[11px] text-slate-400">Hết chỗ</span>
                         ) : tone === 'PARTIAL' ? (
@@ -256,7 +264,7 @@ export function SlotGrid({
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-xs text-sc-muted">
         <span className="font-semibold text-sc-ink-2">Chú thích:</span>
-        {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED'] as SlotTone[]).map((status) => (
+        {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED', 'PAST'] as SlotTone[]).map((status) => (
           <span key={status} className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
             <span
               className={`inline-block size-3 rounded border ${LEGEND_BADGE[status].bg} ${LEGEND_BADGE[status].border}`}

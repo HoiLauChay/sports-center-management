@@ -5,7 +5,7 @@ import { EmptyState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { DAY_SHORT, WEEK_ORDER, formatDayLabel } from '~/lib/time';
+import { DAY_SHORT, WEEK_ORDER, formatDayLabel, isPast } from '~/lib/time';
 import { useMyBookings, useMyPackages } from '../hooks/useBookings';
 
 const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
@@ -70,9 +70,15 @@ function BookingsTab() {
       width: '15%',
       render: (_, booking) => (
         <div className="flex flex-col items-start gap-0.5">
-          <Tag color={booking.status === 'CONFIRMED' ? 'success' : 'default'} className="!m-0">
-            {booking.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Đã hủy'}
-          </Tag>
+          {booking.status === 'CANCELLED' ? (
+            <Tag className="!m-0">Đã hủy</Tag>
+          ) : isPast(booking.date, booking.endTime) ? (
+            <Tag className="!m-0">Đã diễn ra</Tag>
+          ) : (
+            <Tag color="success" className="!m-0">
+              Đã xác nhận
+            </Tag>
+          )}
         </div>
       ),
     },
