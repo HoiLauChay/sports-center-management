@@ -46,7 +46,7 @@ export function CouponInput({ codes, quote, check, onAdd, onRemove, disabled }: 
     const code = draft.trim().toUpperCase();
     if (!code) return;
     if (codes.includes(code)) {
-      setError(`${code} đã có trong đơn`);
+      setError(`${code} đã được áp dụng`);
       return;
     }
     apply.mutate(code);

@@ -40,7 +40,7 @@ const PAYMENT_COLOR: Record<string, string> = {
 export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: OrdersTableProps) {
   const columns: TableColumnsType<Order> = [
     {
-      title: 'Số hóa đơn',
+      title: 'Mã đơn',
       dataIndex: 'orderNumber',
       width: 180,
       render: (value: string) => (

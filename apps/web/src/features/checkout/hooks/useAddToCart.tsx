@@ -35,7 +35,7 @@ export function useAddToCart(store: CartStore, options: { cartPath?: '/cart'; ca
       });
       return true;
     }
-    message.info('Dịch vụ này đã có trong đơn.');
+    message.info('Dịch vụ này đã có trong giỏ.');
     return false;
   };
 }

@@ -15,7 +15,7 @@ interface AddToCartButtonProps extends Pick<ButtonProps, 'type' | 'size' | 'bloc
 export function AddToCartButton({
   selection,
   disabledReason,
-  label = 'Thêm vào đơn',
+  label = 'Thêm vào giỏ',
   onAdded,
   type = 'primary',
   ...rest

@@ -65,7 +65,7 @@ export function CartPage() {
         <Card>
           <EmptyState
             title="Giỏ hàng đang trống"
-            description="Chọn dịch vụ rồi bấm “Thêm vào đơn” để bắt đầu."
+            description="Chọn dịch vụ rồi bấm “Thêm vào giỏ” để bắt đầu."
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Link to="/bookings">
@@ -87,7 +87,7 @@ export function CartPage() {
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="flex min-w-0 flex-col gap-4">
             <Card>
-              <SectionTitle>Dịch vụ trong đơn ({cart.lines.length})</SectionTitle>
+              <SectionTitle>Dịch vụ trong giỏ ({cart.lines.length})</SectionTitle>
               {quoteQuery.isError && (
                 <Alert
                   type="error"

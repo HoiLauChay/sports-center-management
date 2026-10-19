@@ -202,7 +202,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   return (
     <>
       <PageHeader
-        title={`Hóa đơn ${data.orderNumber}`}
+        title={`Đơn hàng ${data.orderNumber}`}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
             <MappedTag value={data.status} map={ORDER_STATUS_TAG} />

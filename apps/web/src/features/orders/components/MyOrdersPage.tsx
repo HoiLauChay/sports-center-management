@@ -15,7 +15,7 @@ export function MyOrdersPage() {
 
   return (
     <>
-      <PageHeader title="Hóa đơn của tôi" />
+      <PageHeader title="Đơn hàng của tôi" />
       <Card>
         <OrdersTable
           data={orders.data}

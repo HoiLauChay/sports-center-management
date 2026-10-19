@@ -246,7 +246,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                 disabled={!preview.data?.isValid || !selection || preview.isFetching || (line ? !line.valid : true)}
                 onClick={() => selection && onAdd(selection)}
               >
-                Thêm vào đơn
+                Thêm vào giỏ
               </Button>
             </div>
             {line && !line.valid && preview.data?.isValid && (

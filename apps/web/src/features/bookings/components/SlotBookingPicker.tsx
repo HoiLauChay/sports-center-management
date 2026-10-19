@@ -252,7 +252,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                   setSelection(null);
                 }}
               >
-                Thêm vào đơn
+                Thêm vào giỏ
               </Button>
               <Button block type="text" onClick={() => setSelection(null)}>
                 Bỏ chọn
