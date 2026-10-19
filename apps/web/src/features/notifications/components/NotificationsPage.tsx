@@ -1,5 +1,5 @@
 import { getRouteApi } from '@tanstack/react-router';
-import { Button, Card, Segmented, Spin } from 'antd';
+import { Button, Card, Segmented, Skeleton } from 'antd';
 import { CheckCheck } from 'lucide-react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -51,8 +51,10 @@ export function NotificationsPage() {
         </div>
 
         {feed.isPending ? (
-          <div className="flex justify-center py-12">
-            <Spin />
+          <div className="p-5">
+            <Skeleton active avatar paragraph={{ rows: 2 }} />
+            <Skeleton active avatar paragraph={{ rows: 2 }} />
+            <Skeleton active avatar paragraph={{ rows: 2 }} />
           </div>
         ) : feed.isError && feed.items.length === 0 ? (
           <ErrorState message={toApiError(feed.error).message} onRetry={() => void feed.refetch()} />

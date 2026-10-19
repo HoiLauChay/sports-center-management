@@ -1,11 +1,18 @@
-import { Button, Empty, Result, Spin } from 'antd';
+import { Button, Card, Empty, Result, Skeleton, Spin } from 'antd';
 import type { ReactNode } from 'react';
 
 export function PageLoading({ fullScreen = false }: { fullScreen?: boolean }) {
+  if (fullScreen) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
   return (
-    <div className={`flex items-center justify-center ${fullScreen ? 'min-h-screen' : 'min-h-[240px]'}`}>
-      <Spin size="large" />
-    </div>
+    <Card aria-busy="true" aria-label="Đang tải">
+      <Skeleton active paragraph={{ rows: 6 }} />
+    </Card>
   );
 }
 
