@@ -1,20 +1,25 @@
 import type { Facility, FacilitySchedule, FacilitySlot, FacilitySlotStatus } from '@sports-center/shared';
 import { Grid, Tooltip } from 'antd';
+import { useState } from 'react';
 import { formatVND } from '~/lib/format';
 import { isPast } from '~/lib/time';
 import type { SlotSelection } from '../types';
 import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
 
-type SlotTone = FacilitySlotStatus | 'PARTIAL' | 'PAST';
+type SlotTone = FacilitySlotStatus | 'PARTIAL' | 'LOW' | 'PAST';
+
+const LOW_SHARE = 0.2;
 
 const toneOf = (slot: FacilitySlot, date: string): SlotTone => {
   if (slot.status === 'CLOSED' && isPast(date, slot.startTime)) return 'PAST';
-  return slot.status === 'AVAILABLE' && slot.booked > 0 ? 'PARTIAL' : slot.status;
+  if (slot.status !== 'AVAILABLE' || slot.booked === 0) return slot.status;
+  return slot.capacity - slot.booked <= Math.max(1, Math.floor(slot.capacity * LOW_SHARE)) ? 'LOW' : 'PARTIAL';
 };
 
 const STATUS_LABEL: Record<SlotTone, string> = {
   AVAILABLE: 'Trống',
   PARTIAL: 'Còn chỗ',
+  LOW: 'Sắp hết',
   FULL: 'Đã đầy',
   CLASS: 'Có lớp',
   MAINTENANCE: 'Bảo trì',
@@ -26,7 +31,8 @@ const CELL_STYLE: Record<SlotTone, string> = {
   AVAILABLE:
     'bg-white text-emerald-800 border-slate-200/90 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-xs cursor-pointer',
   PARTIAL:
-    'bg-amber-50/90 border-amber-200/90 text-amber-900 hover:bg-amber-100 hover:border-amber-300 cursor-pointer shadow-xs',
+    'bg-white text-emerald-800 border-emerald-200 hover:border-emerald-500 hover:bg-emerald-50/50 hover:shadow-xs cursor-pointer',
+  LOW: 'bg-amber-50/90 border-amber-200/90 text-amber-900 hover:bg-amber-100 hover:border-amber-300 cursor-pointer shadow-xs',
   FULL: 'bg-slate-100/90 border-slate-200 text-slate-400 cursor-not-allowed [background-image:repeating-linear-gradient(135deg,transparent_0_5px,rgba(0,0,0,.03)_5px_6px)]',
   CLASS: 'bg-emerald-50/90 border-emerald-200 text-emerald-800 cursor-not-allowed',
   MAINTENANCE: 'bg-rose-50/90 border-rose-200 text-rose-800 cursor-not-allowed',
@@ -36,7 +42,8 @@ const CELL_STYLE: Record<SlotTone, string> = {
 
 const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
   AVAILABLE: { bg: 'bg-white', border: 'border-slate-300' },
-  PARTIAL: { bg: 'bg-amber-100', border: 'border-amber-300' },
+  PARTIAL: { bg: 'bg-white', border: 'border-emerald-300' },
+  LOW: { bg: 'bg-amber-100', border: 'border-amber-300' },
   FULL: { bg: 'bg-slate-200', border: 'border-slate-300' },
   CLASS: { bg: 'bg-emerald-100', border: 'border-emerald-300' },
   MAINTENANCE: { bg: 'bg-rose-100', border: 'border-rose-300' },
@@ -80,6 +87,10 @@ export function SlotGrid({
   const columns = reference?.slots ?? [];
   const date = reference?.date ?? '';
 
+  const [showPast, setShowPast] = useState(false);
+  const pastCount = (facilityId: string) =>
+    (schedules[facilityId]?.slots ?? []).filter((slot) => toneOf(slot, date) === 'PAST').length;
+
   const currentSelection = isValidSelection(selection, schedules, maxSlots) ? selection : null;
   const click = (facilityId: string, index: number) => {
     onSelect?.(selectSlot(schedules, currentSelection, facilityId, index, maxSlots));
@@ -104,8 +115,23 @@ export function SlotGrid({
                 {formatVND(facility.pricePerSlot)}/slot · {facility.capacityPerSlot} chỗ
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-6">
+            {pastCount(facility.id) > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowPast((value) => !value)}
+                className="mb-2 cursor-pointer border-0 bg-transparent p-0 [font:inherit] text-[13px] font-semibold text-sc-primary"
+              >
+                {showPast ? 'Ẩn các khung giờ đã qua' : `Hiện ${pastCount(facility.id)} khung giờ đã qua`}
+              </button>
+            )}
+            {!showPast && pastCount(facility.id) === (schedules[facility.id]?.slots.length ?? 0) && (
+              <p className="mt-0 mb-2 rounded-lg bg-sc-paper px-3 py-4 text-center text-sc-muted">
+                Hôm nay đã hết khung giờ đặt. Chọn ngày khác ở trên.
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-6">
               {(schedules[facility.id]?.slots ?? []).map((slot, index) => {
+                if (!showPast && toneOf(slot, date) === 'PAST') return null;
                 const selected =
                   currentSelection?.facilityId === facility.id &&
                   index >= currentSelection.startIndex &&
@@ -119,12 +145,12 @@ export function SlotGrid({
                       aria-pressed={selected}
                       aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot, date)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex items-center justify-between gap-3 rounded-xl border border-sc-border-soft px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 md:flex-col md:justify-center md:gap-1 md:px-2 md:text-center ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
+                      className={`flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border border-sc-border-soft px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
                     >
                       <span className="block text-sm font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
-                      <span className="flex flex-col items-end gap-0.5 text-xs md:items-center md:gap-1">
+                      <span className="flex flex-col items-center gap-0.5 text-[13px] md:gap-1">
                         <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot, date)]}</span>
                         {available && (
                           <span>
@@ -139,7 +165,7 @@ export function SlotGrid({
             </div>
           </section>
         ))}
-        <p className="m-0 text-xs text-sc-muted" role="status">
+        <p className="m-0 text-[13px] text-sc-muted" role="status">
           Chọn tối đa {maxSlots} slot liên tiếp. Bấm slot ở đầu hoặc cuối để bỏ bớt.
         </p>
       </div>
@@ -232,12 +258,16 @@ export function SlotGrid({
                           <span className="text-[11px] text-slate-300">{STATUS_LABEL[tone]}</span>
                         ) : slot.status === 'FULL' ? (
                           <span className="font-medium text-[11px] text-slate-400">Hết chỗ</span>
-                        ) : tone === 'PARTIAL' ? (
+                        ) : tone === 'PARTIAL' || tone === 'LOW' ? (
                           <div className="flex flex-col items-center justify-center leading-none">
-                            <span className="font-bold text-xs text-amber-900">
+                            <span
+                              className={`font-bold text-xs ${tone === 'LOW' ? 'text-amber-900' : 'text-emerald-800'}`}
+                            >
                               {slot.booked}/{slot.capacity}
                             </span>
-                            <span className="text-[9.5px] text-amber-700/80 mt-0.5">
+                            <span
+                              className={`text-[11px] mt-0.5 ${tone === 'LOW' ? 'text-amber-700' : 'text-emerald-700'}`}
+                            >
                               còn {slot.capacity - slot.booked}
                             </span>
                           </div>
@@ -264,14 +294,16 @@ export function SlotGrid({
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-xs text-sc-muted">
         <span className="font-semibold text-sc-ink-2">Chú thích:</span>
-        {(['AVAILABLE', 'PARTIAL', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED', 'PAST'] as SlotTone[]).map((status) => (
-          <span key={status} className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
-            <span
-              className={`inline-block size-3 rounded border ${LEGEND_BADGE[status].bg} ${LEGEND_BADGE[status].border}`}
-            />
-            {STATUS_LABEL[status]}
-          </span>
-        ))}
+        {(['AVAILABLE', 'PARTIAL', 'LOW', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED', 'PAST'] as SlotTone[]).map(
+          (status) => (
+            <span key={status} className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
+              <span
+                className={`inline-block size-3 rounded border ${LEGEND_BADGE[status].bg} ${LEGEND_BADGE[status].border}`}
+              />
+              {STATUS_LABEL[status]}
+            </span>
+          ),
+        )}
         {onSelect && (
           <>
             <span className="inline-flex items-center gap-1.5 font-medium text-sc-ink-2">
