@@ -112,7 +112,7 @@ export function ClassDetailPage() {
             />
           </Card>
         </div>
-        <Card className="xl:sticky xl:top-20">
+        <Card className="xl:sticky xl:top-4">
           <SectionTitle>Đăng ký</SectionTitle>
           <div className="text-[14px]">
             <div className="flex justify-between border-b border-sc-border-soft py-2">
@@ -137,7 +137,20 @@ export function ClassDetailPage() {
             selection={selection}
             disabledReason={line && !line.valid ? line.error?.message : undefined}
           />
+          {item.startDate && (
+            <p className="mt-3 mb-0 text-[13px] text-sc-muted">
+              Hủy đăng ký trước ngày khai giảng {formatDate(item.startDate)} được hoàn đủ học phí vào ví.
+            </p>
+          )}
         </Card>
+      </div>
+      <div className="h-16 md:hidden" />
+      <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] md:hidden">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[13px] text-sc-muted">Tạm tính</span>
+          <span className="font-semibold tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
+        </div>
+        <AddToCartButton selection={selection} disabledReason={line && !line.valid ? line.error?.message : undefined} />
       </div>
     </>
   );
