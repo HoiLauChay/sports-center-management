@@ -57,14 +57,14 @@ interface PlanCardProps {
 }
 
 function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
-  const buttonLabel = current ? 'Gia hạn gói này' : locked ? 'Không đổi khi còn gói' : 'Đăng ký gói này';
-  const lockedReason = 'Đang có gói khác còn hiệu lực. Đổi gói sau khi hết hạn hoặc hủy gói.';
+  const buttonLabel = current ? 'Gia hạn gói này' : locked ? 'Đang dùng gói khác' : 'Đăng ký gói này';
+  const lockedReason = 'Bạn đang có gói khác còn hiệu lực. Đổi gói được sau khi gói hiện tại hết hạn.';
 
   return (
     <div
       className={`flex min-w-0 flex-col rounded-xl bg-white px-6 pt-[22px] pb-6 shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)] ${
         current ? 'border-2 border-sc-primary !px-[23px] !pt-[21px] !pb-[23px]' : 'border border-sc-border-soft'
-      } ${locked ? 'opacity-60' : ''}`}
+      }`}
     >
       <div
         className={`mb-3.5 min-h-4 font-display text-xs font-bold tracking-[.12em] uppercase ${
@@ -95,6 +95,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
           </li>
         ))}
       </ul>
+      {locked && <p className="mt-0 mb-3 text-[13px] text-sc-muted">{lockedReason}</p>}
       <AddToCartButton
         block
         label={buttonLabel}
@@ -142,7 +143,7 @@ export function MembershipPlansPage() {
             />
           )}
           {plans?.length ? (
-            <div className="grid grid-cols-1 items-stretch gap-4 min-[601px]:grid-cols-2 min-[1001px]:grid-cols-3 min-[1401px]:grid-cols-4">
+            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {plans.map((plan) => (
                 <PlanCard
                   key={plan.id}
@@ -158,11 +159,11 @@ export function MembershipPlansPage() {
               <EmptyState title="Chưa có gói đang bán" description="Vui lòng quay lại sau hoặc liên hệ quầy lễ tân." />
             </Card>
           )}
-          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-[13px] text-sc-muted">
-            <span>
+          <ul className="mt-4 mb-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-sc-muted">
+            <li>
               Gia hạn nối tiếp từ ngày hết hạn; gói mua trong cùng đơn chưa giảm giá cho các dòng khác của đơn đó.
-            </span>
-            <span>
+            </li>
+            <li>
               Hủy gói: không gia hạn, không hoàn tiền, vẫn dùng đến hết hạn.{' '}
               <Link
                 to={PATHS.myMemberships}
@@ -170,8 +171,8 @@ export function MembershipPlansPage() {
               >
                 Gói của tôi
               </Link>
-            </span>
-          </div>
+            </li>
+          </ul>
         </>
       )}
     </>
