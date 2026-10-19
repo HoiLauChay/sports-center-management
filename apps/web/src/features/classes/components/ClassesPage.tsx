@@ -5,6 +5,7 @@ import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/State
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { useMyMemberships } from '~/features/memberships/hooks/useMyMemberships';
 import { toApiError } from '~/lib/http-errors';
 import { useClassCoaches, useClasses } from '../hooks/useClasses';
 import { ClassCard } from './ClassCard';
@@ -18,6 +19,7 @@ export function ClassesPage() {
   const [sportId, setSportId] = useState<string | undefined>();
   const [coachId, setCoachId] = useState<string | undefined>();
   const [q, setQ] = useState('');
+  const discountPct = useMyMemberships().query.data?.current?.currentBenefits?.classDiscountPct ?? 0;
   const classes = useClasses({ page, limit: LIMIT, sportId, coachId, q: q || undefined });
 
   return (
@@ -81,7 +83,7 @@ export function ClassesPage() {
         <>
           <div className="grid grid-cols-1 gap-4 min-[601px]:grid-cols-2 min-[1001px]:grid-cols-3">
             {classes.data.items.map((item) => (
-              <ClassCard key={item.id} item={item} keyword={q} />
+              <ClassCard key={item.id} item={item} keyword={q} discountPct={discountPct} />
             ))}
           </div>
           <Pagination

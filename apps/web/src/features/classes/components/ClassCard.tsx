@@ -1,14 +1,22 @@
 import { Link } from '@tanstack/react-router';
 import { Tag } from 'antd';
-import { CalendarDays, Clock, MapPin, UserRound, Users } from 'lucide-react';
+import { ArrowRight, CalendarDays, Clock, MapPin, UserRound, Users } from 'lucide-react';
 import { Highlight } from '~/components/ui/Highlight';
 import { SportTag } from '~/components/ui/SportTag';
 import { formatDate, formatVND } from '~/lib/format';
 import type { GymClass } from '../types';
 import { weeklyText } from '../utils';
 
-export function ClassCard({ item, keyword }: { item: GymClass; keyword?: string }) {
+interface ClassCardProps {
+  item: GymClass;
+  keyword?: string;
+  discountPct?: number;
+}
+
+export function ClassCard({ item, keyword, discountPct = 0 }: ClassCardProps) {
   const seatsLeft = item.maxStudents - item.enrolledCount;
+  const price = item.course.price;
+  const memberPrice = price - Math.round((price * discountPct) / 100);
   return (
     <Link
       to="/classes/$classId"
@@ -44,8 +52,20 @@ export function ClassCard({ item, keyword }: { item: GymClass; keyword?: string 
           <Users size={14} /> {item.enrolledCount}/{item.maxStudents} học viên
         </li>
       </ul>
-      <div className="mt-auto font-display text-[28px] leading-none font-extrabold tabular-nums">
-        {formatVND(item.course.price)}
+      <div className="mt-auto flex items-end justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          {memberPrice < price && (
+            <span className="text-[13px] text-sc-muted tabular-nums">
+              <span className="line-through">{formatVND(price)}</span> · giá thành viên
+            </span>
+          )}
+          <span className="font-display text-[28px] leading-none font-extrabold tabular-nums">
+            {formatVND(memberPrice)}
+          </span>
+        </div>
+        <span className="flex shrink-0 items-center gap-1 text-[13.5px] font-semibold text-sc-primary">
+          Xem lớp <ArrowRight size={15} />
+        </span>
       </div>
     </Link>
   );
