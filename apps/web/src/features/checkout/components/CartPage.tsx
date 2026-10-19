@@ -120,7 +120,7 @@ export function CartPage() {
               />
             </Card>
           </div>
-          <div className="flex flex-col gap-4 xl:sticky xl:top-20">
+          <div className="flex flex-col gap-4 xl:sticky xl:top-4">
             <WalletCard
               balance={quote?.walletBalance ?? 0}
               description={
@@ -160,7 +160,7 @@ export function CartPage() {
                     Thanh toán bằng ví · {formatVND(quote.total)}
                   </Button>
                   {!quote.canCheckout && (
-                    <p className="mt-2 mb-0 text-xs text-sc-error">{blockedReason(quote)} để thanh toán.</p>
+                    <p className="mt-2 mb-0 text-[13px] text-sc-error">{blockedReason(quote)} để thanh toán.</p>
                   )}
                 </>
               ) : (
@@ -169,6 +169,31 @@ export function CartPage() {
             </Card>
           </div>
         </div>
+      )}
+      {cart.lines.length > 0 && quote && (
+        <>
+          <div className="h-16 md:hidden" />
+          <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] md:hidden">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[13px] text-sc-muted">Phải trả</span>
+              <span className="font-semibold tabular-nums">{formatVND(quote.total)}</span>
+            </div>
+            {insufficient ? (
+              <Link to="/wallet/top-up">
+                <Button type="primary">Nạp ví</Button>
+              </Link>
+            ) : (
+              <Button
+                type="primary"
+                disabled={!quote.canCheckout || quoteQuery.isFetching}
+                loading={checkout.isPaying}
+                onClick={() => pay(quote.total)}
+              >
+                Thanh toán bằng ví
+              </Button>
+            )}
+          </div>
+        </>
       )}
       <PriceChangeModal
         change={checkout.priceChange}
