@@ -37,7 +37,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const [startDate, setStartDate] = useState(addDays(todayVN(), 1));
   const [slotIndex, setSlotIndex] = useState<number>();
   const [weeks, setWeeks] = useState<number | null>(4);
-  const [days, setDays] = useState<number[]>([2, 5]);
+  const [days, setDays] = useState<number[]>([]);
 
   const slots = useMemo(
     () =>
@@ -136,9 +136,9 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="font-semibold text-sc-ink">Thứ trong tuần</span>
-            <span className="text-xs text-sc-muted">
+            <span className="text-[13px] text-sc-muted">
               {days.length === 0 ? (
-                <span className="font-medium text-sc-error">Chưa chọn thứ nào</span>
+                <span>Chọn ít nhất một thứ</span>
               ) : (
                 <span>
                   {WEEK_ORDER.filter((d) => days.includes(d))
@@ -157,10 +157,11 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                   key={day}
                   type="button"
                   aria-pressed={isSelected}
+                  aria-label={DAY_LABEL[day]}
                   onClick={() => {
                     setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()));
                   }}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border py-2.5 px-1 text-center transition-all ${
+                  className={`flex h-12 cursor-pointer items-center justify-center rounded-xl border px-1 text-center transition-all ${
                     isSelected
                       ? 'border-sc-primary bg-sc-primary text-white shadow-xs font-semibold ring-2 ring-sc-primary/15'
                       : 'border-sc-border bg-white text-sc-ink hover:border-sc-primary-border hover:bg-sc-paper'
@@ -168,9 +169,6 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                 >
                   <span className="font-display text-base font-bold uppercase leading-none sm:text-lg">
                     {DAY_SHORT[day]}
-                  </span>
-                  <span className={`mt-1 text-[11px] leading-none ${isSelected ? 'text-white/85' : 'text-sc-muted'}`}>
-                    {DAY_LABEL[day]}
                   </span>
                 </button>
               );
@@ -180,7 +178,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
         <Alert
           type="info"
           showIcon
-          title="Mọi buổi trong gói phải còn trống hoàn toàn. Chỉ cần một buổi đã có người đặt, có lớp hoặc bảo trì thì cả gói bị từ chối; tiền tính một dòng, hóa đơn có nhiều lượt đặt con."
+          title="Gói chỉ đặt được khi mọi buổi đều còn trống. Nếu một buổi trùng lượt đặt khác, lớp học hoặc bảo trì, hãy đổi giờ hoặc thứ."
         />
       </div>
 
