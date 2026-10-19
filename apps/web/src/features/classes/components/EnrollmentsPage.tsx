@@ -11,7 +11,7 @@ import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { vnDate } from '~/lib/time';
 import { useCancelEnrollment, useMyEnrollments } from '../hooks/useClasses';
-import { weeklyText } from '../utils';
+import { classDateRange, weeklyText } from '../utils';
 
 const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string }> = {
   ENROLLED: { label: 'Đang học', color: 'success' },
@@ -71,7 +71,9 @@ export function EnrollmentsPage() {
           <span className="text-[13px] text-sc-muted">
             {enrollment.class.course.sport.name} · HLV {enrollment.class.coach?.fullName ?? '—'}
           </span>
-          <span className="text-[13px] text-sc-muted md:hidden">{weeklyText(enrollment.class.weeklySchedule)}</span>
+          <span className="text-[13px] text-sc-muted md:hidden">
+            {weeklyText(enrollment.class.weeklySchedule)} · {classDateRange(enrollment.class)}
+          </span>
         </div>
       ),
     },
@@ -82,9 +84,9 @@ export function EnrollmentsPage() {
       render: (_, enrollment) => (
         <div className="flex flex-col gap-0.5">
           <span className="whitespace-nowrap">{weeklyText(enrollment.class.weeklySchedule)}</span>
-          {enrollment.class.startDate && (
-            <span className="text-[13px] text-sc-muted">Khai giảng {formatDate(enrollment.class.startDate)}</span>
-          )}
+          <span className="text-[13px] text-sc-muted tabular-nums">
+            {enrollment.class.course.totalSessions} buổi · {classDateRange(enrollment.class)}
+          </span>
         </div>
       ),
     },
