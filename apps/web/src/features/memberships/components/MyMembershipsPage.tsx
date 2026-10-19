@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Alert, Button, Card, Popconfirm, Progress, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Collapse, Popconfirm, Progress, Tag } from 'antd';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
@@ -32,27 +32,57 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
 
 type PeriodRow = MembershipPeriod & { packageName: string };
 
-const historyColumns: TableColumnsType<MemberMembership> = [
-  { title: 'Gói', render: (_, membership) => membership.package.name },
-  { title: 'Từ', dataIndex: 'startDate', render: formatDate },
-  { title: 'Đến', dataIndex: 'endDate', render: formatDate },
-  {
-    title: 'Trạng thái',
-    render: (_, membership) => {
-      const status = statusOf(membership);
-      return <Tag color={STATUS[status].color}>{STATUS[status].label}</Tag>;
-    },
-  },
-];
+function HistoryList({ memberships }: { memberships: MemberMembership[] }) {
+  if (!memberships.length) return <EmptyState title="Chưa có lịch sử gói" />;
+  return (
+    <ul className="m-0 list-none p-0">
+      {memberships.map((membership) => {
+        const status = statusOf(membership);
+        return (
+          <li
+            key={membership.id}
+            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-sc-border-soft py-3 first:pt-0 last:border-b-0 last:pb-0"
+          >
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-semibold">{membership.package.name}</span>
+              <span className="text-[13px] text-sc-muted tabular-nums">
+                {formatDate(membership.startDate)} → {formatDate(membership.endDate)}
+              </span>
+            </div>
+            <Tag color={STATUS[status].color} className="!m-0">
+              {STATUS[status].label}
+            </Tag>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
-const periodColumns: TableColumnsType<PeriodRow> = [
-  { title: 'Gói', dataIndex: 'packageName' },
-  {
-    title: 'Kỳ đã mua',
-    render: (_, period) => `${formatDate(period.periodStart)} → ${formatDate(period.periodEnd)}`,
-  },
-  { title: 'Đã thanh toán', dataIndex: 'paidAmount', render: formatVND },
-];
+function PeriodList({ periods }: { periods: PeriodRow[] }) {
+  if (!periods.length) return <EmptyState title="Chưa có kỳ đã mua" />;
+  return (
+    <Collapse
+      ghost
+      expandIconPlacement="end"
+      items={periods.map((period) => ({
+        key: period.orderItemId,
+        label: (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-semibold">{period.packageName}</span>
+              <span className="text-[13px] text-sc-muted tabular-nums">
+                {formatDate(period.periodStart)} → {formatDate(period.periodEnd)}
+              </span>
+            </div>
+            <span className="tabular-nums">{formatVND(period.paidAmount)}</span>
+          </div>
+        ),
+        children: <MembershipBenefits benefits={period.benefits} />,
+      }))}
+    />
+  );
+}
 
 export function MyMembershipsPage() {
   const { query, cancel } = useMyMemberships();
@@ -112,7 +142,7 @@ export function MyMembershipsPage() {
               action={<Button onClick={() => void query.refetch()}>Thử lại</Button>}
             />
           )}
-          <div className="grid items-start gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-5 lg:grid-cols-2">
             {current ? (
               <Card
                 title="Gói hiện tại"
@@ -120,7 +150,7 @@ export function MyMembershipsPage() {
               >
                 <div>
                   <InfoRow label="Gói">{current.package.name}</InfoRow>
-                  {latestPeriod && <InfoRow label="Giá">{formatVND(latestPeriod.paidAmount)}</InfoRow>}
+                  {latestPeriod && <InfoRow label="Đã trả kỳ gần nhất">{formatVND(latestPeriod.paidAmount)}</InfoRow>}
                   <InfoRow label="Bắt đầu">{formatDate(current.startDate)}</InfoRow>
                   <InfoRow label="Hết hạn">{formatDate(current.endDate)}</InfoRow>
                   {benefits && (
@@ -202,25 +232,10 @@ export function MyMembershipsPage() {
             )}
             <div className="flex flex-col gap-5">
               <Card title="Lịch sử gói">
-                <Table<MemberMembership>
-                  rowKey="id"
-                  dataSource={allMemberships}
-                  columns={historyColumns}
-                  scroll={{ x: 'max-content' }}
-                  pagination={allMemberships.length > 10 ? { pageSize: 10 } : false}
-                  locale={{ emptyText: <EmptyState title="Chưa có lịch sử gói" /> }}
-                />
+                <HistoryList memberships={allMemberships} />
               </Card>
-              <Card title="Các kỳ đã mua">
-                <Table<PeriodRow>
-                  rowKey="orderItemId"
-                  dataSource={periods}
-                  columns={periodColumns}
-                  scroll={{ x: 'max-content' }}
-                  pagination={periods.length > 10 ? { pageSize: 10 } : false}
-                  locale={{ emptyText: <EmptyState title="Chưa có kỳ đã mua" /> }}
-                  expandable={{ expandedRowRender: (period) => <MembershipBenefits benefits={period.benefits} /> }}
-                />
+              <Card title="Các kỳ đã mua" styles={{ body: { padding: '8px 8px 12px' } }}>
+                <PeriodList periods={periods} />
               </Card>
             </div>
           </div>
