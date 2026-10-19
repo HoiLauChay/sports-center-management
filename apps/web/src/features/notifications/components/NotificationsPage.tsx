@@ -18,7 +18,8 @@ export function NotificationsPage() {
   const { unread: unreadOnly = false } = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const feed = useNotificationFeed(unreadOnly);
-  const unreadCount = useNotificationSummary().data?.unreadCount ?? 0;
+  const summary = useNotificationSummary();
+  const unreadCount = summary.data?.unreadCount ?? 0;
   const markAllRead = useMarkAllRead();
   const openNotification = useOpenNotification();
 
@@ -26,7 +27,9 @@ export function NotificationsPage() {
     <>
       <PageHeader
         title="Thông báo"
-        description={unreadCount > 0 ? `Bạn có ${unreadCount} thông báo chưa đọc.` : 'Bạn đã đọc hết thông báo.'}
+        description={
+          summary.data && (unreadCount > 0 ? `Bạn có ${unreadCount} thông báo chưa đọc.` : 'Bạn đã đọc hết thông báo.')
+        }
         extra={
           <Button
             icon={<CheckCheck size={16} />}
