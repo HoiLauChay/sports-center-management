@@ -71,7 +71,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/memberships/mine', label: 'Gói của tôi', icon: IdCard },
         { path: '/wallet', label: 'Ví', icon: Wallet },
         { path: '/cart', label: 'Giỏ hàng', icon: ShoppingCart },
-        { path: '/orders', label: 'Hóa đơn', icon: Receipt },
+        { path: '/orders', label: 'Đơn hàng', icon: Receipt },
       ],
     },
     { items: [{ path: '/support', label: 'Hỗ trợ', icon: LifeBuoy }] },
@@ -127,6 +127,38 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     { items: [{ path: '/admin/settings', label: 'Cấu hình', icon: Settings }] },
   ],
 };
+
+const BOTTOM_NAV: Record<Role, [NavPath, string][]> = {
+  MEMBER: [
+    ['/dashboard', 'Tổng quan'],
+    ['/bookings', 'Đặt sân'],
+    ['/classes', 'Lớp học'],
+    ['/schedule', 'Lịch'],
+  ],
+  COACH: [
+    ['/dashboard', 'Tổng quan'],
+    ['/coach/classes', 'Lớp dạy'],
+    ['/coach/schedule', 'Lịch dạy'],
+    ['/coach/open-classes', 'Cần HLV'],
+  ],
+  RECEPTIONIST: [
+    ['/dashboard', 'Tổng quan'],
+    ['/reception/checkin', 'Check-in'],
+    ['/reception/order', 'Bán hàng'],
+    ['/reception/bookings', 'Lịch sân'],
+  ],
+  MANAGER: [
+    ['/dashboard', 'Tổng quan'],
+    ['/admin/classes', 'Lớp học'],
+    ['/admin/reports', 'Báo cáo'],
+    ['/admin/bank-transactions', 'Giao dịch'],
+  ],
+};
+
+export function bottomNavFor(role: Role): NavItem[] {
+  const items = navGroupsFor(role).flatMap((group) => group.items);
+  return BOTTOM_NAV[role].map(([path, label]) => ({ ...items.find((item) => item.path === path)!, label }));
+}
 
 export function navGroupsFor(role: Role): NavGroup[] {
   return [COMMON, ...ROLE_NAV[role]].filter((group) => group.items.length > 0);
