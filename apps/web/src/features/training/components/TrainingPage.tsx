@@ -119,7 +119,7 @@ function AttendanceSection() {
       render: (_, row) =>
         isPast(row.session.date, row.session.startTime) ? (
           <Button size="small" onClick={() => setNoteOf(row.session.id)}>
-            Xem
+            Xem ghi chú
           </Button>
         ) : null,
     },
@@ -166,18 +166,25 @@ function AttendanceSection() {
           options={(classes.data ?? []).map((item) => ({ value: item.id, label: item.name }))}
           placeholder="Chọn lớp"
         />
-        <div className="flex flex-wrap gap-2 text-[13px]">
-          <Tag color="success" className="!m-0">
-            Có mặt {counts.PRESENT}
-          </Tag>
-          <Tag color="warning" className="!m-0">
-            Muộn {counts.LATE}
-          </Tag>
-          <Tag color="error" className="!m-0">
-            Vắng {counts.ABSENT}
-          </Tag>
-          {done > 0 && <Tag className="!m-0">Đi học {Math.round(((counts.PRESENT + counts.LATE) / done) * 100)}%</Tag>}
-        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'Có mặt', value: counts.PRESENT, tone: 'text-sc-success' },
+          { label: 'Đi muộn', value: counts.LATE, tone: 'text-sc-warning' },
+          { label: 'Vắng', value: counts.ABSENT, tone: 'text-sc-error' },
+          {
+            label: 'Tỷ lệ đi học',
+            value: done > 0 ? `${Math.round(((counts.PRESENT + counts.LATE) / done) * 100)}%` : '—',
+            tone: 'text-sc-ink',
+          },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-lg border border-sc-border-soft bg-white px-4 py-3">
+            <div className="text-[13px] text-sc-muted">{stat.label}</div>
+            <div className={`font-display text-[24px] leading-tight font-extrabold tabular-nums ${stat.tone}`}>
+              {stat.value}
+            </div>
+          </div>
+        ))}
       </div>
       <Table<MyAttendance>
         rowKey={(row) => row.session.id}
