@@ -35,7 +35,6 @@ export function MemberDashboard() {
   const schedule = useMySchedule({ from: today, to: addDays(today, HORIZON_DAYS) });
   const events = useMemo(() => upcoming(eventsOfMember(schedule.data ?? [])), [schedule.data]);
   const current = memberships.data?.current;
-  const thisWeek = events.filter((event) => event.date <= addDays(today, 6)).length;
 
   return (
     <>
@@ -60,7 +59,12 @@ export function MemberDashboard() {
           />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard icon={CalendarDays} label="Lịch trong 7 ngày tới" loading={schedule.isPending} value={thisWeek} />
+          <StatCard
+            icon={CalendarDays}
+            label={`Lịch ${HORIZON_DAYS} ngày tới`}
+            loading={schedule.isPending}
+            value={events.length}
+          />
         </Col>
       </Row>
       <Card className="!mt-4">
