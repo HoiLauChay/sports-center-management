@@ -1,13 +1,14 @@
 import type { Course } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Select, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Select, Table, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
@@ -73,11 +74,7 @@ export function CoursesPage() {
       title: 'Bộ môn',
       key: 'sport',
       width: 110,
-      render: (_, record) => (
-        <Tag color="green" className="!m-0">
-          {record.sport.name}
-        </Tag>
-      ),
+      render: (_, record) => <SportTag name={record.sport.name} />,
     },
     {
       title: 'Số buổi',

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Tag } from 'antd';
 import { CalendarDays, Clock, MapPin, UserRound, Users } from 'lucide-react';
 import { Highlight } from '~/components/ui/Highlight';
+import { SportTag } from '~/components/ui/SportTag';
 import { formatDate, formatVND } from '~/lib/format';
 import type { GymClass } from '../types';
 import { weeklyText } from '../utils';
@@ -15,9 +16,7 @@ export function ClassCard({ item, keyword }: { item: GymClass; keyword?: string 
       className="flex min-w-0 flex-col gap-3 rounded-xl border border-sc-border !bg-white p-5 !text-sc-ink no-underline shadow-[0_1px_2px_rgba(20,19,15,.03),0_2px_10px_rgba(20,19,15,.04)] [transition:border-color_0.15s,transform_0.15s,box-shadow_0.15s] hover:-translate-y-0.5 hover:!border-sc-primary-border hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
-        <Tag color="processing" className="!m-0">
-          {item.course.sport.name}
-        </Tag>
+        <SportTag name={item.course.sport.name} />
         <Tag color={seatsLeft <= 3 ? 'warning' : 'success'} className="!m-0">
           Còn {seatsLeft} chỗ
         </Tag>

@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Input, Modal, Segmented, Select, Tag, type TableColumnsType } from 'antd';
+import { Card, Input, Modal, Segmented, Select, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { RowActions } from '~/components/data/RowActions';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { formatDateTime } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
@@ -81,11 +82,7 @@ export function ManagerSpecializationsPage() {
     {
       title: 'Bộ môn',
       key: 'sport',
-      render: (_, entry) => (
-        <Tag color="green" className="!m-0">
-          {entry.sport.name}
-        </Tag>
-      ),
+      render: (_, entry) => <SportTag name={entry.sport.name} />,
     },
     {
       title: 'Gửi lúc',

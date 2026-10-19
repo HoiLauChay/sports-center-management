@@ -8,6 +8,7 @@ import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses/hooks/useCourses';
 import { useConfirm } from '~/hooks/useConfirm';
@@ -83,9 +84,7 @@ export function ClassesAdminPage() {
             {record.name}
           </Link>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-sc-muted">
-            <Tag color="green" className="!m-0">
-              {record.course.sport.name}
-            </Tag>
+            <SportTag name={record.course.sport.name} />
             <span>
               {record.course.name} · {formatVND(record.course.price)}
             </span>

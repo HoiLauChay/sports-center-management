@@ -2,6 +2,7 @@ import type { ClassSummary } from '@sports-center/shared';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { useMySpecializations } from '~/features/specializations/hooks/useSpecializations';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -46,7 +47,7 @@ export function CoachOpenClassesPage() {
         </div>
       ),
     },
-    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag> },
+    { title: 'Bộ môn', render: (_, record) => <SportTag name={record.course.sport.name} /> },
     {
       title: 'Lịch',
       render: (_, record) => (

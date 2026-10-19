@@ -17,6 +17,7 @@ import { useMemo } from 'react';
 import { BarChart, type ChartDatum } from '~/components/charts/BarChart';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
 import type { GymClass } from '~/features/classes/types';
@@ -93,9 +94,7 @@ const classColumns: TableColumnsType<GymClass> = [
             </Tag>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-[13px] text-sc-muted">
-            <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
-              {item.course.sport.name}
-            </Tag>
+            <SportTag name={item.course.sport.name} />
             <span>·</span>
             <span>{item.facility.name}</span>
             {item.weeklySchedule?.length > 0 && (
@@ -322,11 +321,7 @@ export function ManagerDashboard() {
                         >
                           {session.class.name}
                         </Link>
-                        {session.class.sport && (
-                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
-                            {session.class.sport.name}
-                          </Tag>
-                        )}
+                        {session.class.sport && <SportTag name={session.class.sport.name} />}
                       </div>
                       <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span className="flex items-center gap-1 text-slate-600">
@@ -423,11 +418,7 @@ export function ManagerDashboard() {
                         >
                           {item.name}
                         </Link>
-                        {item.course?.sport && (
-                          <Tag color="cyan" className="!m-0 text-xs leading-tight px-1.5 py-0.5">
-                            {item.course.sport.name}
-                          </Tag>
-                        )}
+                        {item.course?.sport && <SportTag name={item.course.sport.name} />}
                       </div>
                       <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
                         <span>

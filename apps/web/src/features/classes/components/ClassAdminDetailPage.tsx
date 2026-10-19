@@ -6,6 +6,7 @@ import { RowActions } from '~/components/data/RowActions';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
@@ -289,7 +290,7 @@ export function ClassAdminDetailPage() {
         <Card title="Thông tin lớp" styles={{ header: { minHeight: 52 } }}>
           <div className="flex flex-col gap-2">
             <Row label="Khóa học">
-              {item.course.name} · <Tag color="success">{item.course.sport.name}</Tag>
+              {item.course.name} · <SportTag name={item.course.sport.name} />
             </Row>
             <Row label="Học phí">{formatVND(item.course.price)}</Row>
             <Row label="Lịch tuần">
