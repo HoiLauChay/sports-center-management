@@ -19,6 +19,7 @@ interface ScheduleCalendarProps {
   detailExtra?: (event: CalendarEvent) => ReactNode;
   /** Kinds named in the colour legend; defaults to all of them. */
   legend?: ScheduleKind[];
+  empty?: ReactNode;
 }
 
 function EventChip({ event, compact, onOpen }: { event: CalendarEvent; compact?: boolean; onOpen: () => void }) {
@@ -51,6 +52,7 @@ export function ScheduleCalendar({
   onChange,
   detailExtra,
   legend,
+  empty,
 }: ScheduleCalendarProps) {
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const byDate = useMemo(() => groupByDate(events), [events]);
@@ -59,6 +61,7 @@ export function ScheduleCalendar({
   const month = parseDate(anchor).month();
 
   const goTo = (date: string, nextView: CalendarView = view) => onChange({ view: nextView, anchor: date });
+  const nothingShown = !loading && days.every((date) => !byDate.get(date)?.length);
 
   return (
     <Card>
@@ -101,6 +104,11 @@ export function ScheduleCalendar({
         </div>
       </div>
 
+      {nothingShown && empty && (
+        <div className="mb-4 flex flex-col items-center gap-3 rounded-lg bg-sc-paper px-4 py-5 text-center">
+          {empty}
+        </div>
+      )}
       {view === 'week' ? (
         <div className="grid gap-2 md:grid-cols-7">
           {days.map((date) => {
