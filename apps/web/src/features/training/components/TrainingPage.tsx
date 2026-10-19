@@ -65,15 +65,30 @@ function AttendanceSection() {
   const done = counts.PRESENT + counts.LATE + counts.ABSENT;
 
   const columns: TableColumnsType<MyAttendance> = [
-    { title: 'Buổi', key: 'number', width: 70, render: (_, row) => row.session.sessionNumber },
+    { title: 'Buổi', key: 'number', width: 56, render: (_, row) => row.session.sessionNumber },
     {
       title: 'Ngày',
       key: 'date',
-      render: (_, row) => (
-        <span className="whitespace-nowrap">
-          {formatDayLabel(row.session.date)} · {row.session.startTime}–{row.session.endTime}
-        </span>
-      ),
+      render: (_, row) => {
+        const evaluation = evaluationOf.get(row.session.id);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="md:whitespace-nowrap">
+              {formatDayLabel(row.session.date)} · {row.session.startTime}–{row.session.endTime}
+            </span>
+            <div className="flex flex-col items-start gap-1 md:hidden">
+              {row.note && <span className="text-[13px] text-sc-muted">{row.note}</span>}
+              {evaluation && <Rate disabled value={evaluation.rating} className="!text-sm" />}
+              {evaluation?.comment && <span className="text-[13px] text-sc-ink-2">{evaluation.comment}</span>}
+              {isPast(row.session.date, row.session.startTime) && (
+                <Button size="small" onClick={() => setNoteOf(row.session.id)}>
+                  Ghi chú buổi học
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       title: 'Điểm danh',
@@ -94,11 +109,13 @@ function AttendanceSection() {
     {
       title: 'Ghi chú điểm danh',
       key: 'note',
+      responsive: ['md'],
       render: (_, row) => row.note ?? <span className="text-sc-muted-2">—</span>,
     },
     {
       title: 'Ghi chú buổi học',
       key: 'session-note',
+      responsive: ['md'],
       render: (_, row) =>
         isPast(row.session.date, row.session.startTime) ? (
           <Button size="small" onClick={() => setNoteOf(row.session.id)}>
@@ -109,6 +126,7 @@ function AttendanceSection() {
     {
       title: 'Đánh giá của HLV',
       key: 'evaluation',
+      responsive: ['md'],
       render: (_, row) => {
         const evaluation = evaluationOf.get(row.session.id);
         return evaluation ? (

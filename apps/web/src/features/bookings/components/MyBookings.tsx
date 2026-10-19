@@ -29,6 +29,9 @@ function BookingsTab() {
       render: (_, booking) => (
         <div className="flex flex-col gap-1">
           <span className="font-semibold text-sc-ink">{booking.facility.name}</span>
+          <span className="text-[13px] text-sc-muted md:hidden">
+            {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
+          </span>
           {(booking.packageId || BENEFIT_TEXT[booking.benefit]) && (
             <span className="flex flex-wrap gap-1">
               {booking.packageId && <Tag className="!m-0">Gói định kỳ</Tag>}
@@ -46,6 +49,7 @@ function BookingsTab() {
       title: 'Thời gian',
       key: 'time',
       width: '34%',
+      responsive: ['md'],
       render: (_, booking) => (
         <span className="whitespace-nowrap">
           {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
@@ -57,6 +61,7 @@ function BookingsTab() {
       dataIndex: 'paidAmount',
       align: 'right',
       width: '15%',
+      responsive: ['md'],
       render: (value: number | null) =>
         value === null ? (
           <span className="whitespace-nowrap text-sc-muted">Theo gói</span>
@@ -114,7 +119,7 @@ function BookingsTab() {
         columns={columns}
         dataSource={bookings.data?.items}
         loading={bookings.isFetching}
-        scroll={{ x: 650 }}
+        scroll={{ x: 'max-content' }}
         locale={{ emptyText: bookings.isFetching ? ' ' : <EmptyState title="Chưa có lượt đặt nào" /> }}
         pagination={{
           current: page,
@@ -136,12 +141,23 @@ function PackagesTab() {
       title: 'Sân / phòng',
       key: 'facility',
       width: '28%',
-      render: (_, item) => <span className="font-semibold text-sc-ink">{item.facility.name}</span>,
+      render: (_, item) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-sc-ink">{item.facility.name}</span>
+          <span className="text-[13px] text-sc-muted md:hidden">
+            {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
+              .map((day) => DAY_SHORT[day])
+              .join('/')}{' '}
+            {item.startTime}–{item.endTime} · {formatDate(item.startDate)} – {formatDate(item.endDate)}
+          </span>
+        </div>
+      ),
     },
     {
       title: 'Lịch',
       key: 'schedule',
       width: '22%',
+      responsive: ['md'],
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
@@ -155,6 +171,7 @@ function PackagesTab() {
       title: 'Thời gian',
       key: 'range',
       width: '24%',
+      responsive: ['md'],
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {formatDate(item.startDate)} – {formatDate(item.endDate)}
@@ -165,6 +182,7 @@ function PackagesTab() {
       title: 'Buổi',
       key: 'sessions',
       width: '14%',
+      responsive: ['md'],
       render: (_, item) =>
         `${item.bookings.filter((booking) => booking.status === 'CONFIRMED').length}/${item.bookings.length} còn hiệu lực`,
     },
@@ -187,7 +205,7 @@ function PackagesTab() {
       columns={columns}
       dataSource={packages.data}
       loading={packages.isFetching}
-      scroll={{ x: 650 }}
+      scroll={{ x: 'max-content' }}
       pagination={false}
       locale={{ emptyText: packages.isFetching ? ' ' : <EmptyState title="Chưa có gói định kỳ nào" /> }}
     />

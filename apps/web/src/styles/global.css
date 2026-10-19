@@ -195,3 +195,32 @@ html .ant-tag.ant-tag-green {
   flex: 1 0 auto;
   max-width: 100%;
 }
+
+@media (max-width: 767px) {
+  .ant-table-wrapper .ant-table table {
+    width: 100% !important;
+  }
+
+  .ant-card .ant-card-body {
+    padding: 16px;
+  }
+
+  .ant-card .ant-card-head {
+    padding-inline: 16px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th,
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 12px 8px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th:first-child,
+  .ant-table-wrapper .ant-table-tbody > tr > td:first-child {
+    padding-left: 12px !important;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th:last-child,
+  .ant-table-wrapper .ant-table-tbody > tr > td:last-child {
+    padding-right: 12px !important;
+  }
+}

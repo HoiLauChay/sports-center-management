@@ -64,19 +64,21 @@ export function EnrollmentsPage() {
       title: 'Lớp',
       key: 'class',
       render: (_, enrollment) => (
-        <div className="flex min-w-48 flex-col gap-0.5">
+        <div className="flex flex-col gap-0.5 md:min-w-48">
           <Link to="/classes/$classId" params={{ classId: enrollment.class.id }} className="font-semibold">
             {enrollment.class.name}
           </Link>
           <span className="text-[13px] text-sc-muted">
             {enrollment.class.course.sport.name} · HLV {enrollment.class.coach?.fullName ?? '—'}
           </span>
+          <span className="text-[13px] text-sc-muted md:hidden">{weeklyText(enrollment.class.weeklySchedule)}</span>
         </div>
       ),
     },
     {
       title: 'Lịch học',
       key: 'schedule',
+      responsive: ['md'],
       render: (_, enrollment) => (
         <div className="flex flex-col gap-0.5">
           <span className="whitespace-nowrap">{weeklyText(enrollment.class.weeklySchedule)}</span>
@@ -90,6 +92,7 @@ export function EnrollmentsPage() {
       title: 'Đã trả',
       dataIndex: 'paidAmount',
       align: 'right',
+      responsive: ['md'],
       render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
     },
     {

@@ -18,14 +18,21 @@ import { weeklyText } from '../utils';
 const routeApi = getRouteApi('/_authenticated/_member/classes/$classId');
 
 const sessionColumns: TableColumnsType<ClassSession> = [
-  { title: 'Buổi', dataIndex: 'sessionNumber', width: 70 },
+  { title: 'Buổi', dataIndex: 'sessionNumber', width: 56 },
   {
     title: 'Ngày',
     dataIndex: 'date',
-    render: (date: string) => <span className="whitespace-nowrap">{formatDayLabel(date)}</span>,
+    render: (date: string, session) => (
+      <div className="flex flex-col gap-0.5">
+        <span className="whitespace-nowrap">{formatDayLabel(date)}</span>
+        <span className="text-[13px] text-sc-muted md:hidden">
+          {session.startTime}–{session.endTime} · {session.facility.name}
+        </span>
+      </div>
+    ),
   },
-  { title: 'Giờ', render: (_, session) => `${session.startTime}–${session.endTime}` },
-  { title: 'Cơ sở', dataIndex: ['facility', 'name'] },
+  { title: 'Giờ', responsive: ['md'], render: (_, session) => `${session.startTime}–${session.endTime}` },
+  { title: 'Cơ sở', responsive: ['md'], dataIndex: ['facility', 'name'] },
   {
     title: 'Trạng thái',
     dataIndex: 'status',
