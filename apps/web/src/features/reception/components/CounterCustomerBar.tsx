@@ -90,9 +90,6 @@ function MembershipStat({
         )}
         {daysLeft !== null && daysLeft <= RENEW_WINDOW_DAYS && renew}
       </span>
-      {current.currentBenefits && (
-        <span className="mt-0.5 block text-[13.5px] text-sc-success">{benefitsText(current.currentBenefits)}</span>
-      )}
     </Stat>
   );
 }
