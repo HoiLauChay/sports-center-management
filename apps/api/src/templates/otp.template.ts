@@ -4,6 +4,7 @@ import type { OtpPurpose } from '~/generated/prisma/client';
 const TITLES: Record<OtpPurpose, string> = {
   REGISTER: 'Mã xác nhận đăng ký tài khoản',
   PASSWORD_RESET: 'Mã xác nhận đặt lại mật khẩu',
+  ACCOUNT_SETUP: 'Mã xác nhận đặt mật khẩu tài khoản',
 };
 
 export const otpTemplate = (purpose: OtpPurpose, code: string) => {
