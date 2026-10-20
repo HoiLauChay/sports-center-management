@@ -5,6 +5,7 @@ import { ChevronDown, PencilLine } from 'lucide-react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
 import { useCurrentUser } from '~/features/auth';
+import { StaffMembershipBlock } from '~/features/memberships';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { AdminUserEditForm } from './AdminUserEditForm';
 import { UserDetailLoader } from './UserDetailView';
@@ -76,6 +77,7 @@ export function AdminUserDetailPage() {
       id={userId}
       backLabel="Danh sách người dùng"
       onBack={back}
+      aside={(user) => (user.role === 'MEMBER' ? <StaffMembershipBlock memberId={user.id} /> : null)}
       actions={(user) => (
         <UserActions
           key={user.id}
