@@ -60,6 +60,7 @@ export function UsersPage() {
       render: (_, user) => (
         <RowActions
           label={`Thao tác với ${user.fullName}`}
+          inlineLimit={0}
           actions={
             user.id === viewer.id || user.role === 'MANAGER'
               ? []
