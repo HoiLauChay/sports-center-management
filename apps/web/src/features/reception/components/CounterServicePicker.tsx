@@ -1,127 +1,167 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Table, Tabs, type TableColumnsType } from 'antd';
+import { Button, Progress, Skeleton, Tabs, Tag } from 'antd';
+import { CalendarRange, Check, CircleCheck, Crown, Dumbbell, LandPlot, Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { EmptyState } from '~/components/feedback/States';
-import { SectionTitle } from '~/components/ui/SectionTitle';
-import { RecurringPackagePicker } from '~/features/bookings/components/RecurringPackagePicker';
-import { SlotBookingPicker } from '~/features/bookings/components/SlotBookingPicker';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
+import { selectionKey } from '~/features/checkout/utils';
 import { useClasses } from '~/features/classes/hooks/useClasses';
-import type { GymClass } from '~/features/classes/types';
 import { weeklyText } from '~/features/classes/utils';
 import { membershipsQueryOptions } from '~/features/memberships/hooks/useMemberships';
 import { formatDate, formatVND } from '~/lib/format';
+import { benefitsText } from '../utils';
+import { CounterRecurringPackagePicker } from './CounterRecurringPackagePicker';
+import { CounterSlotBookingPicker } from './CounterSlotBookingPicker';
+
+export type CounterServiceTab = 'slot' | 'package' | 'class' | 'membership';
 
 interface PickerProps {
   onAdd: (selection: CheckoutItemInput) => void;
+  /** Selection keys already in the draft, so the same service is not added twice. */
+  inCart: Set<string>;
 }
 
-function ClassPicker({ onAdd }: PickerProps) {
-  const classes = useClasses({ page: 1, limit: 50 });
-  const columns: TableColumnsType<GymClass> = [
-    {
-      title: 'Lớp',
-      key: 'name',
-      render: (_, item) => (
-        <div className="flex min-w-44 flex-col">
-          <b>{item.name}</b>
-          <span className="text-[14.5px] text-sc-muted">HLV {item.coach?.fullName ?? '—'}</span>
-        </div>
-      ),
-    },
-    {
-      title: 'Lịch',
-      key: 'schedule',
-      render: (_, item) => <span className="whitespace-nowrap">{weeklyText(item.weeklySchedule)}</span>,
-    },
-    {
-      title: 'Khai giảng',
-      dataIndex: 'startDate',
-      render: (value: string | null) => (value ? formatDate(value) : '—'),
-    },
-    { title: 'Sĩ số', key: 'seats', render: (_, item) => `${item.enrolledCount}/${item.maxStudents}` },
-    {
-      title: 'Học phí',
-      key: 'price',
-      align: 'right',
-      render: (_, item) => <b className="whitespace-nowrap tabular-nums">{formatVND(item.course.price)}</b>,
-    },
-    {
-      title: '',
-      key: 'add',
-      align: 'right',
-      render: (_, item) => (
-        <Button size="small" type="primary" onClick={() => onAdd({ type: 'COURSE_ENROLLMENT', classId: item.id })}>
-          Thêm vào đơn
-        </Button>
-      ),
-    },
-  ];
+function AddButton({ added, full, onClick }: { added: boolean; full?: boolean; onClick: () => void }) {
+  if (added) {
+    return (
+      <Button block disabled icon={<Check size={15} />}>
+        Đã thêm
+      </Button>
+    );
+  }
   return (
-    <Table<GymClass>
-      rowKey="id"
-      size="small"
-      columns={columns}
-      dataSource={classes.data?.items}
-      loading={classes.isFetching}
-      pagination={false}
-      scroll={{ x: 'max-content' }}
-      locale={{ emptyText: classes.isFetching ? ' ' : <EmptyState title="Chưa có lớp nào đang nhận đăng ký" /> }}
-    />
+    <Button block type="primary" disabled={full} icon={<Plus size={15} />} onClick={onClick}>
+      {full ? 'Hết chỗ' : 'Thêm vào đơn'}
+    </Button>
   );
 }
 
-function MembershipPicker({ onAdd }: PickerProps) {
-  const packages = useQuery(membershipsQueryOptions);
-  const plans = (packages.data ?? []).filter((plan) => plan.isActive);
+function CardGrid({ loading, empty, children }: { loading: boolean; empty: string; children: ReactNode[] }) {
+  if (loading && !children.length) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="rounded-xl border border-sc-border-soft p-4">
+            <Skeleton active paragraph={{ rows: 3 }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (!children.length) return <EmptyState title={empty} />;
+  return <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">{children}</div>;
+}
+
+function ClassPicker({ onAdd, inCart }: PickerProps) {
+  const classes = useClasses({ page: 1, limit: 50 });
+  const items = classes.data?.items ?? [];
   return (
-    <Table
-      rowKey="id"
-      size="small"
-      loading={packages.isFetching}
-      dataSource={plans}
-      pagination={false}
-      scroll={{ x: 'max-content' }}
-      locale={{ emptyText: packages.isFetching ? ' ' : <EmptyState title="Chưa có gói đang bán" /> }}
-      columns={[
-        {
-          title: 'Gói',
-          key: 'name',
-          render: (_, plan) => (
-            <div className="flex min-w-40 flex-col">
-              <b>{plan.name}</b>
-              <span className="text-[14.5px] text-sc-muted">{plan.durationDays} ngày</span>
+    <CardGrid loading={classes.isFetching} empty="Chưa có lớp nào đang nhận đăng ký">
+      {items.map((item) => {
+        const selection: CheckoutItemInput = { type: 'COURSE_ENROLLMENT', classId: item.id };
+        const full = item.enrolledCount >= item.maxStudents;
+        const fill = item.maxStudents ? Math.round((item.enrolledCount / item.maxStudents) * 100) : 0;
+        return (
+          <article
+            key={item.id}
+            className="flex flex-col gap-3 rounded-xl border border-sc-border-soft bg-white p-4 transition-shadow hover:shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-col">
+                <b className="text-[15px] leading-snug text-sc-ink">{item.name}</b>
+                <span className="text-[14.5px] text-sc-muted">
+                  {item.course.sport.name} · HLV {item.coach?.fullName ?? '—'}
+                </span>
+              </div>
+              <b className="shrink-0 font-display text-[18px] tabular-nums text-sc-ink">
+                {formatVND(item.course.price)}
+              </b>
             </div>
-          ),
-        },
-        {
-          title: 'Quyền lợi',
-          key: 'benefits',
-          render: (_, plan) => (
-            <span className="text-[14.5px]">
-              {plan.gymAccess ? 'Gym miễn phí · ' : ''}−{plan.bookingDiscountPct}% sân · −{plan.classDiscountPct}% lớp ·{' '}
-              {plan.freeBookingSlotsPerMonth} slot free/tháng
-            </span>
-          ),
-        },
-        {
-          title: 'Giá',
-          key: 'price',
-          align: 'right' as const,
-          render: (_, plan) => <b className="whitespace-nowrap tabular-nums">{formatVND(plan.price)}</b>,
-        },
-        {
-          title: '',
-          key: 'add',
-          align: 'right' as const,
-          render: (_, plan) => (
-            <Button size="small" type="primary" onClick={() => onAdd({ type: 'MEMBERSHIP', packageId: plan.id })}>
-              Thêm vào đơn
-            </Button>
-          ),
-        },
-      ]}
-    />
+            <div className="flex flex-col gap-1 text-[14.5px] text-sc-ink-2">
+              <span>{weeklyText(item.weeklySchedule) || 'Chưa có lịch'}</span>
+              <span className="text-sc-muted">
+                {item.startDate ? `Khai giảng ${formatDate(item.startDate)}` : 'Chưa có ngày khai giảng'} ·{' '}
+                {item.course.totalSessions} buổi
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Progress
+                percent={fill}
+                showInfo={false}
+                size="small"
+                strokeColor={full ? 'var(--sc-error)' : fill >= 80 ? 'var(--sc-warning)' : 'var(--sc-primary)'}
+                className="!m-0 flex-1"
+              />
+              <span className={`text-[13.5px] tabular-nums ${full ? 'font-semibold text-sc-error' : 'text-sc-muted'}`}>
+                {item.enrolledCount}/{item.maxStudents} chỗ
+              </span>
+            </div>
+            <div className="mt-auto">
+              <AddButton added={inCart.has(selectionKey(selection))} full={full} onClick={() => onAdd(selection)} />
+            </div>
+          </article>
+        );
+      })}
+    </CardGrid>
+  );
+}
+
+function MembershipPicker({ onAdd, inCart, currentPackageId }: PickerProps & { currentPackageId?: string }) {
+  const packages = useQuery(membershipsQueryOptions);
+  const plans = (packages.data ?? []).filter((plan) => plan.isActive).sort((a, b) => a.price - b.price);
+  return (
+    <CardGrid loading={packages.isFetching} empty="Chưa có gói đang bán">
+      {plans.map((plan) => {
+        const selection: CheckoutItemInput = { type: 'MEMBERSHIP', packageId: plan.id };
+        const current = plan.id === currentPackageId;
+        return (
+          <article
+            key={plan.id}
+            className={`flex flex-col gap-3 rounded-xl border bg-white p-4 transition-shadow hover:shadow-sm ${
+              current
+                ? 'border-sc-primary-border shadow-[inset_0_0_0_1px_var(--sc-primary-border)]'
+                : 'border-sc-border-soft'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-col">
+                <span className="flex flex-wrap items-center gap-2">
+                  <b className="text-[15px] text-sc-ink">{plan.name}</b>
+                  {current && (
+                    <Tag color="green" className="!m-0">
+                      Đang dùng
+                    </Tag>
+                  )}
+                </span>
+                <span className="text-[14.5px] text-sc-muted">{plan.durationDays} ngày</span>
+              </div>
+              <b className="shrink-0 font-display text-[18px] tabular-nums text-sc-ink">{formatVND(plan.price)}</b>
+            </div>
+            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[14.5px] text-sc-ink-2">
+              {(benefitsText(plan) || 'Không có ưu đãi').split(' · ').map((benefit) => (
+                <li key={benefit} className="flex items-center gap-1.5">
+                  <CircleCheck size={14} className="shrink-0 text-sc-success" />
+                  {benefit}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-auto">
+              <AddButton added={inCart.has(selectionKey(selection))} onClick={() => onAdd(selection)} />
+            </div>
+          </article>
+        );
+      })}
+    </CardGrid>
+  );
+}
+
+function TabLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {icon}
+      {children}
+    </span>
   );
 }
 
@@ -129,34 +169,56 @@ interface CounterServicePickerProps {
   user: Account;
   buyer: CheckoutBuyer;
   isMember: boolean;
+  tab: CounterServiceTab;
+  onTab: (tab: CounterServiceTab) => void;
+  inCart: Set<string>;
+  currentPackageId?: string;
   onAdd: (selection: CheckoutItemInput) => void;
 }
 
-/** Step 2: reuse the slot grid, recurring package, class list and membership list to add lines to the counter draft. */
-export function CounterServicePicker({ user, buyer, isMember, onAdd }: CounterServicePickerProps) {
+/** The catalogue of the counter: slot grid, recurring package, classes and memberships. Guests only book slots. */
+export function CounterServicePicker({
+  user,
+  buyer,
+  isMember,
+  tab,
+  onTab,
+  inCart,
+  currentPackageId,
+  onAdd,
+}: CounterServicePickerProps) {
   return (
-    <Card>
-      <SectionTitle>2. Thêm dịch vụ</SectionTitle>
+    <section className="rounded-xl border border-sc-border bg-white px-4 pt-1 pb-4 shadow-xs">
       <Tabs
+        activeKey={isMember ? tab : 'slot'}
+        onChange={(key) => onTab(key as CounterServiceTab)}
         items={[
           {
             key: 'slot',
-            label: 'Đặt sân / phòng',
-            children: <SlotBookingPicker user={user} buyer={buyer} onAdd={onAdd} />,
+            label: <TabLabel icon={<LandPlot size={16} />}>Đặt sân / phòng</TabLabel>,
+            children: <CounterSlotBookingPicker user={user} buyer={buyer} onAdd={onAdd} />,
           },
           ...(isMember
             ? [
                 {
                   key: 'package',
-                  label: 'Gói sân định kỳ',
-                  children: <RecurringPackagePicker user={user} buyer={buyer} onAdd={onAdd} />,
+                  label: <TabLabel icon={<CalendarRange size={16} />}>Gói sân định kỳ</TabLabel>,
+                  children: <CounterRecurringPackagePicker user={user} buyer={buyer} onAdd={onAdd} />,
                 },
-                { key: 'class', label: 'Đăng ký lớp', children: <ClassPicker onAdd={onAdd} /> },
-                { key: 'membership', label: 'Gói thành viên', children: <MembershipPicker onAdd={onAdd} /> },
+                {
+                  key: 'class',
+                  label: <TabLabel icon={<Dumbbell size={16} />}>Đăng ký lớp</TabLabel>,
+                  children: <ClassPicker onAdd={onAdd} inCart={inCart} />,
+                },
+                {
+                  key: 'membership',
+                  label: <TabLabel icon={<Crown size={16} />}>Gói thành viên</TabLabel>,
+                  children: <MembershipPicker onAdd={onAdd} inCart={inCart} currentPackageId={currentPackageId} />,
+                },
               ]
             : []),
         ]}
       />
-    </Card>
+    </section>
   );
 }

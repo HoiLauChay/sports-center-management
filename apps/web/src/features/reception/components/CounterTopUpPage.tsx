@@ -1,102 +1,145 @@
-import type { AccountSummary } from '@sports-center/shared';
+import type { WalletTransaction } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getRouteApi } from '@tanstack/react-router';
-import { Alert, App, Avatar, Button, Card, Form, Input, Modal, Radio, Tag } from 'antd';
-import { Banknote, CreditCard, Info, Mail, Phone, QrCode, User } from 'lucide-react';
+import { Link, getRouteApi } from '@tanstack/react-router';
+import { Alert, App, Button, Input, Skeleton } from 'antd';
+import { ArrowRight, CheckCircle2, History, Wallet, WalletCards } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { EmptyState } from '~/components/feedback/States';
-import { MemberSelect } from '~/components/form/MemberSelect';
+import { PageLoading } from '~/components/feedback/States';
 import { MoneyInput } from '~/components/form/MoneyInput';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { SectionTitle } from '~/components/ui/SectionTitle';
-import { WalletCard } from '~/components/ui/WalletCard';
-import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
+import { PAYMENT_METHOD_LABEL, WALLET_TX_TAG } from '~/constants/payment';
+import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import { useSettings } from '~/features/settings';
 import { usersService } from '~/features/users/services/users.service';
-import {
-  InvoicePayPanel,
-  WalletTransactionsTable,
-  useInvoice,
-  useMemberWallet,
-  useRefreshAfterPaid,
-  walletService,
-} from '~/features/wallet';
-import { formatVND } from '~/lib/format';
+import { useInvoice, useMemberWallet, useRefreshAfterPaid, walletService } from '~/features/wallet';
+import { formatRelative, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
+import { useCounterHotkeys } from '../hooks/useCounterHotkeys';
+import { CUSTOMER_SEARCH_ID, memberToBuyer } from '../utils';
+import { CounterCustomerSearch, CustomerAvatar } from './CounterCustomerSearch';
+import { CounterInvoicePanel } from './CounterInvoicePanel';
+import { CounterPaymentPanel, type CounterMethod } from './CounterPaymentPanel';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/top-up');
 
-type TopUpMethod = 'CASH' | 'CARD' | 'TRANSFER';
+type Member = Extract<DraftBuyer, { kind: 'MEMBER' }>;
 
 const PRESET_AMOUNTS = [100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000];
+const METHODS: CounterMethod[] = ['CASH', 'CARD', 'TRANSFER'];
 
-function TransferInvoiceModal({
-  invoiceId,
-  onDone,
-  onCancel,
-}: {
-  invoiceId: string | null;
-  onDone: () => void;
-  onCancel: () => void;
-}) {
-  const { message } = App.useApp();
-  const invoice = useInvoice(invoiceId ?? '');
-  useRefreshAfterPaid(invoice.data, (paid) => {
-    message.success(`Đã nhận ${formatVND(paid.amount)}, ví thành viên đã được cộng.`);
-    onDone();
-  });
+const focusSearch = () => window.setTimeout(() => document.getElementById(CUSTOMER_SEARCH_ID)?.focus(), 0);
 
+interface Done {
+  amount: number;
+  method: CounterMethod;
+  balanceAfter: number | null;
+  tendered: number | null;
+}
+
+function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <Modal
-      open={Boolean(invoiceId)}
-      onCancel={onCancel}
-      footer={null}
-      width={720}
-      destroyOnClose
-      centered
-      title={
-        <div className="flex items-center gap-2">
-          <QrCode className="size-5 text-purple-600" />
-          <span className="font-display font-bold text-base">Quét mã QR chuyển khoản nạp ví</span>
-        </div>
-      }
-    >
-      <div className="py-2">
-        {!invoice.data ? (
-          <p className="m-0 text-sc-muted py-8 text-center">Đang tải thông tin hóa đơn…</p>
-        ) : (
-          <>
-            <InvoicePayPanel
-              invoice={invoice.data}
-              paidMessage={`Đã nhận ${formatVND(invoice.data.amount)}. Ví thành viên đã được cộng.`}
-              paidActions={
-                <Button type="primary" size="large" onClick={onDone}>
-                  Hoàn tất
-                </Button>
-              }
-            />
-            {invoice.data.status !== 'PENDING' && invoice.data.status !== 'PAID' && (
-              <div className="mt-4 text-center">
-                <Button onClick={onCancel}>Đóng và quay lại</Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </Modal>
+    <div className="flex items-baseline justify-between gap-4 border-b border-sc-border-soft py-2 last:border-b-0">
+      <span className="text-[15px] text-sc-muted">{label}</span>
+      <span className={`tabular-nums ${strong ? 'font-display text-[22px] font-extrabold' : 'font-semibold'}`}>
+        {value}
+      </span>
+    </div>
   );
 }
 
-interface MemberInfo {
-  id: string;
-  fullName: string;
-  email: string;
-  phone?: string | null;
-  avatarUrl?: string | null;
-  status?: string;
+function TopUpDone({
+  member,
+  done,
+  onNext,
+  onAgain,
+}: {
+  member: Member;
+  done: Done;
+  onNext: () => void;
+  onAgain: () => void;
+}) {
+  const change = done.method === 'CASH' && done.tendered !== null ? done.tendered - done.amount : 0;
+  return (
+    <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-4 rounded-2xl border border-sc-border bg-white px-6 py-8 text-center shadow-xs">
+      <CheckCircle2 size={52} className="text-sc-success" />
+      <div>
+        <h2 className="m-0 font-display text-[26px] font-extrabold text-sc-ink uppercase">Đã nạp ví</h2>
+        <p className="m-0 text-sc-muted">
+          cho <b className="text-sc-ink">{member.fullName}</b>
+        </p>
+      </div>
+      <div className="w-full text-left">
+        <SummaryRow label="Số tiền nạp" value={formatVND(done.amount)} strong />
+        <SummaryRow label="Hình thức" value={PAYMENT_METHOD_LABEL[done.method]} />
+        <SummaryRow label="Số dư mới" value={done.balanceAfter === null ? '…' : formatVND(done.balanceAfter)} />
+        {change > 0 && (
+          <div className="mt-2 flex items-baseline justify-between gap-4 rounded-lg bg-sc-accent-soft px-3 py-2.5">
+            <span className="font-semibold text-sc-accent">Tiền thối lại</span>
+            <span className="font-display text-[28px] font-extrabold tabular-nums text-sc-accent">
+              {formatVND(change)}
+            </span>
+          </div>
+        )}
+      </div>
+      <Button type="primary" size="large" block autoFocus onClick={onNext} className="!h-12 !font-bold">
+        Khách tiếp theo
+      </Button>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button onClick={onAgain}>Nạp thêm cho khách này</Button>
+        <Link to="/reception/order" search={{ memberId: member.accountId }}>
+          <Button>Bán dịch vụ cho khách này</Button>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
-/** `/reception/top-up`: cash / card top-ups are recorded at once; transfer creates a top-up invoice with a QR. */
+/** Pay-by-transfer: large QR for the customer, then back to the form or on to the "done" screen. */
+function TransferPhase({ invoiceId, onPaid, onBack }: { invoiceId: string; onPaid: () => void; onBack: () => void }) {
+  const invoice = useInvoice(invoiceId);
+  useRefreshAfterPaid(invoice.data, onPaid);
+  if (!invoice.data) return <PageLoading />;
+  return (
+    <div className="mx-auto w-full max-w-2xl rounded-2xl border border-sc-border bg-white px-6 py-6 shadow-xs">
+      <CounterInvoicePanel
+        invoice={invoice.data}
+        paidMessage={`Đã nhận ${formatVND(invoice.data.amount)}. Ví thành viên đã được cộng.`}
+      />
+      <div className="mt-2 flex justify-center">
+        <Button size="large" onClick={onBack}>
+          {invoice.data.status === 'PENDING' ? 'Quay lại (hóa đơn tự hết hạn nếu khách không chuyển)' : 'Quay lại'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function TransactionRow({ transaction }: { transaction: WalletTransaction }) {
+  const tag = WALLET_TX_TAG[transaction.type];
+  const incoming = transaction.type !== 'PAYMENT';
+  return (
+    <li className="flex items-center gap-3 border-b border-sc-border-soft py-2.5 last:border-b-0">
+      <span className="flex min-w-0 flex-1 flex-col leading-tight">
+        <span className="text-[15px] font-semibold text-sc-ink">
+          {tag.label}
+          {transaction.method && (
+            <span className="font-normal text-sc-muted"> · {PAYMENT_METHOD_LABEL[transaction.method]}</span>
+          )}
+        </span>
+        <span className="text-[13.5px] text-sc-muted">{formatRelative(transaction.createdAt)}</span>
+      </span>
+      <span className="flex flex-col items-end leading-tight">
+        <b className={`tabular-nums ${incoming ? 'text-sc-success' : 'text-sc-ink'}`}>
+          {incoming ? '+' : '−'}
+          {formatVND(transaction.amount)}
+        </b>
+        <span className="text-[13.5px] text-sc-muted tabular-nums">còn {formatVND(transaction.balanceAfter)}</span>
+      </span>
+    </li>
+  );
+}
+
+/** `/reception/top-up`: cash / card top-ups are recorded at once; transfer shows a QR for the customer. */
 export function CounterTopUpPage() {
   const search = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
@@ -104,325 +147,312 @@ export function CounterTopUpPage() {
   const queryClient = useQueryClient();
   const settings = useSettings();
   const minAmount = settings.data?.topUpMinAmount ?? 10_000;
-  const [memberId, setMemberId] = useState<string | undefined>(search.memberId);
-  const [selectedMember, setSelectedMember] = useState<AccountSummary | undefined>();
+
+  const [picked, setPicked] = useState<Member | null>(null);
   const [amount, setAmount] = useState<number | null>(500_000);
-  const [method, setMethod] = useState<TopUpMethod>('CASH');
+  const [method, setMethod] = useState<CounterMethod>('CASH');
+  const [cash, setCash] = useState<{ amount: number; value: number } | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
   const keyRef = useRef<{ fingerprint: string; key: string } | null>(null);
 
-  const memberDetail = useQuery({
+  const memberId = picked?.accountId ?? search.memberId;
+  const detail = useQuery({
     queryKey: ['users', 'detail', memberId],
     queryFn: () => usersService.get(memberId!),
-    enabled: Boolean(memberId) && !selectedMember,
+    enabled: Boolean(memberId) && !picked,
     staleTime: 60_000,
   });
+  const member = picked ?? (detail.data?.role === 'MEMBER' ? (memberToBuyer(detail.data) as Member) : null);
+  const wallet = useMemberWallet(member?.accountId, { page: 1, limit: 6 });
+  const balance = wallet.data?.balance;
 
-  const memberInfo: MemberInfo | undefined =
-    selectedMember ??
-    (memberDetail.data
-      ? {
-          id: memberDetail.data.id,
-          fullName: memberDetail.data.fullName,
-          email: memberDetail.data.email,
-          phone: memberDetail.data.phone,
-          avatarUrl: memberDetail.data.avatarUrl,
-          status: memberDetail.data.status,
-        }
-      : undefined);
+  const tendered = cash && cash.amount === amount ? cash.value : null;
+  const amountValue = amount !== null && Number.isFinite(amount) && amount >= minAmount ? amount : null;
+  const valid = amountValue !== null;
 
-  const wallet = useMemberWallet(memberId, { page: 1, limit: 8 });
-
-  const refreshWallet = () => void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+  const selectMember = (next: Member | null) => {
+    setPicked(next);
+    setDone(null);
+    setInvoiceId(null);
+    setError(undefined);
+    setCash(null);
+    setNote('');
+    void navigate({ search: { memberId: next?.accountId }, replace: true });
+    if (!next) focusSearch();
+  };
 
   const record = useMutation({
-    mutationFn: (input: { amount: number; method: 'CASH' | 'CARD'; note: string; key: string }) =>
-      walletService.counterTopUp(memberId!, {
+    mutationFn: (input: {
+      amount: number;
+      method: 'CASH' | 'CARD';
+      note: string;
+      key: string;
+      tendered: number | null;
+    }) =>
+      walletService.counterTopUp(member!.accountId, {
         amount: input.amount,
         method: input.method,
         note: input.note || undefined,
         idempotencyKey: input.key,
       }),
-    onSuccess: (transaction) => {
+    onSuccess: (transaction, input) => {
       keyRef.current = null;
-      refreshWallet();
-      setDone(
-        `Đã nạp thành công ${formatVND(transaction.amount)} (${PAYMENT_METHOD_LABEL[transaction.method ?? 'CASH']}) vào ví.`,
-      );
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      setDone({
+        amount: transaction.amount,
+        method: input.method,
+        balanceAfter: transaction.balanceAfter,
+        tendered: input.method === 'CASH' ? input.tendered : null,
+      });
       setNote('');
+      window.scrollTo({ top: 0 });
     },
     onError: (err) => message.error(toApiError(err).message),
   });
 
   const createInvoice = useMutation({
-    mutationFn: (value: number) => walletService.createTopUp({ accountId: memberId, amount: value }),
-    onSuccess: (invoice) => setInvoiceId(invoice.id),
+    mutationFn: (value: number) => walletService.createTopUp({ accountId: member?.accountId, amount: value }),
+    onSuccess: (invoice) => {
+      setInvoiceId(invoice.id);
+      window.scrollTo({ top: 0 });
+    },
     onError: (err) => {
       const apiError = toApiError(err);
       setError(apiError.errors?.[0]?.message ?? apiError.message);
     },
   });
 
+  const busy = record.isPending || createInvoice.isPending;
+
   const submit = () => {
-    if (record.isPending || createInvoice.isPending || !memberId) return;
+    if (busy || !member) return;
     if (amount === null || !Number.isFinite(amount)) return setError('Vui lòng nhập số tiền');
     if (amount < minAmount) return setError(`Số tiền nạp tối thiểu là ${formatVND(minAmount)}`);
     setError(undefined);
-    setDone(null);
     if (method === 'TRANSFER') {
       createInvoice.mutate(amount);
       return;
     }
-    const fingerprint = JSON.stringify([memberId, amount, method, note]);
+    const fingerprint = JSON.stringify([member.accountId, amount, method, note]);
     if (keyRef.current?.fingerprint !== fingerprint) keyRef.current = { fingerprint, key: crypto.randomUUID() };
-    record.mutate({ amount, method, note, key: keyRef.current.key });
+    record.mutate({ amount, method, note, key: keyRef.current.key, tendered });
   };
 
-  const handleSelectMember = (id: string | undefined, member: AccountSummary | undefined) => {
-    setMemberId(id);
-    setSelectedMember(member);
-    setDone(null);
-    void navigate({ search: { memberId: id }, replace: true });
-  };
+  const counterActive = Boolean(member) && !done && !invoiceId;
+  useCounterHotkeys({
+    onSearch: counterActive || !member ? () => selectMember(null) : undefined,
+    onPay: counterActive && valid && !busy ? submit : undefined,
+    onMethod: counterActive ? (index) => setMethod(METHODS[index]!) : undefined,
+  });
 
-  const handleClearMember = () => {
-    handleSelectMember(undefined, undefined);
-  };
+  if (member && done) {
+    return (
+      <>
+        <PageHeader title="Nạp ví tại quầy" />
+        <TopUpDone
+          member={member}
+          done={{ ...done, balanceAfter: done.balanceAfter ?? balance ?? null }}
+          onNext={() => selectMember(null)}
+          onAgain={() => setDone(null)}
+        />
+      </>
+    );
+  }
 
-  const handleTransferDone = () => {
-    refreshWallet();
-    setInvoiceId(null);
-    setDone('Nạp tiền qua chuyển khoản QR thành công. Số dư ví thành viên đã được cập nhật.');
-  };
+  if (member && invoiceId) {
+    return (
+      <>
+        <PageHeader title="Nạp ví tại quầy" />
+        <TransferPhase
+          invoiceId={invoiceId}
+          onBack={() => setInvoiceId(null)}
+          onPaid={() => {
+            setInvoiceId(null);
+            setDone({ amount: amount ?? 0, method: 'TRANSFER', balanceAfter: null, tendered: null });
+          }}
+        />
+      </>
+    );
+  }
+
+  if (!member) {
+    return (
+      <>
+        <PageHeader title="Nạp ví tại quầy" />
+        <section className="mx-auto mt-4 flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-sc-border bg-white px-6 py-7 shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-sc-primary text-sc-lime">
+              <WalletCards size={22} />
+            </span>
+            <div>
+              <h2 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">Nạp ví cho ai?</h2>
+              <p className="m-0 text-[14.5px] text-sc-muted">Chỉ hội viên có tài khoản mới có ví.</p>
+            </div>
+          </div>
+          {memberId && detail.isFetching ? (
+            <PageLoading />
+          ) : (
+            <CounterCustomerSearch
+              allowGuest={false}
+              placeholder="Nhập SĐT, tên hoặc email hội viên"
+              hint="Chọn hội viên để xem số dư và nạp tiền."
+              onSelect={(buyer) => buyer.kind === 'MEMBER' && selectMember(buyer)}
+            />
+          )}
+        </section>
+      </>
+    );
+  }
+
+  const after = balance !== undefined && amountValue !== null ? balance + amountValue : undefined;
 
   return (
     <>
       <PageHeader title="Nạp ví tại quầy" />
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4">
-          {/* 1. Chọn & thông tin thành viên */}
-          <Card>
-            <div className="flex items-center justify-between mb-3">
-              <div className="[&>h3]:!mb-0">
-                <SectionTitle>1. Thành viên</SectionTitle>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-start-1">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-sc-border bg-white px-4 py-3 shadow-xs">
+            <div className="flex min-w-0 items-center gap-3">
+              <CustomerAvatar name={member.fullName} />
+              <div className="flex min-w-0 flex-col leading-tight">
+                <b className="truncate text-[16px] text-sc-ink">{member.fullName}</b>
+                {member.phone && <span className="text-[14.5px] text-sc-muted tabular-nums">{member.phone}</span>}
               </div>
-              {memberInfo && (
-                <Button
-                  size="small"
-                  type="text"
-                  disabled={Boolean(invoiceId)}
-                  onClick={handleClearMember}
-                  className="!text-[13.5px] text-sc-muted hover:!text-sc-error"
-                >
-                  Đổi khách
-                </Button>
-              )}
             </div>
+            <div className="flex flex-col">
+              <span className="text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
+                Số dư hiện tại
+              </span>
+              <span className="inline-flex items-center gap-1.5 font-display text-[22px] font-extrabold tabular-nums text-sc-ink">
+                <Wallet size={18} className="text-sc-muted" />
+                {balance === undefined ? '…' : formatVND(balance)}
+              </span>
+            </div>
+            <Button className="ml-auto" disabled={busy} onClick={() => selectMember(null)}>
+              Đổi khách
+            </Button>
+          </div>
 
-            {memberInfo ? (
-              <div className="flex items-center gap-3 rounded-xl border border-sc-border bg-sc-paper p-3.5">
-                <Avatar
-                  size={46}
-                  src={memberInfo.avatarUrl}
-                  className="shrink-0 bg-sc-ink text-sc-lime font-bold text-base border border-sc-border"
-                >
-                  {memberInfo.fullName ? memberInfo.fullName.charAt(0).toUpperCase() : <User className="size-5" />}
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sc-ink truncate text-[15px]">{memberInfo.fullName}</span>
-                    <Tag color="green" className="!m-0 text-[12.5px] px-1.5 py-0 leading-tight">
-                      Active
-                    </Tag>
-                  </div>
-                  <div className="flex flex-col gap-0.5 text-[13.5px] text-sc-muted mt-1">
-                    {memberInfo.phone && (
-                      <span className="flex items-center gap-1.5 font-mono">
-                        <Phone className="size-3 text-sc-muted" />
-                        {memberInfo.phone}
-                      </span>
-                    )}
-                    {memberInfo.email && (
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Mail className="size-3 text-sc-muted" />
-                        {memberInfo.email}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
+          <section className="rounded-xl border border-sc-border bg-white px-4 py-4 shadow-xs">
+            <h2 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-[0.04em] text-sc-ink uppercase">
+              Số tiền nạp
+            </h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {PRESET_AMOUNTS.map((value) => {
+                const active = amount === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={busy}
+                    onClick={() => {
+                      setAmount(value);
+                      setError(undefined);
+                    }}
+                    className={`h-14 cursor-pointer rounded-lg border font-display text-[20px] font-bold tabular-nums transition-colors disabled:cursor-not-allowed ${
+                      active
+                        ? 'border-sc-primary bg-sc-primary-soft text-sc-primary shadow-[inset_0_0_0_1px_var(--sc-primary)]'
+                        : 'border-sc-border bg-white text-sc-ink hover:border-sc-primary-border'
+                    }`}
+                  >
+                    {formatVND(value)}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div>
-                <MemberSelect
-                  value={memberId}
-                  disabled={Boolean(invoiceId)}
-                  onChange={handleSelectMember}
-                  className="w-full"
-                  placeholder="Nhập tên, SĐT hoặc email để tìm…"
-                />
-              </div>
-            )}
-          </Card>
-
-          {/* 2. Thẻ số dư ví (chỉ hiển thị khi đã chọn thành viên) */}
-          {memberId && (
-            <WalletCard
-              balance={wallet.data?.balance ?? 0}
-              description={wallet.isFetching ? 'Đang cập nhật số dư…' : 'Số dư khả dụng hiện tại của thành viên'}
-            />
-          )}
-
-          {/* 3. Form nạp tiền */}
-          <Card>
-            <SectionTitle>2. Thông tin nạp ví</SectionTitle>
-            <Form layout="vertical" requiredMark={false} onFinish={submit}>
-              {done && <Alert type="success" showIcon className="!mb-4" title={done} />}
-
-              {!memberId && (
-                <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 text-[13.5px] text-amber-800 dark:text-amber-200">
-                  <Info className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Chọn thành viên ở trên trước khi thực hiện giao dịch nạp ví.</span>
-                </div>
-              )}
-
-              <div className="mb-4">
-                <label className="block text-[13.5px] font-semibold text-sc-ink uppercase tracking-wider mb-2">
-                  Mệnh giá nạp
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {PRESET_AMOUNTS.map((val) => {
-                    const isSelected = amount === val;
-                    return (
-                      <Button
-                        key={val}
-                        type={isSelected ? 'primary' : 'default'}
-                        disabled={!memberId}
-                        onClick={() => {
-                          setAmount(val);
-                          setError(undefined);
-                        }}
-                        className="!h-10 font-semibold tabular-nums"
-                      >
-                        {formatVND(val)}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Form.Item
-                label={<span className="font-semibold text-sc-ink">Hoặc nhập số tiền khác</span>}
-                validateStatus={error ? 'error' : undefined}
-                help={error ?? `Tối thiểu ${formatVND(minAmount)}`}
-                className="!mb-4"
-              >
+                <div className="mb-1.5 text-[14.5px] font-semibold text-sc-ink-2">Hoặc nhập số khác</div>
                 <MoneyInput
                   value={amount}
                   step={50_000}
                   size="large"
+                  disabled={busy}
                   status={error ? 'error' : undefined}
-                  disabled={!memberId}
                   onChange={(value) => {
                     setAmount(value);
                     setError(undefined);
                   }}
                 />
-              </Form.Item>
-
-              <Form.Item
-                label={<span className="font-semibold text-sc-ink">Hình thức thu tiền</span>}
-                className="!mb-4"
-              >
-                <Radio.Group
-                  optionType="button"
-                  buttonStyle="solid"
-                  value={method}
-                  disabled={!memberId}
-                  onChange={(event) => setMethod(event.target.value as TopUpMethod)}
-                  className="w-full flex"
-                >
-                  <Radio.Button value="CASH" className="flex-1 text-center">
-                    <Banknote className="inline size-4 mr-1 text-emerald-600 align-sub" /> Tiền mặt
-                  </Radio.Button>
-                  <Radio.Button value="CARD" className="flex-1 text-center">
-                    <CreditCard className="inline size-4 mr-1 text-blue-600 align-sub" /> Quẹt thẻ
-                  </Radio.Button>
-                  <Radio.Button value="TRANSFER" className="flex-1 text-center">
-                    <QrCode className="inline size-4 mr-1 text-purple-600 align-sub" /> QR Code
-                  </Radio.Button>
-                </Radio.Group>
-              </Form.Item>
-
-              {method !== 'TRANSFER' && (
-                <Form.Item label="Ghi chú (không bắt buộc)" className="!mb-4">
-                  <Input
-                    value={note}
-                    maxLength={200}
-                    disabled={!memberId}
-                    placeholder="Ghi chú thu tiền mặt / quẹt thẻ…"
-                    onChange={(event) => setNote(event.target.value)}
-                  />
-                </Form.Item>
-              )}
-
-              <Button
-                type="primary"
-                size="large"
-                block
-                htmlType="submit"
-                disabled={!memberId}
-                loading={record.isPending || createInvoice.isPending}
-                className="!h-11 !text-[15px] font-bold shadow-sm"
-              >
-                {!memberId
-                  ? 'Chọn thành viên để nạp ví'
-                  : method === 'TRANSFER'
-                    ? `Tạo hóa đơn nạp ví (QR) ${amount ? `· ${formatVND(amount)}` : ''}`
-                    : `Xác nhận đã thu ${amount ? formatVND(amount) : ''}`}
-              </Button>
-            </Form>
-          </Card>
+                <div className={`mt-1 text-[13.5px] ${error ? 'text-sc-error' : 'text-sc-muted'}`}>
+                  {error ?? `Tối thiểu ${formatVND(minAmount)}`}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg bg-sc-paper px-4 py-3 sm:mt-6">
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[12.5px] font-semibold text-sc-muted uppercase">Hiện tại</span>
+                  <b className="tabular-nums">{balance === undefined ? '…' : formatVND(balance)}</b>
+                </span>
+                <ArrowRight size={16} className="text-sc-muted" />
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[12.5px] font-semibold text-sc-muted uppercase">Sau khi nạp</span>
+                  <b className="tabular-nums text-sc-success">{after === undefined ? '—' : formatVND(after)}</b>
+                </span>
+              </div>
+            </div>
+          </section>
         </div>
 
-        {/* Cột phải: Lịch sử ví */}
-        <Card className="h-full">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-sc-border">
-            <div className="[&>h3]:!mb-0">
-              <SectionTitle>Lịch sử giao dịch ví</SectionTitle>
-            </div>
-            {memberInfo && (
-              <Tag color="cyan" className="!m-0 text-[13.5px] font-semibold">
-                {memberInfo.fullName}
-              </Tag>
-            )}
+        <aside className="rounded-xl border border-sc-border bg-white px-4 py-4 shadow-xs xl:sticky xl:top-20 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <span className="font-semibold text-sc-ink">Thu của khách</span>
+            <span className="font-display text-[30px] leading-none font-extrabold tabular-nums text-sc-ink">
+              {formatVND(amountValue ?? 0)}
+            </span>
           </div>
-
-          {memberId ? (
-            <WalletTransactionsTable
-              data={wallet.data?.transactions}
-              isLoading={wallet.isFetching}
-              error={wallet.error}
-              onRetry={() => void wallet.refetch()}
-              page={1}
-              limit={8}
-              onPageChange={() => undefined}
-            />
-          ) : (
-            <div className="flex flex-1 items-center justify-center py-20">
-              <EmptyState
-                title="Chưa chọn thành viên"
-                description="Chọn thành viên ở cột bên trái để xem số dư và lịch sử giao dịch ví."
+          <CounterPaymentPanel
+            total={amountValue ?? 0}
+            method={method}
+            onMethod={setMethod}
+            tendered={tendered}
+            onTendered={(value) =>
+              setCash(value === null || amountValue === null ? null : { amount: amountValue, value })
+            }
+            canPay={valid}
+            blockedReason={`Số tiền nạp tối thiểu là ${formatVND(minAmount)}`}
+            busy={busy}
+            onPay={submit}
+            actionLabel={(value) =>
+              value === 'TRANSFER' ? 'Tạo mã QR' : value === 'CARD' ? 'Xác nhận đã quẹt thẻ' : 'Xác nhận đã thu'
+            }
+            hints={{ TRANSFER: 'Khách quét mã QR để tự chuyển khoản. Ví được cộng ngay khi tiền về.' }}
+          >
+            {method !== 'TRANSFER' && (
+              <Input
+                value={note}
+                maxLength={200}
+                disabled={busy}
+                placeholder="Ghi chú (không bắt buộc)"
+                onChange={(event) => setNote(event.target.value)}
               />
-            </div>
-          )}
-        </Card>
-      </div>
+            )}
+          </CounterPaymentPanel>
+        </aside>
 
-      {/* Modal hiển thị mã QR chuyển khoản */}
-      <TransferInvoiceModal invoiceId={invoiceId} onDone={handleTransferDone} onCancel={() => setInvoiceId(null)} />
+        <section className="min-w-0 rounded-xl border border-sc-border bg-white px-4 py-3 shadow-xs xl:col-start-1">
+          <h2 className="mt-0 mb-1 flex items-center gap-2 font-display text-[17px] font-bold tracking-[0.04em] text-sc-ink uppercase">
+            <History size={17} />
+            Giao dịch gần đây
+          </h2>
+          {wallet.isPending ? (
+            <Skeleton active paragraph={{ rows: 3 }} />
+          ) : wallet.isError ? (
+            <Alert type="error" showIcon title={toApiError(wallet.error).message} />
+          ) : wallet.data?.transactions.items.length ? (
+            <ul className="m-0 list-none p-0">
+              {wallet.data.transactions.items.map((transaction) => (
+                <TransactionRow key={transaction.id} transaction={transaction} />
+              ))}
+            </ul>
+          ) : (
+            <p className="my-3 text-[14.5px] text-sc-muted">Ví chưa có giao dịch nào.</p>
+          )}
+        </section>
+      </div>
     </>
   );
 }
