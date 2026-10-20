@@ -337,7 +337,6 @@ export function CounterOrderPage() {
         <div className="flex min-w-0 flex-col gap-4">
           <CounterCustomerBar
             buyer={cart.buyer}
-            balance={quoteQuery.data?.walletBalance}
             hasLines={cart.lines.length > 0}
             disabled={busy}
             onClear={() => {

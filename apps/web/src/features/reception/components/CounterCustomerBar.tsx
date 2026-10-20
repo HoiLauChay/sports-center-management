@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import type { CheckoutItemInput } from '~/features/checkout/types';
 import { membershipsQueryOptions } from '~/features/memberships/hooks/useMemberships';
+import { useMemberWallet } from '~/features/wallet';
 import { formatDate, formatVND } from '~/lib/format';
 import { useMemberMemberships } from '../hooks/useCounter';
 import { benefitsText, daysUntil } from '../utils';
@@ -96,9 +97,27 @@ function MembershipStat({
   );
 }
 
+/** Read straight from the member's wallet, so it shows before any service is in the draft. */
+function WalletStat({ accountId }: { accountId: string }) {
+  const wallet = useMemberWallet(accountId, { page: 1, limit: 1 });
+  return (
+    <Stat label="Số dư ví">
+      <span className="inline-flex items-center gap-1.5 font-semibold tabular-nums">
+        <Wallet size={14} className="text-sc-muted" />
+        {wallet.isError ? (
+          <span className="font-normal text-sc-muted">Không tải được</span>
+        ) : wallet.data && !wallet.isPlaceholderData ? (
+          formatVND(wallet.data.balance)
+        ) : (
+          '…'
+        )}
+      </span>
+    </Stat>
+  );
+}
+
 interface CounterCustomerBarProps {
   buyer: DraftBuyer;
-  balance?: number | null;
   /** True when changing the customer would throw away services already in the draft. */
   hasLines: boolean;
   disabled?: boolean;
@@ -110,7 +129,6 @@ interface CounterCustomerBarProps {
 /** The chosen customer at a glance: who, wallet, membership (with a renew shortcut), and a way to change. */
 export function CounterCustomerBar({
   buyer,
-  balance,
   hasLines,
   disabled,
   onClear,
@@ -142,12 +160,7 @@ export function CounterCustomerBar({
 
       {member ? (
         <>
-          <Stat label="Số dư ví">
-            <span className="inline-flex items-center gap-1.5 font-semibold tabular-nums">
-              <Wallet size={14} className="text-sc-muted" />
-              {balance === null || balance === undefined ? '…' : formatVND(balance)}
-            </span>
-          </Stat>
+          <WalletStat accountId={buyer.accountId} />
           <MembershipStat
             accountId={buyer.accountId}
             onRenew={onAdd}
