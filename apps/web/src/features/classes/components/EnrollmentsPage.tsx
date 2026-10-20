@@ -9,9 +9,15 @@ import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refun
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { vnDate } from '~/lib/time';
+import { todayVN, vnDate } from '~/lib/time';
 import { useCancelEnrollment, useMyEnrollments } from '../hooks/useClasses';
 import { classDateRange, weeklyText } from '../utils';
+
+function progressText(enrollment: MyEnrollment) {
+  const { startDate } = enrollment.class;
+  if (startDate && todayVN() < startDate) return `Khai giảng ${formatDate(startDate)}`;
+  return enrollment.sessionsLeft > 0 ? `Còn ${enrollment.sessionsLeft} buổi` : 'Đã học hết các buổi';
+}
 
 const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string }> = {
   ENROLLED: { label: 'Đang học', color: 'success' },
@@ -74,6 +80,9 @@ export function EnrollmentsPage() {
           <span className="text-[13px] text-sc-muted md:hidden">
             {weeklyText(enrollment.class.weeklySchedule)} · {classDateRange(enrollment.class)}
           </span>
+          {enrollment.status === 'ENROLLED' && (
+            <span className="text-[13px] font-semibold text-sc-primary">{progressText(enrollment)}</span>
+          )}
         </div>
       ),
     },
