@@ -8,6 +8,7 @@ import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useMemberMembershipActions, useMembershipsOf } from '../hooks/useMemberMemberships';
+import { benefitsText } from '../utils';
 import { SubscribeMembershipModal, TerminateMembershipModal } from './StaffMembershipModals';
 
 const STATUS_TAG: Record<MemberMembership['status'], { color: string; label: string }> = {
@@ -72,11 +73,7 @@ export function StaffMembershipBlock({ memberId, counterLink = false }: StaffMem
                   : `Tự gia hạn bằng ví ngày ${formatDate(current.endDate)}`}
               </div>
               {current.currentBenefits && (
-                <div className="mt-1 text-[14px] text-sc-muted">
-                  {current.currentBenefits.gymAccess ? 'Gym miễn phí · ' : ''}−
-                  {current.currentBenefits.bookingDiscountPct}% sân · −{current.currentBenefits.classDiscountPct}% lớp ·{' '}
-                  {current.currentBenefits.freeBookingSlotsPerMonth} slot/tháng
-                </div>
+                <div className="mt-1 text-[14px] text-sc-muted">{benefitsText(current.currentBenefits)}</div>
               )}
             </>
           ) : (

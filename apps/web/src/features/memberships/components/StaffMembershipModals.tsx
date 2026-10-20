@@ -6,6 +6,7 @@ import { walletQueryKey, walletService } from '~/features/wallet';
 import { formatDate, formatVND } from '~/lib/format';
 import { useMemberMembershipActions } from '../hooks/useMemberMemberships';
 import { membershipsQueryOptions } from '../hooks/useMemberships';
+import { benefitsText } from '../utils';
 
 interface ModalProps {
   open: boolean;
@@ -13,21 +14,6 @@ interface ModalProps {
   current: MemberMembership | null;
   onClose: () => void;
 }
-
-const benefitsText = (pkg: {
-  gymAccess: boolean;
-  bookingDiscountPct: number;
-  classDiscountPct: number;
-  freeBookingSlotsPerMonth: number;
-}) =>
-  [
-    pkg.gymAccess && 'Gym miễn phí',
-    pkg.bookingDiscountPct > 0 && `−${pkg.bookingDiscountPct}% sân`,
-    pkg.classDiscountPct > 0 && `−${pkg.classDiscountPct}% lớp`,
-    pkg.freeBookingSlotsPerMonth > 0 && `${pkg.freeBookingSlotsPerMonth} slot/tháng`,
-  ]
-    .filter(Boolean)
-    .join(' · ') || 'Không có ưu đãi';
 
 export function SubscribeMembershipModal({ open, memberId, current, onClose }: ModalProps) {
   const packages = useQuery({ ...membershipsQueryOptions, enabled: open });
