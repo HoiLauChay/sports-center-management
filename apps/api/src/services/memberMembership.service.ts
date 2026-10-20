@@ -15,7 +15,8 @@ import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import checkoutService from '~/services/checkout/checkout.service';
-import { monthOf, todayInCenter } from '~/utils/time';
+import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import { formatCenterDate, monthOf, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction } from '~/utils/transaction';
 
 const notFound = () =>
@@ -100,6 +101,53 @@ class MemberMembershipService {
       ipAddress: ip,
     });
     return { order, membership: await toResponse(row, todayInCenter()) };
+  };
+
+  terminate = async (actor: { id: string; role: Role }, accountId: string, id: string, reason: string, ip?: string) => {
+    let notifications: CreatedNotification[] = [];
+    const result = await runTransaction(async (tx) => {
+      await lockRows(tx, { accounts: [accountId], memberMemberships: [id] });
+      const current = await memberMembershipRepository.findById(id, accountId, tx);
+      if (!current) throw notFound();
+      const today = todayInCenter();
+      if (!isMembershipCurrent(current, today)) throw invalidState('Chỉ chấm dứt gói còn hiệu lực');
+
+      const updated = await memberMembershipRepository.update(
+        id,
+        { status: 'CANCELLED', endDate: new Date(today), autoRenew: false, cancelledAt: new Date() },
+        tx,
+      );
+      await auditService.record(
+        {
+          accountId: actor.id,
+          action: 'UPDATE',
+          entityType: 'MEMBER_MEMBERSHIP',
+          entityId: id,
+          oldValues: current,
+          newValues: { ...updated, reason },
+          ipAddress: ip,
+        },
+        tx,
+      );
+      notifications = await notificationService.create(
+        [
+          {
+            accountId,
+            type: 'MEMBERSHIP',
+            title: 'Gói thành viên đã chấm dứt',
+            message: `Gói ${current.package.name} đã chấm dứt từ ngày ${formatCenterDate(today)}, không hoàn tiền. Lý do: ${reason}`,
+            referenceType: 'MEMBERSHIP',
+            referenceId: id,
+            dedupKey: `membership-terminated:${id}`,
+            sendEmail: true,
+          },
+        ],
+        tx,
+      );
+      return toResponse(updated, today, tx);
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return result;
   };
 }
 

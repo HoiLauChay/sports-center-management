@@ -98,13 +98,14 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'isActive',
     'deletedAt',
   ),
-  MEMBER_MEMBERSHIP: fields<MemberMembership>()(
+  MEMBER_MEMBERSHIP: fields<MemberMembership & { reason: string }>()(
     'packageId',
     'startDate',
     'endDate',
     'autoRenew',
     'status',
     'cancelledAt',
+    'reason',
   ),
   COUPON: fields<Coupon>()(
     'code',

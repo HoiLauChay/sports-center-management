@@ -1,4 +1,4 @@
-import type { SubscribeMemberBody } from '@sports-center/shared';
+import type { SubscribeMemberBody, TerminateMembershipBody } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -49,6 +49,18 @@ class MemberMembershipController {
       getClientIp(req),
     );
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã đăng ký gói cho thành viên', result }));
+  };
+
+  terminateForMember = async (req: Request, res: Response) => {
+    const { reason } = req.body as TerminateMembershipBody;
+    const result = await memberMembershipService.terminate(
+      req.user!,
+      req.params.id as string,
+      req.params.membershipId as string,
+      reason,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã chấm dứt gói, không hoàn tiền', result }));
   };
 }
 
