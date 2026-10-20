@@ -32,6 +32,7 @@ class EnrollmentService {
     (await enrollmentRepository.findByAccount(accountId)).map((row) => ({
       ...toEnrollmentResponse(row),
       class: toClassSummaryResponse(row.class),
+      sessionsLeft: row.class._count.sessions,
     }));
 
   listForClass = async (actor: Actor, classId: string) => {
