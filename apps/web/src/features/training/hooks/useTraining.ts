@@ -1,5 +1,4 @@
 import type {
-  ClassSummary,
   CreateAnnouncementBody,
   CreateEvaluationBody,
   ListMyCheckInsQuery,
@@ -8,8 +7,6 @@ import type {
 } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { useMemo } from 'react';
-import { useMyEnrollments } from '~/features/classes/hooks/useClasses';
 import { describeApiError } from '~/lib/http-errors';
 import { trainingService } from '../services/training.service';
 
@@ -123,18 +120,6 @@ export function useSendAnnouncement(classId: string) {
 }
 
 /** The classes I joined (also ones I left), newest enrollment first, for the training history. */
-export function useMyTrainingClasses() {
-  const enrollments = useMyEnrollments();
-  const data = useMemo(() => {
-    if (!enrollments.data) return undefined;
-    const byClass = new Map<string, ClassSummary>();
-    for (const entry of [...enrollments.data].sort((a, b) => b.enrolledAt.localeCompare(a.enrolledAt))) {
-      if (!byClass.has(entry.class.id)) byClass.set(entry.class.id, entry.class);
-    }
-    return [...byClass.values()];
-  }, [enrollments.data]);
-  return { ...enrollments, data };
-}
 
 export function useMyAttendance(classId: string | undefined) {
   return useQuery({

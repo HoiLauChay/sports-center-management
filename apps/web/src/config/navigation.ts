@@ -9,7 +9,6 @@ import {
   CalendarDays,
   ChartColumn,
   ClipboardList,
-  Dumbbell,
   GraduationCap,
   HandCoins,
   History,
@@ -60,8 +59,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/bookings', label: 'Đặt sân', icon: MapPin },
         { path: '/classes', label: 'Lớp học', icon: School },
         { path: '/schedule', label: 'Lịch của tôi', icon: CalendarDays },
-        { path: '/enrollments', label: 'Lớp đã đăng ký', icon: GraduationCap },
-        { path: '/training', label: 'Kết quả tập luyện', icon: Dumbbell },
+        { path: '/training', label: 'Lớp của tôi', icon: GraduationCap },
       ],
     },
     {

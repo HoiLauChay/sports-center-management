@@ -1,20 +1,19 @@
-import type { CheckIn, Evaluation, MyAttendance } from '@sports-center/shared';
+import type { CheckIn, Evaluation, MyAttendance, MyEnrollment } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Modal, Rate, Select, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Modal, Rate, Skeleton, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { formatDateTime } from '~/lib/format';
+import { SportTag } from '~/components/ui/SportTag';
+import { enrollmentProgress } from '~/features/classes/components/enrollmentActions';
+import { useMyEnrollments } from '~/features/classes/hooks/useClasses';
+import { weeklyText } from '~/features/classes/utils';
+import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { formatDayLabel, isPast } from '~/lib/time';
-import {
-  useMyAttendance,
-  useMyCheckIns,
-  useMyEvaluations,
-  useMyTrainingClasses,
-  useSessionNote,
-} from '../hooks/useTraining';
+import { formatDayLabel, isPast, todayVN } from '~/lib/time';
+import { useMyAttendance, useMyCheckIns, useMyEvaluations, useSessionNote } from '../hooks/useTraining';
 import { ATTENDANCE_TAG } from '../types';
 
 function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: () => void }) {
@@ -45,10 +44,7 @@ function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: 
   );
 }
 
-function AttendanceSection() {
-  const classes = useMyTrainingClasses();
-  const [picked, setPicked] = useState<string | undefined>();
-  const classId = picked ?? classes.data?.[0]?.id;
+function AttendanceSection({ classId }: { classId: string }) {
   const attendance = useMyAttendance(classId);
   const evaluations = useMyEvaluations(classId);
   const [noteOf, setNoteOf] = useState<string | null>(null);
@@ -65,7 +61,16 @@ function AttendanceSection() {
   const done = counts.PRESENT + counts.LATE + counts.ABSENT;
 
   const columns: TableColumnsType<MyAttendance> = [
-    { title: 'Buổi', key: 'number', width: 56, render: (_, row) => row.session.sessionNumber },
+    {
+      title: 'Buổi',
+      key: 'number',
+      width: 56,
+      render: (_, row) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String(row.session.sessionNumber).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Ngày',
       key: 'date',
@@ -139,39 +144,13 @@ function AttendanceSection() {
     },
   ];
 
-  if (classes.isError) {
-    return <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />;
-  }
-  if (classes.data && classes.data.length === 0) {
-    return (
-      <EmptyState
-        title="Bạn chưa tham gia lớp nào"
-        action={
-          <Link to="/classes">
-            <Button type="primary">Xem lớp đang mở</Button>
-          </Link>
-        }
-      />
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select
-          className="w-full sm:!w-80"
-          loading={classes.isPending}
-          value={classId}
-          onChange={setPicked}
-          options={(classes.data ?? []).map((item) => ({ value: item.id, label: item.name }))}
-          placeholder="Chọn lớp"
-        />
-      </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
-          { label: 'Có mặt', value: counts.PRESENT, tone: 'text-sc-success' },
-          { label: 'Đi muộn', value: counts.LATE, tone: 'text-sc-warning' },
-          { label: 'Vắng', value: counts.ABSENT, tone: 'text-sc-error' },
+          { label: 'Có mặt', value: counts.PRESENT, tone: counts.PRESENT ? 'text-sc-success' : 'text-sc-ink' },
+          { label: 'Đi muộn', value: counts.LATE, tone: counts.LATE ? 'text-sc-warning' : 'text-sc-ink' },
+          { label: 'Vắng', value: counts.ABSENT, tone: counts.ABSENT ? 'text-sc-error' : 'text-sc-ink' },
           {
             label: 'Tỷ lệ đi học',
             value: done > 0 ? `${Math.round(((counts.PRESENT + counts.LATE) / done) * 100)}%` : '—',
@@ -233,18 +212,130 @@ function CheckInHistory() {
   );
 }
 
-/** `/training` (member): my attendance, session notes and coach evaluations per class, and my check-in history. */
+const GROUPS = [
+  { key: 'active', title: 'Đang học' },
+  { key: 'done', title: 'Đã kết thúc' },
+  { key: 'cancelled', title: 'Đã hủy' },
+] as const;
+
+const groupOf = (enrollment: MyEnrollment) => {
+  if (enrollment.status === 'CANCELLED') return 'cancelled';
+  const { startDate } = enrollment.class;
+  return enrollment.sessionsLeft > 0 || (startDate !== null && todayVN() < startDate) ? 'active' : 'done';
+};
+
+function ClassCardLink({ enrollment }: { enrollment: MyEnrollment }) {
+  const cancelled = enrollment.status === 'CANCELLED';
+  const cls = enrollment.class;
+  return (
+    <Link
+      to={cancelled ? '/classes/$classId' : '/training/$classId'}
+      params={{ classId: cls.id }}
+      className={`flex min-w-0 flex-col gap-2 rounded-xl border border-sc-border-soft !bg-white p-4 !text-sc-ink no-underline [transition:border-color_0.15s] hover:!border-sc-primary-border ${cancelled ? 'opacity-75' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <SportTag name={cls.course.sport.name} />
+        <ArrowRight size={16} className="shrink-0 text-sc-muted" />
+      </div>
+      <span className="font-display text-[20px] leading-tight font-extrabold uppercase [overflow-wrap:anywhere]">
+        {cls.name}
+      </span>
+      <span className="text-[13px] text-sc-muted">
+        HLV {cls.coach?.fullName ?? 'đang cập nhật'} · {weeklyText(cls.weeklySchedule)}
+      </span>
+      <span className={`text-[13.5px] font-semibold ${cancelled ? 'text-sc-muted' : 'text-sc-primary'}`}>
+        {cancelled
+          ? enrollment.refundedAt
+            ? `Đã hủy · đã hoàn ${formatVND(enrollment.paidAmount)}`
+            : 'Đã hủy'
+          : enrollmentProgress(enrollment)}
+      </span>
+    </Link>
+  );
+}
+
+function MyClasses() {
+  const enrollments = useMyEnrollments();
+  const groups = useMemo(() => {
+    const sorted = [...(enrollments.data ?? [])].sort((a, b) => b.enrolledAt.localeCompare(a.enrolledAt));
+    return GROUPS.map((group) => ({ ...group, items: sorted.filter((entry) => groupOf(entry) === group.key) })).filter(
+      (group) => group.items.length > 0,
+    );
+  }, [enrollments.data]);
+
+  if (enrollments.isPending) return <Skeleton active paragraph={{ rows: 4 }} />;
+  if (enrollments.isError) {
+    return <ErrorState message={toApiError(enrollments.error).message} onRetry={() => void enrollments.refetch()} />;
+  }
+  if (groups.length === 0) {
+    return (
+      <EmptyState
+        title="Bạn chưa đăng ký lớp nào"
+        action={
+          <Link to="/classes">
+            <Button type="primary">Xem lớp đang mở</Button>
+          </Link>
+        }
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {groups.map((group) => (
+        <section key={group.key} className="flex flex-col gap-3">
+          <h3 className="m-0 font-display text-[15px] font-bold tracking-[0.08em] text-sc-muted uppercase">
+            {group.title} ({group.items.length})
+          </h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {group.items.map((enrollment) => (
+              <ClassCardLink key={enrollment.id} enrollment={enrollment} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function TrainingPage() {
   return (
     <>
-      <PageHeader title="Kết quả tập luyện" />
+      <PageHeader title="Lớp của tôi" />
       <Card>
         <Tabs
           items={[
-            { key: 'classes', label: 'Điểm danh & nhận xét', children: <AttendanceSection /> },
+            { key: 'classes', label: 'Lớp đã đăng ký', children: <MyClasses /> },
             { key: 'checkins', label: 'Lịch sử check-in', children: <CheckInHistory /> },
           ]}
         />
+      </Card>
+    </>
+  );
+}
+
+export function TrainingClassPage({ classId }: { classId: string }) {
+  const enrollments = useMyEnrollments();
+  const enrollment = enrollments.data?.find((entry) => entry.class.id === classId);
+
+  return (
+    <>
+      <PageHeader
+        title={enrollment?.class.name ?? 'Kết quả tập luyện'}
+        description={enrollment ? `Kết quả tập luyện · ${enrollmentProgress(enrollment)}` : undefined}
+        extra={
+          <div className="flex flex-wrap gap-2">
+            <Link to="/training">
+              <Button icon={<ArrowLeft size={16} />}>Lớp của tôi</Button>
+            </Link>
+            <Link to="/classes/$classId" params={{ classId }}>
+              <Button>Trang lớp</Button>
+            </Link>
+          </div>
+        }
+      />
+      <Card>
+        <AttendanceSection classId={classId} />
       </Card>
     </>
   );

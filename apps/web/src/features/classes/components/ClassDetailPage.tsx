@@ -151,7 +151,7 @@ export function ClassDetailPage() {
               <Link to="/schedule">
                 <Button type="primary">Xem lịch của tôi</Button>
               </Link>
-              <Link to="/training">
+              <Link to="/training/$classId" params={{ classId }}>
                 <Button>Kết quả tập luyện</Button>
               </Link>
               {canCancelEnrollment(item.startDate) && (
