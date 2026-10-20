@@ -25,7 +25,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-sc-border-soft bg-sc-surface [box-shadow:0_1px_2px_rgba(20,19,15,0.03),0_2px_10px_rgba(20,19,15,0.04)]">
       <div
-        className={`group/image-edit relative aspect-[4/1] max-h-[260px] w-full overflow-hidden bg-sc-ink bg-cover bg-center max-md:aspect-[3/1] ${cover ? '' : "bg-court-pattern after:absolute after:right-12 after:-bottom-[60px] after:size-[180px] after:rounded-[50%] after:border-2 after:border-[rgba(214,242,75,0.35)] after:content-['']"}`}
+        className={`group/image-edit relative w-full overflow-hidden bg-sc-ink bg-cover bg-center ${coach ? 'aspect-[4/1] max-h-[260px] max-md:aspect-[3/1]' : 'h-24'} ${cover ? '' : "bg-court-pattern after:absolute after:right-12 after:-bottom-[60px] after:size-[180px] after:rounded-[50%] after:border-2 after:border-[rgba(214,242,75,0.35)] after:content-['']"}`}
         style={cover ? { backgroundImage: `url("${encodeURI(cover)}")` } : undefined}
       >
         {coach && (
