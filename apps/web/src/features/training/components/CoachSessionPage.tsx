@@ -1,6 +1,5 @@
-import { Link, getRouteApi } from '@tanstack/react-router';
-import { Button, Card, Tabs, Tag } from 'antd';
-import { ArrowLeft } from 'lucide-react';
+import { getRouteApi } from '@tanstack/react-router';
+import { Card, Tabs, Tag } from 'antd';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
@@ -61,11 +60,7 @@ export function CoachSessionPage() {
             <Tag className="!m-0">{session.class.enrolledCount} học viên</Tag>
           </span>
         }
-        extra={
-          <Link to="/coach/schedule">
-            <Button icon={<ArrowLeft size={16} />}>Lịch dạy</Button>
-          </Link>
-        }
+        back={{ to: '/coach/schedule', label: 'Lịch dạy' }}
       />
       <Card>
         <Tabs

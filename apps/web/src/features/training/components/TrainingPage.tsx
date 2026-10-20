@@ -1,7 +1,7 @@
 import type { CheckIn, Evaluation, MyAttendance, MyEnrollment } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Modal, Rate, Skeleton, Table, Tabs, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
@@ -25,7 +25,7 @@ function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: 
           <h3 className="m-0 text-[16px] font-semibold">{note.data.title}</h3>
           <p className="m-0 whitespace-pre-line text-sc-ink-2">{note.data.content}</p>
           {note.data.attachments.length > 0 && (
-            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[13.5px]">
+            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[15px]">
               {note.data.attachments.map((link) => (
                 <li key={link}>
                   <a href={link} target="_blank" rel="noreferrer noopener">
@@ -35,7 +35,7 @@ function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: 
               ))}
             </ul>
           )}
-          <span className="text-[12.5px] text-sc-muted">Cập nhật {formatDateTime(note.data.updatedAt)}</span>
+          <span className="text-[13.5px] text-sc-muted">Cập nhật {formatDateTime(note.data.updatedAt)}</span>
         </div>
       ) : (
         <EmptyState title="HLV chưa ghi chú cho buổi học này" />
@@ -82,9 +82,9 @@ function AttendanceSection({ classId }: { classId: string }) {
               {formatDayLabel(row.session.date)} · {row.session.startTime}–{row.session.endTime}
             </span>
             <div className="flex flex-col items-start gap-1 md:hidden">
-              {row.note && <span className="text-[13px] text-sc-muted">{row.note}</span>}
-              {evaluation && <Rate disabled value={evaluation.rating} className="!text-sm" />}
-              {evaluation?.comment && <span className="text-[13px] text-sc-ink-2">{evaluation.comment}</span>}
+              {row.note && <span className="text-[14.5px] text-sc-muted">{row.note}</span>}
+              {evaluation && <Rate disabled value={evaluation.rating} className="!text-[15px]" />}
+              {evaluation?.comment && <span className="text-[14.5px] text-sc-ink-2">{evaluation.comment}</span>}
               {isPast(row.session.date, row.session.startTime) && (
                 <Button size="small" onClick={() => setNoteOf(row.session.id)}>
                   Ghi chú buổi học
@@ -137,7 +137,7 @@ function AttendanceSection({ classId }: { classId: string }) {
         return evaluation ? (
           <div className="flex min-w-40 flex-col gap-0.5">
             <Rate disabled value={evaluation.rating} />
-            {evaluation.comment && <span className="text-[13px] text-sc-ink-2">{evaluation.comment}</span>}
+            {evaluation.comment && <span className="text-[14.5px] text-sc-ink-2">{evaluation.comment}</span>}
           </div>
         ) : null;
       },
@@ -158,7 +158,7 @@ function AttendanceSection({ classId }: { classId: string }) {
           },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg border border-sc-border-soft bg-white px-4 py-3">
-            <div className="text-[13px] text-sc-muted">{stat.label}</div>
+            <div className="text-[14.5px] text-sc-muted">{stat.label}</div>
             <div className={`font-display text-[24px] leading-tight font-extrabold tabular-nums ${stat.tone}`}>
               {stat.value}
             </div>
@@ -240,10 +240,10 @@ function ClassCardLink({ enrollment }: { enrollment: MyEnrollment }) {
       <span className="font-display text-[20px] leading-tight font-extrabold uppercase [overflow-wrap:anywhere]">
         {cls.name}
       </span>
-      <span className="text-[13px] text-sc-muted">
+      <span className="text-[14.5px] text-sc-muted">
         HLV {cls.coach?.fullName ?? 'đang cập nhật'} · {weeklyText(cls.weeklySchedule)}
       </span>
-      <span className={`text-[13.5px] font-semibold ${cancelled ? 'text-sc-muted' : 'text-sc-primary'}`}>
+      <span className={`text-[15px] font-semibold ${cancelled ? 'text-sc-muted' : 'text-sc-primary'}`}>
         {cancelled
           ? enrollment.refundedAt
             ? `Đã hủy · đã hoàn ${formatVND(enrollment.paidAmount)}`
@@ -323,15 +323,11 @@ export function TrainingClassPage({ classId }: { classId: string }) {
       <PageHeader
         title={enrollment?.class.name ?? 'Kết quả tập luyện'}
         description={enrollment ? `Kết quả tập luyện · ${enrollmentProgress(enrollment)}` : undefined}
+        back={{ to: '/training', label: 'Lớp của tôi' }}
         extra={
-          <div className="flex flex-wrap gap-2">
-            <Link to="/training">
-              <Button icon={<ArrowLeft size={16} />}>Lớp của tôi</Button>
-            </Link>
-            <Link to="/classes/$classId" params={{ classId }}>
-              <Button>Trang lớp</Button>
-            </Link>
-          </div>
+          <Link to="/classes/$classId" params={{ classId }}>
+            <Button>Trang lớp</Button>
+          </Link>
         }
       />
       <Card>

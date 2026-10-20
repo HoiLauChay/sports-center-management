@@ -1,7 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Alert, App, Button, Card, Form } from 'antd';
-import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { MoneyInput } from '~/components/form/MoneyInput';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -52,14 +51,7 @@ export function TopUpPage() {
 
   return (
     <>
-      <PageHeader
-        title="Nạp tiền vào ví"
-        extra={
-          <Link to="/wallet">
-            <Button icon={<ArrowLeft size={16} />}>Về ví</Button>
-          </Link>
-        }
-      />
+      <PageHeader title="Nạp tiền vào ví" back={{ to: '/wallet', label: 'Về ví' }} />
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           <Form layout="vertical" requiredMark={false} onFinish={submit}>
@@ -97,7 +89,7 @@ export function TopUpPage() {
             <Button type="primary" size="large" htmlType="submit" loading={create.isPending} block>
               Tạo hóa đơn nạp {amount ? formatVND(amount) : ''}
             </Button>
-            <p className="mt-3 mb-0 text-[13px] text-sc-muted">
+            <p className="mt-3 mb-0 text-[14.5px] text-sc-muted">
               Mỗi thành viên chỉ có tối đa 3 hóa đơn đang chờ thanh toán. Hóa đơn hết hạn sau{' '}
               {settings.data?.invoiceExpiryMinutes ?? 15} phút; chuyển khoản trễ vẫn được cộng nếu đúng nội dung và số
               tiền.
@@ -125,7 +117,7 @@ export function TopUpPage() {
                     >
                       <span className="flex flex-col">
                         <span className="font-semibold tabular-nums">{formatVND(invoice.amount)}</span>
-                        <span className="text-[13px] text-sc-muted">{formatDateTime(invoice.createdAt)}</span>
+                        <span className="text-[14.5px] text-sc-muted">{formatDateTime(invoice.createdAt)}</span>
                       </span>
                       <MappedTag value={invoice.status} map={INVOICE_STATUS_TAG} />
                     </Link>
