@@ -27,16 +27,24 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
     {
       title: 'Mã đơn',
       dataIndex: 'orderNumber',
-      width: 180,
-      render: (value: string) => (
-        <span className="font-mono text-[13px] font-semibold text-sc-ink" title={value}>
-          <Highlight keyword={keyword}>{value}</Highlight>
-        </span>
+      render: (value: string, order) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-[13px] font-semibold text-sc-ink" title={value}>
+            <Highlight keyword={keyword}>{value}</Highlight>
+          </span>
+          <span className="text-[13px] text-sc-muted md:hidden">
+            {dayjs(order.paidAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} · {order.items.length} dịch vụ
+          </span>
+          <span className="md:hidden">
+            <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
+          </span>
+        </div>
       ),
     },
     {
       title: 'Thời gian',
       dataIndex: 'paidAt',
+      responsive: ['md'],
       width: 120,
       render: (value: string) => {
         const dt = dayjs(value).tz(VN_TIMEZONE);
@@ -82,6 +90,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
     {
       title: 'Dịch vụ',
       key: 'items',
+      responsive: ['md'],
       render: (_, order) => (
         <div className="flex flex-wrap gap-1">
           {order.items.map((item) => (
@@ -96,12 +105,12 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       align: 'right',
-      width: 120,
       render: (value: number) => <span className="tabular-nums text-sc-ink whitespace-nowrap">{formatVND(value)}</span>,
     },
     {
       title: 'Thanh toán',
       dataIndex: 'paymentMethod',
+      responsive: ['md'],
       width: 110,
       render: (method: Order['paymentMethod']) => (
         <span className="whitespace-nowrap">{PAYMENT_METHOD_LABEL[method]}</span>
@@ -110,7 +119,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
     {
       title: 'Trạng thái',
       key: 'status',
-      width: 140,
+      responsive: ['md'],
       render: (_, order) => (
         <div className="flex flex-col items-start gap-0.5">
           <MappedTag value={order.status} map={ORDER_STATUS_TAG} />

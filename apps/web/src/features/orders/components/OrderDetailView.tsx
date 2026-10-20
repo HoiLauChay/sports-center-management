@@ -216,7 +216,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               label: (
                 <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
                   <LayoutGrid size={15} />
-                  Chi tiết đơn hàng
+                  Chi tiết
                 </span>
               ),
             },
@@ -225,7 +225,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               label: (
                 <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
                   <FileText size={15} />
-                  Bản in hóa đơn (PDF)
+                  Bản in PDF
                 </span>
               ),
             },
