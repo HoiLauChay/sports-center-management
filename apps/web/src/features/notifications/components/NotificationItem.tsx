@@ -1,6 +1,17 @@
 import type { AppNotification, NotificationType } from '@sports-center/shared';
-import { BadgeCheck, Bell, CalendarCheck, CreditCard, Dumbbell, LifeBuoy, School, type LucideIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeCheck,
+  Bell,
+  CalendarCheck,
+  CreditCard,
+  Dumbbell,
+  LifeBuoy,
+  School,
+  type LucideIcon,
+} from 'lucide-react';
 import { formatRelative } from '~/lib/format';
+import { notificationActionLabel } from '../utils/notificationTarget';
 
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   PAYMENT: CreditCard,
@@ -24,36 +35,46 @@ const TYPE_TONE: Record<NotificationType, string> = {
 
 interface NotificationItemProps {
   notification: AppNotification;
-  compact?: boolean;
   onOpen: (notification: AppNotification) => void;
 }
 
-export function NotificationItem({ notification, compact = false, onOpen }: NotificationItemProps) {
+export function NotificationItem({ notification, onOpen }: NotificationItemProps) {
   const Icon = TYPE_ICON[notification.type] ?? Bell;
   const unread = !notification.readAt;
+  const action = notificationActionLabel(notification);
 
   return (
     <button
       type="button"
       onClick={() => onOpen(notification)}
       aria-label={`${unread ? 'Chưa đọc: ' : ''}${notification.title}`}
-      className={`flex w-full cursor-pointer items-start gap-3 border-0 border-b border-b-sc-border-soft px-4 text-left [font:inherit] text-sc-ink [transition:background_0.15s] last:border-b-0 ${compact ? 'py-2.5' : 'py-3.5'} bg-transparent hover:bg-sc-paper`}
+      className="group flex w-full cursor-pointer items-start gap-3 border-0 border-b border-b-sc-border-soft bg-transparent px-5 py-4 text-left [font:inherit] text-sc-ink [transition:background_0.15s] last:border-b-0 hover:bg-sc-paper"
     >
       <span
-        className={`flex shrink-0 items-center justify-center rounded-lg ${compact ? 'size-[30px]' : 'size-[34px]'} ${TYPE_TONE[notification.type] ?? TYPE_TONE.SYSTEM}`}
+        className={`flex size-[38px] shrink-0 items-center justify-center rounded-lg ${TYPE_TONE[notification.type] ?? TYPE_TONE.SYSTEM}`}
       >
-        <Icon size={compact ? 15 : 17} />
+        <Icon size={18} />
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className={`text-[14px] ${unread ? 'font-bold text-sc-ink' : 'font-medium text-sc-ink-2'}`}>
-          {notification.title}
+      <span className="flex min-w-0 flex-1 flex-col gap-1 md:flex-row md:items-start md:gap-6">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="flex items-center gap-2">
+            <span className={`text-[15px] ${unread ? 'font-bold text-sc-ink' : 'font-medium text-sc-ink-2'}`}>
+              {notification.title}
+            </span>
+            {unread && <span aria-hidden className="size-2 shrink-0 rounded-full bg-sc-accent" />}
+          </span>
+          <span className="text-[14px] text-sc-muted wrap-anywhere">{notification.message}</span>
         </span>
-        <span className={`text-[13px] text-sc-muted ${compact ? 'truncate' : 'wrap-anywhere'}`}>
-          {notification.message}
+        <span className="flex shrink-0 items-center gap-3 text-[13px] md:w-56 md:justify-end">
+          <span className="text-sc-muted-2 tabular-nums">{formatRelative(notification.createdAt)}</span>
+          {action && (
+            <span className="flex items-center gap-1 font-semibold text-sc-primary">
+              {action}
+              <ArrowRight size={14} className="[transition:transform_0.15s] group-hover:translate-x-0.5" />
+            </span>
+          )}
         </span>
-        <span className="text-[13px] text-sc-muted-2">{formatRelative(notification.createdAt)}</span>
       </span>
-      {unread && <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-sc-accent" />}
     </button>
   );
 }

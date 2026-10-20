@@ -1,9 +1,11 @@
+import type { AppNotification } from '@sports-center/shared';
 import { getRouteApi } from '@tanstack/react-router';
 import { Button, Card, Segmented, Skeleton } from 'antd';
 import { CheckCheck } from 'lucide-react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
+import { addDays, todayVN, vnDate } from '~/lib/time';
 import {
   useMarkAllRead,
   useNotificationFeed,
@@ -13,6 +15,20 @@ import {
 import { NotificationItem } from './NotificationItem';
 
 const routeApi = getRouteApi('/_authenticated/notifications');
+
+function groupByDay(items: AppNotification[]) {
+  const today = todayVN();
+  const yesterday = addDays(today, -1);
+  const groups: { label: string; items: AppNotification[] }[] = [];
+  for (const item of items) {
+    const day = vnDate(item.createdAt);
+    const label = day === today ? 'Hôm nay' : day === yesterday ? 'Hôm qua' : 'Trước đó';
+    const last = groups.at(-1);
+    if (last?.label === label) last.items.push(item);
+    else groups.push({ label, items: [item] });
+  }
+  return groups;
+}
 
 export function NotificationsPage() {
   const { unread: unreadOnly = false } = routeApi.useSearch();
@@ -67,8 +83,15 @@ export function NotificationsPage() {
           </div>
         ) : (
           <>
-            {feed.items.map((item) => (
-              <NotificationItem key={item.id} notification={item} onOpen={openNotification} />
+            {groupByDay(feed.items).map((group) => (
+              <section key={group.label}>
+                <h3 className="m-0 border-b border-sc-border-soft bg-sc-paper/60 px-5 py-2 font-display text-[13px] font-bold tracking-[0.08em] text-sc-muted uppercase">
+                  {group.label}
+                </h3>
+                {group.items.map((item) => (
+                  <NotificationItem key={item.id} notification={item} onOpen={openNotification} />
+                ))}
+              </section>
             ))}
             {feed.hasNextPage && (
               <div className="border-t border-sc-border-soft p-3 text-center">
