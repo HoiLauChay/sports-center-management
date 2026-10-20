@@ -66,12 +66,12 @@ export function UserStatusModal({ user, target, open, onClose }: UserStatusModal
       }}
       destroyOnHidden
     >
-      <p className="mt-0 mb-4 text-sm text-sc-muted">
+      <p className="mt-0 mb-4 text-[15px] text-sc-muted">
         <span className="font-semibold text-sc-ink">{user.fullName}</span> · {user.email}
       </p>
       {deactivating && user.role === 'COACH' && <Alert type="warning" showIcon className="!mb-4" title={COACH_NOTE} />}
       {deactivating && (
-        <p className="text-sm text-sc-muted">Tài khoản sẽ bị đăng xuất khỏi mọi phiên và không thể đăng nhập.</p>
+        <p className="text-[15px] text-sc-muted">Tài khoản sẽ bị đăng xuất khỏi mọi phiên và không thể đăng nhập.</p>
       )}
       {error && <Alert type="error" showIcon className="!mb-4" title={error} />}
       <Form layout="vertical" requiredMark={false} disabled={mutation.isPending}>

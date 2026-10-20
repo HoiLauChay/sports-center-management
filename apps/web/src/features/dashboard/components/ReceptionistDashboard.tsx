@@ -89,7 +89,7 @@ export function ReceptionistDashboard() {
           <div className="flex items-center gap-2">
             <span>Buổi học hôm nay</span>
             {sessions.data && sessions.data.length > 0 && (
-              <span className="text-xs font-normal text-sc-muted">({sessions.data.length} buổi)</span>
+              <span className="text-[13.5px] font-normal text-sc-muted">({sessions.data.length} buổi)</span>
             )}
           </div>
         }
@@ -113,23 +113,23 @@ export function ReceptionistDashboard() {
                 <div className="flex items-center gap-4 min-w-0">
                   {/* Time block */}
                   <div className="flex flex-col items-center justify-center shrink-0 w-[114px] py-1.5 px-2 rounded-lg bg-emerald-50/80 border border-emerald-200/70 text-center">
-                    <span className="font-mono text-[13.5px] font-bold text-emerald-800 tracking-tight">
+                    <span className="font-mono text-[15px] font-bold text-emerald-800 tracking-tight">
                       {session.startTime}
                     </span>
-                    <span className="text-[11px] font-medium text-emerald-600/90">đến {session.endTime}</span>
+                    <span className="text-[12.5px] font-medium text-emerald-600/90">đến {session.endTime}</span>
                   </div>
 
                   {/* Info */}
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sc-ink text-[14.5px] group-hover:text-emerald-700 transition-colors">
+                      <span className="font-semibold text-sc-ink text-[15.5px] group-hover:text-emerald-700 transition-colors">
                         {session.class.name}
                       </span>
-                      <Tag color="cyan" className="!m-0 text-xs font-normal">
+                      <Tag color="cyan" className="!m-0 text-[13.5px] font-normal">
                         {session.facility.name}
                       </Tag>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-sc-muted flex-wrap">
+                    <div className="flex items-center gap-4 text-[13.5px] text-sc-muted flex-wrap">
                       <span className="flex items-center gap-1.5">
                         <User size={13} className="text-slate-400" />
                         <span>
@@ -156,7 +156,7 @@ export function ReceptionistDashboard() {
                 {/* Quick Action */}
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                   <Link to="/reception/checkin">
-                    <Button size="small" className="text-xs font-medium">
+                    <Button size="small" className="text-[13.5px] font-medium">
                       Điểm danh
                     </Button>
                   </Link>
@@ -179,7 +179,9 @@ export function ReceptionistDashboard() {
         title={
           <div className="flex items-center gap-2">
             <span>Booking sắp tới hôm nay</span>
-            {upcoming.length > 0 && <span className="text-xs font-normal text-sc-muted">({upcoming.length} lượt)</span>}
+            {upcoming.length > 0 && (
+              <span className="text-[13.5px] font-normal text-sc-muted">({upcoming.length} lượt)</span>
+            )}
           </div>
         }
         className="!mt-6 overflow-hidden rounded-xl border border-slate-200/80 shadow-sm"
@@ -188,7 +190,7 @@ export function ReceptionistDashboard() {
           body: { padding: 0 },
         }}
         extra={
-          <Link to="/reception/bookings" className="text-[13px] font-medium text-emerald-700 hover:text-emerald-800">
+          <Link to="/reception/bookings" className="text-[14.5px] font-medium text-emerald-700 hover:text-emerald-800">
             Lưới sân →
           </Link>
         }
@@ -207,30 +209,30 @@ export function ReceptionistDashboard() {
                 <div className="flex items-center gap-4 min-w-0">
                   {/* Time block */}
                   <div className="flex flex-col items-center justify-center shrink-0 w-[114px] py-1.5 px-2 rounded-lg bg-blue-50/80 border border-blue-200/70 text-center">
-                    <span className="font-mono text-[13.5px] font-bold text-blue-800 tracking-tight">
+                    <span className="font-mono text-[15px] font-bold text-blue-800 tracking-tight">
                       {booking.startTime}
                     </span>
-                    <span className="text-[11px] font-medium text-blue-600/90">đến {booking.endTime}</span>
+                    <span className="text-[12.5px] font-medium text-blue-600/90">đến {booking.endTime}</span>
                   </div>
 
                   {/* Info */}
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sc-ink text-[14.5px] group-hover:text-blue-700 transition-colors">
+                      <span className="font-semibold text-sc-ink text-[15.5px] group-hover:text-blue-700 transition-colors">
                         {booking.facility.name}
                       </span>
-                      <Tag color="blue" className="!m-0 text-xs font-normal">
+                      <Tag color="blue" className="!m-0 text-[13.5px] font-normal">
                         Đặt sân
                       </Tag>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-sc-muted">
+                    <div className="flex items-center gap-1.5 text-[13.5px] text-sc-muted">
                       <User size={13} className="text-slate-400 shrink-0" />
                       <span>Khách hàng:</span>
                       {booking.account ? (
                         <span className="font-medium text-sc-ink">{booking.account.fullName}</span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5">
-                          <Tag color="orange" className="!m-0 text-[11px] px-1 py-0 leading-tight">
+                          <Tag color="orange" className="!m-0 text-[12.5px] px-1 py-0 leading-tight">
                             Vãng lai
                           </Tag>
                           <span className="font-medium text-sc-ink">{booking.guestName}</span>
@@ -243,17 +245,17 @@ export function ReceptionistDashboard() {
                 {/* Right side: Price & Check-in */}
                 <div className="flex items-center gap-4 shrink-0 self-end sm:self-center">
                   <div className="flex flex-col items-end">
-                    <span className="font-semibold tabular-nums text-sc-ink text-sm">
+                    <span className="font-semibold tabular-nums text-sc-ink text-[15px]">
                       {booking.paidAmount === null ? 'Theo gói' : formatVND(booking.paidAmount)}
                     </span>
                     {BENEFIT_TAG[booking.benefit] && (
-                      <Tag color="success" className="!m-0 text-[11px] mt-0.5">
+                      <Tag color="success" className="!m-0 text-[12.5px] mt-0.5">
                         {BENEFIT_TAG[booking.benefit]}
                       </Tag>
                     )}
                   </div>
                   <Link to="/reception/checkin">
-                    <Button size="small" type="primary" className="text-xs font-medium">
+                    <Button size="small" type="primary" className="text-[13.5px] font-medium">
                       Check-in
                     </Button>
                   </Link>

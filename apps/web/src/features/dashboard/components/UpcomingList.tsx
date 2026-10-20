@@ -25,7 +25,7 @@ export function UpcomingList({ events, loading, empty, action }: UpcomingListPro
             <span className={`h-9 w-1 shrink-0 rounded ${KIND_STYLE[event.kind].dot}`} />
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-semibold">{event.title}</span>
-              <span className="text-[13px] text-sc-muted">
+              <span className="text-[14.5px] text-sc-muted">
                 {formatDayLabel(event.date)} · {event.startTime}–{event.endTime}
                 {event.subtitle ? ` · ${event.subtitle}` : ''}
               </span>

@@ -171,7 +171,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
                   : 'border-sc-border bg-white text-sc-ink-2 hover:border-sc-primary-border hover:bg-sc-primary-soft'
               }`}
             >
-              <span className="text-[12px] opacity-70">{day === today ? 'Hôm nay' : DAY_SHORT[current.day()]}</span>
+              <span className="text-[13.5px] opacity-70">{day === today ? 'Hôm nay' : DAY_SHORT[current.day()]}</span>
               <span className="text-[16px] font-bold">{current.format('DD')}</span>
             </button>
           );
@@ -195,7 +195,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
             <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">
               {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
             </h3>
-            <span className="flex items-center gap-1 text-[13px] text-sc-muted" role="status">
+            <span className="flex items-center gap-1 text-[14.5px] text-sc-muted" role="status">
               {schedule.updatedAt ? `Cập nhật ${dayjs(schedule.updatedAt).format('HH:mm')}` : 'Đang tải lịch'}
               <Button
                 type="text"
@@ -230,23 +230,23 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         </div>
 
         <aside className="hidden rounded-xl border border-sc-border-soft bg-sc-paper p-4 lg:sticky lg:top-4 lg:block">
-          <span className="font-display text-[12px] font-bold tracking-[0.12em] text-sc-muted uppercase">
+          <span className="font-display text-[13.5px] font-bold tracking-[0.12em] text-sc-muted uppercase">
             Slot đã chọn
           </span>
           {!selected ? (
             <div className="mt-2 text-sc-muted">
               <h3 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">Chưa chọn</h3>
-              <p className="mt-1 mb-0 text-[13px]">Bấm một ô còn trống; bấm ô kề bên để kéo dài, tối đa 3 slot.</p>
+              <p className="mt-1 mb-0 text-[14.5px]">Bấm một ô còn trống; bấm ô kề bên để kéo dài, tối đa 3 slot.</p>
             </div>
           ) : (
             <div className="mt-2 flex flex-col gap-3">
               <div>
                 <h3 className="m-0 font-display text-[22px] font-extrabold uppercase">{selected.facility.name}</h3>
-                <div className="text-[13px] text-sc-muted">
+                <div className="text-[14.5px] text-sc-muted">
                   {formatDayLabel(date)} · {selected.startTime}–{selected.endTime}
                 </div>
               </div>
-              <div className="text-[14px]">
+              <div className="text-[15px]">
                 <div className="flex justify-between border-b border-sc-border-soft py-1.5">
                   <span>Giá niêm yết</span>
                   <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
@@ -283,10 +283,10 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               <span className="truncate font-semibold">
                 {selected.facility.name} · {selected.startTime}–{selected.endTime}
               </span>
-              <span className="text-[13px] text-sc-muted">
+              <span className="text-[14.5px] text-sc-muted">
                 {formatDayLabel(date)} · <span className="font-semibold text-sc-ink tabular-nums">{total}</span>
               </span>
-              {line && !line.valid && <span className="text-[13px] text-sc-error">{line.error?.message}</span>}
+              {line && !line.valid && <span className="text-[14.5px] text-sc-error">{line.error?.message}</span>}
             </div>
             <Button type="text" aria-label="Bỏ chọn" icon={<X size={18} />} onClick={() => setSelection(null)} />
             <Button type="primary" disabled={!canAdd} onClick={add}>

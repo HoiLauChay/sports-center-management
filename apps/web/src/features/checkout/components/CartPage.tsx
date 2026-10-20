@@ -160,7 +160,7 @@ export function CartPage() {
                     Thanh toán bằng ví · {formatVND(quote.total)}
                   </Button>
                   {!quote.canCheckout && (
-                    <p className="mt-2 mb-0 text-[13px] text-sc-error">{blockedReason(quote)} để thanh toán.</p>
+                    <p className="mt-2 mb-0 text-[14.5px] text-sc-error">{blockedReason(quote)} để thanh toán.</p>
                   )}
                 </>
               ) : (
@@ -175,7 +175,7 @@ export function CartPage() {
           <div className="h-16 md:hidden" />
           <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] md:hidden">
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="text-[13px] text-sc-muted">Phải trả</span>
+              <span className="text-[14.5px] text-sc-muted">Phải trả</span>
               <span className="font-semibold tabular-nums">{formatVND(quote.total)}</span>
             </div>
             {insufficient ? (

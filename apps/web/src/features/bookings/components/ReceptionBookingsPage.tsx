@@ -77,7 +77,7 @@ export function ReceptionBookingsPage() {
                 type={date === todayVN() ? 'primary' : 'text'}
                 size="small"
                 onClick={() => setDate(todayVN())}
-                className="!h-7 text-xs font-medium"
+                className="!h-7 text-[13.5px] font-medium"
               >
                 Hôm nay
               </Button>
@@ -125,12 +125,12 @@ export function ReceptionBookingsPage() {
           <div className="flex items-center gap-2">
             <h3 className="font-display text-[17px] font-bold uppercase text-sc-ink m-0">{formatDayLabel(date)}</h3>
             {date === todayVN() && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12.5px] font-semibold text-emerald-800">
                 Hôm nay
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-sc-muted">
+          <div className="flex items-center gap-2 text-[13.5px] text-sc-muted">
             <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>
               {schedule.updatedAt ? `Cập nhật lúc ${dayjs(schedule.updatedAt).format('HH:mm:ss')} · ` : ''}Tự động làm

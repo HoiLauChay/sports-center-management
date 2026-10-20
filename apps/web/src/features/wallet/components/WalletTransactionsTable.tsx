@@ -40,8 +40,8 @@ const columns: TableColumnsType<WalletTransaction> = [
           </span>
           {describe(transaction)}
         </span>
-        <span className="text-[13px] text-sc-muted md:hidden">{formatDateTime(transaction.createdAt)}</span>
-        <span className="text-[13px] text-sc-muted-2 [overflow-wrap:anywhere]">
+        <span className="text-[14.5px] text-sc-muted md:hidden">{formatDateTime(transaction.createdAt)}</span>
+        <span className="text-[14.5px] text-sc-muted-2 [overflow-wrap:anywhere]">
           {transaction.transactionCode}
           {transaction.method && ` · ${PAYMENT_METHOD_LABEL[transaction.method]}`}
           {transaction.createdBy && ` · ${transaction.createdBy.fullName}`}
@@ -50,7 +50,7 @@ const columns: TableColumnsType<WalletTransaction> = [
           <Link
             to="/orders/$orderId"
             params={{ orderId: transaction.orderId }}
-            className="text-[13px] font-semibold underline underline-offset-2"
+            className="text-[14.5px] font-semibold underline underline-offset-2"
           >
             Xem đơn hàng
           </Link>
@@ -68,7 +68,7 @@ const columns: TableColumnsType<WalletTransaction> = [
       >
         {transaction.type === 'PAYMENT' ? '−' : '+'}
         {formatVND(transaction.amount)}
-        <span className="block text-[13px] font-normal text-sc-muted md:hidden">
+        <span className="block text-[14.5px] font-normal text-sc-muted md:hidden">
           Số dư {formatVND(transaction.balanceAfter)}
         </span>
       </span>

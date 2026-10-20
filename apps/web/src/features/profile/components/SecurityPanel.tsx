@@ -19,7 +19,7 @@ function SettingsSection({
     <div className="grid gap-x-10 gap-y-4 @2xl:grid-cols-[220px_minmax(0,1fr)]">
       <div>
         <SectionTitle>{title}</SectionTitle>
-        <p className="m-0 text-sm leading-[1.55] text-sc-muted">{description}</p>
+        <p className="m-0 text-[15px] leading-[1.55] text-sc-muted">{description}</p>
       </div>
       <div>{children}</div>
     </div>
@@ -109,8 +109,8 @@ export function SecurityPanel() {
       >
         <div className="flex flex-wrap items-center gap-4 rounded-[10px] border border-red-200 bg-red-50 px-5 py-4">
           <div className="min-w-0 flex-[1_1_220px]">
-            <div className="text-sm font-semibold">Đăng xuất khỏi mọi thiết bị</div>
-            <div className="mt-0.5 text-[13px] text-sc-muted">
+            <div className="text-[15px] font-semibold">Đăng xuất khỏi mọi thiết bị</div>
+            <div className="mt-0.5 text-[14.5px] text-sc-muted">
               Mọi phiên đăng nhập, kể cả thiết bị này, sẽ kết thúc ngay.
             </div>
           </div>

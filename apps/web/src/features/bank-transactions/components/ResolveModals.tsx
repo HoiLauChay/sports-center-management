@@ -7,7 +7,7 @@ import { useIgnoreBankTransaction, useResolveBankTransaction } from '../hooks/us
 
 function Summary({ transaction }: { transaction: BankTransaction }) {
   return (
-    <div className="mb-4 rounded-lg bg-sc-paper px-4 py-3 text-[13px]">
+    <div className="mb-4 rounded-lg bg-sc-paper px-4 py-3 text-[14.5px]">
       <div className="flex justify-between gap-3">
         <b className="text-[16px] tabular-nums">{formatVND(transaction.amount)}</b>
         <span className="text-sc-muted">{formatDateTime(transaction.transactionDate)}</span>
@@ -79,7 +79,7 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
           />
         </Form.Item>
       </Form>
-      <p className="m-0 text-xs text-sc-muted-2">
+      <p className="m-0 text-[13.5px] text-sc-muted-2">
         Hệ thống cộng đúng số tiền của giao dịch vào ví thành viên, ghi nhật ký và gửi thông báo cho họ. Mỗi giao dịch
         chỉ được cộng một lần.
       </p>

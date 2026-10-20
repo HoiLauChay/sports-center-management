@@ -193,7 +193,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
                 const percent = totals.revenue ? Math.round((value / totals.revenue) * 100) : 0;
                 return (
                   <li key={method}>
-                    <div className="mb-1 flex justify-between text-[13.5px]">
+                    <div className="mb-1 flex justify-between text-[15px]">
                       <span>{PAYMENT_METHOD_LABEL[method]}</span>
                       <b className="tabular-nums">
                         {formatVND(value)} <span className="font-normal text-sc-muted">({percent}%)</span>

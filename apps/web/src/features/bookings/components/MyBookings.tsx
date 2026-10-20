@@ -29,7 +29,7 @@ function BookingsTab() {
       render: (_, booking) => (
         <div className="flex flex-col gap-1">
           <span className="font-semibold text-sc-ink">{booking.facility.name}</span>
-          <span className="text-[13px] text-sc-muted md:hidden">
+          <span className="text-[14.5px] text-sc-muted md:hidden">
             {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
           </span>
           {(booking.packageId || BENEFIT_TEXT[booking.benefit]) && (
@@ -143,7 +143,7 @@ function PackagesTab() {
       render: (_, item) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-semibold text-sc-ink">{item.facility.name}</span>
-          <span className="text-[13px] text-sc-muted md:hidden">
+          <span className="text-[14.5px] text-sc-muted md:hidden">
             {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
               .map((day) => DAY_SHORT[day])
               .join('/')}{' '}

@@ -85,7 +85,7 @@ export function NotificationsPage() {
           <>
             {groupByDay(feed.items).map((group) => (
               <section key={group.label}>
-                <h3 className="m-0 border-b border-sc-border-soft bg-sc-paper/60 px-5 py-2 font-display text-[13px] font-bold tracking-[0.08em] text-sc-muted uppercase">
+                <h3 className="m-0 border-b border-sc-border-soft bg-sc-paper/60 px-5 py-2 font-display text-[14.5px] font-bold tracking-[0.08em] text-sc-muted uppercase">
                   {group.label}
                 </h3>
                 {group.items.map((item) => (

@@ -25,7 +25,7 @@ function ClassPicker({ onAdd }: PickerProps) {
       render: (_, item) => (
         <div className="flex min-w-44 flex-col">
           <b>{item.name}</b>
-          <span className="text-[13px] text-sc-muted">HLV {item.coach?.fullName ?? '—'}</span>
+          <span className="text-[14.5px] text-sc-muted">HLV {item.coach?.fullName ?? '—'}</span>
         </div>
       ),
     },
@@ -90,7 +90,7 @@ function MembershipPicker({ onAdd }: PickerProps) {
           render: (_, plan) => (
             <div className="flex min-w-40 flex-col">
               <b>{plan.name}</b>
-              <span className="text-[13px] text-sc-muted">{plan.durationDays} ngày</span>
+              <span className="text-[14.5px] text-sc-muted">{plan.durationDays} ngày</span>
             </div>
           ),
         },
@@ -98,7 +98,7 @@ function MembershipPicker({ onAdd }: PickerProps) {
           title: 'Quyền lợi',
           key: 'benefits',
           render: (_, plan) => (
-            <span className="text-[13px]">
+            <span className="text-[14.5px]">
               {plan.gymAccess ? 'Gym miễn phí · ' : ''}−{plan.bookingDiscountPct}% sân · −{plan.classDiscountPct}% lớp ·{' '}
               {plan.freeBookingSlotsPerMonth} slot free/tháng
             </span>

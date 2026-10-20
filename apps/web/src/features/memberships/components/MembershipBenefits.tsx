@@ -28,7 +28,7 @@ export function MembershipBenefits({ benefits }: { benefits: Benefits }) {
   return (
     <ul className="m-0 flex list-none flex-col gap-3 p-0">
       {rows.map(({ enabled, label }) => (
-        <li key={label} className={`flex items-start gap-2 text-sm ${enabled ? 'text-sc-ink-2' : 'text-sc-muted'}`}>
+        <li key={label} className={`flex items-start gap-2 text-[15px] ${enabled ? 'text-sc-ink-2' : 'text-sc-muted'}`}>
           {enabled ? (
             <Check size={17} className="mt-0.5 shrink-0 text-sc-primary" aria-hidden />
           ) : (

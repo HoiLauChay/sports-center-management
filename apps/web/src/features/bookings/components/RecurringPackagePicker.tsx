@@ -136,7 +136,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="font-semibold text-sc-ink">Thứ trong tuần</span>
-            <span className="text-[13px] text-sc-muted">
+            <span className="text-[14.5px] text-sc-muted">
               {days.length === 0 ? (
                 <span>Chọn ít nhất một thứ</span>
               ) : (
@@ -228,7 +228,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             />
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-[13px] text-sc-muted">
+                <div className="text-[14.5px] text-sc-muted">
                   Tổng gói ({preview.data?.bookings.length ?? 0} buổi, giá {formatVND(preview.data?.unitPrice ?? 0)}
                   /buổi)
                 </div>

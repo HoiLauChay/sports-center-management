@@ -7,7 +7,7 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
   const appliedCoupons = quote.coupons.filter(({ applied }) => applied);
 
   return (
-    <div className="flex flex-col text-[13.5px]">
+    <div className="flex flex-col text-[15px]">
       <div className="divide-y divide-sc-border-soft">
         <div className="flex items-center justify-between gap-4 py-2">
           <span className="text-sc-ink-2">Tạm tính</span>
@@ -51,7 +51,7 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
       </div>
 
       <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-sc-border pt-3">
-        <span className="text-[14px] font-semibold text-sc-ink">Phải trả</span>
+        <span className="text-[15px] font-semibold text-sc-ink">Phải trả</span>
         <span className="whitespace-nowrap font-display text-[22px] font-extrabold tabular-nums text-sc-ink">
           <MoneyFigure amount={quote.total} />
         </span>

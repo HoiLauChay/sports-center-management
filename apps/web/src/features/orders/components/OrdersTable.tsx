@@ -29,10 +29,10 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       dataIndex: 'orderNumber',
       render: (value: string, order) => (
         <div className="flex flex-col gap-0.5">
-          <span className="font-mono text-[13px] font-semibold text-sc-ink" title={value}>
+          <span className="font-mono text-[14.5px] font-semibold text-sc-ink" title={value}>
             <Highlight keyword={keyword}>{value}</Highlight>
           </span>
-          <span className="text-[13px] text-sc-muted md:hidden">
+          <span className="text-[14.5px] text-sc-muted md:hidden">
             {dayjs(order.paidAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} · {order.items.length} dịch vụ
           </span>
           <span className="md:hidden">
@@ -51,7 +51,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
         return (
           <div className="flex flex-col leading-tight">
             <span className="text-sc-ink tabular-nums">{dt.format('HH:mm')}</span>
-            <span className="text-[13px] text-sc-muted tabular-nums">{dt.format('DD/MM/YYYY')}</span>
+            <span className="text-[14.5px] text-sc-muted tabular-nums">{dt.format('DD/MM/YYYY')}</span>
           </div>
         );
       },
@@ -68,7 +68,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
                   <Highlight keyword={keyword}>{order.account.fullName}</Highlight>
                 </span>
               ) : (
-                <div className="flex flex-col gap-0.5 text-[13px]">
+                <div className="flex flex-col gap-0.5 text-[14.5px]">
                   <div className="flex items-center gap-1.5">
                     <Tag color="orange" className="!m-0">
                       Khách
@@ -78,7 +78,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
                     </span>
                   </div>
                   {order.guestPhone && (
-                    <span className="text-[13px] text-sc-muted">
+                    <span className="text-[14.5px] text-sc-muted">
                       <Highlight keyword={keyword}>{order.guestPhone}</Highlight>
                     </span>
                   )}
@@ -124,7 +124,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
         <div className="flex flex-col items-start gap-0.5">
           <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
           {refundedOf(order) > 0 && (
-            <span className="text-[13px] text-sc-error font-medium">Đã hoàn {formatVND(refundedOf(order))}</span>
+            <span className="text-[14.5px] text-sc-error font-medium">Đã hoàn {formatVND(refundedOf(order))}</span>
           )}
         </div>
       ),

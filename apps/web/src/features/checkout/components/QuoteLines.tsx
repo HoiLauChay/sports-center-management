@@ -37,7 +37,7 @@ function Breakdown({ item }: { item: QuoteLine }) {
   ].filter(Boolean);
   if (!parts.length) return null;
   return (
-    <div className="flex flex-col items-end gap-0.5 text-[13px] tabular-nums">
+    <div className="flex flex-col items-end gap-0.5 text-[14.5px] tabular-nums">
       <span className="text-sc-muted line-through">{formatVND(item.subtotal)}</span>
       {parts.map((part) => (
         <span key={part as string} className="text-sc-success">
@@ -66,9 +66,9 @@ export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }
                 <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[line.selection.type]}</Tag>
                 <span className="font-semibold [overflow-wrap:anywhere]">{description?.title ?? 'Đang tính giá…'}</span>
               </div>
-              {description?.detail && <span className="text-[13px] text-sc-muted">{description.detail}</span>}
+              {description?.detail && <span className="text-[14.5px] text-sc-muted">{description.detail}</span>}
               {benefitLabel(item) && (
-                <span className="text-[13px] font-semibold text-sc-success">{benefitLabel(item)}</span>
+                <span className="text-[14.5px] font-semibold text-sc-success">{benefitLabel(item)}</span>
               )}
               {item && !item.valid && (
                 <Alert type="error" showIcon className="!mt-1" title={item.error?.message ?? 'Dịch vụ không hợp lệ'} />

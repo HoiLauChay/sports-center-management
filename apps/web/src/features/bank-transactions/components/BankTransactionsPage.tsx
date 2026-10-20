@@ -62,7 +62,7 @@ function TransactionsTab() {
           <span className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{transaction.content}</Highlight>
           </span>
-          <span className="text-[13px] text-sc-muted-2">
+          <span className="text-[14.5px] text-sc-muted-2">
             {transaction.paymentCode ? (
               <>
                 <Highlight keyword={q}>{`Mã ${transaction.paymentCode}`}</Highlight>
@@ -99,16 +99,16 @@ function TransactionsTab() {
         const member = invoice?.account ?? transaction.resolvedAccount;
         if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
-          <div className="flex max-w-xs flex-col gap-0.5 text-[13px]">
+          <div className="flex max-w-xs flex-col gap-0.5 text-[14.5px]">
             {member ? (
               <span className="font-medium">{member.fullName}</span>
             ) : (
               invoice && <span className="font-medium">Khách vãng lai</span>
             )}
-            {invoice && <span className="text-[13px] text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
+            {invoice && <span className="text-[14.5px] text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
             {transaction.note && <span className="text-sc-muted [overflow-wrap:anywhere]">{transaction.note}</span>}
             {transaction.handledBy && (
-              <span className="text-[13px] text-sc-muted-2">
+              <span className="text-[14.5px] text-sc-muted-2">
                 {transaction.handledBy.fullName}
                 {transaction.handledAt ? ` · ${formatDateTime(transaction.handledAt)}` : ''}
               </span>
@@ -253,7 +253,7 @@ function ReconciliationTab() {
             {day.matched ? 'Khớp' : 'Lệch'}
           </Tag>
           {day.missingReferenceCodes.length > 0 && (
-            <span className="text-[13px] text-sc-muted">
+            <span className="text-[14.5px] text-sc-muted">
               Chưa ghi nhận: {day.missingReferenceCodes.join(', ')} (job đồng bộ sẽ bổ sung)
             </span>
           )}
@@ -276,7 +276,7 @@ function ReconciliationTab() {
           }}
           onChange={(value) => value?.[0] && value[1] && setRange([value[0], value[1]])}
         />
-        <span className="text-[13px] text-sc-muted">
+        <span className="text-[14.5px] text-sc-muted">
           So tổng tiền vào theo ngày (giờ VN) giữa SePay và hệ thống · tối đa 31 ngày.
         </span>
       </div>

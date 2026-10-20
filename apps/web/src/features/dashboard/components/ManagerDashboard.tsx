@@ -36,7 +36,7 @@ function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
   return (
     <div className="flex flex-col gap-5 border-0 border-t border-solid border-sc-border-soft pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
       <div>
-        <div className="text-[13px] font-semibold tracking-wide text-sc-muted uppercase">Tháng này</div>
+        <div className="text-[14.5px] font-semibold tracking-wide text-sc-muted uppercase">Tháng này</div>
         <div className="mt-2 font-display text-[34px] leading-none font-extrabold tabular-nums">
           <MoneyFigure amount={total} />
         </div>
@@ -47,8 +47,8 @@ function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
           return (
             <li key={series.key} className="grid grid-cols-[10px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-2">
               <span className="size-2.5 rounded-full" style={{ background: series.color }} />
-              <span className="truncate text-[14px]">{series.label}</span>
-              <b className="text-[14px] tabular-nums">{formatVND(value)}</b>
+              <span className="truncate text-[15px]">{series.label}</span>
+              <b className="text-[15px] tabular-nums">{formatVND(value)}</b>
               <div className="col-span-2 col-start-2 h-1.5 overflow-hidden rounded-full bg-sc-paper">
                 <div
                   className="h-full rounded-full"
@@ -89,11 +89,11 @@ const classColumns: TableColumnsType<GymClass> = [
             >
               {item.name}
             </Link>
-            <Tag color={tag.color} className="!m-0 px-2 py-0.5 text-xs font-medium">
+            <Tag color={tag.color} className="!m-0 px-2 py-0.5 text-[13.5px] font-medium">
               {tag.label}
             </Tag>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-[13px] text-sc-muted">
+          <div className="flex flex-wrap items-center gap-2 text-[14.5px] text-sc-muted">
             <SportTag name={item.course.sport.name} />
             <span>·</span>
             <span>{item.facility.name}</span>
@@ -124,7 +124,7 @@ const classColumns: TableColumnsType<GymClass> = [
           {item.enrolledCount} / {item.maxStudents} HV
         </span>
         <span
-          className={`text-[13px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+          className={`text-[14.5px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
         >
           (Tối thiểu: {item.minStudents} HV)
         </span>
@@ -154,7 +154,7 @@ const classColumns: TableColumnsType<GymClass> = [
       const state = fillState(item);
       return (
         <div className="py-3">
-          <Tag color={state.color} className="!m-0 px-2 py-0.5 font-medium text-xs">
+          <Tag color={state.color} className="!m-0 px-2 py-0.5 font-medium text-[13.5px]">
             {state.label}
           </Tag>
         </div>
@@ -226,7 +226,7 @@ export function ManagerDashboard() {
       </div>
 
       {(pending.length > 0 || unmatched > 0) && (
-        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[14px]">
+        <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[15px]">
           <TriangleAlert size={15} className="text-[#d48806]" />
           <b>Cần xử lý:</b>
           {pending.length > 0 && (
@@ -249,7 +249,7 @@ export function ManagerDashboard() {
         loading={revenue.isPending}
         styles={{ header: { minHeight: 52 } }}
         extra={
-          <Link to="/admin/reports" className="text-[13px] font-medium">
+          <Link to="/admin/reports" className="text-[14.5px] font-medium">
             Báo cáo chi tiết
           </Link>
         }
@@ -268,7 +268,7 @@ export function ManagerDashboard() {
               <CalendarCheck size={18} className="text-emerald-700 shrink-0" />
               <span className="font-bold text-sc-ink">Buổi học hôm nay</span>
               {sessions.data && sessions.data.length > 0 && (
-                <span className="text-xs font-normal text-sc-muted">({sessions.data.length} buổi)</span>
+                <span className="text-[13.5px] font-normal text-sc-muted">({sessions.data.length} buổi)</span>
               )}
             </div>
           }
@@ -279,7 +279,7 @@ export function ManagerDashboard() {
           extra={
             <Link
               to="/schedule"
-              className="group inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+              className="group inline-flex items-center gap-1 text-[14.5px] font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
             >
               <span>Xem lịch trình</span>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
@@ -306,10 +306,10 @@ export function ManagerDashboard() {
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="flex flex-col items-center justify-center shrink-0 w-[76px] py-1.5 px-1 rounded-lg bg-emerald-50/90 border border-emerald-200/80 text-center">
-                      <span className="font-mono text-[14px] font-bold text-emerald-800 tracking-tight">
+                      <span className="font-mono text-[15px] font-bold text-emerald-800 tracking-tight">
                         {session.startTime}
                       </span>
-                      <span className="text-xs font-medium text-emerald-600/90">đến {session.endTime}</span>
+                      <span className="text-[13.5px] font-medium text-emerald-600/90">đến {session.endTime}</span>
                     </div>
 
                     <div className="flex flex-col gap-1 min-w-0">
@@ -323,7 +323,7 @@ export function ManagerDashboard() {
                         </Link>
                         {session.class.sport && <SportTag name={session.class.sport.name} />}
                       </div>
-                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[14.5px] text-sc-muted flex-wrap">
                         <span className="flex items-center gap-1 text-slate-600">
                           <MapPin size={12} className="text-slate-400 shrink-0" />
                           <span className="truncate">{session.facility.name}</span>
@@ -344,10 +344,10 @@ export function ManagerDashboard() {
 
                   <div className="flex items-center gap-2.5 shrink-0">
                     <div className="hidden sm:flex flex-col items-end text-right">
-                      <span className="text-[13px] font-bold text-sc-ink tabular-nums">
+                      <span className="text-[14.5px] font-bold text-sc-ink tabular-nums">
                         {session.class.enrolledCount} / {session.class.maxStudents} HV
                       </span>
-                      <span className="text-xs text-sc-muted">Sĩ số</span>
+                      <span className="text-[13.5px] text-sc-muted">Sĩ số</span>
                     </div>
                     <Link
                       to="/admin/classes/$classId"
@@ -380,7 +380,7 @@ export function ManagerDashboard() {
           extra={
             <Link
               to="/admin/classes"
-              className="group inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+              className="group inline-flex items-center gap-1 text-[14.5px] font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
             >
               <span>Quản lý lớp</span>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
@@ -420,7 +420,7 @@ export function ManagerDashboard() {
                         </Link>
                         {item.course?.sport && <SportTag name={item.course.sport.name} />}
                       </div>
-                      <div className="flex items-center gap-3 text-[13px] text-sc-muted flex-wrap">
+                      <div className="flex items-center gap-3 text-[14.5px] text-sc-muted flex-wrap">
                         <span>
                           HLV:{' '}
                           <strong className={item.coach ? 'font-medium text-sc-ink' : 'font-medium text-amber-600'}>
@@ -451,7 +451,7 @@ export function ManagerDashboard() {
                     <Link
                       to="/admin/classes/$classId"
                       params={{ classId: item.id }}
-                      className="hidden sm:inline-flex items-center justify-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors"
+                      className="hidden sm:inline-flex items-center justify-center rounded-md bg-emerald-50 px-2.5 py-1 text-[13.5px] font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors"
                     >
                       {item.coach ? 'Duyệt' : 'Phân công'}
                     </Link>

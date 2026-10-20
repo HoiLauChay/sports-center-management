@@ -24,7 +24,7 @@ export function ScheduleClashList({ conflicts }: { conflicts: ScheduleClash[] })
       className="!mb-4"
       title="Lịch học bị trùng"
       description={
-        <ul className="m-0 list-disc pl-4 text-xs">
+        <ul className="m-0 list-disc pl-4 text-[13.5px]">
           {conflicts.map((clash) => (
             <li key={`${clash.date}-${clash.startTime}-${clash.reason}`}>
               <strong>{formatDate(clash.date)}</strong> {clash.startTime}–{clash.endTime}:{' '}

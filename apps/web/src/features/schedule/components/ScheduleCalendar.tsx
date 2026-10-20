@@ -28,7 +28,7 @@ function EventChip({ event, compact, onOpen }: { event: CalendarEvent; compact?:
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full cursor-pointer rounded-md border-0 border-l-[3px] border-solid px-2 py-1 text-left text-[12.5px] leading-snug text-sc-ink ${style.chip} ${event.cancelled ? 'opacity-55' : ''}`}
+      className={`w-full cursor-pointer rounded-md border-0 border-l-[3px] border-solid px-2 py-1 text-left text-[13.5px] leading-snug text-sc-ink ${style.chip} ${event.cancelled ? 'opacity-55' : ''}`}
     >
       <span className={`block font-semibold ${event.cancelled ? 'line-through' : ''} ${compact ? 'truncate' : ''}`}>
         {event.startTime} {event.title}
@@ -82,7 +82,7 @@ export function ScheduleCalendar({
           {loading && <Spin size="small" />}
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-3 text-[13px] text-sc-muted">
+          <div className="flex items-center gap-3 text-[14.5px] text-sc-muted">
             {(Object.keys(KIND_STYLE) as ScheduleKind[])
               .filter((kind) => !legend || legend.includes(kind))
               .map((kind) => KIND_STYLE[kind])
@@ -119,14 +119,14 @@ export function ScheduleCalendar({
                 key={date}
                 className={`flex min-h-24 flex-col gap-1.5 rounded-lg border border-solid p-2 md:min-h-56 ${isToday ? 'border-sc-primary bg-sc-primary-soft/40' : 'border-sc-border-soft'}`}
               >
-                <div className="flex items-baseline justify-between text-[13px]">
+                <div className="flex items-baseline justify-between text-[14.5px]">
                   <span className="font-semibold">{DAY_SHORT[parseDate(date).day()]}</span>
                   <span className={isToday ? 'font-bold text-sc-primary' : 'text-sc-muted'}>
                     {parseDate(date).format('DD/MM')}
                   </span>
                 </div>
                 {list.length === 0 ? (
-                  <span className="text-[12.5px] text-sc-muted-2">—</span>
+                  <span className="text-[13.5px] text-sc-muted-2">—</span>
                 ) : (
                   list.map((event) => <EventChip key={event.key} event={event} onOpen={() => setSelected(event)} />)
                 )}
@@ -136,7 +136,7 @@ export function ScheduleCalendar({
         </div>
       ) : (
         <>
-          <div className="mb-1 hidden grid-cols-7 gap-1 text-center text-[12.5px] font-semibold text-sc-muted md:grid">
+          <div className="mb-1 hidden grid-cols-7 gap-1 text-center text-[13.5px] font-semibold text-sc-muted md:grid">
             {WEEK_ORDER.map((day) => (
               <span key={day}>{DAY_SHORT[day]}</span>
             ))}
@@ -155,7 +155,7 @@ export function ScheduleCalendar({
                   <button
                     type="button"
                     onClick={() => goTo(date)}
-                    className={`w-fit cursor-pointer rounded border-0 bg-transparent px-1 text-[12.5px] ${isToday ? 'bg-sc-primary font-bold text-white' : 'text-inherit'}`}
+                    className={`w-fit cursor-pointer rounded border-0 bg-transparent px-1 text-[13.5px] ${isToday ? 'bg-sc-primary font-bold text-white' : 'text-inherit'}`}
                   >
                     {parseDate(date).date()}
                   </button>
@@ -167,7 +167,7 @@ export function ScheduleCalendar({
                       <button
                         type="button"
                         onClick={() => goTo(date, 'week')}
-                        className="cursor-pointer border-0 bg-transparent p-0 text-left text-[12px] text-sc-primary"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13.5px] text-sc-primary"
                       >
                         +{list.length - MONTH_CHIPS} lịch khác
                       </button>
@@ -177,7 +177,7 @@ export function ScheduleCalendar({
                     <button
                       type="button"
                       onClick={() => goTo(date, 'week')}
-                      className="cursor-pointer border-0 bg-transparent p-0 text-left text-[12px] text-sc-primary md:hidden"
+                      className="cursor-pointer border-0 bg-transparent p-0 text-left text-[13.5px] text-sc-primary md:hidden"
                     >
                       {list.length} lịch
                     </button>

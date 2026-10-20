@@ -72,7 +72,7 @@ export function SidebarNav({
                 <div className="font-display text-[19px] leading-none font-extrabold tracking-[0.02em] text-white uppercase">
                   Sports Center
                 </div>
-                <div className="mt-[3px] text-[11px] text-[rgba(255,255,255,0.4)]">Management System</div>
+                <div className="mt-[3px] text-[12.5px] text-[rgba(255,255,255,0.4)]">Management System</div>
               </div>
             </Link>
             {!mobile && onToggleCollapsed && (
@@ -108,7 +108,7 @@ export function SidebarNav({
         {groups.map((group, index) => (
           <div key={group.title ?? index} className="mt-[10px]">
             {group.title && !collapsed && (
-              <div className="px-3 pt-2 pb-1.5 font-display text-[12px] font-bold tracking-[0.14em] text-[rgba(255,255,255,0.35)] uppercase">
+              <div className="px-3 pt-2 pb-1.5 font-display text-[13.5px] font-bold tracking-[0.14em] text-[rgba(255,255,255,0.35)] uppercase">
                 {group.title}
               </div>
             )}
@@ -120,7 +120,7 @@ export function SidebarNav({
                 <Link
                   to={path}
                   onClick={onNavigate}
-                  className={`group relative mb-0.5 flex h-[38px] items-center gap-2.5 rounded-lg text-[13.5px] font-medium no-underline ![transition:background_0.15s,color_0.15s] ${collapsed ? 'justify-center p-0' : 'px-2.5'} ${active ? `!bg-[rgba(255,255,255,0.08)] !text-white ${collapsed ? '' : "before:absolute before:top-[9px] before:bottom-[9px] before:-left-3 before:w-[3px] before:rounded-[0_3px_3px_0] before:bg-sc-lime before:content-['']"}` : '!text-[rgba(255,255,255,0.66)] hover:!bg-[rgba(255,255,255,0.06)] hover:!text-white'}`}
+                  className={`group relative mb-0.5 flex h-[38px] items-center gap-2.5 rounded-lg text-[15px] font-medium no-underline ![transition:background_0.15s,color_0.15s] ${collapsed ? 'justify-center p-0' : 'px-2.5'} ${active ? `!bg-[rgba(255,255,255,0.08)] !text-white ${collapsed ? '' : "before:absolute before:top-[9px] before:bottom-[9px] before:-left-3 before:w-[3px] before:rounded-[0_3px_3px_0] before:bg-sc-lime before:content-['']"}` : '!text-[rgba(255,255,255,0.66)] hover:!bg-[rgba(255,255,255,0.06)] hover:!text-white'}`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <span
@@ -133,7 +133,7 @@ export function SidebarNav({
                     (collapsed ? (
                       <span className="absolute top-1 right-3 size-2 rounded-full bg-sc-accent-light" />
                     ) : (
-                      <span className="min-w-5 rounded-full bg-sc-accent px-1.5 text-center text-[11.5px] leading-5 font-bold text-white">
+                      <span className="min-w-5 rounded-full bg-sc-accent px-1.5 text-center text-[13px] leading-5 font-bold text-white">
                         {count > 99 ? '99+' : count}
                       </span>
                     ))}

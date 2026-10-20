@@ -25,7 +25,7 @@ const invoiceColumns: TableColumnsType<Invoice> = [
   {
     title: 'Mã thanh toán',
     dataIndex: 'paymentCode',
-    render: (code: string) => <span className="font-mono text-[13px] font-semibold">{code}</span>,
+    render: (code: string) => <span className="font-mono text-[14.5px] font-semibold">{code}</span>,
   },
   {
     title: 'Số tiền',

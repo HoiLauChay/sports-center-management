@@ -13,14 +13,14 @@ export function ScheduleConflictList({ bookings, sessions }: ScheduleConflicts) 
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[13px] text-sc-muted">
+      <span className="text-[14.5px] text-sc-muted">
         {bookings.length} booking · {sessions.length} buổi học
       </span>
       <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {rows.slice(0, MAX_ROWS).map((row) => {
           const Icon = row.kind === 'booking' ? CalendarClock : GraduationCap;
           return (
-            <li key={`${row.kind}-${row.id}`} className="flex items-center gap-2 text-[13px]">
+            <li key={`${row.kind}-${row.id}`} className="flex items-center gap-2 text-[14.5px]">
               <Icon size={14} className="shrink-0 text-sc-muted" />
               <span className="font-semibold">{row.label}</span>
               <span className="text-sc-muted">
@@ -30,7 +30,7 @@ export function ScheduleConflictList({ bookings, sessions }: ScheduleConflicts) 
           );
         })}
       </ul>
-      {hidden > 0 && <span className="text-[13px] text-sc-muted">… và {hidden} lịch khác</span>}
+      {hidden > 0 && <span className="text-[14.5px] text-sc-muted">… và {hidden} lịch khác</span>}
     </div>
   );
 }

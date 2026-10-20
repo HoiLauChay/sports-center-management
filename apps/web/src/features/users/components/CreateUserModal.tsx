@@ -93,7 +93,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
       }}
       destroyOnHidden
     >
-      <p className="mt-0 mb-4 text-sm text-sc-muted">
+      <p className="mt-0 mb-4 text-[15px] text-sc-muted">
         Người dùng nhận hướng dẫn qua email và chọn Quên mật khẩu trên trang đăng nhập để đặt mật khẩu lần đầu.
       </p>
       <Form layout="vertical" requiredMark={false} disabled={mutation.isPending} onFinish={() => void onSubmit()}>

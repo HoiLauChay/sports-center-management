@@ -112,7 +112,9 @@ export function FacilitiesPage() {
         <div className="flex min-w-0 flex-col">
           <span className="font-semibold">{facility.name}</span>
           {facility.description && (
-            <span className="max-w-xs text-[13px] text-sc-muted [overflow-wrap:anywhere]">{facility.description}</span>
+            <span className="max-w-xs text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+              {facility.description}
+            </span>
           )}
         </div>
       ),

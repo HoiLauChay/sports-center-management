@@ -68,7 +68,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
       }`}
     >
       <div
-        className={`mb-3.5 min-h-4 font-display text-[13px] font-bold tracking-[.12em] uppercase ${
+        className={`mb-3.5 min-h-4 font-display text-[14.5px] font-bold tracking-[.12em] uppercase ${
           current ? 'text-sc-primary' : 'text-sc-accent'
         }`}
       >
@@ -77,18 +77,18 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
       <h2 className="m-0 font-display text-[28px] leading-none font-extrabold tracking-[.005em] uppercase [overflow-wrap:anywhere]">
         {plan.name}
       </h2>
-      <p className="mt-1.5 mb-0 min-h-10 text-[13px] text-sc-muted [overflow-wrap:anywhere]">
+      <p className="mt-1.5 mb-0 min-h-10 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
         {plan.description ?? 'Gói thành viên dành cho việc tập luyện tại trung tâm.'}
       </p>
       <div className="mt-[18px] font-display text-[40px] leading-none font-extrabold tracking-[-.01em] tabular-nums [overflow-wrap:anywhere]">
         <MoneyFigure amount={plan.price} />
       </div>
-      <div className="mt-1.5 text-[13px] text-sc-muted tabular-nums">{periodLabel(plan)}</div>
+      <div className="mt-1.5 text-[14.5px] text-sc-muted tabular-nums">{periodLabel(plan)}</div>
       <ul className="mt-[18px] mb-[22px] flex-1 list-none border-t border-sc-border-soft p-0">
         {benefitRows(plan).map(({ label, highlight }) => (
           <li
             key={label}
-            className={`border-b border-sc-border-soft py-[9px] text-sm leading-[1.35] ${
+            className={`border-b border-sc-border-soft py-[9px] text-[15px] leading-[1.35] ${
               highlight ? 'font-semibold text-sc-primary' : ''
             }`}
           >
@@ -96,7 +96,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
           </li>
         ))}
       </ul>
-      {locked && <p className="mt-0 mb-3 text-[13px] text-sc-muted">{lockedReason}</p>}
+      {locked && <p className="mt-0 mb-3 text-[14.5px] text-sc-muted">{lockedReason}</p>}
       <AddToCartButton
         block
         label={buttonLabel}
@@ -160,7 +160,7 @@ export function MembershipPlansPage() {
               <EmptyState title="Chưa có gói đang bán" description="Vui lòng quay lại sau hoặc liên hệ quầy lễ tân." />
             </Card>
           )}
-          <ul className="mt-4 mb-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-sc-muted">
+          <ul className="mt-4 mb-0 flex list-disc flex-col gap-1 pl-5 text-[14.5px] text-sc-muted">
             <li>
               Gia hạn nối tiếp từ ngày hết hạn; gói mua trong cùng đơn chưa giảm giá cho các dòng khác của đơn đó.
             </li>

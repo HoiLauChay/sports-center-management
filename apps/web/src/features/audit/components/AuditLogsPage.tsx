@@ -132,9 +132,9 @@ export function AuditLogsPage() {
       key: 'entity',
       width: 170,
       render: (_, log) => (
-        <div className="flex flex-col text-[13px] leading-tight">
+        <div className="flex flex-col text-[14.5px] leading-tight">
           <span className="text-sc-ink">{AUDIT_ENTITY_LABEL[log.entityType]}</span>
-          <span title={log.entityId} className="font-mono text-[11px] text-sc-muted">
+          <span title={log.entityId} className="font-mono text-[12.5px] text-sc-muted">
             #{log.entityId.slice(0, 8)}
           </span>
         </div>
@@ -143,7 +143,7 @@ export function AuditLogsPage() {
     {
       title: 'Chi tiết',
       key: 'details',
-      render: (_, log) => <span className="text-[13px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
+      render: (_, log) => <span className="text-[14.5px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
     },
   ];
 
@@ -283,7 +283,7 @@ export function AuditLogsPage() {
               </div>
             ) : (
               logs.items.length > 0 && (
-                <p className="mt-4 mb-0 text-center text-xs text-sc-muted">
+                <p className="mt-4 mb-0 text-center text-[13.5px] text-sc-muted">
                   Đã hiển thị hết thao tác trong khoảng thời gian đã chọn.
                 </p>
               )

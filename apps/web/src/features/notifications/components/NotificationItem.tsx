@@ -51,9 +51,9 @@ export function NotificationItem({ notification, onOpen }: NotificationItemProps
             </span>
             {unread && <span aria-hidden className="size-2 shrink-0 rounded-full bg-sc-accent" />}
           </span>
-          <span className="text-[14px] text-sc-muted wrap-anywhere">{notification.message}</span>
+          <span className="text-[15px] text-sc-muted wrap-anywhere">{notification.message}</span>
         </span>
-        <span className="shrink-0 text-[13px] md:text-right">
+        <span className="shrink-0 text-[14.5px] md:text-right">
           <span className="text-sc-muted-2 tabular-nums">{formatRelative(notification.createdAt)}</span>
         </span>
       </span>

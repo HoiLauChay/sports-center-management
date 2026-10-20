@@ -65,7 +65,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
           <h2 className="m-0 font-display text-[30px] leading-[1.05] font-extrabold wrap-anywhere text-sc-ink uppercase max-md:text-[24px]">
             {user.fullName}
           </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[13px] text-sc-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[14.5px] text-sc-muted">
             <RoleTag role={user.role} />
             <span className="inline-flex items-center gap-1.5">
               <span className="size-2 rounded-[999px] bg-sc-success [box-shadow:0_0_0_3px_rgba(22,163,74,0.15)]" />

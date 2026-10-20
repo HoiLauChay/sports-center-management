@@ -73,7 +73,7 @@ function RegisterModal({ open, taken, onClose }: { open: boolean; taken: Set<str
           />
         </Form.Item>
       </Form>
-      <p className="m-0 text-xs text-sc-muted-2">
+      <p className="m-0 text-[13.5px] text-sc-muted-2">
         Mỗi bộ môn chỉ có một yêu cầu đang chờ hoặc đã duyệt; bộ môn đó bị mờ. Bị từ chối thì có thể gửi lại được.
       </p>
     </Modal>
@@ -100,7 +100,9 @@ export function CoachSpecializationsPage() {
       width: 55,
       className: '!pl-5',
       render: (_, __, index) => (
-        <span className="font-mono text-xs font-semibold text-sc-muted-2">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-mono text-[13.5px] font-semibold text-sc-muted-2">
+          {String(index + 1).padStart(2, '0')}
+        </span>
       ),
     },
     {
@@ -140,7 +142,7 @@ export function CoachSpecializationsPage() {
       dataIndex: 'createdAt',
       width: 135,
       render: (value: string) => (
-        <span className="whitespace-nowrap text-xs text-sc-muted">{formatDateTime(value)}</span>
+        <span className="whitespace-nowrap text-[13.5px] text-sc-muted">{formatDateTime(value)}</span>
       ),
     },
     {
@@ -152,15 +154,15 @@ export function CoachSpecializationsPage() {
           return (
             <div className="flex flex-col gap-1 py-1">
               {entry.reviewedAt && (
-                <span className="text-[11px] text-sc-muted-2">Xét duyệt: {formatDateTime(entry.reviewedAt)}</span>
+                <span className="text-[12.5px] text-sc-muted-2">Xét duyệt: {formatDateTime(entry.reviewedAt)}</span>
               )}
               {entry.reviewNote ? (
-                <div className="rounded-md border border-red-200 bg-red-50/90 px-2.5 py-1.5 text-xs text-red-700 leading-snug">
+                <div className="rounded-md border border-red-200 bg-red-50/90 px-2.5 py-1.5 text-[13.5px] text-red-700 leading-snug">
                   <span className="font-semibold">Lý do: </span>
                   <span>{entry.reviewNote}</span>
                 </div>
               ) : (
-                <span className="text-xs text-sc-muted-2">—</span>
+                <span className="text-[13.5px] text-sc-muted-2">—</span>
               )}
             </div>
           );
@@ -168,18 +170,18 @@ export function CoachSpecializationsPage() {
 
         if (entry.status === 'APPROVED') {
           return (
-            <div className="flex flex-col gap-0.5 text-xs py-1">
+            <div className="flex flex-col gap-0.5 text-[13.5px] py-1">
               {entry.reviewedAt && (
-                <span className="text-[11px] text-sc-muted">Duyệt lúc: {formatDateTime(entry.reviewedAt)}</span>
+                <span className="text-[12.5px] text-sc-muted">Duyệt lúc: {formatDateTime(entry.reviewedAt)}</span>
               )}
               {entry.reviewNote ? (
-                <span className="text-xs text-sc-ink [overflow-wrap:anywhere]">{entry.reviewNote}</span>
+                <span className="text-[13.5px] text-sc-ink [overflow-wrap:anywhere]">{entry.reviewNote}</span>
               ) : null}
             </div>
           );
         }
 
-        return <span className="text-xs italic text-sc-muted-2">Đang chờ quản lý xét duyệt...</span>;
+        return <span className="text-[13.5px] italic text-sc-muted-2">Đang chờ quản lý xét duyệt...</span>;
       },
     },
   ];
@@ -243,7 +245,7 @@ export function CoachSpecializationsPage() {
                 </Avatar>
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-sc-ink">{user.fullName}</div>
-                  <div className="flex items-center gap-1.5 text-xs text-sc-muted">
+                  <div className="flex items-center gap-1.5 text-[13.5px] text-sc-muted">
                     <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
                     <span>Huấn luyện viên</span>
                     {user.phone && <span className="truncate">· {user.phone}</span>}
@@ -255,7 +257,7 @@ export function CoachSpecializationsPage() {
 
               {/* Approved Sports */}
               <div className="mb-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-sc-muted">
+                <div className="mb-2 text-[13.5px] font-semibold uppercase tracking-wider text-sc-muted">
                   Bộ môn đã được duyệt ({approved.length})
                 </div>
                 {approved.length > 0 ? (
@@ -263,7 +265,7 @@ export function CoachSpecializationsPage() {
                     {approved.map((entry) => (
                       <div
                         key={entry.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13.5px] font-medium text-emerald-800"
                       >
                         <CheckCircle2 size={13} className="text-emerald-600" />
                         <span>{entry.sport.name}</span>
@@ -271,7 +273,7 @@ export function CoachSpecializationsPage() {
                     ))}
                   </div>
                 ) : (
-                  <Alert type="warning" showIcon title="Chưa có bộ môn nào được duyệt" className="!text-xs" />
+                  <Alert type="warning" showIcon title="Chưa có bộ môn nào được duyệt" className="!text-[13.5px]" />
                 )}
               </div>
 
@@ -280,40 +282,40 @@ export function CoachSpecializationsPage() {
               {/* Qualifications & Experience */}
               <div className="space-y-3.5">
                 <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sc-muted">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold uppercase tracking-wider text-sc-muted">
                     <GraduationCap size={14} className="text-blue-600" />
                     <span>Chứng chỉ chuyên môn</span>
                   </div>
                   {profile?.certifications ? (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs leading-relaxed text-sc-ink">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-[13.5px] leading-relaxed text-sc-ink">
                       {profile.certifications}
                     </div>
                   ) : (
-                    <span className="text-xs text-sc-muted-2">Chưa cập nhật thông tin chứng chỉ</span>
+                    <span className="text-[13.5px] text-sc-muted-2">Chưa cập nhật thông tin chứng chỉ</span>
                   )}
                 </div>
 
                 <div>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sc-muted">
+                  <div className="mb-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold uppercase tracking-wider text-sc-muted">
                     <Briefcase size={14} className="text-amber-600" />
                     <span>Kinh nghiệm huấn luyện</span>
                   </div>
                   {profile?.experience ? (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs leading-relaxed text-sc-ink">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-[13.5px] leading-relaxed text-sc-ink">
                       {profile.experience}
                     </div>
                   ) : (
-                    <span className="text-xs text-sc-muted-2">Chưa cập nhật kinh nghiệm</span>
+                    <span className="text-[13.5px] text-sc-muted-2">Chưa cập nhật kinh nghiệm</span>
                   )}
                 </div>
 
                 {profile?.bio && (
                   <div>
-                    <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sc-muted">
+                    <div className="mb-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold uppercase tracking-wider text-sc-muted">
                       <FileText size={14} className="text-slate-500" />
                       <span>Giới thiệu</span>
                     </div>
-                    <p className="m-0 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs italic leading-relaxed text-sc-muted">
+                    <p className="m-0 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-[13.5px] italic leading-relaxed text-sc-muted">
                       "{profile.bio}"
                     </p>
                   </div>
@@ -322,7 +324,13 @@ export function CoachSpecializationsPage() {
 
               <Divider className="!my-3.5" />
 
-              <Button type="dashed" block icon={<Plus size={14} />} onClick={() => setOpen(true)} className="!text-xs">
+              <Button
+                type="dashed"
+                block
+                icon={<Plus size={14} />}
+                onClick={() => setOpen(true)}
+                className="!text-[13.5px]"
+              >
                 Đăng ký thêm bộ môn
               </Button>
             </Card>

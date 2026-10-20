@@ -36,7 +36,7 @@ export function FormField<T extends FieldValues, N extends FieldPath<T>>({
           className={[
             className,
             extra
-              ? '[&_.ant-form-item-extra]:!mt-0.5 [&_.ant-form-item-extra]:!min-h-0 [&_.ant-form-item-extra]:!text-[13px] [&_.ant-form-item-extra]:!leading-[18px]'
+              ? '[&_.ant-form-item-extra]:!mt-0.5 [&_.ant-form-item-extra]:!min-h-0 [&_.ant-form-item-extra]:!text-[14.5px] [&_.ant-form-item-extra]:!leading-[18px]'
               : '',
           ]
             .filter(Boolean)
@@ -54,7 +54,7 @@ export function FormField<T extends FieldValues, N extends FieldPath<T>>({
 export function FormRootError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600" role="alert">
+    <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[15px] text-red-600" role="alert">
       {message}
     </div>
   );

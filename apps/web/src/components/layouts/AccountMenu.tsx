@@ -41,7 +41,7 @@ export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenu
         <Avatar
           src={user.avatarUrl ?? undefined}
           size={36}
-          className="shrink-0 !text-[13px] !font-bold"
+          className="shrink-0 !text-[14.5px] !font-bold"
           style={{ background: `${roleColor}33`, color: roleColor }}
         >
           {initialsOf(user.fullName)}
@@ -49,8 +49,8 @@ export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenu
         {!collapsed && (
           <>
             <span className="flex min-w-0 flex-1 flex-col items-start leading-[1.2]">
-              <span className="max-w-full truncate text-[13.5px] font-semibold">{user.fullName}</span>
-              <span className="text-[12px] font-semibold" style={{ color: roleColor }}>
+              <span className="max-w-full truncate text-[15px] font-semibold">{user.fullName}</span>
+              <span className="text-[13.5px] font-semibold" style={{ color: roleColor }}>
                 {ROLE_LABEL[user.role]}
               </span>
             </span>

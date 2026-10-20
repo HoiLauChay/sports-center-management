@@ -81,8 +81,8 @@ export function CouponsPage() {
         const state = STATE_TAG[couponState(coupon)];
         return (
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[14px] font-semibold">{coupon.code}</span>
-            <span className="text-[13px] text-sc-muted line-clamp-1">{coupon.name}</span>
+            <span className="font-mono text-[15px] font-semibold">{coupon.code}</span>
+            <span className="text-[14.5px] text-sc-muted line-clamp-1">{coupon.name}</span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
             </Tag>
@@ -99,7 +99,7 @@ export function CouponsPage() {
             {coupon.discountType === 'PERCENT' ? `${coupon.discountValue}%` : formatVND(coupon.discountValue)}
           </span>
           {coupon.maxDiscount !== null && (
-            <span className="text-[13px] text-sc-muted">tối đa {formatVND(coupon.maxDiscount)}</span>
+            <span className="text-[14.5px] text-sc-muted">tối đa {formatVND(coupon.maxDiscount)}</span>
           )}
         </div>
       ),
@@ -108,7 +108,7 @@ export function CouponsPage() {
       title: 'Hiệu lực',
       key: 'valid',
       render: (_, coupon) => (
-        <div className="flex flex-col text-[13px] whitespace-nowrap">
+        <div className="flex flex-col text-[14.5px] whitespace-nowrap">
           <span>{formatDateTime(coupon.validFrom)}</span>
           <span className="text-sc-muted">→ {formatDateTime(coupon.validTo)}</span>
         </div>
@@ -143,7 +143,7 @@ export function CouponsPage() {
       render: (_, coupon) => (
         <div>
           {coupon.maxUses === null ? (
-            <span className="tabular-nums text-sm">{coupon.usedCount} / không giới hạn</span>
+            <span className="tabular-nums text-[15px]">{coupon.usedCount} / không giới hạn</span>
           ) : (
             <Progress
               percent={Math.min(100, Math.round((coupon.usedCount / coupon.maxUses) * 100))}
@@ -151,7 +151,7 @@ export function CouponsPage() {
               format={() => `${coupon.usedCount}/${coupon.maxUses}`}
             />
           )}
-          <div className="text-[13px] text-sc-muted">{coupon.maxUsesPerUser} lượt / người</div>
+          <div className="text-[14.5px] text-sc-muted">{coupon.maxUsesPerUser} lượt / người</div>
         </div>
       ),
     },

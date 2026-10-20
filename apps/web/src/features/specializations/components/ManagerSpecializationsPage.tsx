@@ -99,7 +99,7 @@ export function ManagerSpecializationsPage() {
       key: 'review',
       render: (_, entry) =>
         entry.reviewedAt ? (
-          <div className="flex max-w-64 flex-col gap-0.5 text-[13px]">
+          <div className="flex max-w-64 flex-col gap-0.5 text-[14.5px]">
             <span className="whitespace-nowrap text-sc-muted">{formatDateTime(entry.reviewedAt)}</span>
             {entry.reviewNote && <span className="[overflow-wrap:anywhere]">{entry.reviewNote}</span>}
           </div>

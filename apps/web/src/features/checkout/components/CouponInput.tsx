@@ -79,14 +79,14 @@ export function CouponInput({ codes, quote, check, onAdd, onRemove, disabled }: 
           Áp dụng
         </Button>
       </div>
-      {error && <p className="mt-1.5 mb-0 text-[13px] text-sc-error">{error}</p>}
+      {error && <p className="mt-1.5 mb-0 text-[14.5px] text-sc-error">{error}</p>}
       {codes.length > 0 && (
         <div className="mt-3 flex flex-col gap-1.5">
           {codes.map((code) => {
             const result = quote?.coupons.find((entry) => entry.code === code);
             const color = !result ? undefined : !result.valid ? 'error' : result.applied ? 'success' : 'warning';
             return (
-              <div key={code} className="flex flex-wrap items-center gap-2 text-[13px]">
+              <div key={code} className="flex flex-wrap items-center gap-2 text-[14.5px]">
                 <Tag
                   color={color}
                   className="!m-0 font-mono"

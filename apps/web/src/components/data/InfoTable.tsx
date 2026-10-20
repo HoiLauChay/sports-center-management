@@ -14,10 +14,10 @@ export function InfoTable({ rows }: { rows: InfoTableRow[] }) {
           key={row.label}
           className={`flex items-stretch ${index < rows.length - 1 ? 'border-0 border-b border-solid border-sc-border' : ''}`}
         >
-          <div className="flex w-[150px] shrink-0 items-center bg-[#f7f5f0] px-3.5 py-2.5 text-[13px] font-medium text-sc-muted">
+          <div className="flex w-[150px] shrink-0 items-center bg-[#f7f5f0] px-3.5 py-2.5 text-[14.5px] font-medium text-sc-muted">
             {row.label}
           </div>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3.5 py-2 text-[13px] text-sc-ink">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 px-3.5 py-2 text-[14.5px] text-sc-ink">
             {row.value}
           </div>
         </div>

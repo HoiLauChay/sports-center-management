@@ -215,7 +215,7 @@ export function CounterTopUpPage() {
                   type="text"
                   disabled={Boolean(invoiceId)}
                   onClick={handleClearMember}
-                  className="!text-xs text-sc-muted hover:!text-sc-error"
+                  className="!text-[13.5px] text-sc-muted hover:!text-sc-error"
                 >
                   Đổi khách
                 </Button>
@@ -233,12 +233,12 @@ export function CounterTopUpPage() {
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sc-ink truncate text-sm">{memberInfo.fullName}</span>
-                    <Tag color="green" className="!m-0 text-[11px] px-1.5 py-0 leading-tight">
+                    <span className="font-bold text-sc-ink truncate text-[15px]">{memberInfo.fullName}</span>
+                    <Tag color="green" className="!m-0 text-[12.5px] px-1.5 py-0 leading-tight">
                       Active
                     </Tag>
                   </div>
-                  <div className="flex flex-col gap-0.5 text-xs text-sc-muted mt-1">
+                  <div className="flex flex-col gap-0.5 text-[13.5px] text-sc-muted mt-1">
                     {memberInfo.phone && (
                       <span className="flex items-center gap-1.5 font-mono">
                         <Phone className="size-3 text-sc-muted" />
@@ -282,14 +282,14 @@ export function CounterTopUpPage() {
               {done && <Alert type="success" showIcon className="!mb-4" title={done} />}
 
               {!memberId && (
-                <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 text-[13.5px] text-amber-800 dark:text-amber-200">
                   <Info className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
                   <span>Chọn thành viên ở trên trước khi thực hiện giao dịch nạp ví.</span>
                 </div>
               )}
 
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-sc-ink uppercase tracking-wider mb-2">
+                <label className="block text-[13.5px] font-semibold text-sc-ink uppercase tracking-wider mb-2">
                   Mệnh giá nạp
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -375,7 +375,7 @@ export function CounterTopUpPage() {
                 htmlType="submit"
                 disabled={!memberId}
                 loading={record.isPending || createInvoice.isPending}
-                className="!h-11 !text-sm font-bold shadow-sm"
+                className="!h-11 !text-[15px] font-bold shadow-sm"
               >
                 {!memberId
                   ? 'Chọn thành viên để nạp ví'
@@ -394,7 +394,7 @@ export function CounterTopUpPage() {
               <SectionTitle>Lịch sử giao dịch ví</SectionTitle>
             </div>
             {memberInfo && (
-              <Tag color="cyan" className="!m-0 text-xs font-semibold">
+              <Tag color="cyan" className="!m-0 text-[13.5px] font-semibold">
                 {memberInfo.fullName}
               </Tag>
             )}
