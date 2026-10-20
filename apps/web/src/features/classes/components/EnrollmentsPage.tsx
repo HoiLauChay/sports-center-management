@@ -5,19 +5,13 @@ import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { canCancelEnrollment, enrollmentRefund } from '~/features/checkout/refundPolicy';
-import { useConfirm } from '~/hooks/useConfirm';
-import { formatDate, formatVND } from '~/lib/format';
+import { canCancelEnrollment } from '~/features/checkout/refundPolicy';
+import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { todayVN, vnDate } from '~/lib/time';
-import { useCancelEnrollment, useMyEnrollments } from '../hooks/useClasses';
+import { vnDate } from '~/lib/time';
+import { useMyEnrollments } from '../hooks/useClasses';
 import { classDateRange, weeklyText } from '../utils';
-
-function progressText(enrollment: MyEnrollment) {
-  const { startDate } = enrollment.class;
-  if (startDate && todayVN() < startDate) return `Khai giảng ${formatDate(startDate)}`;
-  return enrollment.sessionsLeft > 0 ? `Còn ${enrollment.sessionsLeft} buổi` : 'Đã học hết các buổi';
-}
+import { enrollmentProgress, useAskCancelEnrollment } from './enrollmentActions';
 
 const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string }> = {
   ENROLLED: { label: 'Đang học', color: 'success' },
@@ -26,9 +20,8 @@ const STATUS_TAG: Record<MyEnrollment['status'], { label: string; color?: string
 
 /** `/enrollments`: classes I enrolled in; before the class starts one can leave it and get the line refunded. */
 export function EnrollmentsPage() {
-  const confirm = useConfirm();
   const enrollments = useMyEnrollments();
-  const cancel = useCancelEnrollment();
+  const { ask: askCancel, cancel } = useAskCancelEnrollment();
   const [status, setStatus] = useState<MyEnrollment['status'] | 'ALL'>('ALL');
   const [range, setRange] = useState<DateRange>({});
 
@@ -46,25 +39,6 @@ export function EnrollmentsPage() {
   );
   const filtered = status !== 'ALL' || Boolean(range.from || range.to);
 
-  const askCancel = (enrollment: MyEnrollment) => {
-    const refund = enrollmentRefund(enrollment);
-    confirm({
-      title: `Hủy đăng ký lớp ${enrollment.class.name}?`,
-      content: (
-        <div className="flex flex-col gap-2">
-          <span>Khai giảng {formatDate(enrollment.class.startDate!)}.</span>
-          <b className="text-sc-success">
-            {refund > 0
-              ? `Bạn sẽ được hoàn ${formatVND(refund)} về ví.`
-              : 'Lớp này không có khoản thanh toán nên không có tiền hoàn.'}
-          </b>
-        </div>
-      ),
-      okText: refund > 0 ? `Hủy và nhận ${formatVND(refund)}` : 'Hủy đăng ký',
-      onOk: () => cancel.mutateAsync(enrollment.id).catch(() => undefined),
-    });
-  };
-
   const columns: TableColumnsType<MyEnrollment> = [
     {
       title: 'Lớp',
@@ -81,7 +55,7 @@ export function EnrollmentsPage() {
             {weeklyText(enrollment.class.weeklySchedule)} · {classDateRange(enrollment.class)}
           </span>
           {enrollment.status === 'ENROLLED' && (
-            <span className="text-[13px] font-semibold text-sc-primary">{progressText(enrollment)}</span>
+            <span className="text-[13px] font-semibold text-sc-primary">{enrollmentProgress(enrollment)}</span>
           )}
         </div>
       ),

@@ -8,17 +8,26 @@ import { SectionTitle } from '~/components/ui/SectionTitle';
 import { useCurrentUser } from '~/features/auth';
 import { AddToCartButton } from '~/features/checkout';
 import { useQuote } from '~/features/checkout/hooks/useCart';
+import { canCancelEnrollment } from '~/features/checkout/refundPolicy';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { formatDayLabel } from '~/lib/time';
-import { useClass } from '../hooks/useClasses';
+import { formatDayLabel, isPast, todayVN } from '~/lib/time';
+import { useClass, useMyEnrollments } from '../hooks/useClasses';
 import type { ClassSession } from '../types';
 import { weeklyText } from '../utils';
+import { enrollmentProgress, useAskCancelEnrollment } from './enrollmentActions';
 
 const routeApi = getRouteApi('/_authenticated/_member/classes/$classId');
 
 const sessionColumns: TableColumnsType<ClassSession> = [
-  { title: 'Buổi', dataIndex: 'sessionNumber', width: 56 },
+  {
+    title: 'Buổi',
+    dataIndex: 'sessionNumber',
+    width: 56,
+    render: (value: number) => (
+      <span className="font-display text-xl font-extrabold text-sc-muted-2">{String(value).padStart(2, '0')}</span>
+    ),
+  },
   {
     title: 'Ngày',
     dataIndex: 'date',
@@ -36,9 +45,9 @@ const sessionColumns: TableColumnsType<ClassSession> = [
   {
     title: 'Trạng thái',
     dataIndex: 'status',
-    render: (status: ClassSession['status']) =>
+    render: (status: ClassSession['status'], session) =>
       status === 'SCHEDULED' ? (
-        <Tag className="!m-0">Dự kiến</Tag>
+        <Tag className="!m-0">{isPast(session.date, session.startTime) ? 'Đã diễn ra' : 'Dự kiến'}</Tag>
       ) : (
         <Tag color="error" className="!m-0">
           Đã hủy
@@ -52,7 +61,14 @@ export function ClassDetailPage() {
   const user = useCurrentUser();
   const detail = useClass(classId);
   const selection = { type: 'COURSE_ENROLLMENT', classId } as const;
-  const quote = useQuote({ user, items: [selection], enabled: Boolean(detail.data) });
+  const enrollments = useMyEnrollments();
+  const enrollment = enrollments.data?.find((entry) => entry.class.id === classId && entry.status === 'ENROLLED');
+  const { ask: askCancel, cancel } = useAskCancelEnrollment();
+  const quote = useQuote({
+    user,
+    items: [selection],
+    enabled: Boolean(detail.data) && enrollments.isSuccess && !enrollment,
+  });
   const line = quote.data?.items[0];
 
   if (detail.isPending) return <PageLoading />;
@@ -111,46 +127,89 @@ export function ClassDetailPage() {
             />
           </Card>
         </div>
-        <Card className="xl:sticky xl:top-4">
-          <SectionTitle>Đăng ký</SectionTitle>
-          <div className="text-[14px]">
-            <div className="flex justify-between border-b border-sc-border-soft py-2">
-              <span>Học phí</span>
-              <span className="font-medium tabular-nums">{formatVND(item.course.price)}</span>
+        {enrollment ? (
+          <Card className="xl:sticky xl:top-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <SectionTitle>Bạn đã đăng ký</SectionTitle>
+              <Tag color="success" className="!m-0">
+                {item.startDate && todayVN() < item.startDate ? 'Sắp khai giảng' : 'Đang học'}
+              </Tag>
             </div>
-            {line && line.membershipDiscount > 0 && (
-              <div className="flex justify-between border-b border-sc-border-soft py-2 text-sc-success">
-                <span>Ưu đãi gói thành viên</span>
-                <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+            <div className="text-[14px]">
+              <div className="flex justify-between border-b border-sc-border-soft py-2">
+                <span>Đã trả</span>
+                <span className="tabular-nums">{formatVND(enrollment.paidAmount)}</span>
               </div>
-            )}
-            <div className="flex justify-between border-t border-sc-border pt-2.5 pb-1 text-[18px] font-extrabold text-sc-ink">
-              <span>Tạm tính</span>
-              <span className="tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
+              <div className="flex justify-between py-2">
+                <span>Tiến độ</span>
+                <span className="font-semibold text-sc-primary">{enrollmentProgress(enrollment)}</span>
+              </div>
             </div>
+            <div className="mt-3 flex flex-col gap-2">
+              <Link to="/schedule">
+                <Button block type="primary">
+                  Xem lịch của tôi
+                </Button>
+              </Link>
+              <Link to="/training">
+                <Button block>Kết quả tập luyện</Button>
+              </Link>
+              {canCancelEnrollment(item.startDate) && (
+                <Button block danger type="text" loading={cancel.isPending} onClick={() => askCancel(enrollment)}>
+                  Hủy đăng ký
+                </Button>
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card className="xl:sticky xl:top-4">
+            <SectionTitle>Đăng ký</SectionTitle>
+            <div className="text-[14px]">
+              <div className="flex justify-between border-b border-sc-border-soft py-2">
+                <span>Học phí</span>
+                <span className="font-medium tabular-nums">{formatVND(item.course.price)}</span>
+              </div>
+              {line && line.membershipDiscount > 0 && (
+                <div className="flex justify-between border-b border-sc-border-soft py-2 text-sc-success">
+                  <span>Ưu đãi gói thành viên</span>
+                  <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-sc-border pt-2.5 pb-1 text-[18px] font-extrabold text-sc-ink">
+                <span>Tạm tính</span>
+                <span className="tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
+              </div>
+            </div>
+            {line && !line.valid && <Alert type="error" showIcon className="!mb-3" title={line.error?.message} />}
+            <AddToCartButton
+              block
+              size="large"
+              selection={selection}
+              disabledReason={line && !line.valid ? line.error?.message : undefined}
+            />
+            {item.startDate && (
+              <p className="mt-3 mb-0 text-[13px] text-sc-muted">
+                Hủy đăng ký trước ngày khai giảng {formatDate(item.startDate)} được hoàn đủ học phí vào ví.
+              </p>
+            )}
+          </Card>
+        )}
+      </div>
+      {!enrollment && enrollments.isSuccess && (
+        <>
+          <div className="h-16 md:hidden" />
+          <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] md:hidden">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="text-[13px] text-sc-muted">Tạm tính</span>
+              <span className="font-semibold tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
+            </div>
+            <AddToCartButton
+              selection={selection}
+              disabledReason={line && !line.valid ? line.error?.message : undefined}
+            />
           </div>
-          {line && !line.valid && <Alert type="error" showIcon className="!mb-3" title={line.error?.message} />}
-          <AddToCartButton
-            block
-            size="large"
-            selection={selection}
-            disabledReason={line && !line.valid ? line.error?.message : undefined}
-          />
-          {item.startDate && (
-            <p className="mt-3 mb-0 text-[13px] text-sc-muted">
-              Hủy đăng ký trước ngày khai giảng {formatDate(item.startDate)} được hoàn đủ học phí vào ví.
-            </p>
-          )}
-        </Card>
-      </div>
-      <div className="h-16 md:hidden" />
-      <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] md:hidden">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[13px] text-sc-muted">Tạm tính</span>
-          <span className="font-semibold tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
-        </div>
-        <AddToCartButton selection={selection} disabledReason={line && !line.valid ? line.error?.message : undefined} />
-      </div>
+        </>
+      )}
     </>
   );
 }
