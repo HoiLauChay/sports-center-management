@@ -151,6 +151,7 @@ describe('create staff account', () => {
     const { account } = await authService.login({ email: body.email, password: 'NewPassword1!' }, {});
     expect(account.id).toBe(created.id);
     expect(account.emailVerifiedAt).not.toBeNull();
+    expect(account.mustSetPassword).toBe(false);
   });
 });
 
