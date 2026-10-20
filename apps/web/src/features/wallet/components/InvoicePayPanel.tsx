@@ -9,7 +9,7 @@ import { formatCountdown, useCountdown } from '../hooks/useWallet';
 function InfoRow({ label, value, copy }: { label: string; value: ReactNode; copy?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-sc-border-soft py-2.5 last:border-b-0">
-      <span className="shrink-0 text-[13px] text-sc-muted">{label}</span>
+      <span className="shrink-0 text-[14.5px] text-sc-muted">{label}</span>
       <span className="flex min-w-0 items-center gap-1 text-right font-semibold [overflow-wrap:anywhere]">
         {value}
         {copy && <CopyButton value={copy} label={label} />}
@@ -89,11 +89,11 @@ export function InvoicePayPanel({ invoice, paidActions, onCancel, cancelling, pa
             fallback="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><rect width='100%' height='100%' fill='%23f2efe8'/><text x='50%' y='50%' text-anchor='middle' fill='%237a776f' font-size='13' font-family='sans-serif'>Không tải được mã QR</text></svg>"
           />
         </div>
-        <Tag color="warning" className="!m-0 !inline-flex items-center gap-1.5 !px-3 !py-1 !text-[14px]">
+        <Tag color="warning" className="!m-0 !inline-flex items-center gap-1.5 !px-3 !py-1 !text-[15px]">
           <Clock3 size={14} />
           Còn <b className="tabular-nums">{formatCountdown(remaining ?? 0)}</b>
         </Tag>
-        <p className="m-0 text-center text-xs text-sc-muted-2">
+        <p className="m-0 text-center text-[14.5px] text-sc-muted">
           Hệ thống tự kiểm tra mỗi 3 giây, không cần tải lại trang.
         </p>
       </div>

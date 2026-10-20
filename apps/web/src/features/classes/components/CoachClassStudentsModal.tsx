@@ -27,12 +27,12 @@ export function CoachClassStudentsModal({ gymClass, onClose }: CoachClassStudent
       <div className="space-y-4 pt-2">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-sc-line bg-sc-bg p-3">
           <div>
-            <div className="text-xs text-sc-muted">Khóa học & Bộ môn</div>
-            <div className="text-sm font-semibold text-sc-ink">
+            <div className="text-[13.5px] text-sc-muted">Khóa học & Bộ môn</div>
+            <div className="text-[15px] font-semibold text-sc-ink">
               {gymClass?.course.name} · {gymClass?.course.sport.name}
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-[15px]">
             <div>
               <span className="text-sc-muted">Đã đăng ký: </span>
               <span className="font-bold text-sc-primary">{gymClass?.enrolledCount}</span>

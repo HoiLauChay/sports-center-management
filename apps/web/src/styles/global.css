@@ -129,13 +129,13 @@ a {
 
 /* Figma status pills: borderless, 6px radius, 12.5px semibold. */
 html .ant-tag {
-  height: 24px;
-  padding: 0 10px;
+  height: 26px;
+  padding: 0 11px;
   border-color: transparent;
   border-radius: 6px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
-  line-height: 24px;
+  line-height: 26px;
   background: #f3f1ec;
   color: var(--sc-ink-2);
 }
@@ -194,4 +194,33 @@ html .ant-tag.ant-tag-green {
 .ant-card .ant-card-head-title {
   flex: 1 0 auto;
   max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .ant-table-wrapper .ant-table table {
+    width: 100% !important;
+  }
+
+  .ant-card .ant-card-body {
+    padding: 16px;
+  }
+
+  .ant-card .ant-card-head {
+    padding-inline: 16px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th,
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 12px 8px;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th:first-child,
+  .ant-table-wrapper .ant-table-tbody > tr > td:first-child {
+    padding-left: 12px !important;
+  }
+
+  .ant-table-wrapper .ant-table-thead > tr > th:last-child,
+  .ant-table-wrapper .ant-table-tbody > tr > td:last-child {
+    padding-right: 12px !important;
+  }
 }

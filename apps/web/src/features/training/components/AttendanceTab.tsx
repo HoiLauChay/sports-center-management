@@ -104,7 +104,7 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
       key: 'updated',
       render: (_, record) =>
         record.updatedAt && record.updatedBy ? (
-          <span className="text-[12.5px] whitespace-nowrap text-sc-muted">
+          <span className="text-[13.5px] whitespace-nowrap text-sc-muted">
             {record.updatedBy.fullName} · {formatDateTime(record.updatedAt)}
           </span>
         ) : null,
@@ -126,7 +126,7 @@ export function AttendanceTab({ sessionId, editable, upcoming }: AttendanceTabPr
       )}
       {!editable && <Alert type="warning" showIcon title="Buổi học đã bị hủy nên không điểm danh được." />}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+        <div className="flex flex-wrap items-center gap-2 text-[14.5px]">
           <Tag color="success" className="!m-0">
             Có mặt {counts.PRESENT}
           </Tag>

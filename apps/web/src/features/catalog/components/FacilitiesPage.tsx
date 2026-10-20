@@ -8,6 +8,7 @@ import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { FACILITY_TYPE_LABEL } from '~/constants/facility';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
@@ -111,7 +112,9 @@ export function FacilitiesPage() {
         <div className="flex min-w-0 flex-col">
           <span className="font-semibold">{facility.name}</span>
           {facility.description && (
-            <span className="max-w-xs text-[13px] text-sc-muted [overflow-wrap:anywhere]">{facility.description}</span>
+            <span className="max-w-xs text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+              {facility.description}
+            </span>
           )}
         </div>
       ),
@@ -128,9 +131,7 @@ export function FacilitiesPage() {
         facility.sports.length ? (
           <Space wrap size={[4, 4]}>
             {facility.sports.map((sport) => (
-              <Tag key={sport.id} color="green" className="!m-0">
-                {sport.name}
-              </Tag>
+              <SportTag key={sport.id} name={sport.name} />
             ))}
           </Space>
         ) : (

@@ -24,9 +24,9 @@ export function InfoGrid({ items, single = false }: { items: InfoItem[]; single?
               </span>
             )}
             <div className="min-w-0">
-              <div className="text-[12px] font-medium text-sc-muted">{label}</div>
+              <div className="text-[13.5px] font-medium text-sc-muted">{label}</div>
               <div
-                className={`mt-0.5 text-[14.5px] wrap-anywhere whitespace-pre-line ${empty ? 'font-normal text-sc-muted-2' : 'font-medium text-sc-ink'}`}
+                className={`mt-0.5 text-[15.5px]wrap-anywhere whitespace-pre-line ${empty ? 'font-normal text-sc-muted-2' : 'font-medium text-sc-ink'}`}
               >
                 {empty ? 'Chưa cập nhật' : value}
               </div>

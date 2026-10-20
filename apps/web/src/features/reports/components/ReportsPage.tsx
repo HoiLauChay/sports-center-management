@@ -4,6 +4,7 @@ import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } fr
 import { useMemo, useState } from 'react';
 import { BarChart, type ChartDatum, type ChartSeries } from '~/components/charts/BarChart';
 import { ErrorState } from '~/components/feedback/States';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { StatCard } from '~/components/ui/StatCard';
@@ -43,7 +44,7 @@ export function OverviewTab() {
           loading={overview.isPending}
           icon={Banknote}
           label="Doanh thu hôm nay"
-          value={formatVND(data?.revenueToday ?? 0)}
+          value={<MoneyFigure amount={data?.revenueToday ?? 0} />}
         />
       </Col>
       <Col xs={24} sm={12} xl={8}>
@@ -159,13 +160,17 @@ function RevenueTab({ range }: { range: ReportRange }) {
     <div className={report.isFetching ? 'opacity-70 [transition:opacity_0.15s]' : undefined}>
       <Row gutter={[16, 16]} className="!mb-4">
         <Col xs={24} md={8}>
-          <StatCard loading={report.isPending} label="Doanh thu" value={formatVND(totals.revenue)} />
+          <StatCard loading={report.isPending} label="Doanh thu" value={<MoneyFigure amount={totals.revenue} />} />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard loading={report.isPending} label="Hoàn tiền" value={formatVND(totals.refunds)} />
+          <StatCard loading={report.isPending} label="Hoàn tiền" value={<MoneyFigure amount={totals.refunds} />} />
         </Col>
         <Col xs={24} md={8}>
-          <StatCard loading={report.isPending} label="Thực thu" value={formatVND(totals.revenue - totals.refunds)} />
+          <StatCard
+            loading={report.isPending}
+            label="Thực thu"
+            value={<MoneyFigure amount={totals.revenue - totals.refunds} />}
+          />
         </Col>
       </Row>
       <Row gutter={[16, 16]}>
@@ -188,7 +193,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
                 const percent = totals.revenue ? Math.round((value / totals.revenue) * 100) : 0;
                 return (
                   <li key={method}>
-                    <div className="mb-1 flex justify-between text-[13.5px]">
+                    <div className="mb-1 flex justify-between text-[15px]">
                       <span>{PAYMENT_METHOD_LABEL[method]}</span>
                       <b className="tabular-nums">
                         {formatVND(value)} <span className="font-normal text-sc-muted">({percent}%)</span>
@@ -302,7 +307,7 @@ function WalletTab({ range }: { range: ReportRange }) {
           <StatCard
             loading={report.isPending}
             label="Tổng số dư ví"
-            value={formatVND(report.data?.totalBalance ?? 0)}
+            value={<MoneyFigure amount={report.data?.totalBalance ?? 0} />}
           />
         </Col>
         <Col xs={24} md={8}>
@@ -317,7 +322,7 @@ function WalletTab({ range }: { range: ReportRange }) {
             loading={report.isPending}
             tone={report.data && report.data.unmatched.count > 0 ? 'warning' : 'default'}
             label="Tiền vào chưa khớp"
-            value={formatVND(report.data?.unmatched.amount ?? 0)}
+            value={<MoneyFigure amount={report.data?.unmatched.amount ?? 0} />}
           />
         </Col>
       </Row>

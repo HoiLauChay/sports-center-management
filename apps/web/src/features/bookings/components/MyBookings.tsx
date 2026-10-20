@@ -5,7 +5,7 @@ import { EmptyState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { DAY_SHORT, WEEK_ORDER, formatDayLabel } from '~/lib/time';
+import { DAY_SHORT, WEEK_ORDER, formatDayLabel, isPast } from '~/lib/time';
 import { useMyBookings, useMyPackages } from '../hooks/useBookings';
 
 const BENEFIT_TEXT: Record<Booking['benefit'], string | null> = {
@@ -29,6 +29,9 @@ function BookingsTab() {
       render: (_, booking) => (
         <div className="flex flex-col gap-1">
           <span className="font-semibold text-sc-ink">{booking.facility.name}</span>
+          <span className="text-[14.5px] text-sc-muted md:hidden">
+            {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
+          </span>
           {(booking.packageId || BENEFIT_TEXT[booking.benefit]) && (
             <span className="flex flex-wrap gap-1">
               {booking.packageId && <Tag className="!m-0">Gói định kỳ</Tag>}
@@ -46,6 +49,7 @@ function BookingsTab() {
       title: 'Thời gian',
       key: 'time',
       width: '34%',
+      responsive: ['md'],
       render: (_, booking) => (
         <span className="whitespace-nowrap">
           {formatDayLabel(booking.date)} · {booking.startTime}–{booking.endTime}
@@ -57,11 +61,12 @@ function BookingsTab() {
       dataIndex: 'paidAmount',
       align: 'right',
       width: '15%',
+      responsive: ['md'],
       render: (value: number | null) =>
         value === null ? (
           <span className="whitespace-nowrap text-sc-muted">Theo gói</span>
         ) : (
-          <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>
+          <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>
         ),
     },
     {
@@ -70,9 +75,15 @@ function BookingsTab() {
       width: '15%',
       render: (_, booking) => (
         <div className="flex flex-col items-start gap-0.5">
-          <Tag color={booking.status === 'CONFIRMED' ? 'success' : 'default'} className="!m-0">
-            {booking.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Đã hủy'}
-          </Tag>
+          {booking.status === 'CANCELLED' ? (
+            <Tag className="!m-0">Đã hủy</Tag>
+          ) : isPast(booking.date, booking.endTime) ? (
+            <Tag className="!m-0">Đã diễn ra</Tag>
+          ) : (
+            <Tag color="success" className="!m-0">
+              Đã xác nhận
+            </Tag>
+          )}
         </div>
       ),
     },
@@ -104,11 +115,10 @@ function BookingsTab() {
       {bookings.error && !bookings.data && <Alert type="error" showIcon title={toApiError(bookings.error).message} />}
       <Table<Booking>
         rowKey="id"
-        size="middle"
         columns={columns}
         dataSource={bookings.data?.items}
         loading={bookings.isFetching}
-        scroll={{ x: 650 }}
+        scroll={{ x: 'max-content' }}
         locale={{ emptyText: bookings.isFetching ? ' ' : <EmptyState title="Chưa có lượt đặt nào" /> }}
         pagination={{
           current: page,
@@ -130,12 +140,23 @@ function PackagesTab() {
       title: 'Sân / phòng',
       key: 'facility',
       width: '28%',
-      render: (_, item) => <span className="font-semibold text-sc-ink">{item.facility.name}</span>,
+      render: (_, item) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-sc-ink">{item.facility.name}</span>
+          <span className="text-[14.5px] text-sc-muted md:hidden">
+            {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
+              .map((day) => DAY_SHORT[day])
+              .join('/')}{' '}
+            {item.startTime}–{item.endTime} · {formatDate(item.startDate)} – {formatDate(item.endDate)}
+          </span>
+        </div>
+      ),
     },
     {
       title: 'Lịch',
       key: 'schedule',
       width: '22%',
+      responsive: ['md'],
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {WEEK_ORDER.filter((day) => item.daysOfWeek.includes(day))
@@ -149,6 +170,7 @@ function PackagesTab() {
       title: 'Thời gian',
       key: 'range',
       width: '24%',
+      responsive: ['md'],
       render: (_, item) => (
         <span className="whitespace-nowrap">
           {formatDate(item.startDate)} – {formatDate(item.endDate)}
@@ -159,6 +181,7 @@ function PackagesTab() {
       title: 'Buổi',
       key: 'sessions',
       width: '14%',
+      responsive: ['md'],
       render: (_, item) =>
         `${item.bookings.filter((booking) => booking.status === 'CONFIRMED').length}/${item.bookings.length} còn hiệu lực`,
     },
@@ -177,11 +200,10 @@ function PackagesTab() {
   return (
     <Table<FacilityPackage>
       rowKey="id"
-      size="middle"
       columns={columns}
       dataSource={packages.data}
       loading={packages.isFetching}
-      scroll={{ x: 650 }}
+      scroll={{ x: 'max-content' }}
       pagination={false}
       locale={{ emptyText: packages.isFetching ? ' ' : <EmptyState title="Chưa có gói định kỳ nào" /> }}
     />

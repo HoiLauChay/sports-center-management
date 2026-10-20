@@ -11,7 +11,16 @@ import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import scheduleService from '~/services/schedule.service';
-import { formatDate, formatTime, fromDbTime, parseTime, toCenterDateTime, toDbTime, todayInCenter } from '~/utils/time';
+import {
+  formatCenterDate,
+  formatDate,
+  formatTime,
+  fromDbTime,
+  parseTime,
+  toCenterDateTime,
+  toDbTime,
+  todayInCenter,
+} from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const notFound = () =>
@@ -159,7 +168,7 @@ class SessionService {
         accountId,
         type: 'CLASS',
         title: 'Lịch buổi học đã thay đổi',
-        message: `Buổi ${current.sessionNumber} lớp "${cls.name}" đổi từ ${formatDate(current.sessionDate)} ${formatTime(fromDbTime(current.startTime))}–${formatTime(fromDbTime(current.endTime))} sang ${date} ${formatTime(start)}–${formatTime(end)}, tại ${facility.name}.`,
+        message: `Buổi ${current.sessionNumber} lớp "${cls.name}" đổi từ ${formatCenterDate(formatDate(current.sessionDate))} ${formatTime(fromDbTime(current.startTime))}–${formatTime(fromDbTime(current.endTime))} sang ${formatCenterDate(date)} ${formatTime(start)}–${formatTime(end)}, tại ${facility.name}.`,
         referenceType: 'CLASS',
         referenceId: cls.id,
         sendEmail: true,

@@ -21,7 +21,7 @@ function Value({ value }: { value: unknown }) {
   if (typeof value === 'boolean') return <span>{value ? 'Có' : 'Không'}</span>;
   if (typeof value === 'object') {
     return (
-      <pre className="m-0 max-h-64 overflow-auto whitespace-pre-wrap break-all text-xs">
+      <pre className="m-0 max-h-64 overflow-auto whitespace-pre-wrap break-all text-[13.5px]">
         {JSON.stringify(value, null, 2)}
       </pre>
     );
@@ -86,7 +86,7 @@ export function AuditLogDetailDrawer({ log, onClose }: { log: AuditLog | null; o
               {showAll ? 'Các giá trị được ghi nhận' : 'Các giá trị thay đổi'}
             </h2>
             {allFields.length > changed.length && (
-              <label className="flex items-center gap-2 text-[13px] text-sc-muted">
+              <label className="flex items-center gap-2 text-[14.5px] text-sc-muted">
                 <Switch size="small" checked={showAll} onChange={setShowAll} />
                 Hiện cả {allFields.length - changed.length} trường không đổi
               </label>

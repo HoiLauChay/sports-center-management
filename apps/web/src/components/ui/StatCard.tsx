@@ -9,9 +9,10 @@ interface StatCardProps {
   /** `warning` highlights numbers that need attention (e.g. unmatched bank transactions). */
   tone?: 'default' | 'warning';
   loading?: boolean;
+  hint?: ReactNode;
 }
 
-export function StatCard({ label, value, icon: Icon, tone = 'default', loading }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = 'default', loading, hint }: StatCardProps) {
   const warning = tone === 'warning';
   return (
     <Card loading={loading} styles={{ body: { padding: '18px 20px' } }} className="h-full">
@@ -24,7 +25,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'default', loading }
               <Icon size={17} />
             </span>
           )}
-          <span className="min-w-0 text-[13px] leading-tight font-semibold tracking-wide text-sc-muted uppercase">
+          <span className="min-w-0 text-[14px] leading-tight font-semibold tracking-wide text-sc-muted uppercase">
             {label}
           </span>
         </div>
@@ -33,6 +34,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'default', loading }
         >
           {value}
         </div>
+        {hint && <div className="-mt-1 text-[14px] text-sc-muted">{hint}</div>}
       </div>
     </Card>
   );

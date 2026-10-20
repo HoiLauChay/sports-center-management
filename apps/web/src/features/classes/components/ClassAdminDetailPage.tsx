@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
@@ -31,7 +33,7 @@ const DAY_NAME = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ n
 
 function Initial({ name }: { name: string }) {
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sc-primary-soft text-[13px] font-semibold text-sc-primary">
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sc-primary-soft text-[14.5px] font-semibold text-sc-primary">
       {name.trim().split(/\s+/).at(-1)?.[0]?.toUpperCase()}
     </span>
   );
@@ -39,7 +41,7 @@ function Initial({ name }: { name: string }) {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 text-[13px]">
+    <div className="flex items-center gap-2 text-[14.5px]">
       <span className="w-40 shrink-0 text-sc-muted">{label}:</span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">{children}</div>
     </div>
@@ -116,7 +118,7 @@ export function ClassAdminDetailPage() {
           <Initial name={registration.coach.fullName} />
           <div className="flex flex-col">
             <span className="font-semibold">{registration.coach.fullName}</span>
-            <span className="text-[13px] text-sc-muted">{SOURCE_LABEL[registration.source]}</span>
+            <span className="text-[14.5px] text-sc-muted">{SOURCE_LABEL[registration.source]}</span>
           </div>
         </div>
       ),
@@ -203,6 +205,7 @@ export function ClassAdminDetailPage() {
     <>
       <PageHeader
         title={item.name}
+        back={{ to: '/admin/classes', label: 'Danh sách lớp' }}
         description={`${item.course.name} · ${item.facility.name}${
           item.startDate && item.endDate ? ` · ${formatDate(item.startDate)} → ${formatDate(item.endDate)}` : ''
         } · ${liveSessions.length}/${item.course.totalSessions} buổi`}
@@ -248,7 +251,7 @@ export function ClassAdminDetailPage() {
         <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />
         <StatCard icon={CalendarDays} label="Buổi đã dạy" value={`${taught}/${item.course.totalSessions}`} />
         <StatCard icon={UserCheck} label="HLV" value={item.coach?.fullName ?? '—'} />
-        <StatCard icon={Banknote} label="Học phí" value={formatVND(item.course.price)} />
+        <StatCard icon={Banknote} label="Học phí" value={<MoneyFigure amount={item.course.price} />} />
       </div>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,462px)_minmax(0,1fr)]">
@@ -268,15 +271,15 @@ export function ClassAdminDetailPage() {
               <Initial name={item.coach.fullName} />
               <div className="flex flex-col">
                 <b>{item.coach.fullName}</b>
-                <span className="text-[12.5px] text-sc-muted">{item.course.sport.name}</span>
+                <span className="text-[13.5px] text-sc-muted">{item.course.sport.name}</span>
               </div>
             </div>
           ) : (
-            <div className="flex gap-2 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-3 py-2.5 text-[13px]">
+            <div className="flex gap-2 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-3 py-2.5 text-[14.5px]">
               <TriangleAlert size={15} className="mt-0.5 shrink-0 text-[#d48806]" />
               <div className="flex flex-col gap-1">
                 <b>Chưa có HLV — lớp chỉ OPEN khi có đúng 1 HLV</b>
-                <span className="text-[12.5px] text-sc-ink-2">
+                <span className="text-[13.5px] text-sc-ink-2">
                   {item.coachRegistrations.length > 0
                     ? 'Có HLV đăng ký, xem tab HLV để chọn.'
                     : 'Chưa có HLV đăng ký, hãy phân công trực tiếp.'}
@@ -289,7 +292,7 @@ export function ClassAdminDetailPage() {
         <Card title="Thông tin lớp" styles={{ header: { minHeight: 52 } }}>
           <div className="flex flex-col gap-2">
             <Row label="Khóa học">
-              {item.course.name} · <Tag color="success">{item.course.sport.name}</Tag>
+              {item.course.name} · <SportTag name={item.course.sport.name} />
             </Row>
             <Row label="Học phí">{formatVND(item.course.price)}</Row>
             <Row label="Lịch tuần">

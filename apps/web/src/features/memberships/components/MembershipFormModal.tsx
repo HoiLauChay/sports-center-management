@@ -261,7 +261,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
             />
           </Col>
         </Row>
-        <p className="m-0 text-xs text-sc-muted-2">
+        <p className="m-0 text-[13.5px] text-sc-muted-2">
           {membership
             ? 'Kỳ đã thanh toán giữ nguyên quyền lợi lúc mua; thay đổi áp dụng cho kỳ mua hoặc gia hạn tiếp theo. '
             : ''}

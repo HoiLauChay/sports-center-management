@@ -25,7 +25,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
   return (
     <section className="overflow-hidden rounded-xl border border-sc-border-soft bg-sc-surface [box-shadow:0_1px_2px_rgba(20,19,15,0.03),0_2px_10px_rgba(20,19,15,0.04)]">
       <div
-        className={`group/image-edit relative aspect-[4/1] max-h-[260px] w-full overflow-hidden bg-sc-ink bg-cover bg-center max-md:aspect-[3/1] ${cover ? '' : "bg-court-pattern after:absolute after:right-12 after:-bottom-[60px] after:size-[180px] after:rounded-[50%] after:border-2 after:border-[rgba(214,242,75,0.35)] after:content-['']"}`}
+        className={`group/image-edit relative w-full overflow-hidden bg-sc-ink bg-cover bg-center ${coach ? 'aspect-[4/1] max-h-[260px] max-md:aspect-[3/1]' : 'h-24'} ${cover ? '' : "bg-court-pattern after:absolute after:right-12 after:-bottom-[60px] after:size-[180px] after:rounded-[50%] after:border-2 after:border-[rgba(214,242,75,0.35)] after:content-['']"}`}
         style={cover ? { backgroundImage: `url("${encodeURI(cover)}")` } : undefined}
       >
         {coach && (
@@ -65,7 +65,7 @@ export function ProfileHero({ user, editing, onEdit }: ProfileHeroProps) {
           <h2 className="m-0 font-display text-[30px] leading-[1.05] font-extrabold wrap-anywhere text-sc-ink uppercase max-md:text-[24px]">
             {user.fullName}
           </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[13px] text-sc-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[14.5px] text-sc-muted">
             <RoleTag role={user.role} />
             <span className="inline-flex items-center gap-1.5">
               <span className="size-2 rounded-[999px] bg-sc-success [box-shadow:0_0_0_3px_rgba(22,163,74,0.15)]" />

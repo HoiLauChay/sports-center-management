@@ -164,7 +164,9 @@ export function ImageCropModal({ file, options, confirming, onCancel, onConfirm 
       onOk={() => void handleOk()}
       onCancel={onCancel}
     >
-      <p className="mt-0 mb-3 text-sm text-sc-muted">Kéo để di chuyển, cuộn chuột hoặc dùng thanh trượt để phóng to.</p>
+      <p className="mt-0 mb-3 text-[15px] text-sc-muted">
+        Kéo để di chuyển, cuộn chuột hoặc dùng thanh trượt để phóng to.
+      </p>
       <div
         className="relative mx-auto cursor-grab touch-none overflow-hidden rounded-md bg-sc-ink select-none active:cursor-grabbing"
         style={viewport}
@@ -205,7 +207,7 @@ export function ImageCropModal({ file, options, confirming, onCancel, onConfirm 
         )}
       </div>
       {hiddenBand > 0 && options.visibleHint && (
-        <p className="mt-2 mb-0 text-xs text-sc-muted">{options.visibleHint}</p>
+        <p className="mt-2 mb-0 text-[13.5px] text-sc-muted">{options.visibleHint}</p>
       )}
       <div className="mt-4 flex items-center gap-3">
         <ZoomOut size={16} className="shrink-0 text-sc-muted" />

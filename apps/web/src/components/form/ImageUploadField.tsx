@@ -40,7 +40,7 @@ export function ImageUploadField({
       </Avatar>
     ) : (
       <div
-        className={`flex aspect-[3/1] w-full max-w-md items-center justify-center overflow-hidden rounded-md border border-dashed bg-sc-paper text-sm text-sc-muted ${invalid ? 'border-red-400' : 'border-sc-line'}`}
+        className={`flex aspect-[3/1] w-full max-w-md items-center justify-center overflow-hidden rounded-md border border-dashed bg-sc-paper text-[15px] text-sc-muted ${invalid ? 'border-red-400' : 'border-sc-line'}`}
       >
         {value ? <img src={value} alt="Ảnh bìa" className="h-full w-full object-cover" /> : 'Chưa có ảnh bìa'}
       </div>

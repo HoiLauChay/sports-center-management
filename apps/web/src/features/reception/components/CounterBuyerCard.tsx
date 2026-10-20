@@ -17,7 +17,7 @@ function MemberSummary({
   const memberships = useMemberMemberships(buyer.accountId);
   const current = memberships.data?.current;
   return (
-    <div className="mt-3 flex flex-col gap-2 rounded-lg bg-sc-paper px-4 py-3 text-[13.5px]">
+    <div className="mt-3 flex flex-col gap-2 rounded-lg bg-sc-paper px-4 py-3 text-[15px]">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sc-muted">Số dư ví</span>
         <b className="tabular-nums">{balance === null || balance === undefined ? '…' : formatVND(balance)}</b>
@@ -31,14 +31,14 @@ function MemberSummary({
         ) : current ? (
           <span className="text-right">
             <b>{current.package.name}</b>
-            <span className="block text-xs text-sc-muted">hết hạn {formatDate(current.endDate)}</span>
+            <span className="block text-[13.5px] text-sc-muted">hết hạn {formatDate(current.endDate)}</span>
           </span>
         ) : (
           <Tag className="!m-0">Không có gói</Tag>
         )}
       </div>
       {current?.currentBenefits && (
-        <div className="text-xs text-sc-muted">
+        <div className="text-[13.5px] text-sc-muted">
           {current.currentBenefits.gymAccess ? 'Gym miễn phí · ' : ''}−{current.currentBenefits.bookingDiscountPct}% đặt
           sân · −{current.currentBenefits.classDiscountPct}% học phí ·{' '}
           {current.currentBenefits.freeBookingSlotsPerMonth} slot miễn phí/tháng
@@ -139,7 +139,7 @@ export function CounterBuyerCard({ buyer, onChange, balance, disabled }: Counter
                 status={nameError ? 'error' : undefined}
                 onChange={(event) => setGuest({ ...guest, name: event.target.value })}
               />
-              {nameError && <div className="mt-1 text-xs text-sc-error">{nameError}</div>}
+              {nameError && <div className="mt-1 text-[13.5px] text-sc-error">{nameError}</div>}
             </div>
             <div>
               <Input
@@ -151,7 +151,7 @@ export function CounterBuyerCard({ buyer, onChange, balance, disabled }: Counter
                 onChange={(event) => setGuest({ ...guest, phone: event.target.value })}
                 onPressEnter={confirmGuest}
               />
-              {phoneError && <div className="mt-1 text-xs text-sc-error">{phoneError}</div>}
+              {phoneError && <div className="mt-1 text-[13.5px] text-sc-error">{phoneError}</div>}
             </div>
             <Button type="primary" disabled={disabled} onClick={confirmGuest} className="w-fit">
               Xác nhận khách

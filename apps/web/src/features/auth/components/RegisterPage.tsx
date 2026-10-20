@@ -19,7 +19,7 @@ export function RegisterPage() {
 
   return (
     <AuthShell
-      width={480}
+      width={520}
       visual={{
         image: heroImg,
         imagePosition: 'center 40%',

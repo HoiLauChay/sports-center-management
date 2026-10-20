@@ -149,9 +149,9 @@ function ResolutionCell({
         </div>
       )}
       {error ? (
-        <span className="text-[12.5px] text-sc-error">{error}</span>
+        <span className="text-[13.5px] text-sc-error">{error}</span>
       ) : (
-        <span className="text-[12.5px] text-sc-success">Sẽ thông báo cho HLV và học viên</span>
+        <span className="text-[13.5px] text-sc-success">Sẽ thông báo cho HLV và học viên</span>
       )}
     </div>
   );
@@ -301,7 +301,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       render: (_, session) => (
         <div className="flex min-w-44 flex-col gap-0.5">
           <b>{session.className}</b>
-          <span className="text-[12.5px] whitespace-nowrap text-sc-muted">
+          <span className="text-[13.5px] whitespace-nowrap text-sc-muted">
             {formatDate(session.date)} · {session.startTime}–{session.endTime}
           </span>
           {session.alternatives.length === 0 && (
@@ -493,7 +493,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               locale={{ emptyText: 'Không có booking nào bị ảnh hưởng' }}
             />
             {bookings.length > 0 && (
-              <p className="mt-3 mb-0 text-[13px] text-sc-muted">
+              <p className="mt-3 mb-0 text-[14.5px] text-sc-muted">
                 Booking giữ nguyên giờ và giá, không hoàn tiền; thành viên được thông báo về sân mới.
               </p>
             )}

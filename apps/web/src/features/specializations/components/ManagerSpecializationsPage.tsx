@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Input, Modal, Segmented, Select, Tag, type TableColumnsType } from 'antd';
+import { Card, Input, Modal, Segmented, Select, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { RowActions } from '~/components/data/RowActions';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { formatDateTime } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
@@ -81,11 +82,7 @@ export function ManagerSpecializationsPage() {
     {
       title: 'Bộ môn',
       key: 'sport',
-      render: (_, entry) => (
-        <Tag color="green" className="!m-0">
-          {entry.sport.name}
-        </Tag>
-      ),
+      render: (_, entry) => <SportTag name={entry.sport.name} />,
     },
     {
       title: 'Gửi lúc',
@@ -102,7 +99,7 @@ export function ManagerSpecializationsPage() {
       key: 'review',
       render: (_, entry) =>
         entry.reviewedAt ? (
-          <div className="flex max-w-64 flex-col gap-0.5 text-[13px]">
+          <div className="flex max-w-64 flex-col gap-0.5 text-[14.5px]">
             <span className="whitespace-nowrap text-sc-muted">{formatDateTime(entry.reviewedAt)}</span>
             {entry.reviewNote && <span className="[overflow-wrap:anywhere]">{entry.reviewNote}</span>}
           </div>

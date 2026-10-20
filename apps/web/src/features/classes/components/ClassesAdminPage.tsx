@@ -8,6 +8,7 @@ import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses/hooks/useCourses';
 import { useConfirm } from '~/hooks/useConfirm';
@@ -82,10 +83,8 @@ export function ClassesAdminPage() {
           >
             {record.name}
           </Link>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-sc-muted">
-            <Tag color="green" className="!m-0">
-              {record.course.sport.name}
-            </Tag>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14.5px] text-sc-muted">
+            <SportTag name={record.course.sport.name} />
             <span>
               {record.course.name} · {formatVND(record.course.price)}
             </span>
@@ -103,7 +102,7 @@ export function ClassesAdminPage() {
         record.coach ? (
           <span className="font-medium text-sc-ink">{record.coach.fullName}</span>
         ) : (
-          <span className="text-[13px] font-medium text-orange-500">Chưa có HLV</span>
+          <span className="text-[14.5px] font-medium text-orange-500">Chưa có HLV</span>
         ),
     },
     {
@@ -113,7 +112,7 @@ export function ClassesAdminPage() {
           <div className="text-sc-ink tabular-nums">
             {record.enrolledCount}/{record.maxStudents}
           </div>
-          <div className="whitespace-nowrap text-[13px] text-sc-muted">tối thiểu {record.minStudents}</div>
+          <div className="whitespace-nowrap text-[14.5px] text-sc-muted">tối thiểu {record.minStudents}</div>
         </div>
       ),
     },
@@ -124,7 +123,7 @@ export function ClassesAdminPage() {
           {weeklyLines(record.weeklySchedule).map((line) => (
             <span key={line}>{line}</span>
           ))}
-          <span className="text-[13px] text-sc-muted">{classDateRange(record)}</span>
+          <span className="text-[14.5px] text-sc-muted">{classDateRange(record)}</span>
         </div>
       ),
     },

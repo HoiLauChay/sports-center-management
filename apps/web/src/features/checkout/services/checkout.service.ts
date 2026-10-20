@@ -36,10 +36,12 @@ export const checkoutService = {
 
   /** A member reads their own orders (`/me/orders`, date range only); staff read every order. */
   listOrders: async (user: Account, query: ListOrdersQuery) => {
-    const { page, limit, from, to } = query;
+    const { page, limit, from, to, status, orderNumber } = query;
     const { data } =
       user.role === 'MEMBER'
-        ? await privateApi.get<ApiResponse<Paginated<Order>>>('/me/orders', { params: { page, limit, from, to } })
+        ? await privateApi.get<ApiResponse<Paginated<Order>>>('/me/orders', {
+            params: { page, limit, from, to, status, orderNumber },
+          })
         : await privateApi.get<ApiResponse<Paginated<Order>>>('/orders', { params: query });
     return data.result;
   },

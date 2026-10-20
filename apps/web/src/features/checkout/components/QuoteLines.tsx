@@ -1,4 +1,4 @@
-import { Alert, Button, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Tag } from 'antd';
 import { Trash2 } from 'lucide-react';
 import { formatVND } from '~/lib/format';
 import type { CartLine, Quote, QuoteLine } from '../types';
@@ -30,105 +30,68 @@ interface QuoteLinesProps {
   disabled?: boolean;
 }
 
-function Money({ value, discount = false }: { value: number; discount?: boolean }) {
-  if (!value) return <span className="text-sc-muted-2">—</span>;
+function Breakdown({ item }: { item: QuoteLine }) {
+  const parts = [
+    item.membershipDiscount > 0 && `Ưu đãi gói −${formatVND(item.membershipDiscount)}`,
+    item.couponDiscount > 0 && `Mã ${item.couponCode ? `${item.couponCode} ` : ''}−${formatVND(item.couponDiscount)}`,
+  ].filter(Boolean);
+  if (!parts.length) return null;
   return (
-    <span className={`whitespace-nowrap tabular-nums ${discount ? 'text-sc-success' : ''}`}>
-      {discount ? '−' : ''}
-      {formatVND(value)}
-    </span>
+    <div className="flex flex-col items-end gap-0.5 text-[14.5px] tabular-nums">
+      <span className="text-sc-muted line-through">{formatVND(item.subtotal)}</span>
+      {parts.map((part) => (
+        <span key={part as string} className="text-sc-success">
+          {part}
+        </span>
+      ))}
+    </div>
   );
 }
 
-/** The draft's lines with the server's price breakdown and per-line errors (UC_3.18–3.19). */
 export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }: QuoteLinesProps) {
   const aligned = quote?.items.length === lines.length;
   const rows: Row[] = lines.map((line, index) => ({ line, item: aligned ? quote?.items[index] : undefined }));
 
-  const columns: TableColumnsType<Row> = [
-    {
-      title: 'Dịch vụ',
-      key: 'service',
-      render: (_, { line, item }) => {
+  return (
+    <ul className={`m-0 list-none p-0 [transition:opacity_0.15s] ${pricing ? 'opacity-60' : ''}`} aria-busy={pricing}>
+      {rows.map(({ line, item }) => {
         const description = item ? describeLine(item.type, item.snapshot ?? {}) : null;
         return (
-          <div className="flex min-w-56 flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[line.selection.type]}</Tag>
-              <b className="[overflow-wrap:anywhere]">{description?.title ?? 'Đang tính giá…'}</b>
+          <li
+            key={line.key}
+            className="flex items-start gap-3 border-b border-sc-border-soft py-4 first:pt-1 last:border-b-0 last:pb-1"
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[line.selection.type]}</Tag>
+                <span className="font-semibold [overflow-wrap:anywhere]">{description?.title ?? 'Đang tính giá…'}</span>
+              </div>
+              {description?.detail && <span className="text-[14.5px] text-sc-muted">{description.detail}</span>}
+              {benefitLabel(item) && (
+                <span className="text-[14.5px] font-semibold text-sc-success">{benefitLabel(item)}</span>
+              )}
+              {item && !item.valid && (
+                <Alert type="error" showIcon className="!mt-1" title={item.error?.message ?? 'Dịch vụ không hợp lệ'} />
+              )}
             </div>
-            {description?.detail && <span className="text-[13px] text-sc-muted">{description.detail}</span>}
-            {benefitLabel(item) && <span className="text-xs font-semibold text-sc-success">{benefitLabel(item)}</span>}
-            {item && !item.valid && (
-              <Alert type="error" showIcon className="!mt-1" title={item.error?.message ?? 'Dịch vụ không hợp lệ'} />
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: 'Giá gốc',
-      key: 'subtotal',
-      align: 'right',
-      render: (_, { item }) => (item ? <Money value={item.subtotal} /> : '…'),
-    },
-    {
-      title: 'Ưu đãi gói',
-      key: 'membership',
-      align: 'right',
-      render: (_, { item }) => (item ? <Money value={item.membershipDiscount} discount /> : '…'),
-    },
-    {
-      title: 'Mã giảm giá',
-      key: 'coupon',
-      align: 'right',
-      render: (_, { item }) =>
-        item ? (
-          <div className="flex flex-col items-end">
-            <Money value={item.couponDiscount} discount />
-            {item.couponCode && <span className="font-mono text-[11.5px] text-sc-muted">{item.couponCode}</span>}
-          </div>
-        ) : (
-          '…'
-        ),
-    },
-    {
-      title: 'Thành tiền',
-      key: 'total',
-      align: 'right',
-      render: (_, { item }) =>
-        item ? <b className="whitespace-nowrap tabular-nums">{formatVND(item.total)}</b> : <span>…</span>,
-    },
-    ...(onRemove
-      ? [
-          {
-            title: '',
-            key: 'remove',
-            width: 56,
-            render: (_: unknown, { line }: Row) => (
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="font-semibold whitespace-nowrap tabular-nums">{item ? formatVND(item.total) : '…'}</span>
+              {item && <Breakdown item={item} />}
+            </div>
+            {onRemove && (
               <Button
                 type="text"
                 danger
                 disabled={disabled}
-                aria-label="Xóa dòng này"
+                aria-label="Xóa dịch vụ này"
                 icon={<Trash2 size={16} />}
                 onClick={() => onRemove(line.key)}
+                className="-mr-2 shrink-0"
               />
-            ),
-          },
-        ]
-      : []),
-  ];
-
-  return (
-    <Table<Row>
-      rowKey={(row) => row.line.key}
-      size="middle"
-      columns={columns}
-      dataSource={rows}
-      pagination={false}
-      loading={pricing}
-      scroll={{ x: 'max-content' }}
-    />
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

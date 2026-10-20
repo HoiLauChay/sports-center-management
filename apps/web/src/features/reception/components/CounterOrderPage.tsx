@@ -108,7 +108,7 @@ function TransferPhase({
         </div>
       )}
       {data.status === 'PENDING' && (
-        <div className="mt-4 text-xs text-sc-muted-2">
+        <div className="mt-4 text-[13.5px] text-sc-muted-2">
           Khách đổi ý? Bấm “Hủy hóa đơn” rồi quay lại chọn cách thu khác. Rời màn hình này thì hệ thống ngừng kiểm tra
           trạng thái hóa đơn.
         </div>
@@ -122,7 +122,7 @@ function CounterGuideSteps() {
     <Card className="overflow-hidden border border-sc-border bg-white shadow-xs">
       <div className="py-2">
         <div className="text-center max-w-xl mx-auto mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sc-paper text-xs font-semibold text-sc-ink border border-sc-border mb-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sc-paper text-[13.5px] font-semibold text-sc-ink border border-sc-border mb-2.5">
             <span className="size-2 rounded-full bg-emerald-600 animate-pulse" />
             Quy trình bán hàng tại quầy
           </div>
@@ -133,44 +133,44 @@ function CounterGuideSteps() {
           {/* Bước 1 */}
           <div className="relative rounded-xl border border-sc-border bg-sc-paper/60 p-4 transition-all">
             <div className="flex items-center justify-between mb-3">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-ink text-xs font-bold text-sc-lime">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-ink text-[13.5px] font-bold text-sc-lime">
                 1
               </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span className="text-[12.5px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 Đang thực hiện
               </span>
             </div>
             <div className="flex items-center gap-2 mb-1.5">
               <UserCheck className="size-4 text-sc-ink" />
-              <h4 className="m-0 font-bold text-sm text-sc-ink">Chọn người mua</h4>
+              <h4 className="m-0 font-bold text-[15px] text-sc-ink">Chọn người mua</h4>
             </div>
           </div>
 
           {/* Bước 2 */}
           <div className="relative rounded-xl border border-sc-border/60 bg-sc-paper/30 p-4 opacity-75">
             <div className="flex items-center justify-between mb-3">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-xs font-bold text-sc-muted">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-[13.5px] font-bold text-sc-muted">
                 2
               </span>
-              <span className="text-[11px] font-medium text-sc-muted">Chờ bước 1</span>
+              <span className="text-[12.5px] font-medium text-sc-muted">Chờ bước 1</span>
             </div>
             <div className="flex items-center gap-2 mb-1.5">
               <LayoutGrid className="size-4 text-sc-muted" />
-              <h4 className="m-0 font-bold text-sm text-sc-ink">Thêm dịch vụ</h4>
+              <h4 className="m-0 font-bold text-[15px] text-sc-ink">Thêm dịch vụ</h4>
             </div>
           </div>
 
           {/* Bước 3 */}
           <div className="relative rounded-xl border border-sc-border/60 bg-sc-paper/30 p-4 opacity-75">
             <div className="flex items-center justify-between mb-3">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-xs font-bold text-sc-muted">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-sc-muted/20 text-[13.5px] font-bold text-sc-muted">
                 3
               </span>
-              <span className="text-[11px] font-medium text-sc-muted">Chờ bước 2</span>
+              <span className="text-[12.5px] font-medium text-sc-muted">Chờ bước 2</span>
             </div>
             <div className="flex items-center gap-2 mb-1.5">
               <CreditCard className="size-4 text-sc-muted" />
-              <h4 className="m-0 font-bold text-sm text-sc-ink">Thu tiền & Xuất hóa đơn</h4>
+              <h4 className="m-0 font-bold text-[15px] text-sc-ink">Thu tiền & Xuất hóa đơn</h4>
             </div>
           </div>
         </div>
@@ -354,10 +354,10 @@ export function CounterOrderPage() {
                           {method === 'TRANSFER' ? 'Tạo hóa đơn chuyển khoản' : 'Thu tiền'} · {formatVND(quote.total)}
                         </Button>
                         {!quote.canCheckout && (
-                          <p className="m-0 text-xs text-sc-error">{blockedReason(quote)} để thu tiền.</p>
+                          <p className="m-0 text-[13.5px] text-sc-error">{blockedReason(quote)} để thu tiền.</p>
                         )}
                         {method === 'TRANSFER' && quote.total === 0 && (
-                          <p className="m-0 text-xs text-sc-muted">
+                          <p className="m-0 text-[13.5px] text-sc-muted">
                             Đơn 0đ không cần chuyển khoản, hãy chọn tiền mặt hoặc thẻ.
                           </p>
                         )}

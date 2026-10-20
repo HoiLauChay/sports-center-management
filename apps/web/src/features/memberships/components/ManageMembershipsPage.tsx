@@ -94,7 +94,7 @@ export function ManageMembershipsPage() {
         <div className="flex min-w-[150px] flex-col gap-0.5">
           <span className="font-semibold text-sc-ink">{membership.name}</span>
           {membership.description && (
-            <span className="text-[12px] text-sc-muted line-clamp-2">{membership.description}</span>
+            <span className="text-[13.5px] text-sc-muted line-clamp-2">{membership.description}</span>
           )}
         </div>
       ),

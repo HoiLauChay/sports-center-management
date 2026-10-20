@@ -57,7 +57,7 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
   return (
     <Drawer open onClose={onClose} size={520} title={request.subject} destroyOnHidden>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2 text-[13px] text-sc-muted">
+        <div className="flex flex-wrap items-center gap-2 text-[14.5px] text-sc-muted">
           <Tag color={tag.color} className="!m-0">
             {tag.label}
           </Tag>
@@ -68,13 +68,13 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
           {request.handledBy && <span>Xử lý bởi {request.handledBy.fullName}</span>}
         </div>
         <div>
-          <div className="mb-1 text-[13px] font-semibold text-sc-muted">Nội dung thành viên gửi</div>
+          <div className="mb-1 text-[14.5px] font-semibold text-sc-muted">Nội dung thành viên gửi</div>
           <p className="m-0 rounded-lg bg-sc-paper px-4 py-3 whitespace-pre-line [overflow-wrap:anywhere]">
             {request.description}
           </p>
         </div>
         <div>
-          <div className="mb-1 text-[13px] font-semibold text-sc-muted">Phản hồi cho thành viên</div>
+          <div className="mb-1 text-[14.5px] font-semibold text-sc-muted">Phản hồi cho thành viên</div>
           <Input.TextArea
             value={note}
             disabled={closed}
@@ -139,7 +139,7 @@ export function ReceptionSupportPage() {
           <b className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{request.subject}</Highlight>
           </b>
-          <span className="truncate text-[13px] text-sc-muted">{request.description}</span>
+          <span className="truncate text-[14.5px] text-sc-muted">{request.description}</span>
         </div>
       ),
     },

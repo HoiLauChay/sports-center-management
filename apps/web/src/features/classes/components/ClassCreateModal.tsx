@@ -259,10 +259,10 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
           Thêm khung giờ
         </Button>
         {form.formState.errors.weeklySchedule?.root?.message && (
-          <div className="mt-2 text-sm text-red-600">{form.formState.errors.weeklySchedule.root.message}</div>
+          <div className="mt-2 text-[15px] text-red-600">{form.formState.errors.weeklySchedule.root.message}</div>
         )}
 
-        <p className="mt-3 mb-0 text-xs text-sc-muted">
+        <p className="mt-3 mb-0 text-[13.5px] text-sc-muted">
           Lớp mới ở trạng thái nháp và giữ lịch phòng / sân ngay. Lớp cần có HLV và được duyệt mới nhận đăng ký.
         </p>
       </Form>

@@ -22,7 +22,7 @@ import auditService from '~/services/audit.service';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
 import scheduleService, { scheduleConflict, type TimeRange } from '~/services/schedule.service';
 import sessionService from '~/services/session.service';
-import { formatDate, formatTime, fromDbTime, toCenterDateTime } from '~/utils/time';
+import { formatCenterDate, formatDate, formatTime, fromDbTime, toCenterDateTime } from '~/utils/time';
 import { runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const notFound = (message = 'Không tìm thấy cơ sở') =>
@@ -213,7 +213,7 @@ class MaintenanceService {
                 accountId: row.account.id,
                 type: 'BOOKING',
                 title: 'Lượt đặt đã chuyển sân',
-                message: `Lượt đặt ngày ${range.date} ${formatTime(range.start)}–${formatTime(range.end)} chuyển sang ${moved.facility.name} do bảo trì. Giá và giờ giữ nguyên.`,
+                message: `Lượt đặt ngày ${formatCenterDate(range.date)} ${formatTime(range.start)}–${formatTime(range.end)} chuyển sang ${moved.facility.name} do bảo trì. Giá và giờ giữ nguyên.`,
                 referenceType: 'BOOKING',
                 referenceId: row.id,
                 sendEmail: true,

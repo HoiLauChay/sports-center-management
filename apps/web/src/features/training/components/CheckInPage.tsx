@@ -49,7 +49,7 @@ const columns: TableColumnsType<CheckIn> = [
     dataIndex: 'checkedInAt',
     width: 85,
     render: (value: string) => (
-      <span className="flex items-center gap-1 font-semibold text-sc-ink tabular-nums text-xs">
+      <span className="flex items-center gap-1 font-semibold text-sc-ink tabular-nums text-[13.5px]">
         <Clock className="size-3 text-sc-muted" />
         {timeOf(value)}
       </span>
@@ -60,17 +60,17 @@ const columns: TableColumnsType<CheckIn> = [
     dataIndex: ['account', 'fullName'],
     render: (name: string) => (
       <div className="flex items-center gap-2">
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs font-bold">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[13.5px] font-bold">
           {name.split(' ').slice(-1)[0]?.[0] ?? 'U'}
         </div>
-        <span className="font-medium text-sc-ink truncate block text-xs">{name}</span>
+        <span className="font-medium text-sc-ink truncate block text-[13.5px]">{name}</span>
       </div>
     ),
   },
   {
     title: 'Nhân viên',
     dataIndex: ['checkedBy', 'fullName'],
-    render: (name: string) => <span className="text-xs text-sc-muted truncate block">{name}</span>,
+    render: (name: string) => <span className="text-[13.5px] text-sc-muted truncate block">{name}</span>,
   },
 ];
 
@@ -182,8 +182,8 @@ export function CheckInPage() {
                 <UserCheck className="size-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-sc-ink leading-tight m-0">Xác thực hội viên</h3>
-                <span className="text-xs text-sc-muted">Tra cứu nhanh theo SĐT, email hoặc tên</span>
+                <h3 className="text-[15px] font-bold text-sc-ink leading-tight m-0">Xác thực hội viên</h3>
+                <span className="text-[13.5px] text-sc-muted">Tra cứu nhanh theo SĐT, email hoặc tên</span>
               </div>
             </div>
             {member && (
@@ -206,7 +206,7 @@ export function CheckInPage() {
             />
 
             {found.isFetching && (
-              <div className="flex items-center justify-center gap-2 py-3 text-xs text-sc-muted">
+              <div className="flex items-center justify-center gap-2 py-3 text-[13.5px] text-sc-muted">
                 <Spin size="small" />
                 <span>Đang tìm kiếm hội viên…</span>
               </div>
@@ -227,11 +227,11 @@ export function CheckInPage() {
             {!term && !member && !done && (
               <div className="flex flex-col gap-2.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-sc-ink uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[13.5px] font-semibold text-sc-ink uppercase tracking-wider flex items-center gap-1.5">
                     <Calendar className="size-3.5 text-primary" />
                     Lịch đặt hôm nay chờ check-in
                   </span>
-                  <Tag color="blue" className="!m-0 text-xs font-semibold tabular-nums">
+                  <Tag color="blue" className="!m-0 text-[13.5px] font-semibold tabular-nums">
                     {pendingGroups.length} khách ({pendingBookings.length} ca đặt)
                   </Tag>
                 </div>
@@ -245,18 +245,18 @@ export function CheckInPage() {
                           className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:border-primary/40 transition-colors shadow-xs"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold text-xs tabular-nums">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 font-bold text-[13.5px] tabular-nums">
                               {item.earliestTime}
                             </div>
                             <div className="min-w-0">
-                              <span className="font-semibold text-sm text-sc-ink truncate block">
+                              <span className="font-semibold text-[15px] text-sc-ink truncate block">
                                 {item.account.fullName}
                               </span>
                               <div className="flex flex-wrap gap-1 mt-0.5">
                                 {item.slots.map((s) => (
                                   <span
                                     key={s.id}
-                                    className="text-[11px] text-sc-muted bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded truncate"
+                                    className="text-[12.5px] text-sc-muted bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded truncate"
                                   >
                                     {s.facilityName} ({s.startTime}–{s.endTime})
                                   </span>
@@ -303,7 +303,7 @@ export function CheckInPage() {
             {/* Danh sách ứng viên khớp (nhiều hơn 1 người) */}
             {candidates.length > 1 && !member && (
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs text-sc-muted">
+                <div className="flex items-center justify-between text-[13.5px] text-sc-muted">
                   <span>
                     Tìm thấy <b>{candidates.length}</b> thành viên phù hợp:
                   </span>
@@ -317,14 +317,14 @@ export function CheckInPage() {
                       className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer shadow-xs group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[13.5px]">
                           {entry.fullName.split(' ').slice(-1)[0]?.[0] ?? 'M'}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-sm text-sc-ink truncate group-hover:text-primary transition-colors">
+                          <div className="font-semibold text-[15px] text-sc-ink truncate group-hover:text-primary transition-colors">
                             <Highlight keyword={term}>{entry.fullName}</Highlight>
                           </div>
-                          <div className="text-xs text-sc-muted flex items-center gap-2">
+                          <div className="text-[13.5px] text-sc-muted flex items-center gap-2">
                             {entry.phone && (
                               <span className="tabular-nums">
                                 <Highlight keyword={term}>{entry.phone}</Highlight>
@@ -337,7 +337,7 @@ export function CheckInPage() {
                           </div>
                         </div>
                       </div>
-                      <Tag color={entry.status === 'ACTIVE' ? 'success' : 'default'} className="!m-0 text-[11px]">
+                      <Tag color={entry.status === 'ACTIVE' ? 'success' : 'default'} className="!m-0 text-[12.5px]">
                         {entry.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa'}
                       </Tag>
                     </div>
@@ -357,7 +357,7 @@ export function CheckInPage() {
                     </span>
                   }
                   subTitle={
-                    <span className="text-xs text-sc-muted">
+                    <span className="text-[13.5px] text-sc-muted">
                       Thời gian xác nhận vào sân: {formatDateTime(done.checkedInAt)}
                     </span>
                   }
@@ -383,17 +383,17 @@ export function CheckInPage() {
                 {/* Thông tin hồ sơ hội viên */}
                 <div className="flex items-center justify-between rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 p-3.5">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[15px]">
                       {member.fullName.split(' ').slice(-1)[0]?.[0] ?? 'M'}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sc-ink text-base truncate">{member.fullName}</span>
-                        <Tag color={member.status === 'ACTIVE' ? 'success' : 'error'} className="!m-0 text-[11px]">
+                        <Tag color={member.status === 'ACTIVE' ? 'success' : 'error'} className="!m-0 text-[12.5px]">
                           {member.status === 'ACTIVE' ? 'Đang hoạt động' : 'Không hoạt động'}
                         </Tag>
                       </div>
-                      <div className="text-xs text-sc-muted flex items-center gap-2 mt-0.5">
+                      <div className="text-[13.5px] text-sc-muted flex items-center gap-2 mt-0.5">
                         {member.phone && <span className="tabular-nums font-medium">{member.phone}</span>}
                         {member.phone && <span>·</span>}
                         <span className="truncate">{member.email}</span>
@@ -405,11 +405,11 @@ export function CheckInPage() {
                 {/* Tình trạng Booking / Lịch tập hôm nay */}
                 <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 p-3.5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-sc-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-[13.5px] font-semibold text-sc-ink uppercase tracking-wider flex items-center gap-1.5">
                       <Calendar className="size-3.5 text-primary" />
                       Lịch đặt hôm nay
                     </span>
-                    <span className="text-xs text-sc-muted">
+                    <span className="text-[13.5px] text-sc-muted">
                       {memberBookings.length > 0 ? `${memberBookings.length} lịch đặt` : 'Không có lịch đặt'}
                     </span>
                   </div>
@@ -419,7 +419,7 @@ export function CheckInPage() {
                       {memberBookings.map((entry) => (
                         <div
                           key={entry.id}
-                          className="flex items-center justify-between rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs"
+                          className="flex items-center justify-between rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[13.5px]"
                         >
                           <div className="flex items-center gap-2 font-medium text-emerald-900 dark:text-emerald-200">
                             <CheckCircle2 className="size-3.5 text-emerald-600" />
@@ -432,7 +432,7 @@ export function CheckInPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 px-3 py-2.5 text-xs text-sc-muted flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 px-3 py-2.5 text-[13.5px] text-sc-muted flex items-center gap-2">
                       <Clock className="size-3.5 text-slate-400 shrink-0" />
                       <span>Hội viên không có lịch đặt sân hôm nay. Check-in dựa trên buổi học hoặc gói tập.</span>
                     </div>
@@ -451,11 +451,11 @@ export function CheckInPage() {
 
                 {/* Lỗi từ chối check-in từ server */}
                 {refusal && (
-                  <div className="flex gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[13px] text-amber-900 dark:text-amber-200">
+                  <div className="flex gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-[14.5px] text-amber-900 dark:text-amber-200">
                     <TriangleAlert className="size-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                     <div className="flex flex-col gap-0.5">
-                      <b className="font-semibold text-xs uppercase tracking-wide">Chưa đủ điều kiện check-in</b>
-                      <span className="text-xs leading-relaxed">{refusal}</span>
+                      <b className="font-semibold text-[13.5px] uppercase tracking-wide">Chưa đủ điều kiện check-in</b>
+                      <span className="text-[13.5px] leading-relaxed">{refusal}</span>
                     </div>
                   </div>
                 )}
@@ -467,7 +467,7 @@ export function CheckInPage() {
                   block
                   loading={checkIn.isPending}
                   onClick={confirm}
-                  className="!h-11 font-bold text-sm shadow-sm"
+                  className="!h-11 font-bold text-[15px] shadow-sm"
                 >
                   ✓ Xác nhận check-in cho {member.fullName}
                 </Button>
@@ -484,7 +484,7 @@ export function CheckInPage() {
                 <History className="size-4 text-primary" />
                 <span className="font-bold text-sc-ink">Check-in hôm nay</span>
               </div>
-              <Tag color="cyan" className="!m-0 text-xs font-semibold tabular-nums">
+              <Tag color="cyan" className="!m-0 text-[13.5px] font-semibold tabular-nums">
                 {today.data?.length ?? 0} lượt
               </Tag>
             </div>

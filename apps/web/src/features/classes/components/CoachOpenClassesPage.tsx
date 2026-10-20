@@ -2,6 +2,7 @@ import type { ClassSummary } from '@sports-center/shared';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { useMySpecializations } from '~/features/specializations/hooks/useSpecializations';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -40,19 +41,19 @@ export function CoachOpenClassesPage() {
       render: (_, record) => (
         <div>
           <div className="font-semibold text-sc-ink">{record.name}</div>
-          <div className="text-xs text-sc-muted">
+          <div className="text-[13.5px] text-sc-muted">
             {record.course.name} · {formatVND(record.course.price)}
           </div>
         </div>
       ),
     },
-    { title: 'Bộ môn', render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag> },
+    { title: 'Bộ môn', render: (_, record) => <SportTag name={record.course.sport.name} /> },
     {
       title: 'Lịch',
       render: (_, record) => (
         <div className="flex flex-col gap-1">
           <WeeklyTags schedule={record.weeklySchedule} />
-          <span className="text-xs text-sc-muted">
+          <span className="text-[13.5px] text-sc-muted">
             {classDateRange(record)} · {record.facility.name}
           </span>
         </div>

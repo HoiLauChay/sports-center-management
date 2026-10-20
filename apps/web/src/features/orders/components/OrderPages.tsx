@@ -17,7 +17,7 @@ const receptionDetail = getRouteApi('/_authenticated/_receptionist/reception/ord
 
 export function MemberOrderDetailPage() {
   const { orderId } = memberDetail.useParams();
-  return <OrderDetailView orderId={orderId} back={{ to: '/orders', label: 'Hóa đơn của tôi' }} />;
+  return <OrderDetailView orderId={orderId} back={{ to: '/orders', label: 'Đơn hàng của tôi' }} />;
 }
 
 export function ReceptionOrderDetailPage() {

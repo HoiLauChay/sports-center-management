@@ -66,6 +66,7 @@ export interface Enrollment {
 
 export interface MyEnrollment extends Omit<Enrollment, 'class'> {
   class: ClassSummary;
+  sessionsLeft: number;
 }
 
 export interface CancelClassResult {

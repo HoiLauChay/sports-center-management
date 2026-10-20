@@ -1,6 +1,14 @@
 import scheduleRepository from '~/repositories/schedule.repository';
 import notificationService, { type NotificationInput } from '~/services/notification.service';
-import { addDays, formatDate, formatTime, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
+import {
+  addDays,
+  formatCenterDate,
+  formatDate,
+  formatTime,
+  fromDbTime,
+  toCenterDateTime,
+  todayInCenter,
+} from '~/utils/time';
 
 const WINDOW_MS = 60 * 60 * 1000;
 
@@ -24,7 +32,7 @@ class ReminderJobService {
         accountId: booking.accountId!,
         type: 'BOOKING',
         title: 'Sắp đến giờ đặt sân',
-        message: `${booking.facility.name} lúc ${formatTime(fromDbTime(booking.startTime))} hôm ${formatDate(booking.bookingDate)}.`,
+        message: `${booking.facility.name} lúc ${formatTime(fromDbTime(booking.startTime))} hôm ${formatCenterDate(formatDate(booking.bookingDate))}.`,
         referenceType: 'BOOKING',
         referenceId: booking.id,
         dedupKey: `reminder:booking:${booking.id}`,

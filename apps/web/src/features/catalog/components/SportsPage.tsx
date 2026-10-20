@@ -93,7 +93,7 @@ export function SportsPage() {
           <div className="flex min-w-0 flex-col">
             <span className="font-semibold">{sport.name}</span>
             {sport.description && (
-              <span className="max-w-md text-[13px] text-sc-muted [overflow-wrap:anywhere]">{sport.description}</span>
+              <span className="max-w-md text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">{sport.description}</span>
             )}
           </div>
         </div>

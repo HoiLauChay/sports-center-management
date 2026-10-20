@@ -14,10 +14,19 @@ export interface RowAction {
 
 const INLINE_LIMIT = 2;
 
-export function RowActions({ label, actions }: { label: string; actions: RowAction[] }) {
+export function RowActions({
+  label,
+  actions,
+  inlineLimit = INLINE_LIMIT,
+}: {
+  label: string;
+  actions: RowAction[];
+  inlineLimit?: number;
+}) {
   if (actions.length === 0) return null;
-  const inline = actions.length > INLINE_LIMIT ? actions.slice(0, 1) : actions;
-  const overflow = actions.length > INLINE_LIMIT ? actions.slice(1) : [];
+  const collapse = actions.length > inlineLimit;
+  const inline = collapse ? actions.slice(0, Math.min(1, inlineLimit)) : actions;
+  const overflow = collapse ? actions.slice(inline.length) : [];
 
   return (
     <div className="flex items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>
