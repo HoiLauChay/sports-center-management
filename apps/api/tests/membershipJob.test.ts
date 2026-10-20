@@ -86,23 +86,26 @@ describe('membership job', () => {
     ).toBe(1);
   });
 
-  test('a member buying while the job runs never ends up with two active memberships', async () => {
-    const { member, membership } = await seedMember('member@example.com', 1_000_000);
+  test('a member switching package while the job runs never ends up with two active memberships', async () => {
+    const { member } = await seedMember('member@example.com', 1_000_000);
+    const silver = await prisma.membership.create({ data: { name: 'Silver', price: 300_000, durationDays: 30 } });
 
     const [, bought] = await Promise.all([
       runJob(),
       checkout('POST', '/', member, {
-        items: [{ type: 'MEMBERSHIP', packageId: membership.packageId }],
+        items: [{ type: 'MEMBERSHIP', packageId: silver.id }],
         paymentMethod: 'WALLET',
-        expectedTotal: 500_000,
-        idempotencyKey: 'buy-during-job',
+        expectedTotal: 300_000,
+        idempotencyKey: 'switch-during-job',
       }),
     ]);
     expect(bought.status).toBe(201);
 
-    expect(await prisma.memberMembership.count({ where: { accountId: member.id, status: 'ACTIVE' } })).toBe(1);
-    const payments = await prisma.walletTransaction.count({ where: { accountId: member.id, type: 'PAYMENT' } });
-    expect(await expectWalletConsistent(member.id)).toBe(1_000_000 - payments * 500_000);
+    const active = await prisma.memberMembership.findMany({ where: { accountId: member.id, status: 'ACTIVE' } });
+    expect(active.map(({ packageId }) => packageId)).toEqual([silver.id]);
+    const payments = await prisma.walletTransaction.findMany({ where: { accountId: member.id, type: 'PAYMENT' } });
+    const spent = payments.reduce((sum, { amount }) => sum + Number(amount), 0);
+    expect(await expectWalletConsistent(member.id)).toBe(1_000_000 - spent);
   });
 
   test('members are reminded once before their membership ends', async () => {

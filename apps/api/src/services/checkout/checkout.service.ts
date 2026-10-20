@@ -247,6 +247,7 @@ class CheckoutService {
       settings: await settingRepository.get(tx),
       benefits: null,
       planned: [],
+      walletPayment: false,
     };
     const reason =
       current.status !== 'PENDING' || current.expiresAt <= ctx.now

@@ -38,6 +38,7 @@ export interface CheckoutContext {
   settings: SettingRow;
   benefits: ActiveBenefits | null;
   planned: PlannedLine[];
+  walletPayment: boolean;
 }
 
 export interface LineError {

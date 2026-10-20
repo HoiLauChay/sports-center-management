@@ -23,12 +23,15 @@ interface MembershipData {
 const planPeriod = async (db: Db, ctx: CheckoutContext, accountId: string, packageId: string, days: number) => {
   const today = todayInCenter(ctx.now);
   const active = await memberMembershipRepository.findActive(accountId, db);
-  if (active && formatDate(active.endDate) > today) {
-    if (active.packageId !== packageId) return null;
-    const start = formatDate(active.endDate);
-    return { renewId: active.id, expireId: null, start, end: addDays(start, days) };
-  }
-  return { renewId: null, expireId: active?.id ?? null, start: today, end: addDays(today, days) };
+  const current = active && formatDate(active.endDate) > today ? active : null;
+  if (current?.packageId === packageId) return null;
+  return {
+    renewId: null,
+    expireId: active && !current ? active.id : null,
+    switchId: current?.id ?? null,
+    start: today,
+    end: addDays(today, days),
+  };
 };
 
 const onSale = (row: { isActive: boolean } | null) => !!row?.isActive;
@@ -99,13 +102,16 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
 
   prepare: async (db, ctx, input) => {
     if (ctx.buyer.kind === 'GUEST') return lineError(ERROR_CODE.GUEST_NOT_ALLOWED, 'Khách vãng lai không mua gói');
+    if (!ctx.walletPayment) {
+      return lineError(ERROR_CODE.INVALID_STATE, 'Gói thành viên chỉ thanh toán bằng ví, đăng ký ở trang thành viên');
+    }
     const membership = await membershipRepository.findById(input.packageId, db);
     if (!membership || !onSale(membership)) return lineError(ERROR_CODE.INVALID_STATE, 'Gói đã ngừng bán');
 
     const period = await planPeriod(db, ctx, ctx.buyer.accountId, membership.id, membership.durationDays);
-    if (!period) return lineError(ERROR_CODE.INVALID_STATE, 'Người mua đang có gói khác còn hiệu lực');
+    if (!period) return lineError(ERROR_CODE.INVALID_STATE, 'Bạn đang đăng ký gói này');
 
-    return priceLine(membership, period, !!period.renewId);
+    return priceLine(membership, period, false);
   },
 
   verify: async (tx, _ctx, { data }) =>
@@ -120,6 +126,7 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
       ? {
           renewId: data.renewFrom.membershipId,
           expireId: null,
+          switchId: null,
           start: data.renewFrom.start,
           end: addDays(data.renewFrom.start, data.durationDays),
         }
@@ -127,6 +134,13 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
     if (!period) throw new Error('Membership period changed after pricing');
 
     if (period.expireId) await memberMembershipRepository.update(period.expireId, { status: 'EXPIRED' }, tx);
+    if (period.switchId) {
+      await memberMembershipRepository.update(
+        period.switchId,
+        { status: 'CANCELLED', endDate: new Date(period.start), autoRenew: false, cancelledAt: ctx.now },
+        tx,
+      );
+    }
     const membershipId = period.renewId
       ? (
           await memberMembershipRepository.update(

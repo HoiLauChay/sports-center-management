@@ -70,6 +70,7 @@ const settle = async (tx: Prisma.TransactionClient, id: string, accountId: strin
       settings: await settingRepository.get(tx),
       benefits: null,
       planned: [],
+      walletPayment: true,
     };
     const committed = await commitOrder(tx, ctx, renewalOrder(membership, id, start), {
       method: 'WALLET',

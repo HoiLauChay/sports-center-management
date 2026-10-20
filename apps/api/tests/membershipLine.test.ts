@@ -37,41 +37,91 @@ const buy = async (member: Viewer, packageId: string, expectedTotal: number) => 
 };
 
 describe('membership line', () => {
-  test('renewing early extends the end date, keeps the earlier period and undoes a cancellation', async () => {
+  test('the package in use cannot be bought again, even after cancelling, and counter orders cannot sell one', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'desk@example.com');
     await seedBalance(member.id, 1_000_000);
-    await giveActiveMembership(member.id, { bookingDiscountPct: 10 });
-    const cancelled = await prisma.memberMembership.findFirstOrThrow();
-    const before = await prisma.memberMembership.update({
-      where: { id: cancelled.id },
-      data: { cancelledAt: new Date() },
-      include: { periods: true },
+    await giveActiveMembership(member.id);
+    const current = await prisma.memberMembership.update({
+      where: { accountId: member.id, status: 'ACTIVE' },
+      data: { cancelledAt: new Date(), autoRenew: false },
     });
-    const oldEnd = formatDate(before.endDate);
 
-    const order = await buy(member, before.packageId, 500_000);
-    await expectOrderConsistent(order.id);
-    expect(order.items[0]).toMatchObject({ refId: before.id, totalAmount: 500_000 });
-
-    const after = await prisma.memberMembership.findUniqueOrThrow({
-      where: { id: before.id },
-      include: { periods: { orderBy: { periodStart: 'asc' } } },
-    });
-    expect(formatDate(after.endDate)).toBe(addDays(oldEnd, 31));
-    expect(after).toMatchObject({ cancelledAt: null, autoRenew: true });
-    expect(after.periods.map(({ periodStart, periodEnd }) => [formatDate(periodStart), formatDate(periodEnd)])).toEqual(
-      [
-        [formatDate(before.periods[0]!.periodStart), oldEnd],
-        [oldEnd, addDays(oldEnd, 31)],
-      ],
+    const same = await readResult<Quote>(
+      await request('POST', '/quote', member, { items: [{ type: 'MEMBERSHIP', packageId: current.packageId }] }),
     );
-    expect(await expectWalletConsistent(member.id)).toBe(500_000);
+    expect(same.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
 
     const other = await prisma.membership.create({ data: { name: 'Silver', price: 200_000, durationDays: 30 } });
-    const switched = await readResult<Quote>(
-      await request('POST', '/quote', member, { items: [{ type: 'MEMBERSHIP', packageId: other.id }] }),
+    const counter = await readResult<Quote>(
+      await request('POST', '/quote', receptionist, {
+        buyer: { accountId: member.id },
+        items: [{ type: 'MEMBERSHIP', packageId: other.id }],
+      }),
     );
-    expect(switched.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
+    expect(counter.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
+    expect(await expectWalletConsistent(member.id)).toBe(1_000_000);
+  });
+
+  test('switching ends the current package today, keeps its paid period and gives the new benefits at once', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const court = await seedFacility(1);
+    await seedBalance(member.id, 1_000_000);
+    await giveActiveMembership(member.id, { bookingDiscountPct: 10 });
+    const before = await prisma.memberMembership.findFirstOrThrow({ include: { periods: true } });
+    const silver = await prisma.membership.create({
+      data: { name: 'Silver', price: 300_000, durationDays: 30, bookingDiscountPct: 20 },
+    });
+
+    const order = await buy(member, silver.id, 300_000);
+    await expectOrderConsistent(order.id);
+
+    const today = todayInCenter();
+    const old = await prisma.memberMembership.findUniqueOrThrow({
+      where: { id: before.id },
+      include: { periods: true },
+    });
+    expect(old).toMatchObject({ status: 'CANCELLED', autoRenew: false });
+    expect(old.cancelledAt).not.toBeNull();
+    expect(formatDate(old.endDate)).toBe(today);
+    expect(old.periods).toEqual(before.periods);
+
+    const next = await prisma.memberMembership.findUniqueOrThrow({ where: { id: order.items[0]!.refId! } });
+    expect(next).toMatchObject({ packageId: silver.id, status: 'ACTIVE', autoRenew: true, cancelledAt: null });
+    expect([formatDate(next.startDate), formatDate(next.endDate)]).toEqual([today, addDays(today, 30)]);
+    expect(await expectWalletConsistent(member.id)).toBe(700_000);
+
+    const quote = await readResult<Quote>(
+      await request('POST', '/quote', member, {
+        items: [
+          {
+            type: 'FACILITY_BOOKING',
+            facilityId: court.id,
+            date: addDays(today, 1),
+            startTime: '08:00',
+            endTime: '09:00',
+          },
+        ],
+      }),
+    );
+    expect(quote.total).toBe(80_000);
+  });
+
+  test('a package bought today can be switched the same day', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await seedBalance(member.id, 1_000_000);
+    const gold = await prisma.membership.create({ data: { name: 'Gold', price: 500_000, durationDays: 30 } });
+    const silver = await prisma.membership.create({ data: { name: 'Silver', price: 300_000, durationDays: 30 } });
+
+    const first = await buy(member, gold.id, 500_000);
+    await buy(member, silver.id, 300_000);
+
+    const today = todayInCenter();
+    const old = await prisma.memberMembership.findUniqueOrThrow({ where: { id: first.items[0]!.refId! } });
+    expect(old.status).toBe('CANCELLED');
+    expect([formatDate(old.startDate), formatDate(old.endDate)]).toEqual([today, today]);
+    expect(await prisma.memberMembership.count({ where: { accountId: member.id, status: 'ACTIVE' } })).toBe(1);
+    expect(await expectWalletConsistent(member.id)).toBe(200_000);
   });
 
   test('an expired membership is closed first, and later package edits never change a paid period', async () => {
