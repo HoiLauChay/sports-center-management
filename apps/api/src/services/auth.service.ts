@@ -126,7 +126,7 @@ class AuthService {
     const account = await accountRepository.findByEmail(email);
     const valid = await verifyPassword(password, account?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
-    if (!account || !valid) {
+    if (!account || !valid || account.mustSetPassword) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng');
     }
     if (account.status !== 'ACTIVE') {
@@ -259,8 +259,7 @@ class AuthService {
     const passwordHash = await hashPassword(password);
     await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
-      await accountRepository.updatePassword(account.id, passwordHash, tx);
-      if (!account.emailVerifiedAt) await accountRepository.markEmailVerified(account.id, tx);
+      await accountRepository.setOwnPassword(account, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
     });
   };

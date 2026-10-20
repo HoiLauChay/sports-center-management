@@ -112,7 +112,7 @@ class UserService {
     try {
       const { account, notifications } = await runTransaction(async (tx) => {
         const created = await accountRepository.create(
-          { email, fullName, phone, role, passwordHash, ...profileData(body) },
+          { email, fullName, phone, role, passwordHash, mustSetPassword: true, ...profileData(body) },
           tx,
         );
         const profile = role === 'COACH' ? created.coachProfile : created.receptionistProfile;
@@ -133,7 +133,7 @@ class UserService {
               type: 'SYSTEM',
               title: 'Tài khoản của bạn đã được tạo',
               message:
-                'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Để đăng nhập lần đầu, hãy mở trang đăng nhập, chọn "Quên mật khẩu" và nhập email này để đặt mật khẩu.',
+                'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu.',
               dedupKey: `welcome:${created.id}`,
               sendEmail: true,
             },
