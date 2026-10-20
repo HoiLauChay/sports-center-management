@@ -139,12 +139,15 @@ describe('staff membership support', () => {
     const same = await users('POST', `/${member.id}/memberships`, manager, { ...body, idempotencyKey: 'boss-same-1' });
     expect([same.status, await readCode(same)]).toEqual([409, 'INVALID_STATE']);
 
-    const short = await users('POST', `/${member.id}/memberships`, manager, {
-      packageId: platinum.id,
-      expectedTotal: 600_000,
-      idempotencyKey: 'boss-switch-1',
-    });
+    const shortBody = { packageId: platinum.id, expectedTotal: 600_000, idempotencyKey: 'boss-switch-1' };
+    const short = await users('POST', `/${member.id}/memberships`, manager, shortBody);
     expect([short.status, await readCode(short)]).toEqual([409, 'INSUFFICIENT_BALANCE']);
+    expect((await users('POST', `/${member.id}/memberships`, manager, shortBody)).status).toBe(409);
+    const reminders = await prisma.notification.findMany({
+      where: { accountId: member.id, title: 'Gia hạn gói không thành công' },
+    });
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0]!.message).toContain('Platinum');
     const active = await prisma.memberMembership.findMany({ where: { accountId: member.id, status: 'ACTIVE' } });
     expect(active.map(({ packageId }) => packageId)).toEqual([silver.id]);
     expect(await expectWalletConsistent(member.id)).toBe(100_000);

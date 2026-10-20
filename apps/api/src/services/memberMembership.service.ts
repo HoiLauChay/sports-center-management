@@ -11,11 +11,13 @@ import { isMembershipCurrent, toMemberMembershipResponse } from '~/mappers/membe
 import accountRepository from '~/repositories/account.repository';
 import bookingRepository from '~/repositories/booking.repository';
 import memberMembershipRepository, { type MemberMembershipRow } from '~/repositories/memberMembership.repository';
+import membershipRepository from '~/repositories/membership.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import checkoutService from '~/services/checkout/checkout.service';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import { hashRequest } from '~/utils/idempotency';
 import { formatCenterDate, monthOf, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction } from '~/utils/transaction';
 
@@ -41,6 +43,28 @@ const toResponse = async (row: MemberMembershipRow, today: string, tx?: Prisma.T
   const { slotDurationMinutes } = await settingRepository.get(tx);
   const used = await bookingRepository.countFreeSlots(row.accountId, monthOf(today), slotDurationMinutes, tx);
   return toMemberMembershipResponse(row, today, used);
+};
+
+const money = (value: unknown) => Number(value ?? 0).toLocaleString('vi-VN');
+
+const notifyShortWallet = async (
+  staffId: string,
+  accountId: string,
+  body: SubscribeMemberBody,
+  meta?: Record<string, unknown>,
+) => {
+  const membership = await membershipRepository.findById(body.packageId);
+  const created = await notificationService.create([
+    {
+      accountId,
+      type: 'MEMBERSHIP',
+      title: 'Gia hạn gói không thành công',
+      message: `Không đăng ký được gói ${membership?.name ?? ''} vì số dư ví không đủ (cần ${money(meta?.required)}đ, ví còn ${money(meta?.balance)}đ). Vui lòng nạp thêm tiền vào ví.`,
+      dedupKey: `membership-short-wallet:${hashRequest({ staffId, key: body.idempotencyKey })}`,
+      sendEmail: true,
+    },
+  ]);
+  notificationService.sendEmailsAfterCommit(created);
 };
 
 class MemberMembershipService {
@@ -89,7 +113,12 @@ class MemberMembershipService {
     const account = await accountRepository.findById(accountId, 'MEMBER');
     if (account?.status !== 'ACTIVE') throw memberNotFound();
 
-    const order = await checkoutService.chargeMembership(actor, accountId, body);
+    const order = await checkoutService.chargeMembership(actor, accountId, body).catch(async (error: unknown) => {
+      if (error instanceof ErrorWithStatus && error.code === ERROR_CODE.INSUFFICIENT_BALANCE) {
+        await notifyShortWallet(actor.id, accountId, body, error.meta);
+      }
+      throw error;
+    });
     const membershipId = order.items[0]!.refId!;
     const row = (await memberMembershipRepository.findById(membershipId, accountId))!;
     await auditService.record({
