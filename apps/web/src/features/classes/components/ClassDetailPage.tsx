@@ -1,17 +1,19 @@
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft, CircleCheck } from 'lucide-react';
+import { CircleCheck } from 'lucide-react';
 import { InfoGrid } from '~/components/data/InfoGrid';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { SportTag } from '~/components/ui/SportTag';
+import { StatCard } from '~/components/ui/StatCard';
 import { useCurrentUser } from '~/features/auth';
 import { AddToCartButton } from '~/features/checkout';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import { canCancelEnrollment } from '~/features/checkout/refundPolicy';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { formatDayLabel, isPast, todayVN } from '~/lib/time';
+import { formatDayLabel, isPast, parseDate, todayVN } from '~/lib/time';
 import { useClass, useMyEnrollments } from '../hooks/useClasses';
 import type { ClassSession } from '../types';
 import { weeklyText } from '../utils';
@@ -19,13 +21,17 @@ import { enrollmentProgress, useAskCancelEnrollment } from './enrollmentActions'
 
 const routeApi = getRouteApi('/_authenticated/_member/classes/$classId');
 
-const sessionColumns: TableColumnsType<ClassSession> = [
+const sessionColumnsOf = (nextId?: string): TableColumnsType<ClassSession> => [
   {
     title: 'Buổi',
     dataIndex: 'sessionNumber',
     width: 56,
-    render: (value: number) => (
-      <span className="font-display text-xl font-extrabold text-sc-muted-2">{String(value).padStart(2, '0')}</span>
+    render: (value: number, session) => (
+      <span
+        className={`font-display text-[22px] font-extrabold ${session.id === nextId ? 'text-sc-primary' : 'text-sc-muted-2'}`}
+      >
+        {String(value).padStart(2, '0')}
+      </span>
     ),
   },
   {
@@ -46,7 +52,9 @@ const sessionColumns: TableColumnsType<ClassSession> = [
     title: 'Trạng thái',
     dataIndex: 'status',
     render: (status: ClassSession['status'], session) =>
-      status === 'SCHEDULED' ? (
+      session.id === nextId ? (
+        <Tag className="!m-0 !bg-sc-primary-soft !text-sc-primary">Tiếp theo</Tag>
+      ) : status === 'SCHEDULED' ? (
         <Tag className="!m-0">{isPast(session.date, session.startTime) ? 'Đã diễn ra' : 'Dự kiến'}</Tag>
       ) : (
         <Tag color="error" className="!m-0">
@@ -83,65 +91,76 @@ export function ClassDetailPage() {
   }
   const item = detail.data;
   const seatsLeft = item.maxStudents - item.enrolledCount;
+  const nextSession = item.sessions.find(
+    (session) => session.status === 'SCHEDULED' && !isPast(session.date, session.startTime),
+  );
+  const daysToStart = item.startDate ? parseDate(item.startDate).diff(parseDate(todayVN()), 'day') : null;
 
-  const details = (
-    <>
-      <Card>
-        <SectionTitle>Thông tin lớp</SectionTitle>
-        {item.course.description && <p className="mt-0 text-sc-ink-2">{item.course.description}</p>}
-        <InfoGrid
-          items={[
-            { label: 'Huấn luyện viên', value: item.coach?.fullName ?? 'Đang cập nhật' },
-            { label: 'Cơ sở', value: item.facility.name },
-            { label: 'Lịch học', value: weeklyText(item.weeklySchedule) },
-            {
-              label: 'Thời gian',
-              value:
-                item.startDate && item.endDate ? `${formatDate(item.startDate)} – ${formatDate(item.endDate)}` : '—',
-            },
-            { label: 'Sĩ số', value: `${item.enrolledCount}/${item.maxStudents} (còn ${seatsLeft} chỗ)` },
-          ]}
-        />
-      </Card>
-      <Card>
+  const infoCard = (
+    <Card>
+      <SectionTitle>Thông tin lớp</SectionTitle>
+      {item.course.description && <p className="mt-0 text-[15px] text-sc-ink-2">{item.course.description}</p>}
+      <InfoGrid
+        single={Boolean(enrollment)}
+        items={[
+          { label: 'Huấn luyện viên', value: item.coach?.fullName ?? 'Đang cập nhật' },
+          { label: 'Cơ sở', value: item.facility.name },
+          { label: 'Lịch học', value: weeklyText(item.weeklySchedule) },
+          {
+            label: 'Thời gian',
+            value: item.startDate && item.endDate ? `${formatDate(item.startDate)} – ${formatDate(item.endDate)}` : '—',
+          },
+          { label: 'Sĩ số', value: `${item.enrolledCount}/${item.maxStudents} (còn ${seatsLeft} chỗ)` },
+        ]}
+      />
+    </Card>
+  );
+
+  const sessionsCard = (
+    <Card>
+      <div className="flex items-baseline justify-between gap-3">
         <SectionTitle>Lịch các buổi học</SectionTitle>
-        <Table<ClassSession>
-          rowKey="id"
-          columns={sessionColumns}
-          dataSource={item.sessions}
-          pagination={false}
-          scroll={{ x: 'max-content' }}
-        />
-      </Card>
-    </>
+        <span className="text-sc-muted">{item.sessions.length} buổi</span>
+      </div>
+      <Table<ClassSession>
+        rowKey="id"
+        columns={sessionColumnsOf(enrollment ? nextSession?.id : undefined)}
+        dataSource={item.sessions}
+        pagination={false}
+        scroll={{ x: 'max-content' }}
+      />
+    </Card>
   );
 
   return (
     <>
       <PageHeader
         title={item.name}
-        description={`${item.course.sport.name} · ${item.course.totalSessions} buổi`}
-        extra={
-          <Link to="/classes">
-            <Button icon={<ArrowLeft size={16} />}>Danh sách lớp</Button>
-          </Link>
+        back={{ to: '/classes', label: 'Danh sách lớp' }}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <SportTag name={item.course.sport.name} />
+            <span>
+              HLV {item.coach?.fullName ?? 'đang cập nhật'} · {item.facility.name} · {item.course.totalSessions} buổi
+            </span>
+          </span>
         }
       />
       {enrollment ? (
         <div className="flex flex-col gap-4">
-          <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sc-primary-border bg-sc-primary-soft px-5 py-4">
+          <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sc-primary-border bg-sc-primary-soft px-5 py-4 md:px-6 md:py-5">
             <div className="flex min-w-0 items-start gap-3">
-              <CircleCheck size={22} className="mt-0.5 shrink-0 text-sc-primary" />
+              <CircleCheck size={24} className="mt-0.5 shrink-0 text-sc-primary" />
               <div className="flex min-w-0 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-display text-[18px] font-extrabold tracking-wide uppercase">
-                    Bạn đã đăng ký
+                  <span className="font-display text-[20px] font-extrabold tracking-wide uppercase md:text-[22px]">
+                    Bạn đã đăng ký lớp này
                   </span>
-                  <Tag color="success" className="!m-0">
+                  <Tag className="!m-0 !bg-white !text-sc-primary">
                     {item.startDate && todayVN() < item.startDate ? 'Sắp khai giảng' : 'Đang học'}
                   </Tag>
                 </div>
-                <span className="text-[14px] text-sc-ink-2">
+                <span className="text-[15px] text-sc-ink-2">
                   <span className="font-semibold text-sc-primary">{enrollmentProgress(enrollment)}</span> · Đã trả{' '}
                   <span className="tabular-nums">{formatVND(enrollment.paidAmount)}</span>
                 </span>
@@ -161,11 +180,47 @@ export function ClassDetailPage() {
               )}
             </div>
           </section>
-          {details}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <StatCard
+              label="Khai giảng"
+              value={item.startDate ? parseDate(item.startDate).format('DD/MM') : '—'}
+              hint={
+                daysToStart === null
+                  ? 'Chưa có lịch'
+                  : daysToStart > 0
+                    ? `Còn ${daysToStart} ngày nữa`
+                    : daysToStart === 0
+                      ? 'Hôm nay'
+                      : 'Đã khai giảng'
+              }
+            />
+            <StatCard
+              label="Còn lại"
+              value={`${enrollment.sessionsLeft}/${item.course.totalSessions}`}
+              hint="buổi chưa học"
+            />
+            <StatCard
+              label="Buổi tiếp theo"
+              value={nextSession?.startTime ?? '—'}
+              hint={nextSession ? formatDayLabel(nextSession.date) : 'Không còn buổi nào'}
+            />
+            <StatCard
+              label="Sĩ số"
+              value={`${item.enrolledCount}/${item.maxStudents}`}
+              hint={seatsLeft > 0 ? `còn ${seatsLeft} chỗ` : 'đã đủ'}
+            />
+          </div>
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="min-w-0">{sessionsCard}</div>
+            {infoCard}
+          </div>
         </div>
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="flex min-w-0 flex-col gap-4">{details}</div>
+          <div className="flex min-w-0 flex-col gap-4">
+            {infoCard}
+            {sessionsCard}
+          </div>
           <Card className="xl:sticky xl:top-4">
             <SectionTitle>Đăng ký</SectionTitle>
             <div className="text-[14px]">
