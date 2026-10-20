@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { MAX_MONEY } from '../constants/money';
+import { expectedTotalSchema, idempotencyKeySchema } from './checkout';
 
 const nameSchema = z
   .string('Tên gói không được để trống')
@@ -41,6 +42,18 @@ export const memberMembershipParamsSchema = z.object({
   membershipId: z.uuid('Mã gói của thành viên không hợp lệ'),
 });
 
+export const subscribeMemberBodySchema = z.object({
+  packageId: z.uuid('Mã gói không hợp lệ'),
+  expectedTotal: expectedTotalSchema,
+  idempotencyKey: idempotencyKeySchema,
+});
+
+export const terminateMembershipBodySchema = z.object({
+  reason: z.string('Vui lòng nhập lý do').trim().min(1, 'Vui lòng nhập lý do').max(500, 'Lý do tối đa 500 ký tự'),
+});
+
 export type CreateMembershipBody = z.infer<typeof createMembershipBodySchema>;
 export type CreateMembershipInput = z.input<typeof createMembershipBodySchema>;
 export type UpdateMembershipBody = z.infer<typeof updateMembershipBodySchema>;
+export type SubscribeMemberBody = z.infer<typeof subscribeMemberBodySchema>;
+export type TerminateMembershipBody = z.infer<typeof terminateMembershipBodySchema>;

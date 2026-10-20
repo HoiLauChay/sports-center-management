@@ -71,19 +71,21 @@ export const checkoutQuoteBodySchema = z.object({
     .optional(),
 });
 
-const expectedTotalSchema = z
+export const expectedTotalSchema = z
   .int('Tổng tiền phải là số nguyên')
   .min(0, 'Tổng tiền không được âm')
   .max(MAX_MONEY, 'Tổng tiền quá lớn');
 
+export const idempotencyKeySchema = z
+  .string('Thiếu khóa chống gửi lặp')
+  .trim()
+  .min(8, 'Khóa chống gửi lặp quá ngắn')
+  .max(100, 'Khóa chống gửi lặp quá dài');
+
 export const checkoutBodySchema = checkoutQuoteBodySchema.extend({
   paymentMethod: z.enum(['WALLET', 'CASH', 'CARD'], 'Phương thức thanh toán không hợp lệ'),
   expectedTotal: expectedTotalSchema,
-  idempotencyKey: z
-    .string('Thiếu khóa chống gửi lặp')
-    .trim()
-    .min(8, 'Khóa chống gửi lặp quá ngắn')
-    .max(100, 'Khóa chống gửi lặp quá dài'),
+  idempotencyKey: idempotencyKeySchema,
 });
 
 export const counterInvoiceBodySchema = checkoutQuoteBodySchema.extend({
