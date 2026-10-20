@@ -9,7 +9,7 @@ import { formatCountdown, useCountdown } from '../hooks/useWallet';
 function InfoRow({ label, value, copy }: { label: string; value: ReactNode; copy?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-sc-border-soft py-2.5 last:border-b-0">
-      <span className="shrink-0 text-[13px] text-sc-muted">{label}</span>
+      <span className="shrink-0 text-[14.5px] text-sc-muted">{label}</span>
       <span className="flex min-w-0 items-center gap-1 text-right font-semibold [overflow-wrap:anywhere]">
         {value}
         {copy && <CopyButton value={copy} label={label} />}
@@ -91,7 +91,7 @@ export function InvoicePayPanel({
   if (layout === 'counter') {
     return (
       <div className="flex flex-col items-center gap-4 py-2 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-sc-warning/10 px-3 py-1 text-[13px] font-semibold text-sc-warning">
+        <span className="inline-flex items-center gap-2 rounded-full bg-sc-warning/10 px-3 py-1 text-[14.5px] font-semibold text-sc-warning">
           <span className="size-2 animate-pulse rounded-full bg-sc-warning" />
           Đang chờ khách chuyển khoản · còn <b className="tabular-nums">{formatCountdown(remaining ?? 0)}</b>
         </span>
@@ -106,7 +106,7 @@ export function InvoicePayPanel({
           />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[13px] text-sc-muted">Số tiền</span>
+          <span className="text-[14.5px] text-sc-muted">Số tiền</span>
           <span className="flex items-center gap-1 font-display text-[40px] leading-none font-extrabold tabular-nums text-sc-ink">
             {formatVND(invoice.amount)}
             <CopyButton value={String(invoice.amount)} label="Số tiền" />
@@ -123,7 +123,7 @@ export function InvoicePayPanel({
             }
           />
         </div>
-        <p className="m-0 max-w-md text-xs text-sc-muted">
+        <p className="m-0 max-w-md text-[13.5px] text-sc-muted">
           Khách quét mã bằng app ngân hàng, giữ nguyên số tiền và nội dung. Màn hình tự chuyển khi tiền về.
         </p>
         {onCancel && (
@@ -148,11 +148,11 @@ export function InvoicePayPanel({
             fallback={QR_FALLBACK}
           />
         </div>
-        <Tag color="warning" className="!m-0 !inline-flex items-center gap-1.5 !px-3 !py-1 !text-[14px]">
+        <Tag color="warning" className="!m-0 !inline-flex items-center gap-1.5 !px-3 !py-1 !text-[15px]">
           <Clock3 size={14} />
           Còn <b className="tabular-nums">{formatCountdown(remaining ?? 0)}</b>
         </Tag>
-        <p className="m-0 text-center text-xs text-sc-muted-2">
+        <p className="m-0 text-center text-[14.5px] text-sc-muted">
           Hệ thống tự kiểm tra mỗi 3 giây, không cần tải lại trang.
         </p>
       </div>

@@ -62,7 +62,7 @@ export function LoginPage() {
           )}
         />
 
-        <div className="-mt-1.5 mb-[18px] flex items-center justify-end text-sm">
+        <div className="-mt-1.5 mb-5 flex items-center justify-end text-[15px]">
           <AuthLink to={PATHS.forgotPassword}>Quên mật khẩu?</AuthLink>
         </div>
 

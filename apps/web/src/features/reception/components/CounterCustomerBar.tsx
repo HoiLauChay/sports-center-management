@@ -16,7 +16,7 @@ const RENEW_WINDOW_DAYS = 7;
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-[11px] font-semibold tracking-[0.06em] text-sc-muted uppercase">{label}</span>
+      <span className="text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">{label}</span>
       <span className="text-[14px] text-sc-ink">{children}</span>
     </div>
   );
@@ -85,12 +85,12 @@ function MembershipStat({
             Còn {Math.max(daysLeft, 0)} ngày
           </Tag>
         ) : (
-          <span className="text-[13px] text-sc-muted">đến {formatDate(current.endDate)}</span>
+          <span className="text-[14.5px] text-sc-muted">đến {formatDate(current.endDate)}</span>
         )}
         {daysLeft !== null && daysLeft <= RENEW_WINDOW_DAYS && renew}
       </span>
       {current.currentBenefits && (
-        <span className="mt-0.5 block text-xs text-sc-success">{benefitsText(current.currentBenefits)}</span>
+        <span className="mt-0.5 block text-[13.5px] text-sc-success">{benefitsText(current.currentBenefits)}</span>
       )}
     </Stat>
   );
@@ -136,7 +136,7 @@ export function CounterCustomerBar({
               {member ? 'Hội viên' : 'Khách vãng lai'}
             </Tag>
           </span>
-          <span className="text-[13px] text-sc-muted tabular-nums">{buyer.phone ?? 'Chưa có SĐT'}</span>
+          <span className="text-[14.5px] text-sc-muted tabular-nums">{buyer.phone ?? 'Chưa có SĐT'}</span>
         </div>
       </div>
 
@@ -156,7 +156,7 @@ export function CounterCustomerBar({
           />
         </>
       ) : (
-        <span className="text-[13px] text-sc-muted">Chỉ đặt sân lẻ · không ưu đãi · không mã giảm giá</span>
+        <span className="text-[14.5px] text-sc-muted">Chỉ đặt sân lẻ · không ưu đãi · không mã giảm giá</span>
       )}
 
       <div className="ml-auto">

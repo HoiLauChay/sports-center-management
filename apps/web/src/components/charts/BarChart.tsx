@@ -24,18 +24,22 @@ interface BarChartProps {
 
 const PAD = { top: 12, right: 12, bottom: 28, left: 56 };
 
+const TICK_COUNT = 4;
+
+const decimal = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 });
+
 function compact(value: number) {
-  if (value >= 1e9) return `${+(value / 1e9).toFixed(1)} tỷ`;
-  if (value >= 1e6) return `${+(value / 1e6).toFixed(1)} tr`;
-  if (value >= 1e3) return `${Math.round(value / 1e3)}k`;
-  return String(value);
+  if (value >= 1e9) return `${decimal.format(value / 1e9)} tỷ`;
+  if (value >= 1e6) return `${decimal.format(value / 1e6)} tr`;
+  if (value >= 1e3) return `${decimal.format(value / 1e3)}k`;
+  return decimal.format(value);
 }
 
-function niceMax(value: number) {
-  if (value <= 0) return 1;
-  const exponent = 10 ** Math.floor(Math.log10(value));
-  const fraction = value / exponent;
-  const step = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+function niceStep(max: number) {
+  if (max <= 0) return 1;
+  const raw = max / TICK_COUNT;
+  const exponent = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].find((candidate) => candidate * exponent >= raw)!;
   return step * exponent;
 }
 
@@ -58,7 +62,7 @@ export function BarChart({
   data,
   series,
   mode = 'stacked',
-  height = 300,
+  height = 260,
   format = formatVND,
   ariaLabel,
 }: BarChartProps) {
@@ -71,8 +75,9 @@ export function BarChart({
       ? series.reduce((sum, item) => sum + (datum.values[item.key] ?? 0), 0)
       : Math.max(0, ...series.map((item) => datum.values[item.key] ?? 0)),
   );
-  const max = niceMax(Math.max(0, ...totals));
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => max * ratio);
+  const step = niceStep(Math.max(0, ...totals));
+  const max = Math.max(step, Math.ceil(Math.max(0, ...totals) / step) * step);
+  const ticks = Array.from({ length: Math.round(max / step) + 1 }, (_, index) => index * step);
   const slot = inner.width / Math.max(1, data.length);
   const barWidth = Math.max(2, Math.min(40, slot * 0.7));
   const labelEvery = Math.ceil(36 / slot);
@@ -80,10 +85,13 @@ export function BarChart({
 
   return (
     <div ref={ref} className="relative w-full">
-      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-sc-muted">
+      <div
+        className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-sc-muted"
+        style={{ paddingLeft: PAD.left }}
+      >
         {series.map((item) => (
-          <span key={item.key} className="inline-flex items-center gap-1.5">
-            <i className="inline-block size-2.5 rounded-sm" style={{ background: item.color }} />
+          <span key={item.key} className="inline-flex items-center gap-2">
+            <i className="inline-block size-2.5 rounded-full" style={{ background: item.color }} />
             {item.label}
           </span>
         ))}
@@ -99,7 +107,7 @@ export function BarChart({
               stroke="var(--sc-border-soft)"
               strokeDasharray={tick ? '4 4' : undefined}
             />
-            <text x={PAD.left - 8} y={y(tick) + 4} textAnchor="end" fontSize={11} fill="var(--sc-muted)">
+            <text x={PAD.left - 8} y={y(tick) + 4} textAnchor="end" fontSize={12} fill="var(--sc-muted)">
               {compact(tick)}
             </text>
           </g>
@@ -147,7 +155,7 @@ export function BarChart({
                   x={PAD.left + slot * index + slot / 2}
                   y={height - 8}
                   textAnchor="middle"
-                  fontSize={11}
+                  fontSize={12}
                   fill="var(--sc-muted)"
                 >
                   {datum.label}
@@ -169,7 +177,7 @@ export function BarChart({
           {series.map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4">
               <span className="inline-flex items-center gap-1.5">
-                <i className="inline-block size-2 rounded-sm" style={{ background: item.color }} />
+                <i className="inline-block size-2 rounded-full" style={{ background: item.color }} />
                 {item.label}
               </span>
               <b className="tabular-nums">{format(data[hover]!.values[item.key] ?? 0)}</b>

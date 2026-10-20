@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Button, Card, Tag } from 'antd';
 import { BadgeCheck, History, Wallet } from 'lucide-react';
 import { MappedTag } from '~/components/ui/MappedTag';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { ORDER_STATUS_TAG } from '~/constants/payment';
 import { useOrders } from '~/features/orders';
@@ -32,12 +33,12 @@ export function MemberWalletBlock({ memberId }: { memberId: string }) {
             </span>
             <div>
               <div className="font-display text-[26px] leading-none font-extrabold tabular-nums">
-                {wallet.data ? formatVND(wallet.data.balance) : '…'}
+                {wallet.data ? <MoneyFigure amount={wallet.data.balance} /> : '…'}
               </div>
-              <div className="text-xs text-sc-muted">Số dư hiện tại</div>
+              <div className="text-[13.5px] text-sc-muted">Số dư hiện tại</div>
             </div>
           </div>
-          <ul className="mt-3 mb-0 flex list-none flex-col gap-1.5 p-0 text-[13px]">
+          <ul className="mt-3 mb-0 flex list-none flex-col gap-1.5 p-0 text-[14.5px]">
             {(wallet.data?.transactions.items ?? []).map((transaction) => (
               <li
                 key={transaction.id}
@@ -45,7 +46,7 @@ export function MemberWalletBlock({ memberId }: { memberId: string }) {
               >
                 <span className="min-w-0">
                   <span className="block truncate">{transaction.description ?? transaction.transactionCode}</span>
-                  <span className="text-xs text-sc-muted-2">{formatDateTime(transaction.createdAt)}</span>
+                  <span className="text-[13.5px] text-sc-muted-2">{formatDateTime(transaction.createdAt)}</span>
                 </span>
                 <b
                   className={`whitespace-nowrap tabular-nums ${transaction.type === 'PAYMENT' ? 'text-sc-error' : 'text-sc-success'}`}
@@ -75,7 +76,7 @@ export function MemberMembershipBlock({ memberId }: { memberId: string }) {
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sc-paper text-sc-ink-2">
           <BadgeCheck size={17} />
         </span>
-        <div className="min-w-0 flex-1 text-[13.5px]">
+        <div className="min-w-0 flex-1 text-[15px]">
           {memberships.isPending ? (
             <span className="text-sc-muted">Đang tải…</span>
           ) : memberships.data === null ? (
@@ -92,7 +93,7 @@ export function MemberMembershipBlock({ memberId }: { memberId: string }) {
                 {formatDate(current.startDate)} – {formatDate(current.endDate)}
               </div>
               {current.currentBenefits && (
-                <div className="mt-1 text-xs text-sc-muted">
+                <div className="mt-1 text-[13.5px] text-sc-muted">
                   {current.currentBenefits.gymAccess ? 'Gym miễn phí · ' : ''}−
                   {current.currentBenefits.bookingDiscountPct}% sân · −{current.currentBenefits.classDiscountPct}% lớp ·{' '}
                   {current.currentBenefits.freeBookingSlotsPerMonth} slot/tháng
@@ -125,12 +126,12 @@ export function MemberHistoryBlock({ memberId }: { memberId: string }) {
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sc-paper text-sc-ink-2">
           <History size={17} />
         </span>
-        <ul className="m-0 flex min-w-0 flex-1 list-none flex-col gap-2 p-0 text-[13.5px]">
+        <ul className="m-0 flex min-w-0 flex-1 list-none flex-col gap-2 p-0 text-[15px]">
           {(orders.data?.items ?? []).map((order) => (
             <li key={order.id} className="flex items-center justify-between gap-2">
               <Link to="/reception/orders/$orderId" params={{ orderId: order.id }} className="min-w-0">
-                <span className="block font-mono text-[13px] font-semibold">{order.orderNumber}</span>
-                <span className="text-xs text-sc-muted">{formatDateTime(order.paidAt)}</span>
+                <span className="block font-mono text-[14.5px] font-semibold">{order.orderNumber}</span>
+                <span className="text-[13.5px] text-sc-muted">{formatDateTime(order.paidAt)}</span>
               </Link>
               <span className="flex flex-col items-end gap-0.5">
                 <b className="tabular-nums">{formatVND(order.totalAmount)}</b>

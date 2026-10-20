@@ -59,7 +59,7 @@ const focusCustomerSearch = () => window.setTimeout(() => document.getElementByI
 function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-sc-border-soft py-2 last:border-b-0">
-      <span className="text-[13.5px] text-sc-muted">{label}</span>
+      <span className="text-[15px] text-sc-muted">{label}</span>
       <span className={`tabular-nums ${strong ? 'font-display text-[22px] font-extrabold' : 'font-semibold'}`}>
         {value}
       </span>
@@ -282,7 +282,7 @@ export function CounterOrderPage() {
   if (invoiceId) {
     return (
       <>
-        <PageHeader title="Bán tại quầy" description="Đưa màn hình cho khách quét mã QR." />
+        <PageHeader title="Bán tại quầy" />
         <TransferPhase invoiceId={invoiceId} onBack={() => setInvoiceId(null)} onFinished={newOrder} />
       </>
     );
@@ -319,7 +319,9 @@ export function CounterOrderPage() {
             </span>
             <div>
               <h2 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">Khách hàng</h2>
-              <p className="m-0 text-[13px] text-sc-muted">Tìm hội viên hoặc bán cho khách vãng lai để bắt đầu đơn.</p>
+              <p className="m-0 text-[14.5px] text-sc-muted">
+                Tìm hội viên hoặc bán cho khách vãng lai để bắt đầu đơn.
+              </p>
             </div>
           </div>
           {preselect.isFetching ? <PageLoading /> : <CounterCustomerSearch disabled={busy} onSelect={store.setBuyer} />}
@@ -396,7 +398,7 @@ export function CounterOrderPage() {
       {cart.lines.length > 0 && !cartVisible && (
         <div className="sticky bottom-0 z-10 -mx-4 mt-4 flex items-center justify-between gap-3 border-t border-sc-border bg-white/95 px-4 py-3 backdrop-blur xl:hidden">
           <div className="flex flex-col leading-tight">
-            <span className="text-xs text-sc-muted">{cart.lines.length} dịch vụ · Phải trả</span>
+            <span className="text-[13.5px] text-sc-muted">{cart.lines.length} dịch vụ · Phải trả</span>
             <b className="font-display text-[22px] tabular-nums">{quote ? formatVND(quote.total) : '…'}</b>
           </div>
           <Button

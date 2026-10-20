@@ -2,6 +2,7 @@ import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
+import { RefreshCw, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
@@ -111,6 +112,15 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
     setSelection(null);
   };
 
+  const inStrip = quickDays.includes(date);
+  const total = pricing || !line ? '…' : formatVND(line.total);
+  const canAdd = Boolean(line?.valid) && !quote.isFetching && !schedule.error;
+  const add = () => {
+    if (!selected) return;
+    onAdd(selected.input);
+    setSelection(null);
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -132,7 +142,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           aria-label="Chọn sân / phòng"
           showSearch
           optionFilterProp="label"
-          className="!min-w-48"
+          className="w-full sm:!w-auto sm:!min-w-48"
           value={facilityId}
           options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
           onChange={(value) => {
@@ -140,51 +150,62 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
             setSelection(null);
           }}
         />
-        <div className="flex flex-wrap items-center gap-1.5">
-          {quickDays.map((day) => {
-            const current = dayjs(day, DATE_FORMAT);
-            return (
-              <button
-                key={day}
-                type="button"
-                aria-pressed={day === date}
-                onClick={() => changeDay(day)}
-                className={`flex h-12 w-12 cursor-pointer flex-col items-center justify-center rounded-lg border text-center leading-tight [transition:all_0.12s] ${
-                  day === date
-                    ? 'border-sc-ink bg-sc-ink text-white'
-                    : 'border-sc-border bg-white text-sc-ink-2 hover:border-sc-primary-border hover:bg-sc-primary-soft'
-                }`}
-              >
-                <small className="text-[10.5px] opacity-70">{DAY_SHORT[current.day()]}</small>
-                <b className="text-[15px]">{current.format('DD')}</b>
-              </button>
-            );
-          })}
-          <DatePicker
-            value={dayjs(date, DATE_FORMAT)}
-            allowClear={false}
-            format="DD/MM/YYYY"
-            minDate={dayjs(today, DATE_FORMAT)}
-            maxDate={dayjs(addDays(today, maxAdvance), DATE_FORMAT)}
-            onChange={(value) => value && changeDay(value.format(DATE_FORMAT))}
-            className="!w-36"
-          />
-        </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div
+        className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]"
+        role="group"
+        aria-label="Chọn ngày"
+      >
+        {quickDays.map((day) => {
+          const current = dayjs(day, DATE_FORMAT);
+          return (
+            <button
+              key={day}
+              type="button"
+              aria-pressed={day === date}
+              onClick={() => changeDay(day)}
+              className={`flex h-14 min-w-14 shrink-0 cursor-pointer px-2 flex-col items-center justify-center rounded-xl border text-center leading-tight [transition:all_0.12s] ${
+                day === date
+                  ? 'border-sc-ink bg-sc-ink text-white'
+                  : 'border-sc-border bg-white text-sc-ink-2 hover:border-sc-primary-border hover:bg-sc-primary-soft'
+              }`}
+            >
+              <span className="text-[13.5px] opacity-70">{day === today ? 'Hôm nay' : DAY_SHORT[current.day()]}</span>
+              <span className="text-[16px] font-bold">{current.format('DD')}</span>
+            </button>
+          );
+        })}
+        <DatePicker
+          value={inStrip ? null : dayjs(date, DATE_FORMAT)}
+          placeholder="Ngày khác"
+          allowClear={false}
+          format="DD/MM/YYYY"
+          inputReadOnly
+          minDate={dayjs(today, DATE_FORMAT)}
+          maxDate={dayjs(addDays(today, maxAdvance), DATE_FORMAT)}
+          onChange={(value) => value && changeDay(value.format(DATE_FORMAT))}
+          className={`!h-14 !w-36 shrink-0 !rounded-xl ${inStrip ? '' : '!border-sc-ink'}`}
+        />
+      </div>
+
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 rounded-xl border border-sc-border-soft bg-white p-4">
-          <h3 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-wide uppercase">
-            {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
-          </h3>
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-sc-muted" role="status">
-            <Button onClick={schedule.refetch} loading={schedule.isFetching}>
-              Làm mới lịch
-            </Button>
-            <span>
-              {schedule.updatedAt ? `Cập nhật lúc ${dayjs(schedule.updatedAt).format('HH:mm:ss')}` : 'Chưa tải lịch'}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">
+              {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
+            </h3>
+            <span className="flex items-center gap-1 text-[14.5px] text-sc-muted" role="status">
+              {schedule.updatedAt ? `Cập nhật ${dayjs(schedule.updatedAt).format('HH:mm')}` : 'Đang tải lịch'}
+              <Button
+                type="text"
+                size="small"
+                aria-label="Làm mới lịch"
+                icon={<RefreshCw size={14} />}
+                loading={schedule.isFetching}
+                onClick={schedule.refetch}
+              />
             </span>
-            <span>Tự cập nhật mỗi 30 giây</span>
           </div>
           {invalidated && (
             <Alert
@@ -208,60 +229,72 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           )}
         </div>
 
-        <aside className="rounded-xl border border-sc-border-soft bg-sc-paper p-4">
-          <small className="font-display text-[12px] font-bold tracking-[0.12em] text-sc-muted uppercase">
+        <aside className="hidden rounded-xl border border-sc-border-soft bg-sc-paper p-4 lg:sticky lg:top-4 lg:block">
+          <span className="font-display text-[13.5px] font-bold tracking-[0.12em] text-sc-muted uppercase">
             Slot đã chọn
-          </small>
+          </span>
           {!selected ? (
             <div className="mt-2 text-sc-muted">
-              <h3 className="m-0 font-display text-[22px] font-extrabold uppercase text-sc-ink">Chưa chọn</h3>
-              <p className="mt-1 mb-0 text-[13px]">Bấm ô trống trên lưới; bấm ô kề bên để kéo dài, tối đa 3 slot.</p>
+              <h3 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">Chưa chọn</h3>
+              <p className="mt-1 mb-0 text-[14.5px]">Bấm một ô còn trống; bấm ô kề bên để kéo dài, tối đa 3 slot.</p>
             </div>
           ) : (
             <div className="mt-2 flex flex-col gap-3">
               <div>
                 <h3 className="m-0 font-display text-[22px] font-extrabold uppercase">{selected.facility.name}</h3>
-                <div className="text-[13px] text-sc-muted">
+                <div className="text-[14.5px] text-sc-muted">
                   {formatDayLabel(date)} · {selected.startTime}–{selected.endTime}
                 </div>
               </div>
-              <div className="text-[14px]">
+              <div className="text-[15px]">
                 <div className="flex justify-between border-b border-sc-border-soft py-1.5">
                   <span>Giá niêm yết</span>
-                  <span className="font-medium tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
+                  <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.subtotal)}</span>
                 </div>
                 {line && line.membershipDiscount > 0 && (
                   <div className="flex justify-between border-b border-sc-border-soft py-1.5 text-sc-success">
                     <span>{BENEFIT_TEXT[String(line.snapshot?.benefit)] ?? 'Ưu đãi gói'}</span>
-                    <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                    <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-sc-border pt-2 pb-1 text-[17px] font-extrabold text-sc-ink">
+                <div className="flex justify-between pt-2 pb-1 text-[17px] font-bold text-sc-ink">
                   <span>Tạm tính</span>
-                  <span className="tabular-nums">{pricing || !line ? '…' : formatVND(line.total)}</span>
+                  <span className="tabular-nums">{total}</span>
                 </div>
               </div>
               {quote.isError && <Alert type="error" showIcon title={toApiError(quote.error).message} />}
               {line && !line.valid && <Alert type="error" showIcon title={line.error?.message} />}
-              <Button
-                type="primary"
-                block
-                disabled={!line?.valid || quote.isFetching || Boolean(schedule.error)}
-                onClick={() => {
-                  onAdd(selected.input);
-                  setSelection(null);
-                }}
-              >
-                Thêm vào đơn
+              <Button type="primary" block disabled={!canAdd} onClick={add}>
+                Thêm vào giỏ
               </Button>
               <Button block type="text" onClick={() => setSelection(null)}>
                 Bỏ chọn
               </Button>
-              <p className="m-0 text-xs text-sc-muted-2">Giỏ chưa giữ chỗ: chỗ được xác nhận khi thanh toán.</p>
             </div>
           )}
         </aside>
       </div>
+
+      {selected && <div className="h-16 lg:hidden" />}
+      {selected && (
+        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 md:bottom-0 border-t border-t-sc-border-soft bg-white px-4 py-3 shadow-[0_-6px_20px_rgba(20,19,15,0.08)] lg:hidden">
+          <div className="mx-auto flex max-w-[1120px] items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold">
+                {selected.facility.name} · {selected.startTime}–{selected.endTime}
+              </span>
+              <span className="text-[14.5px] text-sc-muted">
+                {formatDayLabel(date)} · <span className="font-semibold text-sc-ink tabular-nums">{total}</span>
+              </span>
+              {line && !line.valid && <span className="text-[14.5px] text-sc-error">{line.error?.message}</span>}
+            </div>
+            <Button type="text" aria-label="Bỏ chọn" icon={<X size={18} />} onClick={() => setSelection(null)} />
+            <Button type="primary" disabled={!canAdd} onClick={add}>
+              Thêm vào giỏ
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

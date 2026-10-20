@@ -141,7 +141,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
             render={(field) => (
               <div className="flex items-center gap-2">
                 <Switch checked={field.value} onChange={field.onChange} />
-                <span className="text-sm font-medium text-sc-text">{field.value ? 'Đang bật' : 'Tắt'}</span>
+                <span className="text-[15px] font-medium text-sc-text">{field.value ? 'Đang bật' : 'Tắt'}</span>
               </div>
             )}
           />
@@ -353,7 +353,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
           label={
             <span className="flex items-center gap-1.5">
               <span>Dịch vụ áp dụng</span>
-              <span className="text-xs font-normal text-sc-muted">(để trống = áp dụng cho mọi dịch vụ)</span>
+              <span className="text-[13.5px] font-normal text-sc-muted">(để trống = áp dụng cho mọi dịch vụ)</span>
             </span>
           }
           render={(field) => (

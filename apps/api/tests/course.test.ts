@@ -100,12 +100,25 @@ describe('courses', () => {
     expect(await prisma.course.count()).toBe(1);
   });
 
-  test('a course with classes keeps its sport; editing or deleting the template leaves classes untouched', async () => {
+  test('a course with classes keeps its sport, counts them for the manager; editing or deleting the template leaves classes untouched', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const boxing = await prisma.sport.create({ data: { name: 'Boxing' } });
     const yoga = await prisma.sport.create({ data: { name: 'Yoga' } });
     const course = await readResult<Course>(await request('POST', '/', manager, body(boxing.id)));
     const { cls, session } = await classOf(course.id);
+    await prisma.class.create({
+      data: {
+        name: 'Lớp B',
+        courseId: course.id,
+        facilityId: cls.facilityId,
+        maxStudents: 10,
+        weeklySchedule: [],
+        status: 'CANCELLED',
+      },
+    });
+    const member = await createAccount('MEMBER', 'member@example.com');
+    expect((await readResult<Course[]>(await request('GET', '/', manager)))[0]!.classCount).toBe(1);
+    expect((await readResult<Course[]>(await request('GET', '/', member)))[0]).not.toHaveProperty('classCount');
 
     const moved = await request('PATCH', `/${course.id}`, manager, { sportId: yoga.id });
     expect(moved.status).toBe(409);
@@ -113,7 +126,7 @@ describe('courses', () => {
 
     expect((await request('PATCH', `/${course.id}`, manager, { totalSessions: 20, price: 1 })).status).toBe(200);
     expect((await request('DELETE', `/${course.id}`, manager)).status).toBe(200);
-    expect(await prisma.class.findMany()).toEqual([cls]);
+    expect(await prisma.class.findMany({ where: { status: { not: 'CANCELLED' } } })).toEqual([cls]);
     expect(await prisma.classSession.findMany()).toEqual([session]);
   });
 });

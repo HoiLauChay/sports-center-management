@@ -76,7 +76,7 @@ function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
       <Form.Item label={`Tệp đính kèm (${attachments.length}/${MAX_ATTACHMENTS})`}>
         <div className="flex flex-col items-start gap-1.5">
           {attachments.map((url) => (
-            <span key={url} className="flex items-center gap-2 text-[13.5px]">
+            <span key={url} className="flex items-center gap-2 text-[15px]">
               <Paperclip size={14} className="text-sc-muted" />
               <a href={url} target="_blank" rel="noreferrer noopener">
                 {fileName(url)}

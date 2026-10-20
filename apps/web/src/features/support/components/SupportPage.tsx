@@ -17,7 +17,7 @@ function RequestCard({ request }: { request: SupportRequest }) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="m-0 text-[16px] font-bold [overflow-wrap:anywhere]">{request.subject}</h3>
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-sc-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14.5px] text-sc-muted">
             <Tag className="!m-0">{SUPPORT_CATEGORY_LABEL[request.category]}</Tag>
             <span>Gửi {formatDateTime(request.createdAt)}</span>
             {request.updatedAt !== request.createdAt && <span>Cập nhật {formatRelative(request.updatedAt)}</span>}
@@ -42,7 +42,7 @@ function RequestCard({ request }: { request: SupportRequest }) {
       />
       {request.resolutionNote && (
         <div className="mt-4 rounded-lg border border-sc-primary-border bg-sc-primary-soft px-4 py-3">
-          <div className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-sc-primary">
+          <div className="mb-1 flex items-center gap-1.5 text-[14.5px] font-semibold text-sc-primary">
             <MessageSquareText size={15} />
             Phản hồi từ trung tâm{request.handledBy ? ` · ${request.handledBy.fullName}` : ''}
           </div>
@@ -62,7 +62,6 @@ export function SupportPage() {
     <>
       <PageHeader
         title="Hỗ trợ"
-        description="Gửi yêu cầu cho lễ tân và theo dõi trạng thái xử lý. Trạng thái tự cập nhật khi lễ tân phản hồi."
         extra={
           <Button type="primary" icon={<Plus size={16} />} onClick={() => setOpen(true)}>
             Gửi yêu cầu

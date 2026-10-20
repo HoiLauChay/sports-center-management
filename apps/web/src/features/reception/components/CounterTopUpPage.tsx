@@ -38,7 +38,7 @@ interface Done {
 function SummaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-sc-border-soft py-2 last:border-b-0">
-      <span className="text-[13.5px] text-sc-muted">{label}</span>
+      <span className="text-[15px] text-sc-muted">{label}</span>
       <span className={`tabular-nums ${strong ? 'font-display text-[22px] font-extrabold' : 'font-semibold'}`}>
         {value}
       </span>
@@ -120,20 +120,20 @@ function TransactionRow({ transaction }: { transaction: WalletTransaction }) {
   return (
     <li className="flex items-center gap-3 border-b border-sc-border-soft py-2.5 last:border-b-0">
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
-        <span className="text-[13.5px] font-semibold text-sc-ink">
+        <span className="text-[15px] font-semibold text-sc-ink">
           {tag.label}
           {transaction.method && (
             <span className="font-normal text-sc-muted"> · {PAYMENT_METHOD_LABEL[transaction.method]}</span>
           )}
         </span>
-        <span className="text-xs text-sc-muted">{formatRelative(transaction.createdAt)}</span>
+        <span className="text-[13.5px] text-sc-muted">{formatRelative(transaction.createdAt)}</span>
       </span>
       <span className="flex flex-col items-end leading-tight">
         <b className={`tabular-nums ${incoming ? 'text-sc-success' : 'text-sc-ink'}`}>
           {incoming ? '+' : '−'}
           {formatVND(transaction.amount)}
         </b>
-        <span className="text-xs text-sc-muted tabular-nums">còn {formatVND(transaction.balanceAfter)}</span>
+        <span className="text-[13.5px] text-sc-muted tabular-nums">còn {formatVND(transaction.balanceAfter)}</span>
       </span>
     </li>
   );
@@ -265,7 +265,7 @@ export function CounterTopUpPage() {
   if (member && invoiceId) {
     return (
       <>
-        <PageHeader title="Nạp ví tại quầy" description="Đưa màn hình cho khách quét mã QR." />
+        <PageHeader title="Nạp ví tại quầy" />
         <TransferPhase
           invoiceId={invoiceId}
           onBack={() => setInvoiceId(null)}
@@ -289,7 +289,7 @@ export function CounterTopUpPage() {
             </span>
             <div>
               <h2 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">Nạp ví cho ai?</h2>
-              <p className="m-0 text-[13px] text-sc-muted">Chỉ hội viên có tài khoản mới có ví.</p>
+              <p className="m-0 text-[14.5px] text-sc-muted">Chỉ hội viên có tài khoản mới có ví.</p>
             </div>
           </div>
           {memberId && detail.isFetching ? (
@@ -319,11 +319,11 @@ export function CounterTopUpPage() {
               <CustomerAvatar name={member.fullName} />
               <div className="flex min-w-0 flex-col leading-tight">
                 <b className="truncate text-[16px] text-sc-ink">{member.fullName}</b>
-                {member.phone && <span className="text-[13px] text-sc-muted tabular-nums">{member.phone}</span>}
+                {member.phone && <span className="text-[14.5px] text-sc-muted tabular-nums">{member.phone}</span>}
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
+              <span className="text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
                 Số dư hiện tại
               </span>
               <span className="inline-flex items-center gap-1.5 font-display text-[22px] font-extrabold tabular-nums text-sc-ink">
@@ -366,7 +366,7 @@ export function CounterTopUpPage() {
             </div>
             <div className="mt-3 grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
               <div>
-                <div className="mb-1.5 text-[13px] font-semibold text-sc-ink-2">Hoặc nhập số khác</div>
+                <div className="mb-1.5 text-[14.5px] font-semibold text-sc-ink-2">Hoặc nhập số khác</div>
                 <MoneyInput
                   value={amount}
                   step={50_000}
@@ -378,18 +378,18 @@ export function CounterTopUpPage() {
                     setError(undefined);
                   }}
                 />
-                <div className={`mt-1 text-xs ${error ? 'text-sc-error' : 'text-sc-muted'}`}>
+                <div className={`mt-1 text-[13.5px] ${error ? 'text-sc-error' : 'text-sc-muted'}`}>
                   {error ?? `Tối thiểu ${formatVND(minAmount)}`}
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-sc-paper px-4 py-3 sm:mt-6">
                 <span className="flex flex-col leading-tight">
-                  <span className="text-[11px] font-semibold text-sc-muted uppercase">Hiện tại</span>
+                  <span className="text-[12.5px] font-semibold text-sc-muted uppercase">Hiện tại</span>
                   <b className="tabular-nums">{balance === undefined ? '…' : formatVND(balance)}</b>
                 </span>
                 <ArrowRight size={16} className="text-sc-muted" />
                 <span className="flex flex-col leading-tight">
-                  <span className="text-[11px] font-semibold text-sc-muted uppercase">Sau khi nạp</span>
+                  <span className="text-[12.5px] font-semibold text-sc-muted uppercase">Sau khi nạp</span>
                   <b className="tabular-nums text-sc-success">{after === undefined ? '—' : formatVND(after)}</b>
                 </span>
               </div>
@@ -449,7 +449,7 @@ export function CounterTopUpPage() {
               ))}
             </ul>
           ) : (
-            <p className="my-3 text-[13px] text-sc-muted">Ví chưa có giao dịch nào.</p>
+            <p className="my-3 text-[14.5px] text-sc-muted">Ví chưa có giao dịch nào.</p>
           )}
         </section>
       </div>

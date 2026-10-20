@@ -37,7 +37,7 @@ function MemberOption({ member, keyword }: { member: AccountSummary; keyword: st
         <span className="font-semibold text-sc-ink">
           <Highlight keyword={keyword}>{member.fullName}</Highlight>
         </span>
-        <span className="truncate text-[13px] text-sc-muted">
+        <span className="truncate text-[14.5px] text-sc-muted">
           {member.phone ? <Highlight keyword={keyword}>{member.phone}</Highlight> : 'Chưa có SĐT'}
           {' · '}
           <Highlight keyword={keyword}>{member.email}</Highlight>
@@ -99,7 +99,7 @@ function GuestForm({
             onChange={(event) => setGuest({ ...guest, name: event.target.value })}
             onPressEnter={submit}
           />
-          {nameError && <div className="mt-1 text-xs text-sc-error">{nameError}</div>}
+          {nameError && <div className="mt-1 text-[13.5px] text-sc-error">{nameError}</div>}
         </div>
         <div>
           <Input
@@ -113,7 +113,7 @@ function GuestForm({
             onChange={(event) => setGuest({ ...guest, phone: event.target.value })}
             onPressEnter={submit}
           />
-          {phoneError && <div className="mt-1 text-xs text-sc-error">{phoneError}</div>}
+          {phoneError && <div className="mt-1 text-[13.5px] text-sc-error">{phoneError}</div>}
         </div>
       </div>
       {member && (
@@ -140,7 +140,7 @@ function GuestForm({
           Quay lại tìm hội viên
         </Button>
       </div>
-      <p className="m-0 flex items-start gap-1.5 text-xs text-sc-muted">
+      <p className="m-0 flex items-start gap-1.5 text-[13.5px] text-sc-muted">
         <Info size={14} className="mt-px shrink-0" />
         Khách vãng lai chỉ đặt sân lẻ, không có ưu đãi gói, không dùng mã giảm giá và không được hoàn tiền.
       </p>
@@ -195,7 +195,7 @@ export function CounterCustomerSearch({
           </span>
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-sc-ink">Bán cho khách vãng lai{typed ? ` · ${typed}` : ''}</span>
-            <span className="text-[13px] text-sc-muted">Khách không có tài khoản, chỉ đặt sân lẻ</span>
+            <span className="text-[14.5px] text-sc-muted">Khách không có tài khoản, chỉ đặt sân lẻ</span>
           </div>
         </div>
       ),
@@ -234,7 +234,7 @@ export function CounterCustomerSearch({
           placeholder={placeholder}
         />
       </AutoComplete>
-      <p className="m-0 text-xs text-sc-muted">
+      <p className="m-0 text-[13.5px] text-sc-muted">
         {q && members.isFetching
           ? 'Đang tìm hội viên…'
           : q && !items.length && members.isSuccess

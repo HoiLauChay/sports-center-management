@@ -36,7 +36,7 @@ const enroll = async (
 };
 
 describe('enrollment and coach student access', () => {
-  test('member sees full class summaries and cancelled history, staff see class enrollments', async () => {
+  test('member sees full class summaries, sessions left and cancelled history, staff see class enrollments', async () => {
     const cls = await seedOpenClass();
     const member = await createAccount('MEMBER', 'member@example.com');
     const other = await createAccount('MEMBER', 'other@example.com');
@@ -56,6 +56,18 @@ describe('enrollment and coach student access', () => {
       },
     });
     expect(mine[0]?.class.course).toHaveProperty('price');
+    const sessions = await prisma.classSession.findMany({
+      where: { classId: cls.id },
+      orderBy: { sessionNumber: 'asc' },
+    });
+    expect(mine[0]?.sessionsLeft).toBe(sessions.length);
+    await prisma.classSession.update({
+      where: { id: sessions[0]!.id },
+      data: { sessionDate: new Date(addDays(todayInCenter(), -1)) },
+    });
+    await prisma.classSession.update({ where: { id: sessions[1]!.id }, data: { status: 'CANCELLED' } });
+    const left = await readResult<MyEnrollment[]>(await request('GET', '/me/enrollments', member));
+    expect(left[0]?.sessionsLeft).toBe(sessions.length - 2);
     expect(await readResult<unknown[]>(await request('GET', '/me/enrollments', other))).toEqual([]);
     expect((await request('GET', `/classes/${cls.id}/enrollments`, member)).status).toBe(403);
     for (const role of ['MANAGER', 'RECEPTIONIST'] as const) {

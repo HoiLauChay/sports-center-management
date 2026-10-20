@@ -1,10 +1,10 @@
 import { ArrowLeftOutlined, ThunderboltFilled } from '@ant-design/icons';
-import { Link } from '@tanstack/react-router';
-import { ConfigProvider } from 'antd';
+import { Link, useRouter } from '@tanstack/react-router';
+import { ConfigProvider, Grid } from 'antd';
 import { motion } from 'motion/react';
-import type { ComponentProps, CSSProperties, ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { PATHS } from '~/constants/paths';
-import { authTheme } from '~/styles/antd-theme';
+import { authCompactTheme, authTheme } from '~/styles/antd-theme';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -24,11 +24,25 @@ interface AuthShellProps {
   width?: number;
 }
 
-export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
+export function AuthShell({ children, visual, width = 460 }: AuthShellProps) {
+  const compact = Grid.useBreakpoint().md === false;
+  const router = useRouter();
+  const bandRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    if (!window.matchMedia('(max-width: 56.24rem)').matches) return;
+    const skipBand = () => window.scrollTo({ top: bandRef.current?.offsetHeight ?? 0, behavior: 'instant' });
+    skipBand();
+    return router.subscribe('onRendered', skipBand);
+  }, [router]);
+
   return (
-    <ConfigProvider theme={authTheme}>
-      <div className="grid min-h-screen grid-cols-1 items-start bg-sc-paper font-body text-sc-ink auth:grid-cols-[1.05fr_1fr]">
-        <aside className="relative flex h-[300px] flex-col justify-end overflow-hidden bg-sc-ink px-6 pt-5 pb-7 text-white auth:sticky auth:top-0 auth:h-screen auth:justify-between auth:px-12 auth:pt-8 auth:pb-10">
+    <ConfigProvider theme={compact ? authCompactTheme : authTheme}>
+      <div className="grid min-h-screen grid-cols-1 content-start items-start bg-sc-paper font-body text-sc-ink auth:grid-cols-[1.05fr_1fr]">
+        <aside
+          ref={bandRef}
+          className="relative flex h-[76px] flex-col justify-end overflow-hidden bg-sc-ink px-5 text-white auth:sticky auth:top-0 auth:h-screen auth:justify-between auth:px-12 auth:pt-8 auth:pb-10"
+        >
           <motion.img
             src={visual.image}
             alt=""
@@ -42,7 +56,7 @@ export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
 
           <Link
             to={PATHS.home}
-            className="absolute top-5 left-6 z-10 inline-flex items-center gap-2.5 font-display text-[22px] font-extrabold tracking-[.02em] text-white uppercase no-underline hover:text-white auth:static auth:self-start"
+            className="absolute top-1/2 left-5 z-10 inline-flex -translate-y-1/2 items-center gap-2.5 font-display text-[20px] font-extrabold tracking-[.02em] !text-white uppercase no-underline auth:static auth:translate-y-0 auth:self-start auth:text-[22px]"
           >
             <i className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-[3px] bg-sc-lime text-[15px] not-italic text-sc-ink">
               <ThunderboltFilled />
@@ -50,8 +64,15 @@ export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
             Sports Center
           </Link>
 
+          <Link
+            to={PATHS.home}
+            className="absolute top-1/2 right-5 z-10 -translate-y-1/2 text-[14px] font-medium !text-white/85 no-underline hover:!text-white auth:hidden"
+          >
+            <ArrowLeftOutlined /> Trang chủ
+          </Link>
+
           <motion.div
-            className="relative z-10"
+            className="relative z-10 hidden auth:block"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: EASE }}
@@ -71,7 +92,7 @@ export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
                 {visual.facts.map((f) => (
                   <div key={f.label}>
                     <b className="block font-display text-[28px] leading-none font-extrabold tabular-nums">{f.value}</b>
-                    <small className="mt-1 block text-[13px] text-white/65">{f.label}</small>
+                    <small className="mt-1 block text-[14.5px] text-white/65">{f.label}</small>
                   </div>
                 ))}
               </div>
@@ -90,17 +111,17 @@ export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
           </motion.div>
         </aside>
 
-        <main className="flex min-h-screen flex-col px-5 pt-5 pb-8 auth:px-8 auth:py-7">
-          <div className="flex justify-end">
+        <main className="flex min-h-screen flex-col px-5 pt-7 pb-10 auth:px-8 auth:py-7">
+          <div className="hidden justify-end auth:flex">
             <Link
               to={PATHS.home}
-              className="text-sm font-medium text-sc-muted no-underline transition-colors hover:text-sc-ink"
+              className="text-[15px] font-medium text-sc-muted no-underline transition-colors hover:text-sc-ink"
             >
               <ArrowLeftOutlined /> Về trang chủ
             </Link>
           </div>
           <motion.div
-            className="m-auto w-full py-3 auth:py-6"
+            className="mx-auto w-full auth:my-auto auth:py-6"
             style={{ maxWidth: width }}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -117,16 +138,16 @@ export function AuthShell({ children, visual, width = 420 }: AuthShellProps) {
 export function AuthHeading({ title, description }: { title: string; description: string }) {
   return (
     <>
-      <h2 className="mb-2 font-display text-[34px] leading-none font-extrabold text-sc-ink uppercase auth:text-[42px]">
+      <h2 className="mb-2 font-display text-[32px] leading-none font-extrabold text-sc-ink uppercase auth:text-[42px]">
         {title}
       </h2>
-      <p className="mb-[26px] text-[15px] leading-normal text-sc-muted">{description}</p>
+      <p className="mb-6 text-[15px] leading-normal text-sc-muted auth:mb-7 auth:text-[17px]">{description}</p>
     </>
   );
 }
 
 export function AuthAlt({ children }: { children: ReactNode }) {
-  return <div className="mt-[18px] text-center text-[14.5px] text-sc-muted">{children}</div>;
+  return <div className="mt-5 text-center text-[15px] text-sc-muted auth:text-[16px]">{children}</div>;
 }
 
 export function AuthLink({ to, children }: { to: ComponentProps<typeof Link>['to']; children: ReactNode }) {

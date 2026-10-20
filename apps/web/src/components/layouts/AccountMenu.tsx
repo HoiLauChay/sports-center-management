@@ -1,17 +1,23 @@
 import type { Account } from '@sports-center/shared';
 import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Dropdown, type MenuProps } from 'antd';
-import { LogOut, UserRound } from 'lucide-react';
+import { Ellipsis, LogOut, UserRound } from 'lucide-react';
 import { PATHS } from '~/constants/paths';
 import { ROLE_LABEL } from '~/constants/roles';
 import { useLogout } from '~/features/auth';
 import { initialsOf } from '~/lib/format';
-import { ROLE_COLOR } from '~/styles/antd-theme';
+import { ROLE_COLOR_ON_DARK } from '~/styles/antd-theme';
 
-export function AccountMenu({ user, compact = false }: { user: Account; compact?: boolean }) {
+interface AccountMenuProps {
+  user: Account;
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}
+
+export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenuProps) {
   const navigate = useNavigate();
   const logout = useLogout();
-  const roleColor = ROLE_COLOR[user.role];
+  const roleColor = ROLE_COLOR_ON_DARK[user.role];
 
   const items: MenuProps['items'] = [
     { key: 'profile', icon: <UserRound size={16} />, label: 'Hồ sơ cá nhân' },
@@ -20,32 +26,36 @@ export function AccountMenu({ user, compact = false }: { user: Account; compact?
   ];
 
   const onClick: MenuProps['onClick'] = ({ key }) => {
+    onNavigate?.();
     if (key === 'profile') void navigate({ to: PATHS.profile });
     if (key === 'logout') void logout();
   };
 
   return (
-    <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
+    <Dropdown menu={{ items, onClick }} trigger={['click']} placement={collapsed ? 'topLeft' : 'top'}>
       <button
         type="button"
         aria-label="Menu tài khoản"
-        className={`flex cursor-pointer items-center gap-2.5 rounded-[999px] border border-sc-border-soft bg-white [font:inherit] text-sc-ink [transition:border-color_0.15s] hover:border-sc-border ${compact ? 'p-0.5' : 'py-1 pr-2.5 pl-1'}`}
+        className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border-0 bg-transparent [font:inherit] text-white [transition:background_0.15s] hover:bg-[rgba(255,255,255,0.08)] ${collapsed ? 'justify-center p-1.5' : 'p-2'}`}
       >
         <Avatar
           src={user.avatarUrl ?? undefined}
-          size={30}
-          className="shrink-0 !text-xs !font-bold"
-          style={{ background: `${roleColor}22`, color: roleColor }}
+          size={36}
+          className="shrink-0 !text-[14.5px] !font-bold"
+          style={{ background: `${roleColor}33`, color: roleColor }}
         >
           {initialsOf(user.fullName)}
         </Avatar>
-        {!compact && (
-          <span className="flex flex-col items-start leading-[1.15]">
-            <span className="max-w-[180px] truncate text-[13px] font-semibold">{user.fullName}</span>
-            <span className="text-[11px] font-semibold" style={{ color: roleColor }}>
-              {ROLE_LABEL[user.role]}
+        {!collapsed && (
+          <>
+            <span className="flex min-w-0 flex-1 flex-col items-start leading-[1.2]">
+              <span className="max-w-full truncate text-[15px] font-semibold">{user.fullName}</span>
+              <span className="text-[13.5px] font-semibold" style={{ color: roleColor }}>
+                {ROLE_LABEL[user.role]}
+              </span>
             </span>
-          </span>
+            <Ellipsis size={18} className="shrink-0 text-[rgba(255,255,255,0.6)]" />
+          </>
         )}
       </button>
     </Dropdown>

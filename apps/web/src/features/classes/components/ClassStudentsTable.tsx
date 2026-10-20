@@ -21,10 +21,19 @@ export function ClassStudentsTable({ classId, showPayment = false, className }: 
   }
 
   const columns: TableColumnsType<Enrollment> = [
-    { title: '#', key: 'index', width: 60, render: (_, __, index) => index + 1 },
+    {
+      title: '#',
+      key: 'index',
+      width: 56,
+      render: (_, __, index) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+      ),
+    },
     {
       title: 'Học viên',
-      render: (_, record) => <span className="font-medium text-sc-ink">{record.account.fullName}</span>,
+      render: (_, record) => <span className="font-semibold text-sc-ink">{record.account.fullName}</span>,
     },
     { title: 'Ngày đăng ký', render: (_, record) => formatDate(record.enrolledAt) },
     {
@@ -38,7 +47,7 @@ export function ClassStudentsTable({ classId, showPayment = false, className }: 
       title: 'Học phí',
       align: 'right',
       render: (_, record) => (
-        <span className="whitespace-nowrap">
+        <span className="whitespace-nowrap tabular-nums">
           {formatVND(record.paidAmount)}
           {record.refundedAt && <Tag className="!ml-2">Đã hoàn</Tag>}
         </span>
@@ -49,7 +58,6 @@ export function ClassStudentsTable({ classId, showPayment = false, className }: 
   return (
     <Table<Enrollment>
       rowKey="id"
-      size="middle"
       columns={columns}
       dataSource={enrollments.data}
       loading={enrollments.isPending}

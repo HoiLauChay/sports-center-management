@@ -17,7 +17,7 @@ export function useAddToCart(store: CartStore, options: { cartPath?: '/cart'; ca
       message.success({
         content: cartPath ? (
           <span>
-            Đã thêm vào đơn.{' '}
+            Đã thêm vào giỏ.{' '}
             <button
               type="button"
               className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-sc-primary underline underline-offset-2"
@@ -35,7 +35,7 @@ export function useAddToCart(store: CartStore, options: { cartPath?: '/cart'; ca
       });
       return true;
     }
-    message.info('Dịch vụ này đã có trong đơn.');
+    message.info('Dịch vụ này đã có trong giỏ.');
     return false;
   };
 }

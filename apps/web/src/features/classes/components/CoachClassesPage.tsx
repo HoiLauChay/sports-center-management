@@ -1,8 +1,9 @@
 import type { ClassSummary } from '@sports-center/shared';
-import { Button, Card, Popconfirm, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Popconfirm, Space, Table, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { SportTag } from '~/components/ui/SportTag';
 import { toApiError } from '~/lib/http-errors';
 import { todayVN } from '~/lib/time';
 import { useMyClasses, useWithdrawFromClass } from '../hooks/useCoachClasses';
@@ -32,7 +33,7 @@ export function CoachClassesPage() {
     },
     {
       title: 'Bộ môn',
-      render: (_, record) => <Tag color="green">{record.course.sport.name}</Tag>,
+      render: (_, record) => <SportTag name={record.course.sport.name} />,
     },
     { title: 'Lịch', render: (_, record) => <WeeklyTags schedule={record.weeklySchedule} /> },
     { title: 'Thời gian', render: (_, record) => <span className="whitespace-nowrap">{classDateRange(record)}</span> },
@@ -69,7 +70,7 @@ export function CoachClassesPage() {
 
   return (
     <>
-      <PageHeader title="Lớp phụ trách" description="Lớp bạn đang là HLV hiện tại." />
+      <PageHeader title="Lớp phụ trách" />
       <Card>
         {classes.isError ? (
           <ErrorState message={toApiError(classes.error).message} onRetry={() => void classes.refetch()} />

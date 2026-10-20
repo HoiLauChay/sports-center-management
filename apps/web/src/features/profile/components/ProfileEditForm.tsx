@@ -213,7 +213,7 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-sc-border-soft pt-5">
-        <span className="text-[13px] text-sc-muted-2">
+        <span className="text-[14.5px] text-sc-muted-2">
           {user.role === 'COACH' ? 'Ảnh đại diện và ảnh bìa' : 'Ảnh đại diện'} đổi trực tiếp bằng nút bút chì trên ảnh.
         </span>
         <div className="flex gap-2">

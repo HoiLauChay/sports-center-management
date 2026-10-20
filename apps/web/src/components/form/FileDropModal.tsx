@@ -36,10 +36,10 @@ export function FileDropModal({ open, title, purpose, checkSize = true, onSelect
             <Icon size={22} />
           </span>
           <span className="mt-1 text-[15px] font-semibold text-sc-ink">Kéo thả {noun} vào đây</span>
-          <span className="text-sm text-sc-muted">
+          <span className="text-[15px] text-sc-muted">
             hoặc <span className="font-semibold text-sc-primary">bấm để chọn từ máy</span>
           </span>
-          <span className="mt-1 text-xs text-sc-muted-2">
+          <span className="mt-1 text-[13.5px] text-sc-muted-2">
             {types}
             {checkSize && ` · tối đa ${maxSizeMb} MB`}
           </span>

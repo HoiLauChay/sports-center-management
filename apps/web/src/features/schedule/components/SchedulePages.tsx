@@ -37,6 +37,21 @@ export function SchedulePage() {
           view={state.view}
           anchor={state.anchor}
           onChange={setState}
+          empty={
+            <>
+              <span className="text-sc-muted">
+                {state.view === 'week' ? 'Tuần này' : 'Tháng này'} bạn chưa có lịch đặt sân hay buổi học nào.
+              </span>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Link to="/bookings">
+                  <Button type="primary">Đặt sân</Button>
+                </Link>
+                <Link to="/classes">
+                  <Button>Đăng ký lớp</Button>
+                </Link>
+              </div>
+            </>
+          }
           detailExtra={(event) =>
             event.classId ? (
               <Link to="/classes/$classId" params={{ classId: event.classId }}>
@@ -68,6 +83,11 @@ export function CoachSchedulePage() {
       ) : (
         <ScheduleCalendar
           legend={['CLASS_SESSION']}
+          empty={
+            <span className="text-sc-muted">
+              {state.view === 'week' ? 'Tuần này' : 'Tháng này'} chưa có buổi dạy nào.
+            </span>
+          }
           events={events}
           loading={schedule.isFetching}
           view={state.view}

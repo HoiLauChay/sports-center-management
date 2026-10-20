@@ -1,6 +1,5 @@
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { App, Button, Card } from 'antd';
-import { ArrowLeft } from 'lucide-react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -44,11 +43,7 @@ export function InvoicePage() {
             {data.paidAt && <span>Thanh toán lúc {formatDateTime(data.paidAt)}</span>}
           </span>
         }
-        extra={
-          <Link to="/wallet">
-            <Button icon={<ArrowLeft size={16} />}>Về ví</Button>
-          </Link>
-        }
+        back={{ to: '/wallet', label: 'Về ví' }}
       />
       <Card>
         <InvoicePayPanel

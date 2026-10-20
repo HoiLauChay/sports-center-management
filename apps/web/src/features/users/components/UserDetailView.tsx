@@ -1,6 +1,6 @@
 import type { Account } from '@sports-center/shared';
 import { Avatar, Button, Card, Col, Result, Row } from 'antd';
-import { ArrowLeft, Cake, CalendarDays, Mail, MapPin, Phone, VenusAndMars } from 'lucide-react';
+import { Cake, CalendarDays, ChevronLeft, Mail, MapPin, Phone, VenusAndMars } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AccountRoleSection } from '~/components/data/AccountRoleSection';
 import { InfoGrid } from '~/components/data/InfoGrid';
@@ -31,7 +31,7 @@ function UserSummary({ user, actions }: { user: Account; actions?: ReactNode }) 
           <h2 className="m-0 font-display text-[26px] leading-tight font-extrabold uppercase [overflow-wrap:anywhere]">
             {user.fullName}
           </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-sc-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14.5px] text-sc-muted">
             <RoleTag role={user.role} />
             <StatusTag status={user.status} />
             <span className="inline-flex items-center gap-1.5">
@@ -104,9 +104,14 @@ export function UserDetailLoader({ id, backLabel, onBack, aside, actions, editor
   const { data: user, isPending, isError, error, notFound, refetch } = useUserDetail(id);
 
   const back = (
-    <Button type="text" icon={<ArrowLeft size={16} />} onClick={onBack} className="-ml-2 mb-3 !text-sc-muted">
+    <button
+      type="button"
+      onClick={onBack}
+      className="mb-3 inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[15px] font-semibold text-sc-muted hover:text-sc-ink"
+    >
+      <ChevronLeft size={18} />
       {backLabel}
-    </Button>
+    </button>
   );
 
   if (notFound) {

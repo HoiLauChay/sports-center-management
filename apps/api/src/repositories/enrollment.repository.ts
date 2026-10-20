@@ -1,7 +1,7 @@
 import { prisma } from '~/configs/db';
 import type { EnrollmentStatus, Prisma } from '~/generated/prisma/client';
 import { classSummarySelect } from '~/repositories/class.repository';
-import { todayInCenter } from '~/utils/time';
+import { minutesInCenter, todayInCenter, toDbTime } from '~/utils/time';
 
 const enrollmentSelect = {
   id: true,
@@ -18,12 +18,33 @@ const enrollmentSelect = {
 export type EnrollmentRow = Prisma.ClassEnrollmentGetPayload<{ select: typeof enrollmentSelect }>;
 
 class EnrollmentRepository {
-  findByAccount = (accountId: string) =>
-    prisma.classEnrollment.findMany({
+  findByAccount = (accountId: string, now = new Date()) => {
+    const today = new Date(todayInCenter(now));
+    const time = toDbTime(minutesInCenter(now));
+    return prisma.classEnrollment.findMany({
       where: { accountId },
-      select: { ...enrollmentSelect, class: { select: classSummarySelect } },
+      select: {
+        ...enrollmentSelect,
+        class: {
+          select: {
+            ...classSummarySelect,
+            _count: {
+              select: {
+                ...classSummarySelect._count.select,
+                sessions: {
+                  where: {
+                    status: 'SCHEDULED',
+                    OR: [{ sessionDate: { gt: today } }, { sessionDate: today, startTime: { gte: time } }],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: [{ enrolledAt: 'desc' }, { id: 'desc' }],
     });
+  };
 
   findByClass = (classId: string, status?: EnrollmentStatus) =>
     prisma.classEnrollment.findMany({

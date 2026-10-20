@@ -64,7 +64,7 @@ interface Arrival {
 function SlotChip({ slot, now }: { slot: Booking; now: string }) {
   const { state } = slotState(slot, now);
   return (
-    <span className={`rounded-md border px-1.5 py-0.5 text-[12px] font-medium tabular-nums ${SLOT_TONE[state]}`}>
+    <span className={`rounded-md border px-1.5 py-0.5 text-[13.5px] font-medium tabular-nums ${SLOT_TONE[state]}`}>
       {slot.facility.name} · {slot.startTime}–{slot.endTime}
     </span>
   );
@@ -73,7 +73,7 @@ function SlotChip({ slot, now }: { slot: Booking; now: string }) {
 function Stat({ label, value, tone }: { label: string; value: ReactNode; tone?: string }) {
   return (
     <div className="flex flex-col rounded-xl border border-sc-border bg-white px-4 py-2.5 shadow-xs">
-      <span className="text-[11px] font-semibold tracking-[0.06em] text-sc-muted uppercase">{label}</span>
+      <span className="text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">{label}</span>
       <span className={`font-display text-[26px] leading-tight font-extrabold tabular-nums ${tone ?? 'text-sc-ink'}`}>
         {value}
       </span>
@@ -107,7 +107,7 @@ function MemberPanel({
         <CustomerAvatar name={member.fullName} />
         <div className="flex min-w-0 flex-1 flex-col leading-tight">
           <b className="truncate text-[17px] text-sc-ink">{member.fullName}</b>
-          {member.phone && <span className="text-[13px] text-sc-muted tabular-nums">{member.phone}</span>}
+          {member.phone && <span className="text-[14.5px] text-sc-muted tabular-nums">{member.phone}</span>}
         </div>
         <Button icon={<X size={15} />} onClick={onClear}>
           Đổi người
@@ -115,7 +115,7 @@ function MemberPanel({
       </div>
 
       <div className="rounded-xl border border-sc-border-soft bg-sc-paper/60 p-3">
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
+        <div className="mb-2 flex items-center gap-1.5 text-[13.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
           <CalendarClock size={14} />
           Lịch hôm nay
         </div>
@@ -126,14 +126,14 @@ function MemberPanel({
               return (
                 <li
                   key={slot.id}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-[13.5px]"
+                  className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-[15px]"
                 >
                   <span className="font-semibold text-sc-ink">{slot.facility.name}</span>
                   <span className="flex items-center gap-2">
                     <span className="tabular-nums text-sc-ink-2">
                       {slot.startTime}–{slot.endTime}
                     </span>
-                    <span className={`rounded-md border px-1.5 py-0.5 text-[11.5px] font-semibold ${SLOT_TONE[state]}`}>
+                    <span className={`rounded-md border px-1.5 py-0.5 text-[13px] font-semibold ${SLOT_TONE[state]}`}>
                       {label}
                     </span>
                   </span>
@@ -142,7 +142,7 @@ function MemberPanel({
             })}
           </ul>
         ) : (
-          <p className="m-0 flex items-start gap-2 text-[13px] text-sc-ink-2">
+          <p className="m-0 flex items-start gap-2 text-[14.5px] text-sc-ink-2">
             <TriangleAlert size={16} className="mt-px shrink-0 text-sc-warning" />
             Không có lượt đặt sân hôm nay. Chỉ check-in được nếu hội viên có buổi học của lớp đang theo học hôm nay.
           </p>
@@ -150,14 +150,14 @@ function MemberPanel({
       </div>
 
       {checkIn && (
-        <p className="m-0 flex items-center gap-2 rounded-lg bg-sc-primary-soft px-3 py-2 text-[13px] text-sc-primary">
+        <p className="m-0 flex items-center gap-2 rounded-lg bg-sc-primary-soft px-3 py-2 text-[14.5px] text-sc-primary">
           <CheckCircle2 size={16} className="shrink-0" />
           Đã check-in lúc <b>{timeOf(checkIn.checkedInAt)}</b>. Có thể check-in thêm lượt nếu khách vào ca sau.
         </p>
       )}
 
       {refusal && (
-        <p className="m-0 flex items-start gap-2 rounded-lg border border-sc-error/30 bg-sc-error/5 px-3 py-2.5 text-[13px] text-sc-error">
+        <p className="m-0 flex items-start gap-2 rounded-lg border border-sc-error/30 bg-sc-error/5 px-3 py-2.5 text-[14.5px] text-sc-error">
           <TriangleAlert size={16} className="mt-px shrink-0" />
           <span>
             <b>Chưa check-in được.</b> {refusal}
@@ -181,7 +181,7 @@ function MemberPanel({
         </span>
       </Button>
 
-      <div className="flex flex-wrap gap-2 text-[13px]">
+      <div className="flex flex-wrap gap-2 text-[14.5px]">
         <Link to="/reception/order" search={{ memberId: member.accountId }}>
           <Button size="small">Bán dịch vụ</Button>
         </Link>
@@ -216,7 +216,7 @@ function ArrivalRow({
         className={`flex w-14 shrink-0 flex-col items-center rounded-lg border py-1 leading-tight ${SLOT_TONE[state].replace(' line-through', '')}`}
       >
         <b className="font-display text-[17px] tabular-nums">{next.startTime}</b>
-        <span className="text-[10.5px] font-semibold whitespace-nowrap">
+        <span className="text-[12px] font-semibold whitespace-nowrap">
           {state === 'ongoing'
             ? 'Đang chơi'
             : state === 'soon'
@@ -337,7 +337,7 @@ export function CheckInPage() {
 
   return (
     <>
-      <PageHeader title="Check-in" description="Xác nhận hội viên vào sân hoặc vào lớp hôm nay." />
+      <PageHeader title="Check-in" />
 
       <div className="mb-4 grid grid-cols-3 gap-3 sm:max-w-xl">
         <Stat label="Có lịch hôm nay" value={bookings.data ? arrivals.length : '…'} />
@@ -385,7 +385,7 @@ export function CheckInPage() {
                     <h2 className="m-0 font-display text-[22px] font-extrabold text-sc-ink uppercase">
                       Hội viên đến quầy
                     </h2>
-                    <p className="m-0 text-[13px] text-sc-muted">
+                    <p className="m-0 text-[14.5px] text-sc-muted">
                       Tìm theo SĐT hoặc tên, hoặc bấm Check-in ngay trong danh sách bên dưới.
                     </p>
                   </div>
@@ -456,7 +456,7 @@ export function CheckInPage() {
               <ScanLine size={18} />
               Nhật ký hôm nay
             </h2>
-            <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-xs font-semibold text-sc-ink-2">
+            <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-ink-2">
               {log.length} lượt
             </span>
           </header>
@@ -477,8 +477,8 @@ export function CheckInPage() {
                     {timeOf(entry.checkedInAt)}
                   </b>
                   <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-[13.5px] font-semibold text-sc-ink">{entry.account.fullName}</span>
-                    <span className="truncate text-xs text-sc-muted">bởi {entry.checkedBy.fullName}</span>
+                    <span className="truncate text-[15px] font-semibold text-sc-ink">{entry.account.fullName}</span>
+                    <span className="truncate text-[13.5px] text-sc-muted">bởi {entry.checkedBy.fullName}</span>
                   </span>
                 </li>
               ))}

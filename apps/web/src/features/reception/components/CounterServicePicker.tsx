@@ -70,7 +70,7 @@ function ClassPicker({ onAdd, inCart }: PickerProps) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex min-w-0 flex-col">
                 <b className="text-[15px] leading-snug text-sc-ink">{item.name}</b>
-                <span className="text-[13px] text-sc-muted">
+                <span className="text-[14.5px] text-sc-muted">
                   {item.course.sport.name} · HLV {item.coach?.fullName ?? '—'}
                 </span>
               </div>
@@ -78,7 +78,7 @@ function ClassPicker({ onAdd, inCart }: PickerProps) {
                 {formatVND(item.course.price)}
               </b>
             </div>
-            <div className="flex flex-col gap-1 text-[13px] text-sc-ink-2">
+            <div className="flex flex-col gap-1 text-[14.5px] text-sc-ink-2">
               <span>{weeklyText(item.weeklySchedule) || 'Chưa có lịch'}</span>
               <span className="text-sc-muted">
                 {item.startDate ? `Khai giảng ${formatDate(item.startDate)}` : 'Chưa có ngày khai giảng'} ·{' '}
@@ -93,7 +93,7 @@ function ClassPicker({ onAdd, inCart }: PickerProps) {
                 strokeColor={full ? 'var(--sc-error)' : fill >= 80 ? 'var(--sc-warning)' : 'var(--sc-primary)'}
                 className="!m-0 flex-1"
               />
-              <span className={`text-xs tabular-nums ${full ? 'font-semibold text-sc-error' : 'text-sc-muted'}`}>
+              <span className={`text-[13.5px] tabular-nums ${full ? 'font-semibold text-sc-error' : 'text-sc-muted'}`}>
                 {item.enrolledCount}/{item.maxStudents} chỗ
               </span>
             </div>
@@ -134,11 +134,11 @@ function MembershipPicker({ onAdd, inCart, currentPackageId }: PickerProps & { c
                     </Tag>
                   )}
                 </span>
-                <span className="text-[13px] text-sc-muted">{plan.durationDays} ngày</span>
+                <span className="text-[14.5px] text-sc-muted">{plan.durationDays} ngày</span>
               </div>
               <b className="shrink-0 font-display text-[18px] tabular-nums text-sc-ink">{formatVND(plan.price)}</b>
             </div>
-            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[13px] text-sc-ink-2">
+            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[14.5px] text-sc-ink-2">
               {(benefitsText(plan) || 'Không có ưu đãi').split(' · ').map((benefit) => (
                 <li key={benefit} className="flex items-center gap-1.5">
                   <CircleCheck size={14} className="shrink-0 text-sc-success" />

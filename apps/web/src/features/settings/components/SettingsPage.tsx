@@ -229,14 +229,14 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
       <Col xs={24} lg={9}>
         <Card>
           <SectionTitle>Lưới slot</SectionTitle>
-          <p className="mt-0 mb-3 text-sm text-sc-muted">
+          <p className="mt-0 mb-3 text-[15px] text-sc-muted">
             {slots.length
               ? `${slots.length} slot × ${slotDurationMinutes} phút mỗi ngày`
               : 'Giờ hoạt động không hợp lệ'}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {slots.map((slot) => (
-              <span key={slot} className="rounded-full bg-sc-paper px-2.5 py-0.5 font-mono text-xs">
+              <span key={slot} className="rounded-full bg-sc-paper px-2.5 py-0.5 font-mono text-[13.5px]">
                 {slot}
               </span>
             ))}

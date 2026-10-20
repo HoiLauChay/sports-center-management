@@ -52,20 +52,20 @@ function LineCard({
         <Icon size={16} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[11px] font-semibold tracking-[0.04em] text-sc-muted uppercase">
+        <span className="text-[12.5px] font-semibold tracking-[0.04em] text-sc-muted uppercase">
           {ORDER_ITEM_TYPE_LABEL[line.selection.type]}
         </span>
         {description ? (
           <>
             <b className="text-[14px] leading-snug text-sc-ink [overflow-wrap:anywhere]">{description.title}</b>
-            {description.detail && <span className="text-[12.5px] text-sc-muted">{description.detail}</span>}
+            {description.detail && <span className="text-[14px] text-sc-muted">{description.detail}</span>}
           </>
         ) : (
           <Skeleton active title={false} paragraph={{ rows: 1, width: '70%' }} className="!mt-1" />
         )}
-        {benefit && <span className="text-xs font-semibold text-sc-success">{benefit}</span>}
+        {benefit && <span className="text-[13.5px] font-semibold text-sc-success">{benefit}</span>}
         {item && !item.valid && (
-          <span className="text-[12.5px] text-sc-error">{item.error?.message ?? 'Dịch vụ không hợp lệ'}</span>
+          <span className="text-[14px] text-sc-error">{item.error?.message ?? 'Dịch vụ không hợp lệ'}</span>
         )}
       </div>
       <div className="flex shrink-0 flex-col items-end justify-between gap-1">
@@ -73,7 +73,9 @@ function LineCard({
           <span className="flex flex-col items-end leading-tight">
             <b className="tabular-nums text-sc-ink">{formatVND(item.total)}</b>
             {discounted && (
-              <span className="text-xs text-sc-muted-2 tabular-nums line-through">{formatVND(item.subtotal)}</span>
+              <span className="text-[13.5px] text-sc-muted-2 tabular-nums line-through">
+                {formatVND(item.subtotal)}
+              </span>
             )}
           </span>
         ) : (
@@ -95,7 +97,7 @@ function LineCard({
 
 function TotalRow({ label, value, tone }: { label: ReactNode; value: string; tone?: 'success' }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1 text-[13.5px]">
+    <div className="flex items-center justify-between gap-3 py-1 text-[15px]">
       <span className="text-sc-ink-2">{label}</span>
       <span className={`tabular-nums ${tone === 'success' ? 'font-medium text-sc-success' : 'text-sc-ink'}`}>
         {value}
@@ -160,7 +162,7 @@ export function CounterCartPanel({
           <ShoppingBag size={18} />
           Đơn hàng
         </h2>
-        <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-xs font-semibold text-sc-ink-2">
+        <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-ink-2">
           {lines.length} dịch vụ
         </span>
       </header>
@@ -172,7 +174,7 @@ export function CounterCartPanel({
               <ShoppingBag size={22} />
             </span>
             <b className="text-sc-ink">Đơn đang trống</b>
-            <span className="text-[13px] text-sc-muted">Chọn sân, lớp hoặc gói để thêm vào đơn.</span>
+            <span className="text-[14.5px] text-sc-muted">Chọn sân, lớp hoặc gói để thêm vào đơn.</span>
           </div>
         ) : (
           <>
@@ -228,13 +230,13 @@ export function CounterCartPanel({
                   </span>
                 </div>
                 {saved > 0 && (
-                  <span className="mt-2 self-end rounded-full bg-sc-success/10 px-2.5 py-0.5 text-xs font-semibold text-sc-success">
+                  <span className="mt-2 self-end rounded-full bg-sc-success/10 px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-success">
                     Khách tiết kiệm {formatVND(saved)}
                   </span>
                 )}
               </div>
             ) : (
-              <p className="m-0 text-[13px] text-sc-muted">{pricing ? 'Đang tính giá…' : ''}</p>
+              <p className="m-0 text-[14.5px] text-sc-muted">{pricing ? 'Đang tính giá…' : ''}</p>
             )}
 
             {quote && children}

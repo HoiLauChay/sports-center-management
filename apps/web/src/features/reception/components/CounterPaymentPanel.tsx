@@ -85,7 +85,7 @@ export function CounterPaymentPanel({
               disabled={busy || unavailable}
               title={unavailable ? 'Đơn 0đ không cần chuyển khoản' : `Alt+${index + 1}`}
               onClick={() => onMethod(value)}
-              className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-[14.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 active
                   ? 'border-sc-primary bg-sc-primary-soft text-sc-primary shadow-[inset_0_0_0_1px_var(--sc-primary)]'
                   : 'border-sc-border bg-white text-sc-ink-2 hover:border-sc-primary-border'
@@ -101,7 +101,7 @@ export function CounterPaymentPanel({
       {method === 'CASH' && !free && (
         <div className="flex flex-col gap-2 rounded-lg bg-sc-paper px-3 py-3">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[13px] font-semibold text-sc-ink-2">Khách đưa</span>
+            <span className="text-[14.5px] font-semibold text-sc-ink-2">Khách đưa</span>
             <InputNumber<number>
               className="!w-40"
               min={0}
@@ -127,7 +127,7 @@ export function CounterPaymentPanel({
             ))}
           </div>
           <div className="flex items-baseline justify-between gap-3 border-t border-sc-border pt-2">
-            <span className="text-[13px] font-semibold text-sc-ink-2">{short ? 'Còn thiếu' : 'Tiền thối lại'}</span>
+            <span className="text-[14.5px] font-semibold text-sc-ink-2">{short ? 'Còn thiếu' : 'Tiền thối lại'}</span>
             <span
               className={`font-display text-[24px] font-extrabold tabular-nums ${
                 short ? 'text-sc-error' : change > 0 ? 'text-sc-accent' : 'text-sc-muted'
@@ -140,7 +140,7 @@ export function CounterPaymentPanel({
       )}
 
       {method === 'CARD' && (
-        <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[13px] text-sc-ink-2">
+        <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[14.5px] text-sc-ink-2">
           {hints?.CARD ?? (
             <>
               Quẹt thẻ <b>{formatVND(total)}</b> trên máy POS, khi máy báo thành công thì bấm xác nhận.
@@ -149,14 +149,14 @@ export function CounterPaymentPanel({
         </p>
       )}
       {method === 'TRANSFER' && !free && (
-        <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[13px] text-sc-ink-2">
+        <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[14.5px] text-sc-ink-2">
           {hints?.TRANSFER ?? 'Hệ thống tạo mã QR để khách quét. Đơn hoàn tất khi tiền về tài khoản.'}
         </p>
       )}
 
       {children}
 
-      {!canPay && blockedReason && <p className="m-0 text-[13px] text-sc-error">{blockedReason}</p>}
+      {!canPay && blockedReason && <p className="m-0 text-[14.5px] text-sc-error">{blockedReason}</p>}
 
       <Button
         type="primary"

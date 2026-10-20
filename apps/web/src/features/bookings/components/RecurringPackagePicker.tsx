@@ -31,7 +31,7 @@ const DAY_PRESETS = [
 ] as const;
 
 function FieldLabel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`mb-1.5 text-[13px] font-semibold text-sc-ink-2 ${className}`}>{children}</div>;
+  return <div className={`mb-1.5 text-[14.5px] font-semibold text-sc-ink-2 ${className}`}>{children}</div>;
 }
 
 function ChoiceChip({
@@ -50,7 +50,7 @@ function ChoiceChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`${tall ? 'h-10 min-w-10' : 'h-8 min-w-9'} cursor-pointer rounded-md border px-2 text-[12.5px] font-semibold whitespace-nowrap transition-colors ${
+      className={`${tall ? 'h-10 min-w-10' : 'h-8 min-w-9'} cursor-pointer rounded-md border px-2 text-[14px] font-semibold whitespace-nowrap transition-colors ${
         active
           ? 'border-sc-primary bg-sc-primary-soft text-sc-primary'
           : 'border-sc-border bg-white text-sc-ink-2 hover:border-sc-primary-border'
@@ -78,7 +78,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const [startDate, setStartDate] = useState(addDays(todayVN(), 1));
   const [slotIndex, setSlotIndex] = useState<number>();
   const [weeks, setWeeks] = useState<number | null>(4);
-  const [days, setDays] = useState<number[]>([2, 5]);
+  const [days, setDays] = useState<number[]>([]);
 
   const slots = useMemo(
     () =>
@@ -215,6 +215,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                     key={day}
                     type="button"
                     aria-pressed={isSelected}
+                    aria-label={DAY_LABEL[day]}
                     title={DAY_LABEL[day]}
                     onClick={() =>
                       setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
@@ -232,7 +233,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                 );
               })}
             </div>
-            <div className="mt-2.5 rounded-lg bg-sc-paper px-3 py-2 text-[13px]">
+            <div className="mt-2.5 rounded-lg bg-sc-paper px-3 py-2 text-[14.5px]">
               {days.length === 0 ? (
                 <span className="font-medium text-sc-error">Chọn ít nhất một thứ trong tuần</span>
               ) : (
@@ -246,9 +247,10 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             </div>
           </div>
 
-          <p className="m-0 flex items-start gap-1.5 text-xs leading-relaxed text-sc-muted">
+          <p className="m-0 flex items-start gap-1.5 text-[13.5px] leading-relaxed text-sc-muted">
             <Info size={14} className="mt-0.5 shrink-0" />
-            Mọi buổi phải còn trống: chỉ cần một buổi trùng lịch đặt, lớp học hoặc bảo trì thì cả gói bị từ chối.
+            Gói chỉ đặt được khi mọi buổi đều còn trống. Nếu một buổi trùng lượt đặt khác, lớp học hoặc bảo trì, hãy đổi
+            giờ hoặc thứ.
           </p>
         </div>
 
@@ -289,7 +291,6 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
               )}
               <Table<PackagePreviewBooking>
                 rowKey="date"
-                size="small"
                 columns={columns}
                 dataSource={preview.data?.bookings}
                 loading={preview.isFetching}
@@ -299,7 +300,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
               />
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs text-sc-muted">
+                  <div className="text-[13.5px] text-sc-muted">
                     Tổng gói ({preview.data?.bookings.length ?? 0} buổi, giá {formatVND(preview.data?.unitPrice ?? 0)}
                     /buổi)
                   </div>
@@ -314,7 +315,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                   disabled={!preview.data?.isValid || !selection || preview.isFetching || (line ? !line.valid : true)}
                   onClick={() => selection && onAdd(selection)}
                 >
-                  Thêm vào đơn
+                  Thêm vào giỏ
                 </Button>
               </div>
               {line && !line.valid && preview.data?.isValid && (

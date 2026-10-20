@@ -18,19 +18,20 @@ import { formatDateTime, formatVND } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useMyWallet } from '../hooks/useWallet';
 import { walletService } from '../services/wallet.service';
+import { TopUpSteps } from './TopUpSteps';
 import { WalletTransactionsTable } from './WalletTransactionsTable';
 
 const invoiceColumns: TableColumnsType<Invoice> = [
   {
     title: 'Mã thanh toán',
     dataIndex: 'paymentCode',
-    render: (code: string) => <span className="font-mono text-[13px] font-semibold">{code}</span>,
+    render: (code: string) => <span className="font-mono text-[14.5px] font-semibold">{code}</span>,
   },
   {
     title: 'Số tiền',
     dataIndex: 'amount',
     align: 'right',
-    render: (amount: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(amount)}</b>,
+    render: (amount: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(amount)}</span>,
   },
   {
     title: 'Trạng thái',
@@ -49,7 +50,7 @@ const invoiceColumns: TableColumnsType<Invoice> = [
       value ? <span className="whitespace-nowrap">{formatDateTime(value)}</span> : '—',
   },
   {
-    title: '',
+    title: 'Thao tác',
     key: 'actions',
     align: 'right',
     render: (_, invoice) => {
@@ -153,7 +154,6 @@ export function WalletPage() {
     <>
       <PageHeader
         title="Ví của tôi"
-        description="Mua dịch vụ trực tuyến chỉ thanh toán bằng ví. Ví chỉ nạp, thanh toán và hoàn tiền, không rút."
         extra={
           <Link to="/wallet/top-up">
             <Button type="primary" icon={<Plus size={16} />}>
@@ -162,11 +162,14 @@ export function WalletPage() {
           </Link>
         }
       />
-      <div className="mb-4 max-w-md">
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)] items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <WalletCard
           balance={balance.data?.balance ?? 0}
           description={balance.isPending ? 'Đang tải số dư…' : 'Số dư khả dụng để thanh toán đơn hàng'}
         />
+        <Card title="Cách nạp tiền" size="small">
+          <TopUpSteps />
+        </Card>
       </div>
       <Card>
         <Tabs
