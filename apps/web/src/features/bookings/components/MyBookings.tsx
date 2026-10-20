@@ -66,7 +66,7 @@ function BookingsTab() {
         value === null ? (
           <span className="whitespace-nowrap text-sc-muted">Theo gói</span>
         ) : (
-          <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>
+          <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>
         ),
     },
     {
@@ -115,7 +115,6 @@ function BookingsTab() {
       {bookings.error && !bookings.data && <Alert type="error" showIcon title={toApiError(bookings.error).message} />}
       <Table<Booking>
         rowKey="id"
-        size="middle"
         columns={columns}
         dataSource={bookings.data?.items}
         loading={bookings.isFetching}
@@ -201,7 +200,6 @@ function PackagesTab() {
   return (
     <Table<FacilityPackage>
       rowKey="id"
-      size="middle"
       columns={columns}
       dataSource={packages.data}
       loading={packages.isFetching}

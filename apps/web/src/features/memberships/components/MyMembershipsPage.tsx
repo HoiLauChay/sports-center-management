@@ -172,7 +172,7 @@ export function MyMembershipsPage() {
                     strokeColor="var(--sc-primary)"
                     className="!mt-4 !mb-0"
                   />
-                  <div className="text-xs text-sc-muted">
+                  <div className="text-[13px] text-sc-muted">
                     Còn {daysLeft} ngày / {totalDays} ngày
                   </div>
                 </div>
@@ -184,7 +184,7 @@ export function MyMembershipsPage() {
                         {slotsLeft}/{totalSlots} còn lại
                       </strong>
                     </div>
-                    <p className="mt-1 mb-0 text-xs text-sc-muted">Đã dùng {usedSlots} slot.</p>
+                    <p className="mt-1 mb-0 text-[13px] text-sc-muted">Đã dùng {usedSlots} slot.</p>
                   </div>
                 )}
                 <div className="mt-4 border-t border-sc-border-soft pt-4">

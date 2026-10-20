@@ -104,7 +104,6 @@ export function ClassDetailPage() {
             <SectionTitle>Lịch các buổi học</SectionTitle>
             <Table<ClassSession>
               rowKey="id"
-              size="small"
               columns={sessionColumns}
               dataSource={item.sessions}
               pagination={false}

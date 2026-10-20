@@ -144,7 +144,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
                   {WEEK_ORDER.filter((d) => days.includes(d))
                     .map((d) => DAY_SHORT[d])
                     .join(', ')}{' '}
-                  · <b className="text-sc-primary">{days.length} buổi/tuần</b>
+                  · <span className="font-semibold text-sc-primary">{days.length} buổi/tuần</span>
                 </span>
               )}
             </span>
@@ -219,7 +219,6 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             )}
             <Table<PackagePreviewBooking>
               rowKey="date"
-              size="small"
               columns={columns}
               dataSource={preview.data?.bookings}
               loading={preview.isFetching}
@@ -229,7 +228,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             />
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-xs text-sc-muted">
+                <div className="text-[13px] text-sc-muted">
                   Tổng gói ({preview.data?.bookings.length ?? 0} buổi, giá {formatVND(preview.data?.unitPrice ?? 0)}
                   /buổi)
                 </div>

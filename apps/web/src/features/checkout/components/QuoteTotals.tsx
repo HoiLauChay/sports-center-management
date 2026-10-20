@@ -30,7 +30,7 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
               <span className="inline-flex items-center gap-1.5">
                 <span>Mã giảm giá</span>
                 {appliedCoupons.map(({ code }) => (
-                  <Tag key={code} className="!m-0 text-xs font-mono font-medium">
+                  <Tag key={code} className="!m-0 font-mono">
                     {code}
                   </Tag>
                 ))}

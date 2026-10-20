@@ -93,7 +93,7 @@ export function InvoicePayPanel({ invoice, paidActions, onCancel, cancelling, pa
           <Clock3 size={14} />
           Còn <b className="tabular-nums">{formatCountdown(remaining ?? 0)}</b>
         </Tag>
-        <p className="m-0 text-center text-xs text-sc-muted-2">
+        <p className="m-0 text-center text-[13px] text-sc-muted">
           Hệ thống tự kiểm tra mỗi 3 giây, không cần tải lại trang.
         </p>
       </div>

@@ -188,7 +188,6 @@ function AttendanceSection() {
       </div>
       <Table<MyAttendance>
         rowKey={(row) => row.session.id}
-        size="middle"
         columns={columns}
         dataSource={rows}
         loading={attendance.isFetching}
@@ -222,7 +221,6 @@ function CheckInHistory() {
       ) : (
         <Table<CheckIn>
           rowKey="id"
-          size="middle"
           columns={columns}
           dataSource={history.data}
           loading={history.isFetching}

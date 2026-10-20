@@ -50,7 +50,7 @@ const columns: TableColumnsType<WalletTransaction> = [
           <Link
             to="/orders/$orderId"
             params={{ orderId: transaction.orderId }}
-            className="text-xs font-semibold underline underline-offset-2"
+            className="text-[13px] font-semibold underline underline-offset-2"
           >
             Xem đơn hàng
           </Link>
@@ -63,15 +63,15 @@ const columns: TableColumnsType<WalletTransaction> = [
     key: 'amount',
     align: 'right',
     render: (_, transaction) => (
-      <b
-        className={`whitespace-nowrap tabular-nums ${transaction.type === 'PAYMENT' ? 'text-sc-error' : 'text-sc-success'}`}
+      <span
+        className={`whitespace-nowrap font-medium tabular-nums ${transaction.type === 'PAYMENT' ? 'text-sc-error' : 'text-sc-success'}`}
       >
         {transaction.type === 'PAYMENT' ? '−' : '+'}
         {formatVND(transaction.amount)}
         <span className="block text-[13px] font-normal text-sc-muted md:hidden">
           Số dư {formatVND(transaction.balanceAfter)}
         </span>
-      </b>
+      </span>
     ),
   },
   {

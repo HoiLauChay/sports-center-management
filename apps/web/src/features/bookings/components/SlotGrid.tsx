@@ -110,7 +110,7 @@ export function SlotGrid({
         {facilities.map((facility) => (
           <section key={facility.id} aria-label={`Khung giờ ${facility.name}`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <b className="text-base">{facility.name}</b>
+              <span className="text-base font-semibold">{facility.name}</span>
               <span className="text-sm text-sc-muted">
                 {formatVND(facility.pricePerSlot)}/slot · {facility.capacityPerSlot} chỗ
               </span>
@@ -186,7 +186,7 @@ export function SlotGrid({
           {/* Header Row */}
           <div role="row" className="grid gap-1.5" style={{ gridTemplateColumns: template }}>
             <div className="sticky left-0 z-10 flex items-end bg-white pb-1 pl-1 pr-3 border-r border-slate-200/90 shadow-[3px_0_8px_-3px_rgba(0,0,0,0.05)]">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sân / Phòng</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-slate-400">Sân / Phòng</span>
             </div>
             {columns.map((slot) => (
               <div
@@ -214,7 +214,7 @@ export function SlotGrid({
                   <span className="font-semibold text-sc-ink text-[13.5px] truncate" title={facility.name}>
                     {facility.name}
                   </span>
-                  <span className="text-[11.5px] text-sc-muted truncate">
+                  <span className="text-[13px] text-sc-muted truncate">
                     {formatVND(facility.pricePerSlot)}/slot
                     {facility.capacityPerSlot > 1 ? ` · ${facility.capacityPerSlot} chỗ` : ''}
                   </span>
@@ -242,26 +242,26 @@ export function SlotGrid({
                         aria-pressed={selected}
                         aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[tone]}${selected ? ', đang chọn' : ''}`}
                         onClick={() => click(facility.id, index)}
-                        className={`group/cell relative flex flex-col items-center justify-center h-11 rounded-lg border text-xs tabular-nums transition-all disabled:opacity-100 ${
+                        className={`group/cell relative flex flex-col items-center justify-center h-12 rounded-lg border text-xs tabular-nums transition-all disabled:opacity-100 ${
                           selected
                             ? '!border-sc-primary !bg-sc-primary !text-white shadow-sm font-semibold'
                             : CELL_STYLE[tone]
                         }`}
                       >
                         {selected ? (
-                          <span className="font-bold text-[11.5px] text-white">✓ Chọn</span>
+                          <span className="font-bold text-[12px] text-white">✓ Chọn</span>
                         ) : slot.status === 'CLASS' ? (
-                          <span className="font-semibold text-[11px] text-emerald-800">Có lớp</span>
+                          <span className="font-semibold text-[12px] text-emerald-800">Có lớp</span>
                         ) : slot.status === 'MAINTENANCE' ? (
-                          <span className="font-semibold text-[11px] text-rose-700">Bảo trì</span>
+                          <span className="font-semibold text-[12px] text-rose-700">Bảo trì</span>
                         ) : slot.status === 'CLOSED' ? (
-                          <span className="text-[11px] text-slate-300">{STATUS_LABEL[tone]}</span>
+                          <span className="text-[12px] text-slate-300">{STATUS_LABEL[tone]}</span>
                         ) : slot.status === 'FULL' ? (
-                          <span className="font-medium text-[11px] text-slate-400">Hết chỗ</span>
+                          <span className="font-medium text-[12px] text-slate-400">Hết chỗ</span>
                         ) : tone === 'PARTIAL' || tone === 'LOW' ? (
                           <div className="flex flex-col items-center justify-center leading-none">
                             <span
-                              className={`font-bold text-xs ${tone === 'LOW' ? 'text-amber-900' : 'text-emerald-800'}`}
+                              className={`font-bold text-[13px] ${tone === 'LOW' ? 'text-amber-900' : 'text-emerald-800'}`}
                             >
                               {slot.booked}/{slot.capacity}
                             </span>
@@ -273,11 +273,11 @@ export function SlotGrid({
                           </div>
                         ) : slot.capacity > 1 ? (
                           <div className="flex flex-col items-center justify-center leading-none">
-                            <span className="font-medium text-xs text-emerald-700">0/{slot.capacity}</span>
-                            <span className="text-[9.5px] text-emerald-600/70 mt-0.5">Trống</span>
+                            <span className="font-medium text-[13px] text-emerald-700">0/{slot.capacity}</span>
+                            <span className="text-[11px] text-emerald-700 mt-0.5">Trống</span>
                           </div>
                         ) : (
-                          <span className="font-medium text-[11.5px] text-emerald-700 group-hover/cell:scale-105 transition-transform">
+                          <span className="font-medium text-[12px] text-emerald-700 group-hover/cell:scale-105 transition-transform">
                             Trống
                           </span>
                         )}
@@ -292,7 +292,7 @@ export function SlotGrid({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-xs text-sc-muted">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-[13px] text-sc-muted">
         <span className="font-semibold text-sc-ink-2">Chú thích:</span>
         {(['AVAILABLE', 'PARTIAL', 'LOW', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED', 'PAST'] as SlotTone[]).map(
           (status) => (

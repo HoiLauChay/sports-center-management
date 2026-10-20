@@ -104,7 +104,7 @@ export function EnrollmentsPage() {
       dataIndex: 'paidAmount',
       align: 'right',
       responsive: ['md'],
-      render: (value: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(value)}</b>,
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
     },
     {
       title: 'Trạng thái',
@@ -115,7 +115,7 @@ export function EnrollmentsPage() {
             {STATUS_TAG[enrollment.status].label}
           </Tag>
           {enrollment.refundedAt && (
-            <span className="text-xs text-sc-error">Đã hoàn {formatVND(enrollment.paidAmount)}</span>
+            <span className="text-[13px] text-sc-error">Đã hoàn {formatVND(enrollment.paidAmount)}</span>
           )}
         </div>
       ),

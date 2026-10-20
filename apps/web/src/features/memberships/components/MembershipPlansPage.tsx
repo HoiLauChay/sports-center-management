@@ -67,7 +67,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
       }`}
     >
       <div
-        className={`mb-3.5 min-h-4 font-display text-xs font-bold tracking-[.12em] uppercase ${
+        className={`mb-3.5 min-h-4 font-display text-[13px] font-bold tracking-[.12em] uppercase ${
           current ? 'text-sc-primary' : 'text-sc-accent'
         }`}
       >
