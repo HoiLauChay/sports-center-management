@@ -3,6 +3,7 @@ import {
   createUserBodySchema,
   listUsersQuerySchema,
   memberMembershipParamsSchema,
+  subscribeMemberBodySchema,
   updateUserBodySchema,
   updateUserStatusBodySchema,
   userIdParamsSchema,
@@ -43,6 +44,12 @@ userRouter.post(
   isRole('MANAGER', 'RECEPTIONIST'),
   validate({ params: memberMembershipParamsSchema }),
   memberMembershipController.cancelForMember,
+);
+userRouter.post(
+  '/:id/memberships',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, body: subscribeMemberBodySchema }),
+  memberMembershipController.subscribeForMember,
 );
 userRouter.post(
   '/:id/wallet/top-ups',
