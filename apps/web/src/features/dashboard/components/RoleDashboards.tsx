@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Button, Card, Col, Row } from 'antd';
 import { BadgeCheck, CalendarDays, GraduationCap, IdCard, MapPin, School, Wallet } from 'lucide-react';
 import { useMemo } from 'react';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { StatCard } from '~/components/ui/StatCard';
@@ -10,7 +11,6 @@ import { useMyMemberships } from '~/features/memberships/hooks/useMyMemberships'
 import { useCoachSchedule, useMySchedule } from '~/features/schedule';
 import { eventsOfCoach, eventsOfMember } from '~/features/schedule/utils';
 import { useMyWallet } from '~/features/wallet';
-import { formatVND } from '~/lib/format';
 import { addDays, nowVN, parseDate, todayVN } from '~/lib/time';
 import { UpcomingList } from './UpcomingList';
 
@@ -53,7 +53,7 @@ export function MemberDashboard() {
             icon={Wallet}
             label="Số dư ví"
             loading={wallet.isPending}
-            value={formatVND(wallet.data?.balance ?? 0)}
+            value={<MoneyFigure amount={wallet.data?.balance ?? 0} />}
           />
         </Col>
         <Col xs={24} md={8}>

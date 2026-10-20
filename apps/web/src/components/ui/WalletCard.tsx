@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { formatVND } from '~/lib/format';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 
 interface WalletCardProps {
   balance: number;
@@ -14,7 +14,7 @@ export function WalletCard({ balance, label = 'Số dư ví', description }: Wal
         {label}
       </small>
       <div className="mt-1.5 font-display text-[34px] leading-none font-extrabold text-sc-lime tabular-nums">
-        {formatVND(balance)}
+        <MoneyFigure amount={balance} />
       </div>
       {description && <p className="mx-0 mt-2.5 mb-0 text-[12px] text-[rgba(255,255,255,0.5)]">{description}</p>}
     </div>

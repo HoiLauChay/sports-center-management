@@ -1,4 +1,5 @@
 import { Tag } from 'antd';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { formatVND } from '~/lib/format';
 import type { Quote } from '../types';
 
@@ -52,7 +53,7 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
       <div className="mt-1 flex items-baseline justify-between gap-4 border-t border-sc-border pt-3">
         <span className="text-[14px] font-semibold text-sc-ink">Phải trả</span>
         <span className="whitespace-nowrap font-display text-[22px] font-extrabold tabular-nums text-sc-ink">
-          {formatVND(quote.total)}
+          <MoneyFigure amount={quote.total} />
         </span>
       </div>
 

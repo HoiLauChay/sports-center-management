@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Tag } from 'antd';
 import { ArrowRight, CalendarDays, Clock, MapPin, UserRound, Users } from 'lucide-react';
 import { Highlight } from '~/components/ui/Highlight';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { SportTag } from '~/components/ui/SportTag';
 import { formatDate, formatVND } from '~/lib/format';
 import type { GymClass } from '../types';
@@ -60,7 +61,7 @@ export function ClassCard({ item, keyword, discountPct = 0 }: ClassCardProps) {
             </span>
           )}
           <span className="font-display text-[28px] leading-none font-extrabold tabular-nums">
-            {formatVND(memberPrice)}
+            <MoneyFigure amount={memberPrice} />
           </span>
         </div>
         <span className="flex shrink-0 items-center gap-1 text-[13.5px] font-semibold text-sc-primary">

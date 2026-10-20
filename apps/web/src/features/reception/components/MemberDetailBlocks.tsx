@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Button, Card, Tag } from 'antd';
 import { BadgeCheck, History, Wallet } from 'lucide-react';
 import { MappedTag } from '~/components/ui/MappedTag';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { ORDER_STATUS_TAG } from '~/constants/payment';
 import { useOrders } from '~/features/orders';
@@ -32,7 +33,7 @@ export function MemberWalletBlock({ memberId }: { memberId: string }) {
             </span>
             <div>
               <div className="font-display text-[26px] leading-none font-extrabold tabular-nums">
-                {wallet.data ? formatVND(wallet.data.balance) : '…'}
+                {wallet.data ? <MoneyFigure amount={wallet.data.balance} /> : '…'}
               </div>
               <div className="text-xs text-sc-muted">Số dư hiện tại</div>
             </div>

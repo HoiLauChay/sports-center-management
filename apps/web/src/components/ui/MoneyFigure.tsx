@@ -4,7 +4,7 @@ export function MoneyFigure({ amount }: { amount: number }) {
   return (
     <span className="inline-flex items-baseline gap-1">
       {amountFormatter.format(amount)}
-      <span className="font-body text-[0.45em] font-semibold text-sc-muted">₫</span>
+      <span className="font-body text-[0.45em] font-semibold opacity-55">₫</span>
     </span>
   );
 }

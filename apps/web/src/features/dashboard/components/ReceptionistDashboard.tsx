@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { Button, Card, Spin, Tag } from 'antd';
 import { Banknote, CalendarCheck, LifeBuoy, LogIn, User, Users } from 'lucide-react';
 import { EmptyState } from '~/components/feedback/States';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
@@ -65,7 +66,7 @@ export function ReceptionistDashboard() {
           icon={Banknote}
           label="Thu tại quầy hôm nay"
           loading={orders.isPending}
-          value={formatVND(counterTotal)}
+          value={<MoneyFigure amount={counterTotal} />}
         />
         <StatCard
           icon={CalendarCheck}

@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { Alert, Button, Card } from 'antd';
 import dayjs from 'dayjs';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { PATHS } from '~/constants/paths';
 import { AddToCartButton } from '~/features/checkout';
@@ -80,7 +81,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
         {plan.description ?? 'Gói thành viên dành cho việc tập luyện tại trung tâm.'}
       </p>
       <div className="mt-[18px] font-display text-[40px] leading-none font-extrabold tracking-[-.01em] tabular-nums [overflow-wrap:anywhere]">
-        {formatVND(plan.price)}
+        <MoneyFigure amount={plan.price} />
       </div>
       <div className="mt-1.5 text-[13px] text-sc-muted tabular-nums">{periodLabel(plan)}</div>
       <ul className="mt-[18px] mb-[22px] flex-1 list-none border-t border-sc-border-soft p-0">

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
+import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
@@ -249,7 +250,7 @@ export function ClassAdminDetailPage() {
         <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />
         <StatCard icon={CalendarDays} label="Buổi đã dạy" value={`${taught}/${item.course.totalSessions}`} />
         <StatCard icon={UserCheck} label="HLV" value={item.coach?.fullName ?? '—'} />
-        <StatCard icon={Banknote} label="Học phí" value={formatVND(item.course.price)} />
+        <StatCard icon={Banknote} label="Học phí" value={<MoneyFigure amount={item.course.price} />} />
       </div>
 
       <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,462px)_minmax(0,1fr)]">
