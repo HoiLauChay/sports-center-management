@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { AUTH_RULES } from '../constants/auth';
-import { OTP_PURPOSES } from '../constants/enums';
+import { OTP_PURPOSES, VERIFY_OTP_PURPOSES } from '../constants/enums';
 
 const { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, OTP_LENGTH } = AUTH_RULES;
 
@@ -46,9 +46,17 @@ export const sendOtpBodySchema = z.object({
   captchaToken: z.string().min(1, 'Vui lòng xác thực captcha'),
 });
 
+export const loginStartBodySchema = z.object({ email: emailSchema });
+
 export const loginBodySchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Mật khẩu không được để trống'),
+});
+
+export const verifyOtpBodySchema = z.object({
+  email: emailSchema,
+  purpose: z.enum(VERIFY_OTP_PURPOSES),
+  otp: otpSchema,
 });
 
 export const registerBaseSchema = z.object({
@@ -70,6 +78,8 @@ export const resetPasswordBodySchema = withPasswordConfirmation(
   }),
 );
 
+export const setPasswordBodySchema = resetPasswordBodySchema;
+
 export const changePasswordBodySchema = withPasswordConfirmation(
   z.object({
     currentPassword: z.string().min(1, 'Mật khẩu hiện tại không được để trống'),
@@ -82,7 +92,10 @@ export const changePasswordBodySchema = withPasswordConfirmation(
 });
 
 export type SendOtpBody = z.infer<typeof sendOtpBodySchema>;
+export type LoginStartBody = z.infer<typeof loginStartBodySchema>;
 export type LoginBody = z.infer<typeof loginBodySchema>;
+export type VerifyOtpBody = z.infer<typeof verifyOtpBodySchema>;
+export type SetPasswordBody = z.infer<typeof setPasswordBodySchema>;
 export type RegisterBody = z.infer<typeof registerBodySchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
