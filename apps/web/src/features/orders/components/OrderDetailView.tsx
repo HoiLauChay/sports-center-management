@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { App, Button, Card, Segmented, Space, Spin, Table, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft, Download, FileText, LayoutGrid, Printer } from 'lucide-react';
+import { App, Button, Card, Space, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { Download, FileText, LayoutGrid, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -24,7 +23,7 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
       dataIndex: 'lineNumber',
       width: 56,
       render: (val: number) => (
-        <span className="font-display text-xl font-extrabold text-sc-muted-2">{String(val).padStart(2, '0')}</span>
+        <span className="font-display text-[22px] font-extrabold text-sc-muted-2">{String(val).padStart(2, '0')}</span>
       ),
     },
     {
@@ -33,12 +32,10 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
       render: (_, item) => {
         const { title, detail } = describeLine(item.type, item.snapshot);
         return (
-          <div className="flex flex-col gap-1 py-0.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
-              <span className="font-semibold text-sc-ink [overflow-wrap:anywhere]">{title}</span>
-            </div>
-            {detail && <span className="text-[13px] leading-relaxed text-sc-muted">{detail}</span>}
+          <div className="flex flex-col gap-1.5 py-1">
+            <Tag className="!m-0 self-start">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
+            <span className="text-[18px] font-bold text-sc-ink [overflow-wrap:anywhere]">{title}</span>
+            {detail && <span className="text-[15.5px] leading-relaxed text-sc-muted">{detail}</span>}
           </div>
         );
       },
@@ -49,17 +46,19 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
       align: 'right',
       render: (_, item) => (
         <div className="flex flex-col items-end gap-0.5 tabular-nums">
-          <span className="whitespace-nowrap text-sc-ink">{formatVND(item.totalAmount)}</span>
+          <span className="text-[16px] font-semibold whitespace-nowrap text-sc-ink">{formatVND(item.totalAmount)}</span>
           {(item.membershipDiscount > 0 || item.couponDiscount > 0) && (
-            <span className="text-[13px] whitespace-nowrap text-sc-muted line-through">{formatVND(item.subtotal)}</span>
+            <span className="text-[14.5px] whitespace-nowrap text-sc-muted line-through">
+              {formatVND(item.subtotal)}
+            </span>
           )}
           {item.membershipDiscount > 0 && (
-            <span className="text-[13px] whitespace-nowrap text-sc-success">
+            <span className="text-[14.5px] whitespace-nowrap text-sc-success">
               Ưu đãi gói −{formatVND(item.membershipDiscount)}
             </span>
           )}
           {item.couponDiscount > 0 && (
-            <span className="text-[13px] whitespace-nowrap text-sc-success">
+            <span className="text-[14.5px] whitespace-nowrap text-sc-success">
               Mã giảm giá −{formatVND(item.couponDiscount)}
             </span>
           )}
@@ -199,56 +198,31 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <span>{PAYMENT_METHOD_LABEL[data.paymentMethod]}</span>
           </span>
         }
+        back={back}
         extra={
-          <Link to={back.to}>
-            <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
-          </Link>
+          <Space.Compact>
+            <Button
+              icon={viewMode === 'pdf' ? <LayoutGrid size={16} /> : <FileText size={16} />}
+              onClick={() => void handleToggleView()}
+            >
+              {viewMode === 'pdf' ? 'Xem chi tiết' : 'Xem bản in'}
+            </Button>
+            <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
+              Tải PDF
+            </Button>
+            <Button icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
+              In hóa đơn
+            </Button>
+          </Space.Compact>
         }
       />
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Segmented
-          value={viewMode}
-          onChange={(val) => void handleToggleView(val as 'details' | 'pdf')}
-          options={[
-            {
-              value: 'details',
-              label: (
-                <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
-                  <LayoutGrid size={15} />
-                  Chi tiết
-                </span>
-              ),
-            },
-            {
-              value: 'pdf',
-              label: (
-                <span className="flex items-center gap-1.5 px-3 py-1 font-medium">
-                  <FileText size={15} />
-                  Bản in PDF
-                </span>
-              ),
-            },
-          ]}
-          className="!p-1 bg-sc-paper-2"
-        />
-
-        <Space.Compact>
-          <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
-            Tải PDF
-          </Button>
-          <Button icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
-            In hóa đơn
-          </Button>
-        </Space.Compact>
-      </div>
 
       {viewMode === 'pdf' ? (
         loadingPdf ? (
           <Card className="flex h-[750px] items-center justify-center">
             <div className="flex flex-col items-center gap-3">
               <Spin size="large" />
-              <span className="text-sm text-sc-muted">Đang tải hóa đơn PDF...</span>
+              <span className="text-[15px] text-sc-muted">Đang tải hóa đơn PDF...</span>
             </div>
           </Card>
         ) : (
@@ -271,7 +245,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
           <div className="flex flex-col gap-4">
             <Card>
               <SectionTitle>Thanh toán</SectionTitle>
-              <div className="mb-3 flex flex-col gap-1 border-b border-sc-border-soft pb-3 text-[14px]">
+              <div className="mb-3 flex flex-col gap-1.5 border-b border-sc-border-soft pb-3 text-[15px]">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sc-muted">Người mua</span>
                   <span className="flex items-center gap-2 font-semibold text-sc-ink">
@@ -298,7 +272,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               </div>
               <QuoteTotals quote={toTotals(data)} />
               {refunded > 0 && (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-[13px] text-red-700">
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-[14.5px] text-red-700">
                   <span className="font-medium">Đã hoàn về ví</span>
                   <span className="font-bold tabular-nums">−{formatVND(refunded)}</span>
                 </div>
