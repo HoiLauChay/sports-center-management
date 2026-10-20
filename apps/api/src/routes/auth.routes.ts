@@ -1,10 +1,13 @@
 import {
   changePasswordBodySchema,
   loginBodySchema,
+  loginStartBodySchema,
   registerBodySchema,
   resetPasswordBodySchema,
   sendOtpBodySchema,
+  setPasswordBodySchema,
   updateMeBodySchema,
+  verifyOtpBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
@@ -12,10 +15,13 @@ import authController from '~/controllers/auth.controllers';
 import { auth } from '~/middlewares/auth.middlewares';
 import {
   loginLimit,
+  loginStartLimit,
   refreshLimit,
   registerLimit,
   resetPasswordLimit,
   sendOtpLimit,
+  setPasswordLimit,
+  verifyOtpLimit,
 } from '~/middlewares/rateLimit.middlewares';
 import { validate } from '~/utils/validation';
 
@@ -23,7 +29,15 @@ const authRouter = Router();
 
 authRouter.post('/send-otp', sendOtpLimit, validate({ body: sendOtpBodySchema }), authController.sendOtp);
 authRouter.post('/register', registerLimit, validate({ body: registerBodySchema }), authController.register);
+authRouter.post('/login/start', loginStartLimit, validate({ body: loginStartBodySchema }), authController.loginStart);
 authRouter.post('/login', loginLimit, validate({ body: loginBodySchema }), authController.login);
+authRouter.post('/verify-otp', verifyOtpLimit, validate({ body: verifyOtpBodySchema }), authController.verifyOtp);
+authRouter.post(
+  '/set-password',
+  setPasswordLimit,
+  validate({ body: setPasswordBodySchema }),
+  authController.setPassword,
+);
 authRouter.post('/refresh', refreshLimit, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);

@@ -48,6 +48,9 @@ const rateLimit =
 
 export const sendOtpLimit = rateLimit(createLimiter('auth:send-otp', 5, '1 h'));
 export const loginLimit = rateLimit(createLimiter('auth:login', 10, '15 m'));
+export const loginStartLimit = rateLimit(createLimiter('auth:login-start', 10, '15 m'));
+export const verifyOtpLimit = rateLimit(createLimiter('auth:verify-otp', 30, '15 m'));
+export const setPasswordLimit = rateLimit(createLimiter('auth:set-password', 30, '15 m'));
 export const registerLimit = rateLimit(createLimiter('auth:register', 30, '15 m'));
 export const resetPasswordLimit = rateLimit(createLimiter('auth:reset-password', 30, '15 m'));
 export const refreshLimit = rateLimit(createLimiter('auth:refresh', 120, '15 m'));

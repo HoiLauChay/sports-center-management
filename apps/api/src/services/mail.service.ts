@@ -1,7 +1,6 @@
-import type { OtpPurpose } from '@sports-center/shared';
-
 import { env } from '~/configs/env';
 import { mailer } from '~/configs/mailer';
+import type { OtpPurpose } from '~/generated/prisma/client';
 import { otpTemplate } from '~/templates/otp.template';
 
 interface MailOptions {

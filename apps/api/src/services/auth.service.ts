@@ -5,10 +5,14 @@ import {
   type ChangePasswordBody,
   type ErrorCode,
   type LoginBody,
+  type LoginStartBody,
+  type LoginStartResult,
   type RegisterBody,
   type ResetPasswordBody,
   type SendOtpBody,
+  type SetPasswordBody,
   type UpdateMeBody,
+  type VerifyOtpBody,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
@@ -54,29 +58,51 @@ class AuthService {
       throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
     }
 
-    const latest = await otpRepository.findLatestActive(email, purpose);
-    if (latest) {
-      const elapsed = (Date.now() - latest.createdAt.getTime()) / 1000;
-      if (elapsed < AUTH.OTP_RESEND_COOLDOWN) {
-        const retryAfter = Math.ceil(AUTH.OTP_RESEND_COOLDOWN - elapsed);
-        throw new ErrorWithStatus({
-          status: HTTP_STATUS.TOO_MANY_REQUESTS,
-          code: ERROR_CODE.OTP_COOLDOWN,
-          message: `Vui lòng đợi ${retryAfter} giây để gửi lại mã`,
-          meta: { retryAfter },
-        });
-      }
+    const retryAfter = await this.otpCooldown(email, purpose);
+    if (retryAfter) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        code: ERROR_CODE.OTP_COOLDOWN,
+        message: `Vui lòng đợi ${retryAfter} giây để gửi lại mã`,
+        meta: { retryAfter },
+      });
+    }
+    await this.issueOtp(email, purpose);
+  };
+
+  loginStart = async ({ email }: LoginStartBody): Promise<LoginStartResult> => {
+    const account = await accountRepository.findByEmail(email);
+    if (!account || account.status !== 'ACTIVE' || !account.mustSetPassword) return { next: 'PASSWORD' };
+
+    const retryAfter = await this.otpCooldown(email, 'ACCOUNT_SETUP');
+    if (retryAfter) return { next: 'SET_PASSWORD', retryAfter };
+    await this.issueOtp(email, 'ACCOUNT_SETUP');
+    return { next: 'SET_PASSWORD', retryAfter: AUTH.OTP_RESEND_COOLDOWN };
+  };
+
+  checkOtp = async ({ email, purpose, otp }: VerifyOtpBody) => {
+    await this.verifyOtp(email, purpose, otp);
+  };
+
+  setPassword = async ({ email, otp, password }: SetPasswordBody, meta: SessionMeta) => {
+    const record = await this.verifyOtp(email, 'ACCOUNT_SETUP', otp);
+    const account = await accountRepository.findByEmail(email);
+    if (!account || !account.mustSetPassword) {
+      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu, vui lòng đăng nhập');
+    }
+    if (account.status !== 'ACTIVE') {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
     }
 
-    const code = generateOtp();
-    await otpRepository.invalidateAll(email, purpose);
-    await otpRepository.create({
-      email,
-      purpose,
-      codeHash: hashToken(code),
-      expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
+    const passwordHash = await hashPassword(password);
+    const updated = await prisma.$transaction(async (tx) => {
+      await otpRepository.consume(record.id, tx);
+      await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
+      return accountRepository.setOwnPassword(account, passwordHash, tx);
     });
-    await mailService.sendOtp(email, purpose, code);
+
+    const tokens = await this.issueTokens(updated.id, updated.role, meta);
+    return { account: toAccountResponse(updated), ...tokens };
   };
 
   register = async ({ email, otp, fullName, password }: RegisterBody, meta: SessionMeta) => {
@@ -293,6 +319,25 @@ class AuthService {
       message: 'Số điện thoại đã được sử dụng',
       errors: [{ path: 'body.phone', message: 'Số điện thoại đã được sử dụng' }],
     });
+
+  private otpCooldown = async (email: string, purpose: OtpPurpose) => {
+    const latest = await otpRepository.findLatestActive(email, purpose);
+    if (!latest) return 0;
+    const elapsed = (Date.now() - latest.createdAt.getTime()) / 1000;
+    return elapsed < AUTH.OTP_RESEND_COOLDOWN ? Math.ceil(AUTH.OTP_RESEND_COOLDOWN - elapsed) : 0;
+  };
+
+  private issueOtp = async (email: string, purpose: OtpPurpose) => {
+    const code = generateOtp();
+    await otpRepository.invalidateAll(email, purpose);
+    await otpRepository.create({
+      email,
+      purpose,
+      codeHash: hashToken(code),
+      expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
+    });
+    await mailService.sendOtp(email, purpose, code);
+  };
 
   private issueTokens = async (accountId: string, role: Role, meta: SessionMeta) => {
     const refreshToken = generateOpaqueToken();
