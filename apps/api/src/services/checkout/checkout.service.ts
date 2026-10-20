@@ -209,7 +209,7 @@ class CheckoutService {
           retryOnDuplicateCode('transaction_code_key', () =>
             runTransaction(async (tx) => {
               await lockCheckout(tx, { buyerId: accountId, items });
-              const ctx = await buildContext(tx, actor, { accountId }, new Date(), true);
+              const ctx = await buildContext(tx, actor, { accountId });
               const prepared = await prepareOrder(tx, ctx, items);
               const [line] = prepared.lines;
               if (!line!.result.ok) {
@@ -301,7 +301,6 @@ class CheckoutService {
       settings: await settingRepository.get(tx),
       benefits: null,
       planned: [],
-      walletPayment: false,
     };
     const reason =
       current.status !== 'PENDING' || current.expiresAt <= ctx.now

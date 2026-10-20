@@ -102,9 +102,6 @@ export const membershipHandler: LineHandler<MembershipInput, MembershipData, Mem
 
   prepare: async (db, ctx, input) => {
     if (ctx.buyer.kind === 'GUEST') return lineError(ERROR_CODE.GUEST_NOT_ALLOWED, 'Khách vãng lai không mua gói');
-    if (!ctx.walletPayment) {
-      return lineError(ERROR_CODE.INVALID_STATE, 'Gói thành viên chỉ thanh toán bằng ví, đăng ký ở trang thành viên');
-    }
     const membership = await membershipRepository.findById(input.packageId, db);
     if (!membership || !onSale(membership)) return lineError(ERROR_CODE.INVALID_STATE, 'Gói đã ngừng bán');
 

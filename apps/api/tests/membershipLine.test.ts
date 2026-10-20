@@ -37,7 +37,7 @@ const buy = async (member: Viewer, packageId: string, expectedTotal: number) => 
 };
 
 describe('membership line', () => {
-  test('the package in use cannot be bought again, even after cancelling, and counter orders cannot sell one', async () => {
+  test('the package in use cannot be bought again, even after cancelling, while the counter can switch it', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
     const receptionist = await createAccount('RECEPTIONIST', 'desk@example.com');
     await seedBalance(member.id, 1_000_000);
@@ -52,14 +52,28 @@ describe('membership line', () => {
     );
     expect(same.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
 
-    const other = await prisma.membership.create({ data: { name: 'Silver', price: 200_000, durationDays: 30 } });
-    const counter = await readResult<Quote>(
+    const atDesk = await readResult<Quote>(
       await request('POST', '/quote', receptionist, {
         buyer: { accountId: member.id },
-        items: [{ type: 'MEMBERSHIP', packageId: other.id }],
+        items: [{ type: 'MEMBERSHIP', packageId: current.packageId }],
       }),
     );
-    expect(counter.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
+    expect(atDesk.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
+
+    const other = await prisma.membership.create({ data: { name: 'Silver', price: 200_000, durationDays: 30 } });
+    const counter = await request('POST', '/', receptionist, {
+      buyer: { accountId: member.id },
+      items: [{ type: 'MEMBERSHIP', packageId: other.id }],
+      paymentMethod: 'CASH',
+      expectedTotal: 200_000,
+      idempotencyKey: 'desk-membership-1',
+    });
+    expect(counter.status).toBe(201);
+    expect(await prisma.memberMembership.findUniqueOrThrow({ where: { id: current.id } })).toMatchObject({
+      status: 'CANCELLED',
+    });
+    const active = await prisma.memberMembership.findMany({ where: { accountId: member.id, status: 'ACTIVE' } });
+    expect(active.map(({ packageId }) => packageId)).toEqual([other.id]);
     expect(await expectWalletConsistent(member.id)).toBe(1_000_000);
   });
 

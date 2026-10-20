@@ -46,12 +46,11 @@ export const buildContext = async (
   actor: { id: string; role: Role },
   buyer: CheckoutBuyer | undefined,
   now = new Date(),
-  walletPayment = actor.role === 'MEMBER',
 ): Promise<CheckoutContext> => {
   const resolved = await resolveBuyer(db, actor, buyer);
   const [settings, benefits] = await Promise.all([
     settingRepository.get(db),
     resolved.kind === 'MEMBER' ? loadBenefits(db, resolved.accountId, now) : null,
   ]);
-  return { buyer: resolved, actor, now, settings, benefits, planned: [], walletPayment };
+  return { buyer: resolved, actor, now, settings, benefits, planned: [] };
 };
