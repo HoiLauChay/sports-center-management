@@ -151,10 +151,21 @@ function GuestForm({
 interface CounterCustomerSearchProps {
   onSelect: (buyer: DraftBuyer) => void;
   disabled?: boolean;
+  /** `false` for member-only flows (check-in, wallet top-up): no walk-in guest option. */
+  allowGuest?: boolean;
+  placeholder?: string;
+  /** Helper text under the box while nothing is typed. */
+  hint?: string;
 }
 
 /** One box for every customer: search members by name / phone / email, or fall through to a walk-in guest. */
-export function CounterCustomerSearch({ onSelect, disabled }: CounterCustomerSearchProps) {
+export function CounterCustomerSearch({
+  onSelect,
+  disabled,
+  allowGuest = true,
+  placeholder = 'Nhập SĐT, tên hoặc email khách',
+  hint = 'Chọn hội viên để áp dụng ưu đãi gói, hoặc bán cho khách vãng lai.',
+}: CounterCustomerSearchProps) {
   const [term, setTerm] = useState('');
   const [guest, setGuest] = useState<{ name: string; phone: string } | null>(null);
   const q = useDebounce(term.trim());
@@ -173,7 +184,9 @@ export function CounterCustomerSearch({ onSelect, disabled }: CounterCustomerSea
   const items = q ? (members.data?.items ?? []) : [];
   const options = [
     ...items.map((member) => ({ value: member.id, label: <MemberOption member={member} keyword={q} /> })),
-    {
+  ];
+  if (allowGuest) {
+    options.push({
       value: GUEST_OPTION,
       label: (
         <div className="flex items-center gap-3 border-t border-sc-border-soft py-1.5">
@@ -186,8 +199,8 @@ export function CounterCustomerSearch({ onSelect, disabled }: CounterCustomerSea
           </div>
         </div>
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -218,15 +231,17 @@ export function CounterCustomerSearch({ onSelect, disabled }: CounterCustomerSea
           autoComplete="off"
           prefix={<Search size={18} className="text-sc-muted" />}
           suffix={<kbd className="counter-kbd">Ctrl K</kbd>}
-          placeholder="Nhập SĐT, tên hoặc email khách"
+          placeholder={placeholder}
         />
       </AutoComplete>
       <p className="m-0 text-xs text-sc-muted">
         {q && members.isFetching
           ? 'Đang tìm hội viên…'
           : q && !items.length && members.isSuccess
-            ? 'Không thấy hội viên nào. Chọn “Bán cho khách vãng lai” nếu khách chưa có tài khoản.'
-            : 'Chọn hội viên để áp dụng ưu đãi gói, hoặc bán cho khách vãng lai.'}
+            ? allowGuest
+              ? 'Không thấy hội viên nào. Chọn “Bán cho khách vãng lai” nếu khách chưa có tài khoản.'
+              : 'Không thấy hội viên nào khớp. Kiểm tra lại SĐT hoặc tên khách.'
+            : hint}
       </p>
     </div>
   );

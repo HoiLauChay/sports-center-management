@@ -27,10 +27,10 @@ export function daysUntil(date: string) {
   return parseDate(day).diff(parseDate(todayVN()), 'day');
 }
 
-/** Notes a customer is likely to hand over: the total rounded up to the next 50k / 100k / 200k / 500k. */
+/** Notes a customer is likely to hand over: the total rounded up to the next 50k / 100k / 200k / 500k / 1tr. */
 export function cashSuggestions(total: number) {
   const values = new Set<number>();
-  for (const step of [50_000, 100_000, 200_000, 500_000]) {
+  for (const step of [50_000, 100_000, 200_000, 500_000, 1_000_000]) {
     const rounded = Math.ceil(total / step) * step;
     if (rounded > total) values.add(rounded);
   }

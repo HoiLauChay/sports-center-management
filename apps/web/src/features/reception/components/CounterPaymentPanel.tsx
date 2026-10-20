@@ -1,6 +1,7 @@
 import type { PaymentMethod } from '@sports-center/shared';
 import { Button, InputNumber } from 'antd';
 import { Banknote, CreditCard, QrCode, type LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { formatVND } from '~/lib/format';
 import { cashSuggestions } from '../utils';
@@ -13,7 +14,12 @@ const METHODS: { value: CounterMethod; icon: LucideIcon }[] = [
   { value: 'TRANSFER', icon: QrCode },
 ];
 
-const shortVND = (value: number) => (value % 1000 === 0 ? `${value / 1000}k` : formatVND(value));
+const shortVND = (value: number) =>
+  value >= 1_000_000 && value % 100_000 === 0
+    ? `${value / 1_000_000}tr`
+    : value % 1000 === 0
+      ? `${value / 1000}k`
+      : formatVND(value);
 
 interface CounterPaymentPanelProps {
   total: number;
@@ -26,6 +32,12 @@ interface CounterPaymentPanelProps {
   blockedReason?: string;
   busy?: boolean;
   onPay: () => void;
+  /** Overrides the text of the big button per method (counter order wording by default). */
+  actionLabel?: (method: CounterMethod) => string;
+  /** Overrides the short explanation under the card / transfer tiles. */
+  hints?: Partial<Record<'CARD' | 'TRANSFER', ReactNode>>;
+  /** Extra fields shown above the button (e.g. a note). */
+  children?: ReactNode;
 }
 
 /** Payment method tiles, cash tendered / change, and the one big "collect" button. */
@@ -39,14 +51,18 @@ export function CounterPaymentPanel({
   blockedReason,
   busy,
   onPay,
+  actionLabel,
+  hints,
+  children,
 }: CounterPaymentPanelProps) {
   const free = total === 0;
   const short = method === 'CASH' && tendered !== null && tendered < total;
   const change = method === 'CASH' && tendered !== null ? tendered - total : 0;
   const disabled = !canPay || short || (method === 'TRANSFER' && free);
 
-  const label =
-    method === 'TRANSFER'
+  const label = actionLabel
+    ? actionLabel(method)
+    : method === 'TRANSFER'
       ? 'Tạo mã QR'
       : method === 'CARD'
         ? 'Xác nhận đã quẹt thẻ'
@@ -125,14 +141,20 @@ export function CounterPaymentPanel({
 
       {method === 'CARD' && (
         <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[13px] text-sc-ink-2">
-          Quẹt thẻ <b>{formatVND(total)}</b> trên máy POS, khi máy báo thành công thì bấm xác nhận.
+          {hints?.CARD ?? (
+            <>
+              Quẹt thẻ <b>{formatVND(total)}</b> trên máy POS, khi máy báo thành công thì bấm xác nhận.
+            </>
+          )}
         </p>
       )}
       {method === 'TRANSFER' && !free && (
         <p className="m-0 rounded-lg bg-sc-paper px-3 py-2.5 text-[13px] text-sc-ink-2">
-          Hệ thống tạo mã QR để khách quét. Đơn hoàn tất khi tiền về tài khoản.
+          {hints?.TRANSFER ?? 'Hệ thống tạo mã QR để khách quét. Đơn hoàn tất khi tiền về tài khoản.'}
         </p>
       )}
+
+      {children}
 
       {!canPay && blockedReason && <p className="m-0 text-[13px] text-sc-error">{blockedReason}</p>}
 
