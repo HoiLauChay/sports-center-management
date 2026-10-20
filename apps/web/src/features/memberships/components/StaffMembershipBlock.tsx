@@ -33,7 +33,7 @@ export function StaffMembershipBlock({ memberId, counterLink = false }: StaffMem
   const askCancel = (membership: MemberMembership) =>
     confirm({
       title: `Hủy đăng ký gói ${membership.package.name}?`,
-      content: `Gói vẫn dùng được đến ${formatDate(membership.endDate)} rồi dừng, không tự gia hạn và không hoàn tiền. Không bỏ hủy được.`,
+      content: `Gói vẫn còn quyền lợi đến ${formatDate(membership.endDate)}.`,
       okText: 'Hủy đăng ký',
       onOk: () => cancel.mutateAsync(membership.id).catch(() => undefined),
     });
