@@ -24,7 +24,13 @@ export function ClassesPage() {
 
   return (
     <>
-      <PageHeader title="Lớp học" />
+      <PageHeader
+        title="Lớp học"
+        description={
+          classes.data &&
+          `${classes.data.total} lớp đang nhận đăng ký${discountPct > 0 ? ` · thành viên được giảm ${discountPct}%` : ''}`
+        }
+      />
       <div className="mb-4 flex flex-wrap gap-3">
         <SearchInput
           placeholder="Tên lớp hoặc huấn luyện viên..."
@@ -81,7 +87,7 @@ export function ClassesPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 min-[601px]:grid-cols-2 min-[1001px]:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(270px,320px))]">
             {classes.data.items.map((item) => (
               <ClassCard key={item.id} item={item} keyword={q} discountPct={discountPct} />
             ))}
