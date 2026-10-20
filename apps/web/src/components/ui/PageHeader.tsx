@@ -35,7 +35,7 @@ export function PageHeader({ title, description, extra, back }: PageHeaderProps)
                 <ChevronLeft size={26} />
               </Link>
             )}
-            <h1 className="m-0 font-display text-[28px] leading-[1.05] font-extrabold [overflow-wrap:anywhere] uppercase md:text-[40px]">
+            <h1 className="m-0 font-display text-[27px] leading-[1.05] font-extrabold [overflow-wrap:anywhere] uppercase md:text-[38px]">
               {title}
             </h1>
           </div>

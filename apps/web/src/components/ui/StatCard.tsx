@@ -15,14 +15,14 @@ interface StatCardProps {
 export function StatCard({ label, value, icon: Icon, tone = 'default', loading, hint }: StatCardProps) {
   const warning = tone === 'warning';
   return (
-    <Card loading={loading} styles={{ body: { padding: '18px 20px' } }} className="h-full">
-      <div className="flex h-full flex-col gap-3">
+    <Card loading={loading} styles={{ body: { padding: '14px 18px' } }} className="h-full">
+      <div className="flex h-full flex-col gap-2.5">
         <div className="flex items-center gap-2.5">
           {Icon && (
             <span
-              className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${warning ? 'bg-sc-accent-soft text-sc-accent' : 'bg-sc-primary-soft text-sc-primary'}`}
+              className={`flex size-7 shrink-0 items-center justify-center rounded-lg ${warning ? 'bg-sc-accent-soft text-sc-accent' : 'bg-sc-primary-soft text-sc-primary'}`}
             >
-              <Icon size={17} />
+              <Icon size={16} />
             </span>
           )}
           <span className="min-w-0 text-[14px] leading-tight font-semibold tracking-wide text-sc-muted uppercase">
@@ -30,7 +30,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'default', loading, 
           </span>
         </div>
         <div
-          className={`font-display text-[clamp(30px,2.6vw,38px)] leading-none font-extrabold whitespace-nowrap tabular-nums ${warning ? 'text-sc-accent' : 'text-sc-ink'}`}
+          className={`font-display text-[clamp(24px,2vw,32px)] leading-none font-extrabold whitespace-nowrap tabular-nums ${warning ? 'text-sc-accent' : 'text-sc-ink'}`}
         >
           {value}
         </div>
