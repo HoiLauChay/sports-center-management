@@ -1,6 +1,6 @@
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CircleCheck } from 'lucide-react';
 import { InfoGrid } from '~/components/data/InfoGrid';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -84,6 +84,38 @@ export function ClassDetailPage() {
   const item = detail.data;
   const seatsLeft = item.maxStudents - item.enrolledCount;
 
+  const details = (
+    <>
+      <Card>
+        <SectionTitle>Thông tin lớp</SectionTitle>
+        {item.course.description && <p className="mt-0 text-sc-ink-2">{item.course.description}</p>}
+        <InfoGrid
+          items={[
+            { label: 'Huấn luyện viên', value: item.coach?.fullName ?? 'Đang cập nhật' },
+            { label: 'Cơ sở', value: item.facility.name },
+            { label: 'Lịch học', value: weeklyText(item.weeklySchedule) },
+            {
+              label: 'Thời gian',
+              value:
+                item.startDate && item.endDate ? `${formatDate(item.startDate)} – ${formatDate(item.endDate)}` : '—',
+            },
+            { label: 'Sĩ số', value: `${item.enrolledCount}/${item.maxStudents} (còn ${seatsLeft} chỗ)` },
+          ]}
+        />
+      </Card>
+      <Card>
+        <SectionTitle>Lịch các buổi học</SectionTitle>
+        <Table<ClassSession>
+          rowKey="id"
+          columns={sessionColumns}
+          dataSource={item.sessions}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+        />
+      </Card>
+    </>
+  );
+
   return (
     <>
       <PageHeader
@@ -95,87 +127,59 @@ export function ClassDetailPage() {
           </Link>
         }
       />
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <Card>
-            <SectionTitle>Thông tin lớp</SectionTitle>
-            {item.course.description && <p className="mt-0 text-sc-ink-2">{item.course.description}</p>}
-            <InfoGrid
-              items={[
-                { label: 'Huấn luyện viên', value: item.coach?.fullName ?? 'Đang cập nhật' },
-                { label: 'Cơ sở', value: item.facility.name },
-                { label: 'Lịch học', value: weeklyText(item.weeklySchedule) },
-                {
-                  label: 'Thời gian',
-                  value:
-                    item.startDate && item.endDate
-                      ? `${formatDate(item.startDate)} – ${formatDate(item.endDate)}`
-                      : '—',
-                },
-                { label: 'Sĩ số', value: `${item.enrolledCount}/${item.maxStudents} (còn ${seatsLeft} chỗ)` },
-              ]}
-            />
-          </Card>
-          <Card>
-            <SectionTitle>Lịch các buổi học</SectionTitle>
-            <Table<ClassSession>
-              rowKey="id"
-              columns={sessionColumns}
-              dataSource={item.sessions}
-              pagination={false}
-              scroll={{ x: 'max-content' }}
-            />
-          </Card>
-        </div>
-        {enrollment ? (
-          <Card className="xl:sticky xl:top-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <SectionTitle>Bạn đã đăng ký</SectionTitle>
-              <Tag color="success" className="!m-0">
-                {item.startDate && todayVN() < item.startDate ? 'Sắp khai giảng' : 'Đang học'}
-              </Tag>
-            </div>
-            <div className="text-[14px]">
-              <div className="flex justify-between border-b border-sc-border-soft py-2">
-                <span>Đã trả</span>
-                <span className="tabular-nums">{formatVND(enrollment.paidAmount)}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span>Tiến độ</span>
-                <span className="font-semibold text-sc-primary">{enrollmentProgress(enrollment)}</span>
+      {enrollment ? (
+        <div className="flex flex-col gap-4">
+          <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-sc-primary-border bg-sc-primary-soft px-5 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <CircleCheck size={22} className="mt-0.5 shrink-0 text-sc-primary" />
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-display text-[18px] font-extrabold tracking-wide uppercase">
+                    Bạn đã đăng ký
+                  </span>
+                  <Tag color="success" className="!m-0">
+                    {item.startDate && todayVN() < item.startDate ? 'Sắp khai giảng' : 'Đang học'}
+                  </Tag>
+                </div>
+                <span className="text-[14px] text-sc-ink-2">
+                  <span className="font-semibold text-sc-primary">{enrollmentProgress(enrollment)}</span> · Đã trả{' '}
+                  <span className="tabular-nums">{formatVND(enrollment.paidAmount)}</span>
+                </span>
               </div>
             </div>
-            <div className="mt-3 flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link to="/schedule">
-                <Button block type="primary">
-                  Xem lịch của tôi
-                </Button>
+                <Button type="primary">Xem lịch của tôi</Button>
               </Link>
               <Link to="/training">
-                <Button block>Kết quả tập luyện</Button>
+                <Button>Kết quả tập luyện</Button>
               </Link>
               {canCancelEnrollment(item.startDate) && (
-                <Button block danger type="text" loading={cancel.isPending} onClick={() => askCancel(enrollment)}>
+                <Button danger type="text" loading={cancel.isPending} onClick={() => askCancel(enrollment)}>
                   Hủy đăng ký
                 </Button>
               )}
             </div>
-          </Card>
-        ) : (
+          </section>
+          {details}
+        </div>
+      ) : (
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="flex min-w-0 flex-col gap-4">{details}</div>
           <Card className="xl:sticky xl:top-4">
             <SectionTitle>Đăng ký</SectionTitle>
             <div className="text-[14px]">
               <div className="flex justify-between border-b border-sc-border-soft py-2">
                 <span>Học phí</span>
-                <span className="font-medium tabular-nums">{formatVND(item.course.price)}</span>
+                <span className="tabular-nums">{formatVND(item.course.price)}</span>
               </div>
               {line && line.membershipDiscount > 0 && (
                 <div className="flex justify-between border-b border-sc-border-soft py-2 text-sc-success">
                   <span>Ưu đãi gói thành viên</span>
-                  <span className="font-semibold tabular-nums">−{formatVND(line.membershipDiscount)}</span>
+                  <span className="tabular-nums">−{formatVND(line.membershipDiscount)}</span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-sc-border pt-2.5 pb-1 text-[18px] font-extrabold text-sc-ink">
+              <div className="flex justify-between pt-2.5 pb-1 text-[18px] font-bold text-sc-ink">
                 <span>Tạm tính</span>
                 <span className="tabular-nums">{formatVND(line ? line.total : item.course.price)}</span>
               </div>
@@ -193,8 +197,8 @@ export function ClassDetailPage() {
               </p>
             )}
           </Card>
-        )}
-      </div>
+        </div>
+      )}
       {!enrollment && enrollments.isSuccess && (
         <>
           <div className="h-16 md:hidden" />
