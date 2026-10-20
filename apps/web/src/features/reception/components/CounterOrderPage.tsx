@@ -17,7 +17,6 @@ import { blockedReason, selectionKey } from '~/features/checkout/utils';
 import { InvoiceSheet } from '~/features/orders/components/InvoiceSheet';
 import { useOrder } from '~/features/orders/hooks/useOrders';
 import { usersService } from '~/features/users/services/users.service';
-import { InvoicePayPanel } from '~/features/wallet';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import {
@@ -32,6 +31,7 @@ import { CUSTOMER_SEARCH_ID, memberToBuyer } from '../utils';
 import { CounterCartPanel } from './CounterCartPanel';
 import { CounterCustomerBar } from './CounterCustomerBar';
 import { CounterCustomerSearch } from './CounterCustomerSearch';
+import { CounterInvoicePanel } from './CounterInvoicePanel';
 import { CounterPaymentPanel, type CounterMethod } from './CounterPaymentPanel';
 import { CounterServicePicker, type CounterServiceTab } from './CounterServicePicker';
 
@@ -148,8 +148,7 @@ function TransferPhase({
 
   return (
     <div className="mx-auto w-full max-w-2xl rounded-2xl border border-sc-border bg-white px-6 py-6 shadow-xs">
-      <InvoicePayPanel
-        layout="counter"
+      <CounterInvoicePanel
         invoice={data}
         paidMessage={<>Đã nhận {formatVND(data.amount)}. Đang tạo biên lai…</>}
         onCancel={data.status === 'PENDING' ? () => cancel.mutate(data.id, { onSuccess: onBack }) : undefined}

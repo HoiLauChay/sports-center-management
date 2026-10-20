@@ -224,24 +224,3 @@ html .ant-tag.ant-tag-green {
     padding-right: 12px !important;
   }
 }
-
-/* Keyboard shortcut hint on the counter screen (Ctrl K, Ctrl ↵). */
-.counter-kbd {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border: 1px solid var(--sc-border);
-  border-radius: 4px;
-  background: var(--sc-paper);
-  color: var(--sc-muted);
-  font-family: var(--sc-font-body);
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 16px;
-  white-space: nowrap;
-}
-.counter-kbd-on-primary {
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
-}

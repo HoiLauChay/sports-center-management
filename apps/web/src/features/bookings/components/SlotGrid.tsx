@@ -129,8 +129,7 @@ export function SlotGrid({
                 Hôm nay đã hết khung giờ đặt. Chọn ngày khác ở trên.
               </p>
             )}
-            {/* Columns follow the space the grid gets (the counter puts it in a narrow column), not the viewport. */}
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 md:gap-3">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-5">
               {(schedules[facility.id]?.slots ?? []).map((slot, index) => {
                 if (!showPast && toneOf(slot, date) === 'PAST') return null;
                 const selected =

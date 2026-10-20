@@ -11,12 +11,13 @@ import { PAYMENT_METHOD_LABEL, WALLET_TX_TAG } from '~/constants/payment';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import { useSettings } from '~/features/settings';
 import { usersService } from '~/features/users/services/users.service';
-import { InvoicePayPanel, useInvoice, useMemberWallet, useRefreshAfterPaid, walletService } from '~/features/wallet';
+import { useInvoice, useMemberWallet, useRefreshAfterPaid, walletService } from '~/features/wallet';
 import { formatRelative, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useCounterHotkeys } from '../hooks/useCounterHotkeys';
 import { CUSTOMER_SEARCH_ID, memberToBuyer } from '../utils';
 import { CounterCustomerSearch, CustomerAvatar } from './CounterCustomerSearch';
+import { CounterInvoicePanel } from './CounterInvoicePanel';
 import { CounterPaymentPanel, type CounterMethod } from './CounterPaymentPanel';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/top-up');
@@ -100,8 +101,7 @@ function TransferPhase({ invoiceId, onPaid, onBack }: { invoiceId: string; onPai
   if (!invoice.data) return <PageLoading />;
   return (
     <div className="mx-auto w-full max-w-2xl rounded-2xl border border-sc-border bg-white px-6 py-6 shadow-xs">
-      <InvoicePayPanel
-        layout="counter"
+      <CounterInvoicePanel
         invoice={invoice.data}
         paidMessage={`Đã nhận ${formatVND(invoice.data.amount)}. Ví thành viên đã được cộng.`}
       />

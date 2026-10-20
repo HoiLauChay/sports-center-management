@@ -4,6 +4,7 @@ import { Banknote, CreditCard, QrCode, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { formatVND } from '~/lib/format';
+import '../counter.css';
 import { cashSuggestions } from '../utils';
 
 export type CounterMethod = Extract<PaymentMethod, 'CASH' | 'CARD' | 'TRANSFER'>;

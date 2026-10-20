@@ -122,7 +122,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   };
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <Select
           aria-label="Chọn bộ môn"
@@ -189,7 +189,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         />
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_240px] @4xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0 rounded-xl border border-sc-border-soft bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">

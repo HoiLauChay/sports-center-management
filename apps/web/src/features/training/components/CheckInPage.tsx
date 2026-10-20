@@ -8,6 +8,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { useBookingsOn } from '~/features/bookings/hooks/useBookings';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import { CounterCustomerSearch, CustomerAvatar } from '~/features/reception/components/CounterCustomerSearch';
+import '~/features/reception/counter.css';
 import { useCounterHotkeys } from '~/features/reception/hooks/useCounterHotkeys';
 import { CUSTOMER_SEARCH_ID } from '~/features/reception/utils';
 import { formatDateTime } from '~/lib/format';

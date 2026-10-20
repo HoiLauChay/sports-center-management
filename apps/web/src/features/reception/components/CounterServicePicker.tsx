@@ -4,8 +4,6 @@ import { Button, Progress, Skeleton, Tabs, Tag } from 'antd';
 import { CalendarRange, Check, CircleCheck, Crown, Dumbbell, LandPlot, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState } from '~/components/feedback/States';
-import { RecurringPackagePicker } from '~/features/bookings/components/RecurringPackagePicker';
-import { SlotBookingPicker } from '~/features/bookings/components/SlotBookingPicker';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { selectionKey } from '~/features/checkout/utils';
 import { useClasses } from '~/features/classes/hooks/useClasses';
@@ -13,6 +11,8 @@ import { weeklyText } from '~/features/classes/utils';
 import { membershipsQueryOptions } from '~/features/memberships/hooks/useMemberships';
 import { formatDate, formatVND } from '~/lib/format';
 import { benefitsText } from '../utils';
+import { CounterRecurringPackagePicker } from './CounterRecurringPackagePicker';
+import { CounterSlotBookingPicker } from './CounterSlotBookingPicker';
 
 export type CounterServiceTab = 'slot' | 'package' | 'class' | 'membership';
 
@@ -196,14 +196,14 @@ export function CounterServicePicker({
           {
             key: 'slot',
             label: <TabLabel icon={<LandPlot size={16} />}>Đặt sân / phòng</TabLabel>,
-            children: <SlotBookingPicker user={user} buyer={buyer} onAdd={onAdd} />,
+            children: <CounterSlotBookingPicker user={user} buyer={buyer} onAdd={onAdd} />,
           },
           ...(isMember
             ? [
                 {
                   key: 'package',
                   label: <TabLabel icon={<CalendarRange size={16} />}>Gói sân định kỳ</TabLabel>,
-                  children: <RecurringPackagePicker user={user} buyer={buyer} onAdd={onAdd} />,
+                  children: <CounterRecurringPackagePicker user={user} buyer={buyer} onAdd={onAdd} />,
                 },
                 {
                   key: 'class',

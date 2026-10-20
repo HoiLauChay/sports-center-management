@@ -7,6 +7,7 @@ import { Highlight } from '~/components/ui/Highlight';
 import type { DraftBuyer } from '~/features/checkout/store/cartStore';
 import { usersService } from '~/features/users/services/users.service';
 import { useDebounce } from '~/hooks/useDebounce';
+import '../counter.css';
 import { CUSTOMER_SEARCH_ID, memberToBuyer } from '../utils';
 
 const GUEST_OPTION = '__guest__';
