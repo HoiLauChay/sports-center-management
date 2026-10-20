@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { App, Button, Card, Segmented, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Segmented, Space, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import { ArrowLeft, Download, FileText, LayoutGrid, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
@@ -17,85 +17,74 @@ import { useOrder } from '../hooks/useOrders';
 import { PdfReceiptCanvas } from './PdfReceiptCanvas';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
-const columnsOf = (order: Order): TableColumnsType<OrderItem> => [
-  {
-    title: '#',
-    dataIndex: 'lineNumber',
-    width: 40,
-    align: 'center',
-    render: (val: number) => <span className="text-xs font-medium text-sc-muted">{val}</span>,
-  },
-  {
-    title: 'Dịch vụ',
-    key: 'service',
-    render: (_, item) => {
-      const { title, detail } = describeLine(item.type, item.snapshot);
-      return (
-        <div className="flex flex-col gap-1 py-0.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tag className="!m-0 text-xs">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
-            <b className="text-sc-ink [overflow-wrap:anywhere]">{title}</b>
+const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
+  const columns: TableColumnsType<OrderItem> = [
+    {
+      title: '#',
+      dataIndex: 'lineNumber',
+      width: 56,
+      render: (val: number) => (
+        <span className="font-display text-xl font-extrabold text-sc-muted-2">{String(val).padStart(2, '0')}</span>
+      ),
+    },
+    {
+      title: 'Dịch vụ',
+      key: 'service',
+      render: (_, item) => {
+        const { title, detail } = describeLine(item.type, item.snapshot);
+        return (
+          <div className="flex flex-col gap-1 py-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
+              <span className="font-semibold text-sc-ink [overflow-wrap:anywhere]">{title}</span>
+            </div>
+            {detail && <span className="text-[13px] leading-relaxed text-sc-muted">{detail}</span>}
           </div>
-          {detail && <span className="text-[12.5px] leading-relaxed text-sc-muted">{detail}</span>}
+        );
+      },
+    },
+    {
+      title: 'Thành tiền',
+      key: 'total',
+      align: 'right',
+      render: (_, item) => (
+        <div className="flex flex-col items-end gap-0.5 tabular-nums">
+          <span className="whitespace-nowrap text-sc-ink">{formatVND(item.totalAmount)}</span>
+          {(item.membershipDiscount > 0 || item.couponDiscount > 0) && (
+            <span className="text-[13px] whitespace-nowrap text-sc-muted line-through">{formatVND(item.subtotal)}</span>
+          )}
+          {item.membershipDiscount > 0 && (
+            <span className="text-[13px] whitespace-nowrap text-sc-success">
+              Ưu đãi gói −{formatVND(item.membershipDiscount)}
+            </span>
+          )}
+          {item.couponDiscount > 0 && (
+            <span className="text-[13px] whitespace-nowrap text-sc-success">
+              Mã giảm giá −{formatVND(item.couponDiscount)}
+            </span>
+          )}
         </div>
-      );
-    },
-  },
-  {
-    title: 'Giá gốc',
-    dataIndex: 'subtotal',
-    align: 'right',
-    width: 95,
-    render: (value: number) => <span className="whitespace-nowrap tabular-nums text-sc-ink-2">{formatVND(value)}</span>,
-  },
-  {
-    title: 'Ưu đãi gói',
-    dataIndex: 'membershipDiscount',
-    align: 'right',
-    width: 95,
-    render: (value: number) =>
-      value ? (
-        <span className="whitespace-nowrap font-medium text-sc-success tabular-nums">−{formatVND(value)}</span>
-      ) : (
-        <span className="text-sc-muted-2">—</span>
       ),
-  },
-  {
-    title: 'Mã giảm giá',
-    dataIndex: 'couponDiscount',
-    align: 'right',
-    width: 95,
-    render: (value: number) =>
-      value ? (
-        <span className="whitespace-nowrap font-medium text-sc-success tabular-nums">−{formatVND(value)}</span>
-      ) : (
-        <span className="text-sc-muted-2">—</span>
-      ),
-  },
-  {
-    title: 'Thành tiền',
-    dataIndex: 'totalAmount',
-    align: 'right',
-    width: 105,
-    render: (value: number) => <b className="whitespace-nowrap tabular-nums text-sc-ink">{formatVND(value)}</b>,
-  },
-  {
-    title: 'Đã hoàn',
-    key: 'refunded',
-    align: 'right',
-    width: 95,
-    render: (_, item) => {
-      const value = refundedOf(order, item.id);
-      return value ? (
-        <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0 font-medium">
-          −{formatVND(value)}
-        </Tag>
-      ) : (
-        <span className="text-sc-muted-2">—</span>
-      );
     },
-  },
-];
+    {
+      title: 'Đã hoàn',
+      key: 'refunded',
+      align: 'right',
+      width: 95,
+      render: (_, item) => {
+        const value = refundedOf(order, item.id);
+        return value ? (
+          <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0 font-medium">
+            −{formatVND(value)}
+          </Tag>
+        ) : (
+          <span className="text-sc-muted-2">—</span>
+        );
+      },
+    },
+  ];
+  return refundedOf(order) > 0 ? columns : columns.filter((column) => column.key !== 'refunded');
+};
 
 function toTotals(order: Order) {
   return {
@@ -210,6 +199,11 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <span>{PAYMENT_METHOD_LABEL[data.paymentMethod]}</span>
           </span>
         }
+        extra={
+          <Link to={back.to}>
+            <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
+          </Link>
+        }
       />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -239,17 +233,14 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
           className="!p-1 bg-sc-paper-2"
         />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to={back.to}>
-            <Button icon={<ArrowLeft size={16} />}>{back.label}</Button>
-          </Link>
+        <Space.Compact>
           <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
             Tải PDF
           </Button>
-          <Button type="primary" icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
+          <Button icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
             In hóa đơn
           </Button>
-        </div>
+        </Space.Compact>
       </div>
 
       {viewMode === 'pdf' ? (
@@ -271,43 +262,43 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
             <SectionTitle>Dịch vụ</SectionTitle>
             <Table<OrderItem>
               rowKey="id"
-              size="middle"
               columns={columnsOf(data)}
               dataSource={data.items}
               pagination={false}
-              scroll={{ x: 600 }}
+              scroll={{ x: 'max-content' }}
             />
           </Card>
           <div className="flex flex-col gap-4">
             <Card>
-              <SectionTitle>Người mua</SectionTitle>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-semibold text-sc-ink">{buyer}</span>
-                  {!data.account && (
-                    <Tag color="orange" className="!m-0">
-                      Khách vãng lai
-                    </Tag>
-                  )}
+              <SectionTitle>Thanh toán</SectionTitle>
+              <div className="mb-3 flex flex-col gap-1 border-b border-sc-border-soft pb-3 text-[14px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sc-muted">Người mua</span>
+                  <span className="flex items-center gap-2 font-semibold text-sc-ink">
+                    {!data.account && (
+                      <Tag color="orange" className="!m-0">
+                        Khách vãng lai
+                      </Tag>
+                    )}
+                    {buyer}
+                  </span>
                 </div>
                 {data.guestPhone && (
-                  <div className="flex items-center gap-1.5 text-xs text-sc-muted">
-                    <span>Số ĐT:</span>
-                    <span className="font-mono font-medium text-sc-ink-2">{data.guestPhone}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sc-muted">Số điện thoại</span>
+                    <span className="tabular-nums">{data.guestPhone}</span>
                   </div>
                 )}
                 {data.createdBy && (
-                  <div className="mt-1 border-t border-sc-border-soft pt-2 text-xs text-sc-muted-2">
-                    Lập bởi <span className="font-medium text-sc-ink-2">{data.createdBy.fullName}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sc-muted">Lập bởi</span>
+                    <span>{data.createdBy.fullName}</span>
                   </div>
                 )}
               </div>
-            </Card>
-            <Card>
-              <SectionTitle>Thanh toán</SectionTitle>
               <QuoteTotals quote={toTotals(data)} />
               {refunded > 0 && (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-xs text-red-700">
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-[13px] text-red-700">
                   <span className="font-medium">Đã hoàn về ví</span>
                   <span className="font-bold tabular-nums">−{formatVND(refunded)}</span>
                 </div>
