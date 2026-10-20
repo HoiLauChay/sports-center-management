@@ -1,7 +1,6 @@
 import type { Paginated } from '@sports-center/shared';
-import { Button, Tag, type TableColumnsType } from 'antd';
+import { Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
-import { Eye } from 'lucide-react';
 import { DataTable } from '~/components/data/DataTable';
 import { Highlight } from '~/components/ui/Highlight';
 import { MappedTag } from '~/components/ui/MappedTag';
@@ -23,20 +22,6 @@ interface OrdersTableProps {
   keyword?: string;
 }
 
-const ITEM_TYPE_COLOR: Record<string, string> = {
-  FACILITY_BOOKING: 'blue',
-  FACILITY_PACKAGE: 'purple',
-  COURSE_ENROLLMENT: 'cyan',
-  MEMBERSHIP: 'gold',
-};
-
-const PAYMENT_COLOR: Record<string, string> = {
-  WALLET: 'cyan',
-  CASH: 'green',
-  TRANSFER: 'blue',
-  CARD: 'purple',
-};
-
 export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: OrdersTableProps) {
   const columns: TableColumnsType<Order> = [
     {
@@ -44,7 +29,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       dataIndex: 'orderNumber',
       width: 180,
       render: (value: string) => (
-        <span className="font-mono text-[12.5px] font-semibold text-sc-ink" title={value}>
+        <span className="font-mono text-[13px] font-semibold text-sc-ink" title={value}>
           <Highlight keyword={keyword}>{value}</Highlight>
         </span>
       ),
@@ -56,9 +41,9 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       render: (value: string) => {
         const dt = dayjs(value).tz(VN_TIMEZONE);
         return (
-          <div className="flex flex-col text-xs leading-tight">
-            <span className="font-semibold text-sc-ink">{dt.format('HH:mm')}</span>
-            <span className="text-[11px] text-sc-muted">{dt.format('DD/MM/YYYY')}</span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sc-ink tabular-nums">{dt.format('HH:mm')}</span>
+            <span className="text-[13px] text-sc-muted tabular-nums">{dt.format('DD/MM/YYYY')}</span>
           </div>
         );
       },
@@ -75,9 +60,9 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
                   <Highlight keyword={keyword}>{order.account.fullName}</Highlight>
                 </span>
               ) : (
-                <div className="flex flex-col gap-0.5 text-xs">
+                <div className="flex flex-col gap-0.5 text-[13px]">
                   <div className="flex items-center gap-1.5">
-                    <Tag color="orange" className="!m-0 text-[10.5px] px-1 py-0 leading-tight">
+                    <Tag color="orange" className="!m-0">
                       Khách
                     </Tag>
                     <span className="font-medium text-sc-ink truncate max-w-[120px]" title={order.guestName ?? ''}>
@@ -85,7 +70,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
                     </span>
                   </div>
                   {order.guestPhone && (
-                    <span className="text-[11px] text-sc-muted">
+                    <span className="text-[13px] text-sc-muted">
                       <Highlight keyword={keyword}>{order.guestPhone}</Highlight>
                     </span>
                   )}
@@ -100,7 +85,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       render: (_, order) => (
         <div className="flex flex-wrap gap-1">
           {order.items.map((item) => (
-            <Tag key={item.id} color={ITEM_TYPE_COLOR[item.type] ?? 'default'} className="!m-0 text-xs">
+            <Tag key={item.id} className="!m-0">
               {ORDER_ITEM_TYPE_LABEL[item.type]}
             </Tag>
           ))}
@@ -112,20 +97,14 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       dataIndex: 'totalAmount',
       align: 'right',
       width: 120,
-      render: (value: number) => (
-        <span className="font-semibold tabular-nums text-sc-ink whitespace-nowrap text-[13.5px]">
-          {formatVND(value)}
-        </span>
-      ),
+      render: (value: number) => <span className="tabular-nums text-sc-ink whitespace-nowrap">{formatVND(value)}</span>,
     },
     {
       title: 'Thanh toán',
       dataIndex: 'paymentMethod',
       width: 110,
       render: (method: Order['paymentMethod']) => (
-        <Tag color={PAYMENT_COLOR[method] ?? 'default'} className="!m-0 text-xs">
-          {PAYMENT_METHOD_LABEL[method]}
-        </Tag>
+        <span className="whitespace-nowrap">{PAYMENT_METHOD_LABEL[method]}</span>
       ),
     },
     {
@@ -136,27 +115,9 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
         <div className="flex flex-col items-start gap-0.5">
           <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
           {refundedOf(order) > 0 && (
-            <span className="text-[11px] text-sc-error font-medium">Đã hoàn {formatVND(refundedOf(order))}</span>
+            <span className="text-[13px] text-sc-error font-medium">Đã hoàn {formatVND(refundedOf(order))}</span>
           )}
         </div>
-      ),
-    },
-    {
-      title: 'Thao tác',
-      key: 'open',
-      width: 90,
-      align: 'right',
-      render: (_, order) => (
-        <Button
-          size="small"
-          icon={<Eye size={13} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpen(order);
-          }}
-        >
-          Xem
-        </Button>
       ),
     },
   ];
@@ -164,11 +125,11 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
   return (
     <DataTable<Order>
       columns={columns}
-      emptyTitle="Chưa có hóa đơn"
-      emptyDescription="Hóa đơn xuất hiện sau mỗi lần thanh toán thành công."
+      emptyTitle="Chưa có đơn hàng"
+      emptyDescription="Đơn hàng xuất hiện sau mỗi lần thanh toán thành công."
       rowClassName="cursor-pointer hover:bg-slate-50/70 transition-colors"
       onRow={(order) => ({ onClick: () => onOpen(order) })}
-      scroll={{ x: 960 }}
+      scroll={{ x: 'max-content' }}
       {...table}
     />
   );
