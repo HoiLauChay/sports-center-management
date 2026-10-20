@@ -4,6 +4,7 @@ import {
   type CheckoutItemInput,
   type CheckoutQuoteBody,
   type CounterInvoiceBody,
+  type SubscribeMemberBody,
 } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
@@ -182,6 +183,59 @@ class CheckoutService {
                 method: body.paymentMethod,
                 idempotencyKey: key,
                 requestHash,
+              });
+              notifications = committed.notifications;
+              return (await orderRepository.findById(committed.orderId, tx))!;
+            }),
+          ),
+        ),
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toOrderResponse(order);
+  };
+
+  chargeMembership = async (actor: Actor, accountId: string, body: SubscribeMemberBody) => {
+    const items: CheckoutItemInput[] = [{ type: 'MEMBERSHIP', packageId: body.packageId }];
+    const requestHash = hashRequest({ accountId, packageId: body.packageId, expectedTotal: body.expectedTotal });
+    const key = idempotencyKey.staffMembership(actor.id, body.idempotencyKey);
+    let notifications: CreatedNotification[] = [];
+
+    const order = await withIdempotency({
+      requestHash,
+      find: () => orderRepository.findByIdempotencyKey(key),
+      execute: () =>
+        retryOnDuplicateCode('order_number_key', () =>
+          retryOnDuplicateCode('transaction_code_key', () =>
+            runTransaction(async (tx) => {
+              await lockCheckout(tx, { buyerId: accountId, items });
+              const ctx = await buildContext(tx, actor, { accountId });
+              const prepared = await prepareOrder(tx, ctx, items);
+              const [line] = prepared.lines;
+              if (!line!.result.ok) {
+                throw new ErrorWithStatus({
+                  status: HTTP_STATUS.CONFLICT,
+                  code: ERROR_CODE.INVALID_STATE,
+                  message: line!.result.error.message,
+                });
+              }
+              if (prepared.total !== body.expectedTotal) {
+                throw await rejectQuote(tx, ctx, prepared, 'PRICE_CHANGED', 'Giá gói đã thay đổi, vui lòng xem lại');
+              }
+              const committed = await commitOrder(tx, ctx, prepared, {
+                method: 'WALLET',
+                idempotencyKey: key,
+                requestHash,
+              }).catch((error: unknown) => {
+                if (error instanceof ErrorWithStatus && error.code === ERROR_CODE.INSUFFICIENT_BALANCE) {
+                  throw new ErrorWithStatus({
+                    status: HTTP_STATUS.CONFLICT,
+                    code: ERROR_CODE.INSUFFICIENT_BALANCE,
+                    message: 'Ví thành viên không đủ tiền, nhắc thành viên nạp thêm vào ví',
+                    meta: error.meta,
+                  });
+                }
+                throw error;
               });
               notifications = committed.notifications;
               return (await orderRepository.findById(committed.orderId, tx))!;

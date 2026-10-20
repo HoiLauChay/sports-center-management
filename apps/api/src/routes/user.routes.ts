@@ -3,6 +3,8 @@ import {
   createUserBodySchema,
   listUsersQuerySchema,
   memberMembershipParamsSchema,
+  subscribeMemberBodySchema,
+  terminateMembershipBodySchema,
   updateUserBodySchema,
   updateUserStatusBodySchema,
   userIdParamsSchema,
@@ -43,6 +45,18 @@ userRouter.post(
   isRole('MANAGER', 'RECEPTIONIST'),
   validate({ params: memberMembershipParamsSchema }),
   memberMembershipController.cancelForMember,
+);
+userRouter.post(
+  '/:id/memberships',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, body: subscribeMemberBodySchema }),
+  memberMembershipController.subscribeForMember,
+);
+userRouter.post(
+  '/:id/memberships/:membershipId/terminate',
+  isRole('MANAGER', 'RECEPTIONIST'),
+  validate({ params: memberMembershipParamsSchema, body: terminateMembershipBodySchema }),
+  memberMembershipController.terminateForMember,
 );
 userRouter.post(
   '/:id/wallet/top-ups',

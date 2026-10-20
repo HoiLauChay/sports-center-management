@@ -1,4 +1,9 @@
-import { ERROR_CODE, type MyMemberships } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type MyMemberships,
+  type StaffMembershipResult,
+  type SubscribeMemberBody,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
@@ -6,10 +11,14 @@ import { isMembershipCurrent, toMemberMembershipResponse } from '~/mappers/membe
 import accountRepository from '~/repositories/account.repository';
 import bookingRepository from '~/repositories/booking.repository';
 import memberMembershipRepository, { type MemberMembershipRow } from '~/repositories/memberMembership.repository';
+import membershipRepository from '~/repositories/membership.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
-import { monthOf, todayInCenter } from '~/utils/time';
+import checkoutService from '~/services/checkout/checkout.service';
+import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import { hashRequest } from '~/utils/idempotency';
+import { formatCenterDate, monthOf, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction } from '~/utils/transaction';
 
 const notFound = () =>
@@ -17,6 +26,13 @@ const notFound = () =>
     status: HTTP_STATUS.NOT_FOUND,
     code: ERROR_CODE.NOT_FOUND,
     message: 'Không tìm thấy gói của thành viên',
+  });
+
+const memberNotFound = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.NOT_FOUND,
+    code: ERROR_CODE.NOT_FOUND,
+    message: 'Không tìm thấy thành viên',
   });
 
 const invalidState = (message: string) =>
@@ -27,6 +43,28 @@ const toResponse = async (row: MemberMembershipRow, today: string, tx?: Prisma.T
   const { slotDurationMinutes } = await settingRepository.get(tx);
   const used = await bookingRepository.countFreeSlots(row.accountId, monthOf(today), slotDurationMinutes, tx);
   return toMemberMembershipResponse(row, today, used);
+};
+
+const money = (value: unknown) => Number(value ?? 0).toLocaleString('vi-VN');
+
+const notifyShortWallet = async (
+  staffId: string,
+  accountId: string,
+  body: SubscribeMemberBody,
+  meta?: Record<string, unknown>,
+) => {
+  const membership = await membershipRepository.findById(body.packageId);
+  const created = await notificationService.create([
+    {
+      accountId,
+      type: 'MEMBERSHIP',
+      title: 'Gia hạn gói không thành công',
+      message: `Không đăng ký được gói ${membership?.name ?? ''} vì số dư ví không đủ (cần ${money(meta?.required)}đ, ví còn ${money(meta?.balance)}đ). Vui lòng nạp thêm tiền vào ví.`,
+      dedupKey: `membership-short-wallet:${hashRequest({ staffId, key: body.idempotencyKey })}`,
+      sendEmail: true,
+    },
+  ]);
+  notificationService.sendEmailsAfterCommit(created);
 };
 
 class MemberMembershipService {
@@ -65,6 +103,81 @@ class MemberMembershipService {
       );
       return toResponse(updated, today, tx);
     });
+
+  subscribe = async (
+    actor: { id: string; role: Role },
+    accountId: string,
+    body: SubscribeMemberBody,
+    ip?: string,
+  ): Promise<StaffMembershipResult> => {
+    const account = await accountRepository.findById(accountId, 'MEMBER');
+    if (account?.status !== 'ACTIVE') throw memberNotFound();
+
+    const order = await checkoutService.chargeMembership(actor, accountId, body).catch(async (error: unknown) => {
+      if (error instanceof ErrorWithStatus && error.code === ERROR_CODE.INSUFFICIENT_BALANCE) {
+        await notifyShortWallet(actor.id, accountId, body, error.meta);
+      }
+      throw error;
+    });
+    const membershipId = order.items[0]!.refId!;
+    const row = (await memberMembershipRepository.findById(membershipId, accountId))!;
+    await auditService.record({
+      accountId: actor.id,
+      action: 'CREATE',
+      entityType: 'MEMBER_MEMBERSHIP',
+      entityId: membershipId,
+      newValues: row,
+      ipAddress: ip,
+    });
+    return { order, membership: await toResponse(row, todayInCenter()) };
+  };
+
+  terminate = async (actor: { id: string; role: Role }, accountId: string, id: string, reason: string, ip?: string) => {
+    let notifications: CreatedNotification[] = [];
+    const result = await runTransaction(async (tx) => {
+      await lockRows(tx, { accounts: [accountId], memberMemberships: [id] });
+      const current = await memberMembershipRepository.findById(id, accountId, tx);
+      if (!current) throw notFound();
+      const today = todayInCenter();
+      if (!isMembershipCurrent(current, today)) throw invalidState('Chỉ chấm dứt gói còn hiệu lực');
+
+      const updated = await memberMembershipRepository.update(
+        id,
+        { status: 'CANCELLED', endDate: new Date(today), autoRenew: false, cancelledAt: new Date() },
+        tx,
+      );
+      await auditService.record(
+        {
+          accountId: actor.id,
+          action: 'UPDATE',
+          entityType: 'MEMBER_MEMBERSHIP',
+          entityId: id,
+          oldValues: current,
+          newValues: { ...updated, reason },
+          ipAddress: ip,
+        },
+        tx,
+      );
+      notifications = await notificationService.create(
+        [
+          {
+            accountId,
+            type: 'MEMBERSHIP',
+            title: 'Gói thành viên đã chấm dứt',
+            message: `Gói ${current.package.name} đã chấm dứt từ ngày ${formatCenterDate(today)}, không hoàn tiền. Lý do: ${reason}`,
+            referenceType: 'MEMBERSHIP',
+            referenceId: id,
+            dedupKey: `membership-terminated:${id}`,
+            sendEmail: true,
+          },
+        ],
+        tx,
+      );
+      return toResponse(updated, today, tx);
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return result;
+  };
 }
 
 export default new MemberMembershipService();

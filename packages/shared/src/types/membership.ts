@@ -1,4 +1,5 @@
 import type { Ref } from './api';
+import type { Order } from './checkout';
 
 export interface MembershipPackage {
   id: string;
@@ -42,4 +43,9 @@ export interface MemberMembership {
 export interface MyMemberships {
   current: MemberMembership | null;
   history: MemberMembership[];
+}
+
+export interface StaffMembershipResult {
+  order: Order;
+  membership: MemberMembership;
 }

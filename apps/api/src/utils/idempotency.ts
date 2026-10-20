@@ -11,6 +11,7 @@ const toDateKey = (date: Date) => date.toISOString().slice(0, 10);
 export const idempotencyKey = {
   checkout: (accountId: string, clientKey: string) => `checkout:${accountId}:${clientKey}`,
   counter: (receptionistId: string, clientKey: string) => `counter:${receptionistId}:${clientKey}`,
+  staffMembership: (staffId: string, clientKey: string) => `staff-membership:${staffId}:${clientKey}`,
   renew: (membershipId: string, periodStart: Date) => `renew:${membershipId}:${toDateKey(periodStart)}`,
   payment: (orderId: string) => `payment:${orderId}`,
   sepay: (bankTransactionId: string) => `sepay:${bankTransactionId}`,
