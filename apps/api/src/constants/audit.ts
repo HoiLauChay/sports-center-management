@@ -39,6 +39,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'role',
     'status',
     'emailVerifiedAt',
+    'mustSetPassword',
     'dateOfBirth',
     'gender',
     'address',

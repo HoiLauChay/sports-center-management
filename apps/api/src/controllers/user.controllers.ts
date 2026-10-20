@@ -33,6 +33,16 @@ class UserController {
       .status(HTTP_STATUS.OK)
       .json(new ResponseClient({ message: 'Đã cập nhật trạng thái tài khoản', result: account }));
   };
+
+  resetPassword = async (req: Request, res: Response) => {
+    const account = await userService.resetPassword(req.user!, req.params.id as string, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(
+      new ResponseClient({
+        message: 'Đã reset mật khẩu, người dùng sẽ đặt mật khẩu mới khi đăng nhập',
+        result: account,
+      }),
+    );
+  };
 }
 
 export default new UserController();

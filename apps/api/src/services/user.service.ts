@@ -227,6 +227,56 @@ class UserService {
     return toAccountResponse(account);
   };
 
+  resetPassword = async (viewer: Viewer, id: string, ip?: string) => {
+    if (id === viewer.id) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.CONFLICT,
+        code: ERROR_CODE.INVALID_STATE,
+        message: 'Không thể tự reset mật khẩu của mình, hãy dùng đổi mật khẩu',
+      });
+    }
+    const passwordHash = await hashPassword(generateOpaqueToken());
+
+    const { account, notifications } = await runTransaction(async (tx) => {
+      await lockRows(tx, { accounts: [id] });
+      const current = await accountRepository.findById(id, undefined, tx);
+      if (!current) throw notFound();
+
+      const next = await accountRepository.clearPassword(id, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByAccountId(id, tx);
+      await auditService.record(
+        {
+          accountId: viewer.id,
+          action: 'UPDATE',
+          entityType: 'ACCOUNT',
+          entityId: id,
+          oldValues: current,
+          newValues: next,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      const notifications = await notificationService.create(
+        [
+          {
+            accountId: id,
+            type: 'SYSTEM',
+            title: 'Mật khẩu của bạn đã được đặt lại',
+            message:
+              'Quản lý trung tâm đã đặt lại mật khẩu tài khoản Sports Center của bạn. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu mới.',
+            dedupKey: `password-reset:${id}:${next.passwordChangedAt.getTime()}`,
+            sendEmail: true,
+          },
+        ],
+        tx,
+      );
+      return { account: next, notifications };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toAccountResponse(account);
+  };
+
   private releaseCoachClasses = async (
     viewer: Viewer,
     coach: AccountWithProfile,

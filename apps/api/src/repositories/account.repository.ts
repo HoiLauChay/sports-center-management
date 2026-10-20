@@ -146,6 +146,13 @@ class AccountRepository {
       select: { id: true },
     });
 
+  clearPassword = (id: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.update({
+      where: { id },
+      data: { passwordHash, passwordChangedAt: new Date(), mustSetPassword: true },
+      include: accountProfileInclude,
+    });
+
   setOwnPassword = async (
     account: { id: string; emailVerifiedAt: Date | null },
     passwordHash: string,

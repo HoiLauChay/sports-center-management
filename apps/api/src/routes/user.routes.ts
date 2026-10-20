@@ -77,5 +77,11 @@ userRouter.patch(
   validate({ params: userIdParamsSchema, body: updateUserStatusBodySchema }),
   userController.updateStatus,
 );
+userRouter.post(
+  '/:id/reset-password',
+  isRole('MANAGER'),
+  validate({ params: userIdParamsSchema }),
+  userController.resetPassword,
+);
 
 export default userRouter;
