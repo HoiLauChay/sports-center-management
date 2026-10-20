@@ -111,7 +111,7 @@ export function SlotGrid({
           <section key={facility.id} aria-label={`Khung giờ ${facility.name}`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <span className="text-base font-semibold">{facility.name}</span>
-              <span className="text-sm text-sc-muted">
+              <span className="text-[15px] text-sc-muted">
                 {formatVND(facility.pricePerSlot)}/slot · {facility.capacityPerSlot} chỗ
               </span>
             </div>
@@ -119,7 +119,7 @@ export function SlotGrid({
               <button
                 type="button"
                 onClick={() => setShowPast((value) => !value)}
-                className="mb-2 cursor-pointer border-0 bg-transparent p-0 [font:inherit] text-[13px] font-semibold text-sc-primary"
+                className="mb-2 cursor-pointer border-0 bg-transparent p-0 [font:inherit] text-[14.5px] font-semibold text-sc-primary"
               >
                 {showPast ? 'Ẩn các khung giờ đã qua' : `Hiện ${pastCount(facility.id)} khung giờ đã qua`}
               </button>
@@ -129,7 +129,7 @@ export function SlotGrid({
                 Hôm nay đã hết khung giờ đặt. Chọn ngày khác ở trên.
               </p>
             )}
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 lg:grid-cols-4 xl:grid-cols-5">
               {(schedules[facility.id]?.slots ?? []).map((slot, index) => {
                 if (!showPast && toneOf(slot, date) === 'PAST') return null;
                 const selected =
@@ -145,15 +145,15 @@ export function SlotGrid({
                       aria-pressed={selected}
                       aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot, date)]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex min-h-20 flex-col items-center justify-center gap-1 rounded-xl border border-sc-border-soft px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-24 ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
+                      className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border border-sc-border-soft px-2 py-2.5 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-20 ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
                     >
-                      <span className="block text-sm font-bold tabular-nums">
+                      <span className="block text-[14px] font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
-                      <span className="flex flex-col items-center gap-0.5 text-[13px] md:gap-1">
+                      <span className="flex flex-col items-center gap-0.5 text-[13px]">
                         <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot, date)]}</span>
                         {available && (
-                          <span>
+                          <span className="whitespace-nowrap">
                             Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
                           </span>
                         )}
@@ -165,7 +165,7 @@ export function SlotGrid({
             </div>
           </section>
         ))}
-        <p className="m-0 text-[13px] text-sc-muted" role="status">
+        <p className="m-0 text-[14.5px] text-sc-muted" role="status">
           Chọn tối đa {maxSlots} slot liên tiếp. Bấm slot ở đầu hoặc cuối để bỏ bớt.
         </p>
       </div>
@@ -186,13 +186,13 @@ export function SlotGrid({
           {/* Header Row */}
           <div role="row" className="grid gap-1.5" style={{ gridTemplateColumns: template }}>
             <div className="sticky left-0 z-10 flex items-end bg-white pb-1 pl-1 pr-3 border-r border-slate-200/90 shadow-[3px_0_8px_-3px_rgba(0,0,0,0.05)]">
-              <span className="text-[13px] font-bold uppercase tracking-wider text-slate-400">Sân / Phòng</span>
+              <span className="text-[14.5px] font-bold uppercase tracking-wider text-slate-400">Sân / Phòng</span>
             </div>
             {columns.map((slot) => (
               <div
                 key={slot.startTime}
                 role="columnheader"
-                className="flex items-center justify-center py-1.5 px-1 rounded-md bg-slate-100/80 text-center font-mono text-[11.5px] font-semibold text-sc-ink tabular-nums"
+                className="flex items-center justify-center py-1.5 px-1 rounded-md bg-slate-100/80 text-center font-mono text-[13px] font-semibold text-sc-ink tabular-nums"
               >
                 {slot.startTime}
               </div>
@@ -211,10 +211,10 @@ export function SlotGrid({
               >
                 {/* Sticky Facility Column */}
                 <div className="sticky left-0 z-10 flex min-w-0 flex-col justify-center bg-white py-1 pl-1 pr-3 border-r border-slate-200/90 shadow-[3px_0_8px_-3px_rgba(0,0,0,0.05)]">
-                  <span className="font-semibold text-sc-ink text-[13.5px] truncate" title={facility.name}>
+                  <span className="font-semibold text-sc-ink text-[15px] truncate" title={facility.name}>
                     {facility.name}
                   </span>
-                  <span className="text-[13px] text-sc-muted truncate">
+                  <span className="text-[14.5px] text-sc-muted truncate">
                     {formatVND(facility.pricePerSlot)}/slot
                     {facility.capacityPerSlot > 1 ? ` · ${facility.capacityPerSlot} chỗ` : ''}
                   </span>
@@ -242,42 +242,42 @@ export function SlotGrid({
                         aria-pressed={selected}
                         aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[tone]}${selected ? ', đang chọn' : ''}`}
                         onClick={() => click(facility.id, index)}
-                        className={`group/cell relative flex flex-col items-center justify-center h-12 rounded-lg border text-xs tabular-nums transition-all disabled:opacity-100 ${
+                        className={`group/cell relative flex flex-col items-center justify-center h-12 rounded-lg border text-[13.5px] tabular-nums transition-all disabled:opacity-100 ${
                           selected
                             ? '!border-sc-primary !bg-sc-primary !text-white shadow-sm font-semibold'
                             : CELL_STYLE[tone]
                         }`}
                       >
                         {selected ? (
-                          <span className="font-bold text-[12px] text-white">✓ Chọn</span>
+                          <span className="font-bold text-[13.5px] text-white">✓ Chọn</span>
                         ) : slot.status === 'CLASS' ? (
-                          <span className="font-semibold text-[12px] text-emerald-800">Có lớp</span>
+                          <span className="font-semibold text-[13.5px] text-emerald-800">Có lớp</span>
                         ) : slot.status === 'MAINTENANCE' ? (
-                          <span className="font-semibold text-[12px] text-rose-700">Bảo trì</span>
+                          <span className="font-semibold text-[13.5px] text-rose-700">Bảo trì</span>
                         ) : slot.status === 'CLOSED' ? (
-                          <span className="text-[12px] text-slate-300">{STATUS_LABEL[tone]}</span>
+                          <span className="text-[13.5px] text-slate-300">{STATUS_LABEL[tone]}</span>
                         ) : slot.status === 'FULL' ? (
-                          <span className="font-medium text-[12px] text-slate-400">Hết chỗ</span>
+                          <span className="font-medium text-[13.5px] text-slate-400">Hết chỗ</span>
                         ) : tone === 'PARTIAL' || tone === 'LOW' ? (
                           <div className="flex flex-col items-center justify-center leading-none">
                             <span
-                              className={`font-bold text-[13px] ${tone === 'LOW' ? 'text-amber-900' : 'text-emerald-800'}`}
+                              className={`font-bold text-[14.5px] ${tone === 'LOW' ? 'text-amber-900' : 'text-emerald-800'}`}
                             >
                               {slot.booked}/{slot.capacity}
                             </span>
                             <span
-                              className={`text-[11px] mt-0.5 ${tone === 'LOW' ? 'text-amber-700' : 'text-emerald-700'}`}
+                              className={`text-[12.5px] mt-0.5 ${tone === 'LOW' ? 'text-amber-700' : 'text-emerald-700'}`}
                             >
                               còn {slot.capacity - slot.booked}
                             </span>
                           </div>
                         ) : slot.capacity > 1 ? (
                           <div className="flex flex-col items-center justify-center leading-none">
-                            <span className="font-medium text-[13px] text-emerald-700">0/{slot.capacity}</span>
-                            <span className="text-[11px] text-emerald-700 mt-0.5">Trống</span>
+                            <span className="font-medium text-[14.5px] text-emerald-700">0/{slot.capacity}</span>
+                            <span className="text-[12.5px] text-emerald-700 mt-0.5">Trống</span>
                           </div>
                         ) : (
-                          <span className="font-medium text-[12px] text-emerald-700 group-hover/cell:scale-105 transition-transform">
+                          <span className="font-medium text-[13.5px] text-emerald-700 group-hover/cell:scale-105 transition-transform">
                             Trống
                           </span>
                         )}
@@ -292,7 +292,7 @@ export function SlotGrid({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-[13px] text-sc-muted">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3.5 text-[14.5px] text-sc-muted">
         <span className="font-semibold text-sc-ink-2">Chú thích:</span>
         {(['AVAILABLE', 'PARTIAL', 'LOW', 'FULL', 'CLASS', 'MAINTENANCE', 'CLOSED', 'PAST'] as SlotTone[]).map(
           (status) => (
