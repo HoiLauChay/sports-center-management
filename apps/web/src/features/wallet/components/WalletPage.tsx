@@ -18,6 +18,7 @@ import { formatDateTime, formatVND } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useMyWallet } from '../hooks/useWallet';
 import { walletService } from '../services/wallet.service';
+import { TopUpSteps } from './TopUpSteps';
 import { WalletTransactionsTable } from './WalletTransactionsTable';
 
 const invoiceColumns: TableColumnsType<Invoice> = [
@@ -30,7 +31,7 @@ const invoiceColumns: TableColumnsType<Invoice> = [
     title: 'Số tiền',
     dataIndex: 'amount',
     align: 'right',
-    render: (amount: number) => <b className="whitespace-nowrap tabular-nums">{formatVND(amount)}</b>,
+    render: (amount: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(amount)}</span>,
   },
   {
     title: 'Trạng thái',
@@ -49,7 +50,7 @@ const invoiceColumns: TableColumnsType<Invoice> = [
       value ? <span className="whitespace-nowrap">{formatDateTime(value)}</span> : '—',
   },
   {
-    title: '',
+    title: 'Thao tác',
     key: 'actions',
     align: 'right',
     render: (_, invoice) => {
@@ -161,11 +162,14 @@ export function WalletPage() {
           </Link>
         }
       />
-      <div className="mb-4 max-w-md">
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)] items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <WalletCard
           balance={balance.data?.balance ?? 0}
           description={balance.isPending ? 'Đang tải số dư…' : 'Số dư khả dụng để thanh toán đơn hàng'}
         />
+        <Card title="Cách nạp tiền" size="small">
+          <TopUpSteps />
+        </Card>
       </div>
       <Card>
         <Tabs
