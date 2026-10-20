@@ -12,7 +12,13 @@ const dateRange = {
 const validRange = ({ from, to }: { from?: string; to?: string }) => !from || !to || from <= to;
 const rangeIssue = { path: ['to'], message: 'Ngày kết thúc phải từ ngày bắt đầu trở đi' };
 
-export const listMyOrdersQuerySchema = pageQuerySchema.extend(dateRange).refine(validRange, rangeIssue);
+export const listMyOrdersQuerySchema = pageQuerySchema
+  .extend({
+    ...dateRange,
+    status: z.enum(ORDER_STATUSES, 'Trạng thái không hợp lệ').optional(),
+    orderNumber: z.string().trim().min(1).max(50).optional(),
+  })
+  .refine(validRange, rangeIssue);
 
 export const listOrdersQuerySchema = pageQuerySchema
   .extend({

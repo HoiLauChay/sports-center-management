@@ -116,8 +116,8 @@ class OrderRepository {
     ]);
   };
 
-  findPageOfAccount = (accountId: string, { from, to, page, limit }: ListMyOrdersQuery) =>
-    this.findPage({ accountId, from, to, page, limit });
+  findPageOfAccount = (accountId: string, { from, to, page, limit, status, orderNumber }: ListMyOrdersQuery) =>
+    this.findPage({ accountId, from, to, page, limit, status, orderNumber });
 
   findItemForRefund = (id: string, tx: Prisma.TransactionClient) =>
     tx.orderItem.findUnique({

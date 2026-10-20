@@ -122,7 +122,13 @@ describe('orders and receipts', () => {
     }
     const mine = await startServer('/me/orders');
     const otherList = await readResult<Paginated<Order>>(await mine.request('GET', '', other));
+    const byNumber = await readResult<Paginated<Order>>(
+      await mine.request('GET', `?orderNumber=${order.orderNumber.slice(-4)}`, owner),
+    );
+    const noMatch = await readResult<Paginated<Order>>(await mine.request('GET', '?orderNumber=ZZZZ', owner));
     mine.server.close();
+    expect(byNumber.items.map(({ id }) => id)).toEqual([order.id]);
+    expect(noMatch.total).toBe(0);
     expect(otherList.total).toBe(0);
 
     const seen = await readResult<Order>(await request('GET', `/${order.id}`, receptionist));
