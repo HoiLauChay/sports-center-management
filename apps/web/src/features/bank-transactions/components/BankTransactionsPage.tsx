@@ -127,7 +127,7 @@ function TransactionsTab() {
           actions={
             transaction.status === 'UNMATCHED'
               ? [
-                  { key: 'resolve', label: 'Gán thành viên', primary: true, onClick: () => setResolving(transaction) },
+                  { key: 'resolve', label: 'Xử lý', primary: true, onClick: () => setResolving(transaction) },
                   { key: 'ignore', label: 'Bỏ qua', onClick: () => setIgnoring(transaction) },
                 ]
               : []
