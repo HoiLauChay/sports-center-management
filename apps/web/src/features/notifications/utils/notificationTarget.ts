@@ -14,16 +14,3 @@ export function notificationTarget({ referenceType, referenceId }: AppNotificati
   if (!referenceType || !referenceId) return undefined;
   return TARGETS[referenceType]?.(referenceId);
 }
-
-const ACTION_LABEL: Partial<Record<string, string>> = {
-  INVOICE: 'Xem hóa đơn',
-  ORDER: 'Xem đơn',
-  BOOKING: 'Xem lịch đặt',
-  CLASS: 'Xem lớp',
-  SUPPORT_REQUEST: 'Xem yêu cầu',
-  BANK_TRANSACTION: 'Xem giao dịch',
-};
-
-export function notificationActionLabel({ referenceType, referenceId }: AppNotification) {
-  return referenceType && referenceId ? ACTION_LABEL[referenceType] : undefined;
-}

@@ -1,17 +1,6 @@
 import type { AppNotification, NotificationType } from '@sports-center/shared';
-import {
-  ArrowRight,
-  BadgeCheck,
-  Bell,
-  CalendarCheck,
-  CreditCard,
-  Dumbbell,
-  LifeBuoy,
-  School,
-  type LucideIcon,
-} from 'lucide-react';
+import { BadgeCheck, Bell, CalendarCheck, CreditCard, Dumbbell, LifeBuoy, School, type LucideIcon } from 'lucide-react';
 import { formatRelative } from '~/lib/format';
-import { notificationActionLabel } from '../utils/notificationTarget';
 
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   PAYMENT: CreditCard,
@@ -41,7 +30,6 @@ interface NotificationItemProps {
 export function NotificationItem({ notification, onOpen }: NotificationItemProps) {
   const Icon = TYPE_ICON[notification.type] ?? Bell;
   const unread = !notification.readAt;
-  const action = notificationActionLabel(notification);
 
   return (
     <button
@@ -65,14 +53,8 @@ export function NotificationItem({ notification, onOpen }: NotificationItemProps
           </span>
           <span className="text-[14px] text-sc-muted wrap-anywhere">{notification.message}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-3 text-[13px] md:w-56 md:justify-end">
+        <span className="shrink-0 text-[13px] md:text-right">
           <span className="text-sc-muted-2 tabular-nums">{formatRelative(notification.createdAt)}</span>
-          {action && (
-            <span className="flex items-center gap-1 font-semibold text-sc-primary">
-              {action}
-              <ArrowRight size={14} className="[transition:transform_0.15s] group-hover:translate-x-0.5" />
-            </span>
-          )}
         </span>
       </span>
     </button>
