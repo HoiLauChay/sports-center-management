@@ -6,11 +6,11 @@ import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { SportTag } from '~/components/ui/SportTag';
 import { formatVND } from '~/lib/format';
 import { parseDate } from '~/lib/time';
-import type { GymClass } from '../types';
+import type { ClassSummary } from '../types';
 import { weeklyText } from '../utils';
 
 interface ClassCardProps {
-  item: GymClass;
+  item: ClassSummary;
   keyword?: string;
   discountPct?: number;
 }

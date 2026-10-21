@@ -20,7 +20,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
-import type { GymClass } from '~/features/classes/types';
+import type { ClassSummary } from '~/features/classes/types';
 import { classStatusTag, weeklyText } from '~/features/classes/utils';
 import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/useReports';
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
@@ -64,7 +64,7 @@ function MonthBreakdown({ bucket }: { bucket: RevenueBucket | undefined }) {
 }
 
 /** How well a running class is filling up: the manager's cue to push enrollments or step in. */
-function fillState(item: GymClass) {
+function fillState(item: ClassSummary) {
   const rate = item.enrolledCount / item.maxStudents;
   if (item.enrolledCount < item.minStudents) return { label: 'Thiếu sĩ số', color: 'warning', bar: '#f59e0b' };
   return rate >= 0.8
@@ -72,7 +72,7 @@ function fillState(item: GymClass) {
     : { label: 'Ổn định', color: 'processing', bar: '#0f4d34' };
 }
 
-const classColumns: TableColumnsType<GymClass> = [
+const classColumns: TableColumnsType<ClassSummary> = [
   {
     title: 'Lớp',
     key: 'class',
@@ -468,7 +468,7 @@ export function ManagerDashboard() {
         className="!mt-6"
         styles={{ header: { minHeight: 54 }, body: { padding: '12px 24px 24px' } }}
       >
-        <Table<GymClass>
+        <Table<ClassSummary>
           rowKey="id"
           columns={classColumns}
           dataSource={classes.data?.running}
