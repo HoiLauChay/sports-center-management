@@ -3,7 +3,7 @@ import type { ClassDerivedStatus, ListClassesQuery, Role } from '@sports-center/
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 import { courseSelect } from '~/repositories/course.repository';
-import { pageArgs } from '~/utils/pagination';
+import { findSegmentedPage, pageArgs, type Segment } from '~/utils/pagination';
 import { todayInCenter } from '~/utils/time';
 
 const classSelect = {
@@ -95,6 +95,22 @@ const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhe
   endDate: status === 'COMPLETED' ? { lt: today } : { gte: today },
 });
 
+type ClassSegment = Segment<Prisma.ClassWhereInput, Prisma.ClassOrderByWithRelationInput[]>;
+
+const startAsc: Prisma.ClassOrderByWithRelationInput[] = [{ startDate: { sort: 'asc', nulls: 'last' } }, { id: 'asc' }];
+
+// Manager list: what needs a decision first (pending approval, then running classes, then drafts), finished last.
+const managerSegments = (today: Date): ClassSegment[] => [
+  { where: { status: 'PENDING_APPROVAL' }, orderBy: startAsc },
+  { where: { status: 'OPEN', OR: [{ endDate: null }, { endDate: { gte: today } }] }, orderBy: startAsc },
+  { where: { status: 'DRAFT' }, orderBy: startAsc },
+  { where: { status: 'OPEN', endDate: { lt: today } }, orderBy: [{ endDate: 'desc' }, { id: 'desc' }] },
+  {
+    where: { status: 'CANCELLED' },
+    orderBy: [{ startDate: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+  },
+];
+
 class ClassRepository {
   findAssignedToCoach = (coachId: string) =>
     prisma.class.findMany({
@@ -151,6 +167,15 @@ class ClassRepository {
           : {},
       ],
     };
+    if (viewer.role === 'MANAGER') {
+      return findSegmentedPage(
+        managerSegments(today),
+        { page, limit },
+        (segment) => prisma.class.count({ where: { AND: [where, segment] } }),
+        ({ where: segment, ...args }) =>
+          prisma.class.findMany({ where: { AND: [where, segment] }, select: classSummarySelect, ...args }),
+      );
+    }
     return Promise.all([
       prisma.class.findMany({
         where,
