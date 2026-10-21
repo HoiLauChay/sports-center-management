@@ -2,7 +2,7 @@ import type { ListSpecializationsQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
-import { pageArgs } from '~/utils/pagination';
+import { findSegmentedPage, type Segment } from '~/utils/pagination';
 
 const specializationSelect = {
   id: true,
@@ -19,6 +19,18 @@ const specializationSelect = {
 
 export type SpecializationRow = Prisma.CoachSpecializationGetPayload<{ select: typeof specializationSelect }>;
 
+// Pending requests first, the longest waiting on top; reviewed ones after, the latest review first.
+const reviewSegments: Segment<
+  Prisma.CoachSpecializationWhereInput,
+  Prisma.CoachSpecializationOrderByWithRelationInput[]
+>[] = [
+  { where: { status: 'PENDING' }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] },
+  {
+    where: { status: { in: ['APPROVED', 'REJECTED'] } },
+    orderBy: [{ reviewedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+  },
+];
+
 class SpecializationRepository {
   findAll = (coachId: string) =>
     prisma.coachSpecialization.findMany({
@@ -29,15 +41,17 @@ class SpecializationRepository {
 
   findPage = ({ status, coachId, sportId, ...page }: ListSpecializationsQuery) => {
     const where: Prisma.CoachSpecializationWhereInput = { status, coachId, sportId };
-    return Promise.all([
-      prisma.coachSpecialization.findMany({
-        where,
-        select: specializationSelect,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        ...pageArgs(page),
-      }),
-      prisma.coachSpecialization.count({ where }),
-    ]);
+    return findSegmentedPage(
+      reviewSegments,
+      page,
+      (segment) => prisma.coachSpecialization.count({ where: { AND: [where, segment] } }),
+      ({ where: segment, ...args }) =>
+        prisma.coachSpecialization.findMany({
+          where: { AND: [where, segment] },
+          select: specializationSelect,
+          ...args,
+        }),
+    );
   };
 
   lockSport = async (sportId: string, tx: Prisma.TransactionClient) => {
