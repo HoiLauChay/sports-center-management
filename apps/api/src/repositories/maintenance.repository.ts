@@ -2,6 +2,7 @@ import type { ListMaintenancesQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { sortByKeys } from '~/utils/pagination';
 import { addDays, toCenterDateTime, todayInCenter } from '~/utils/time';
 
 const ref = { select: { id: true, name: true } } as const;
@@ -44,8 +45,9 @@ const daysOf = (startAt: Date, endAt: Date) => ({
 });
 
 class MaintenanceRepository {
-  findMany = ({ facilityId, from, to }: ListMaintenancesQuery) =>
-    prisma.facilityMaintenance.findMany({
+  // Ongoing first (ending soonest), then scheduled (starting soonest), then finished (latest first).
+  findMany = async ({ facilityId, from, to }: ListMaintenancesQuery, now = new Date()) => {
+    const rows = await prisma.facilityMaintenance.findMany({
       where: {
         facilityId,
         deletedAt: null,
@@ -53,8 +55,13 @@ class MaintenanceRepository {
         startAt: to ? { lt: toCenterDateTime(addDays(to, 1), 0) } : undefined,
       },
       select: maintenanceSelect,
-      orderBy: [{ startAt: 'asc' }, { id: 'asc' }],
     });
+    return sortByKeys(rows, ({ id, startAt, endAt }) => {
+      if (endAt <= now) return [2, -startAt.getTime(), id];
+      if (startAt <= now) return [0, endAt.getTime(), id];
+      return [1, startAt.getTime(), id];
+    });
+  };
 
   findById = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.facilityMaintenance.findFirst({
