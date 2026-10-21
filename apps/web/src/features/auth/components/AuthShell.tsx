@@ -135,7 +135,7 @@ export function AuthShell({ children, visual, width = 460 }: AuthShellProps) {
   );
 }
 
-export function AuthHeading({ title, description }: { title: string; description: string }) {
+export function AuthHeading({ title, description }: { title: string; description: ReactNode }) {
   return (
     <>
       <h2 className="mb-2 font-display text-[32px] leading-none font-extrabold text-sc-ink uppercase auth:text-[42px]">

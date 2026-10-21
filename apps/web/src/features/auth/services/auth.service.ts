@@ -3,9 +3,12 @@ import type {
   ApiResponse,
   ChangePasswordBody,
   LoginBody,
+  LoginStartResult,
   RegisterBody,
   ResetPasswordBody,
   SendOtpBody,
+  SetPasswordBody,
+  VerifyOtpBody,
 } from '@sports-center/shared';
 import { privateApi, publicApi } from '~/lib/http';
 
@@ -17,6 +20,20 @@ export const authService = {
 
   register: async (payload: RegisterBody) => {
     const { data } = await publicApi.post<ApiResponse<Account>>('/auth/register', payload);
+    return data.result;
+  },
+
+  loginStart: async (email: string) => {
+    const { data } = await publicApi.post<ApiResponse<LoginStartResult>>('/auth/login/start', { email });
+    return data.result;
+  },
+
+  verifyOtp: async (payload: VerifyOtpBody) => {
+    await publicApi.post('/auth/verify-otp', payload);
+  },
+
+  setPassword: async (payload: SetPasswordBody) => {
+    const { data } = await publicApi.post<ApiResponse<Account>>('/auth/set-password', payload);
     return data.result;
   },
 
