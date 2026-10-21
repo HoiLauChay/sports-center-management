@@ -37,6 +37,8 @@ enum Gender {
 enum OtpPurpose {
   REGISTER
   PASSWORD_RESET
+  ACCOUNT_SETUP
+  ACCOUNT_ACTIVATION
 
   @@map("otp_purpose")
 }
@@ -52,6 +54,7 @@ model Account {
   status            AccountStatus @default(ACTIVE)
   emailVerifiedAt   DateTime?     @map("email_verified_at") @db.Timestamptz()
   passwordChangedAt DateTime      @default(now()) @map("password_changed_at") @db.Timestamptz()
+  mustSetPassword   Boolean       @default(false) @map("must_set_password")
   dateOfBirth       DateTime?     @map("date_of_birth") @db.Date
   gender            Gender?
   address           String?       @db.VarChar(500)

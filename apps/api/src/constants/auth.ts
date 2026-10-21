@@ -6,6 +6,7 @@ export const AUTH = {
   REFRESH_TOKEN_TTL: 30 * 24 * 60 * 60,
   OTP_TTL: 10 * 60,
   OTP_MAX_ATTEMPTS: 5,
+  ACTIVATION_TTL: 24 * 60 * 60,
   BCRYPT_ROUNDS: 12,
 } as const;
 

@@ -146,8 +146,28 @@ class AccountRepository {
       select: { id: true },
     });
 
-  markEmailVerified = (id: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.account.update({ where: { id }, data: { emailVerifiedAt: new Date() }, select: { id: true } });
+  replaceEmail = (id: string, email: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.update({
+      where: { id },
+      data: { email, emailVerifiedAt: null, passwordHash, passwordChangedAt: new Date(), mustSetPassword: true },
+      include: accountProfileInclude,
+    });
+
+  setOwnPassword = async (
+    account: { id: string; emailVerifiedAt: Date | null },
+    passwordHash: string,
+    tx: Prisma.TransactionClient = prisma,
+  ) =>
+    tx.account.update({
+      where: { id: account.id },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        mustSetPassword: false,
+        emailVerifiedAt: account.emailVerifiedAt ?? new Date(),
+      },
+      include: accountProfileInclude,
+    });
 }
 
 export default new AccountRepository();

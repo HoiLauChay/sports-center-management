@@ -1,8 +1,7 @@
-import type { OtpPurpose } from '@sports-center/shared';
-
 import { env } from '~/configs/env';
 import { mailer } from '~/configs/mailer';
-import { otpTemplate } from '~/templates/otp.template';
+import { activationTemplate, type ActivationReason } from '~/templates/activation.template';
+import { otpTemplate, type CodePurpose } from '~/templates/otp.template';
 
 interface MailOptions {
   to: string;
@@ -34,7 +33,10 @@ class MailService {
     if (error) throw new Error(`Failed to send mail batch: ${error.message}`);
   };
 
-  sendOtp = (to: string, purpose: OtpPurpose, code: string) => this.send({ to, ...otpTemplate(purpose, code) });
+  sendOtp = (to: string, purpose: CodePurpose, code: string) => this.send({ to, ...otpTemplate(purpose, code) });
+
+  sendActivation = (to: string, fullName: string, url: string, reason: ActivationReason) =>
+    this.send({ to, ...activationTemplate(fullName, url, reason) });
 }
 
 export default new MailService();

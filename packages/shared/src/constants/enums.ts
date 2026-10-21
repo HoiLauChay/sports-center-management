@@ -9,6 +9,9 @@ export type Gender = (typeof GENDERS)[number];
 
 export const OTP_PURPOSES = ['REGISTER', 'PASSWORD_RESET'] as const;
 export type OtpPurpose = (typeof OTP_PURPOSES)[number];
+export const VERIFY_OTP_PURPOSES = ['PASSWORD_RESET', 'ACCOUNT_SETUP'] as const;
+export const LOGIN_NEXT_STEPS = ['PASSWORD', 'SET_PASSWORD'] as const;
+export type LoginNextStep = (typeof LOGIN_NEXT_STEPS)[number];
 
 export const UPLOAD_PURPOSES = [
   'AVATAR',

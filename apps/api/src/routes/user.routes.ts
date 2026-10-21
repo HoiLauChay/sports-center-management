@@ -1,4 +1,5 @@
 import {
+  changeUserEmailBodySchema,
   counterTopUpBodySchema,
   createUserBodySchema,
   listUsersQuerySchema,
@@ -76,6 +77,12 @@ userRouter.patch(
   isRole('MANAGER'),
   validate({ params: userIdParamsSchema, body: updateUserStatusBodySchema }),
   userController.updateStatus,
+);
+userRouter.patch(
+  '/:id/email',
+  isRole('MANAGER'),
+  validate({ params: userIdParamsSchema, body: changeUserEmailBodySchema }),
+  userController.changeEmail,
 );
 
 export default userRouter;

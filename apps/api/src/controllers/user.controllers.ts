@@ -33,6 +33,16 @@ class UserController {
       .status(HTTP_STATUS.OK)
       .json(new ResponseClient({ message: 'Đã cập nhật trạng thái tài khoản', result: account }));
   };
+
+  changeEmail = async (req: Request, res: Response) => {
+    const account = await userService.changeEmail(req.user!, req.params.id as string, req.body, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(
+      new ResponseClient({
+        message: 'Đã đổi email, người dùng đặt mật khẩu mới qua email này khi đăng nhập',
+        result: account,
+      }),
+    );
+  };
 }
 
 export default new UserController();

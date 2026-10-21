@@ -130,7 +130,8 @@ describe('create staff account', () => {
     expect(await prisma.coachProfile.count({ where: { accountId: created.id } })).toBe(1);
     expect(await prisma.receptionistProfile.count({ where: { accountId: created.id } })).toBe(0);
     expect(await prisma.auditLog.count({ where: { entityId: created.id, action: 'CREATE' } })).toBe(2);
-    expect(await prisma.notification.count({ where: { accountId: created.id, sendEmail: true } })).toBe(1);
+    expect(await prisma.notification.count({ where: { accountId: created.id, sendEmail: false } })).toBe(1);
+    expect(await prisma.otpCode.count({ where: { email: body.email, purpose: 'ACCOUNT_ACTIVATION' } })).toBe(1);
 
     const duplicate = await postAs('/', manager, { ...body, phone: null });
     expect(duplicate.status).toBe(409);
@@ -151,6 +152,7 @@ describe('create staff account', () => {
     const { account } = await authService.login({ email: body.email, password: 'NewPassword1!' }, {});
     expect(account.id).toBe(created.id);
     expect(account.emailVerifiedAt).not.toBeNull();
+    expect(account.mustSetPassword).toBe(false);
   });
 });
 

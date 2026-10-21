@@ -2,6 +2,7 @@ import type { COACH_PROFILE_FIELDS } from '@sports-center/shared';
 import {
   ERROR_CODE,
   MEMBER_PROFILE_FIELDS,
+  type ChangeUserEmailBody,
   type CreateUserBody,
   type ErrorCode,
   type ListUsersQuery,
@@ -18,6 +19,7 @@ import enrollmentRepository from '~/repositories/enrollment.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import authService from '~/services/auth.service';
 import notificationService, { type NotificationInput } from '~/services/notification.service';
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
@@ -110,9 +112,9 @@ class UserService {
     const passwordHash = await hashPassword(generateOpaqueToken());
 
     try {
-      const { account, notifications } = await runTransaction(async (tx) => {
+      const { account, activationUrl } = await runTransaction(async (tx) => {
         const created = await accountRepository.create(
-          { email, fullName, phone, role, passwordHash, ...profileData(body) },
+          { email, fullName, phone, role, passwordHash, mustSetPassword: true, ...profileData(body) },
           tx,
         );
         const profile = role === 'COACH' ? created.coachProfile : created.receptionistProfile;
@@ -126,24 +128,22 @@ class UserService {
             tx,
           );
         }
-        const notifications = await notificationService.create(
+        await notificationService.create(
           [
             {
               accountId: created.id,
               type: 'SYSTEM',
               title: 'Tài khoản của bạn đã được tạo',
-              message:
-                'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Để đăng nhập lần đầu, hãy mở trang đăng nhập, chọn "Quên mật khẩu" và nhập email này để đặt mật khẩu.',
+              message: 'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Chào mừng bạn đến với Sports Center.',
               dedupKey: `welcome:${created.id}`,
-              sendEmail: true,
             },
           ],
           tx,
         );
-        return { account: created, notifications };
+        return { account: created, activationUrl: await authService.createActivationLink(email, tx) };
       });
 
-      notificationService.sendEmailsAfterCommit(notifications);
+      authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'CREATED');
       return toAccountResponse(account);
     } catch (err) {
       if (isUniqueViolation(err, 'email_key')) throw emailTaken();
@@ -226,6 +226,66 @@ class UserService {
     notificationService.sendEmailsAfterCommit(notifications);
     return toAccountResponse(account);
   };
+
+  changeEmail = async (viewer: Viewer, id: string, { email }: ChangeUserEmailBody, ip?: string) => {
+    const invalidState = (message: string) =>
+      new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
+    if (id === viewer.id) throw invalidState('Không thể tự đổi email của mình');
+    const passwordHash = await hashPassword(generateOpaqueToken());
+
+    try {
+      const { account, activationUrl } = await this.replaceEmail(viewer, id, email, passwordHash, invalidState, ip);
+      authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'EMAIL_CHANGED');
+      return toAccountResponse(account);
+    } catch (err) {
+      if (isUniqueViolation(err, 'email_key')) throw emailTaken();
+      throw err;
+    }
+  };
+
+  private replaceEmail = (
+    viewer: Viewer,
+    id: string,
+    email: string,
+    passwordHash: string,
+    invalidState: (message: string) => ErrorWithStatus,
+    ip?: string,
+  ) =>
+    runTransaction(async (tx) => {
+      await lockRows(tx, { accounts: [id] });
+      const current = await accountRepository.findById(id, undefined, tx);
+      if (!current) throw notFound();
+      if (current.email === email) throw invalidState('Email mới trùng email hiện tại');
+      if (await accountRepository.existsByEmail(email)) throw emailTaken();
+
+      const next = await accountRepository.replaceEmail(id, email, passwordHash, tx);
+      await refreshTokenRepository.revokeAllByAccountId(id, tx);
+      await auditService.record(
+        {
+          accountId: viewer.id,
+          action: 'UPDATE',
+          entityType: 'ACCOUNT',
+          entityId: id,
+          oldValues: current,
+          newValues: next,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      await notificationService.create(
+        [
+          {
+            accountId: id,
+            type: 'SYSTEM',
+            title: 'Email tài khoản đã được cập nhật',
+            message: `Quản lý trung tâm đã đổi email đăng nhập Sports Center của bạn sang ${email}.`,
+            dedupKey: `email-changed:${id}:${next.passwordChangedAt.getTime()}`,
+          },
+        ],
+        tx,
+      );
+      return { account: next, activationUrl: await authService.createActivationLink(email, tx) };
+    });
 
   private releaseCoachClasses = async (
     viewer: Viewer,

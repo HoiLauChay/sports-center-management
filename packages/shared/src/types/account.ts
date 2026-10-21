@@ -1,4 +1,4 @@
-import type { AccountStatus, Gender, Role } from '../constants/enums';
+import type { AccountStatus, Gender, LoginNextStep, Role } from '../constants/enums';
 
 export interface MemberProfile {
   emergencyContact: string | null;
@@ -30,6 +30,7 @@ export interface Account {
   role: Role;
   status: AccountStatus;
   emailVerifiedAt: string | null;
+  mustSetPassword: boolean;
   createdAt: string;
   profile: MemberProfile | CoachProfile | StaffProfile;
 }
@@ -45,3 +46,13 @@ export type StudentAccount = Pick<
 > & {
   profile: Omit<MemberProfile, 'walletBalance'>;
 };
+
+export interface LoginStartResult {
+  next: LoginNextStep;
+  retryAfter?: number;
+}
+
+export interface ActivationInfo {
+  email: string;
+  fullName: string;
+}
