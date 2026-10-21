@@ -40,9 +40,12 @@ export const updateUserStatusBodySchema = z.object({
   reason: optionalText(500, 'Lý do'),
 });
 
+export const changeUserEmailBodySchema = z.object({ email: emailSchema });
+
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type CreateUserBody = z.infer<typeof createUserBodySchema>;
 export type CreateUserInput = z.input<typeof createUserBodySchema>;
 export type UpdateUserBody = z.infer<typeof updateUserBodySchema>;
 export type UpdateUserInput = z.input<typeof updateUserBodySchema>;
 export type UpdateUserStatusBody = z.infer<typeof updateUserStatusBodySchema>;
+export type ChangeUserEmailBody = z.infer<typeof changeUserEmailBodySchema>;
