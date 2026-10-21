@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import type { CoachRegistrationStatus, Prisma } from '~/generated/prisma/client';
+import { sortByKeys } from '~/utils/pagination';
 
 const registrationSelect = {
   id: true,
@@ -16,12 +17,17 @@ const registrationSelect = {
 export type CoachRegistrationRow = Prisma.ClassCoachRegistrationGetPayload<{ select: typeof registrationSelect }>;
 
 class CoachRegistrationRepository {
-  findAll = (classId: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.classCoachRegistration.findMany({
-      where: { classId },
-      select: registrationSelect,
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-    });
+  // Pending first (oldest on top), then approved, then rejected (latest first).
+  findAll = async (classId: string, tx: Prisma.TransactionClient = prisma) =>
+    sortByKeys(
+      await tx.classCoachRegistration.findMany({
+        where: { classId },
+        select: registrationSelect,
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }),
+      ({ status, createdAt, id }) =>
+        status === 'REJECTED' ? [2, -createdAt.getTime(), id] : [status === 'PENDING' ? 0 : 1, createdAt.getTime(), id],
+    );
 
   findByCoach = (coachId: string, status?: CoachRegistrationStatus) =>
     prisma.classCoachRegistration.findMany({
