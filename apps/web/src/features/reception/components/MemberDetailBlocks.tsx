@@ -1,15 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Tag } from 'antd';
-import { BadgeCheck, History, Wallet } from 'lucide-react';
+import { Button, Card } from 'antd';
+import { History, Wallet } from 'lucide-react';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { ORDER_STATUS_TAG } from '~/constants/payment';
 import { useOrders } from '~/features/orders';
 import { useMemberWallet } from '~/features/wallet';
-import { formatDate, formatDateTime, formatVND } from '~/lib/format';
+import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { useMemberMemberships } from '../hooks/useCounter';
 
 export function MemberWalletBlock({ memberId }: { memberId: string }) {
   const wallet = useMemberWallet(memberId, { page: 1, limit: 4 });
@@ -62,52 +61,6 @@ export function MemberWalletBlock({ memberId }: { memberId: string }) {
           </ul>
         </>
       )}
-    </Card>
-  );
-}
-
-export function MemberMembershipBlock({ memberId }: { memberId: string }) {
-  const memberships = useMemberMemberships(memberId);
-  const current = memberships.data?.current;
-  return (
-    <Card>
-      <SectionTitle>Gói thành viên</SectionTitle>
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sc-paper text-sc-ink-2">
-          <BadgeCheck size={17} />
-        </span>
-        <div className="min-w-0 flex-1 text-[15px]">
-          {memberships.isPending ? (
-            <span className="text-sc-muted">Đang tải…</span>
-          ) : memberships.data === null ? (
-            <span className="text-sc-muted">
-              Chưa xem được gói của thành viên (API gói thành viên theo người dùng đang hoàn thiện).
-            </span>
-          ) : current ? (
-            <>
-              <b>{current.package.name}</b>{' '}
-              <Tag color="success" className="!m-0">
-                Còn hiệu lực
-              </Tag>
-              <div className="mt-0.5 text-sc-muted">
-                {formatDate(current.startDate)} – {formatDate(current.endDate)}
-              </div>
-              {current.currentBenefits && (
-                <div className="mt-1 text-[13.5px] text-sc-muted">
-                  {current.currentBenefits.gymAccess ? 'Gym miễn phí · ' : ''}−
-                  {current.currentBenefits.bookingDiscountPct}% sân · −{current.currentBenefits.classDiscountPct}% lớp ·{' '}
-                  {current.currentBenefits.freeBookingSlotsPerMonth} slot/tháng
-                </div>
-              )}
-            </>
-          ) : (
-            <span className="text-sc-muted">Thành viên chưa có gói đang hiệu lực.</span>
-          )}
-        </div>
-      </div>
-      <Link to="/reception/order" search={{ memberId }} className="mt-3 inline-block">
-        <Button size="small">Bán / gia hạn gói tại quầy</Button>
-      </Link>
     </Card>
   );
 }

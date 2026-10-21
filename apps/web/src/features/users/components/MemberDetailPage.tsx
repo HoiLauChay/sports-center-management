@@ -1,6 +1,7 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { PATHS } from '~/constants/paths';
-import { MemberHistoryBlock, MemberMembershipBlock, MemberWalletBlock } from '~/features/reception';
+import { StaffMembershipBlock } from '~/features/memberships';
+import { MemberHistoryBlock, MemberWalletBlock } from '~/features/reception';
 import { UserDetailLoader } from './UserDetailView';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/$memberId');
@@ -23,7 +24,7 @@ export function MemberDetailPage() {
       aside={() => (
         <>
           <MemberWalletBlock memberId={memberId} />
-          <MemberMembershipBlock memberId={memberId} />
+          <StaffMembershipBlock memberId={memberId} counterLink />
           <MemberHistoryBlock memberId={memberId} />
         </>
       )}
