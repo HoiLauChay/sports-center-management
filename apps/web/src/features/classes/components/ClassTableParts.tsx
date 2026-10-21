@@ -1,6 +1,6 @@
 import { Space, Tag } from 'antd';
 import { DAY_SHORT, WEEK_ORDER } from '~/lib/time';
-import type { GymClass, WeeklySlot } from '../types';
+import type { ClassSummary, WeeklySlot } from '../types';
 import { classStatusTag } from '../utils';
 
 /** One tag per weekly slot, Monday first: "T3 18:00–19:30". */
@@ -17,7 +17,7 @@ export function WeeklyTags({ schedule }: { schedule: WeeklySlot[] }) {
   );
 }
 
-export function ClassStatusTag({ item }: { item: Pick<GymClass, 'status' | 'derivedStatus'> }) {
+export function ClassStatusTag({ item }: { item: Pick<ClassSummary, 'status' | 'derivedStatus'> }) {
   const tag = classStatusTag(item);
   return <Tag color={tag.color}>{tag.label}</Tag>;
 }

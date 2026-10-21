@@ -1,6 +1,6 @@
 import { formatDate } from '~/lib/format';
 import { DAY_SHORT, WEEK_ORDER, todayVN } from '~/lib/time';
-import type { ClassDerivedStatus, ClassStatus, CoachRegistrationStatus, GymClass, WeeklySlot } from './types';
+import type { ClassDerivedStatus, ClassStatus, ClassSummary, CoachRegistrationStatus, WeeklySlot } from './types';
 
 export function weeklyText(schedule: WeeklySlot[]) {
   const first = schedule[0];
@@ -24,7 +24,7 @@ export function weeklyLines(schedule: WeeklySlot[]) {
 }
 
 /** "05/10 → 27/11/2026", or a dash for a class without sessions. */
-export function classDateRange(item: Pick<GymClass, 'startDate' | 'endDate'>) {
+export function classDateRange(item: Pick<ClassSummary, 'startDate' | 'endDate'>) {
   if (!item.startDate || !item.endDate) return '—';
   return `${formatDate(item.startDate).slice(0, 5)} → ${formatDate(item.endDate)}`;
 }
@@ -43,7 +43,7 @@ export const CLASS_PHASE_TAG: Record<ClassDerivedStatus, { label: string; color?
 };
 
 /** The status a manager sees for a class: the stored one, refined by the derived phase once the class is open. */
-export function classStatusTag(item: Pick<GymClass, 'status' | 'derivedStatus'>) {
+export function classStatusTag(item: Pick<ClassSummary, 'status' | 'derivedStatus'>) {
   return item.status === 'OPEN' && item.derivedStatus
     ? CLASS_PHASE_TAG[item.derivedStatus]
     : CLASS_STATUS_TAG[item.status];
@@ -68,7 +68,7 @@ export interface ClassAdminActions {
  * coach assignment before the first session (an open class may also change coach later), approval only with a coach,
  * and cancelling any class that is neither cancelled nor over.
  */
-export function classAdminActions(item: GymClass): ClassAdminActions {
+export function classAdminActions(item: ClassSummary): ClassAdminActions {
   const started = item.startDate !== null && todayVN() >= item.startDate;
   const live = item.status !== 'CANCELLED' && item.derivedStatus !== 'COMPLETED';
   const pending = item.status === 'PENDING_APPROVAL';
