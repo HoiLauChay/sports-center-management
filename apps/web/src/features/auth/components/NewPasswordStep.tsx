@@ -2,6 +2,7 @@ import { LockOutlined } from '@ant-design/icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { passwordSchema, withPasswordConfirmation } from '@sports-center/shared';
 import { Button, Form, Input } from 'antd';
+import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
@@ -16,7 +17,7 @@ export type NewPasswordValues = z.infer<typeof newPasswordSchema>;
 
 interface NewPasswordStepProps {
   title: string;
-  description: string;
+  description: ReactNode;
   submitLabel: string;
   submitting: boolean;
   error?: string | null;

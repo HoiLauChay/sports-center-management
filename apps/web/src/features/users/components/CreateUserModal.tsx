@@ -65,7 +65,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
     mutationFn: (values: CreateUserBody) => usersService.create(toPayload(values)),
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
-      message.success(`Đã tạo tài khoản cho ${created.email}. Người dùng đăng nhập bằng email để đặt mật khẩu.`);
+      message.success(`Đã tạo tài khoản cho ${created.email}. Hệ thống đã gửi link kích hoạt tới email này.`);
       close();
     },
     onError: handleApiError,
@@ -94,7 +94,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
       destroyOnHidden
     >
       <p className="mt-0 mb-4 text-[15px] text-sc-muted">
-        Người dùng đăng nhập bằng email này, hệ thống gửi mã xác nhận để họ tự đặt mật khẩu lần đầu.
+        Hệ thống gửi link kích hoạt (24 giờ) tới email này để người dùng đặt mật khẩu và vào ứng dụng.
       </p>
       <Form layout="vertical" requiredMark={false} disabled={mutation.isPending} onFinish={() => void onSubmit()}>
         <FormRootError message={form.formState.errors.root?.message} />

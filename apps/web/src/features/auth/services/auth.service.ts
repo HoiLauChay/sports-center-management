@@ -1,5 +1,7 @@
 import type {
   Account,
+  ActivateAccountBody,
+  ActivationInfo,
   ApiResponse,
   ChangePasswordBody,
   LoginBody,
@@ -34,6 +36,16 @@ export const authService = {
 
   setPassword: async (payload: SetPasswordBody) => {
     const { data } = await publicApi.post<ApiResponse<Account>>('/auth/set-password', payload);
+    return data.result;
+  },
+
+  checkActivation: async (token: string) => {
+    const { data } = await publicApi.post<ApiResponse<ActivationInfo>>('/auth/activation', { token });
+    return data.result;
+  },
+
+  activate: async (payload: ActivateAccountBody) => {
+    const { data } = await publicApi.post<ApiResponse<Account>>('/auth/activate', payload);
     return data.result;
   },
 

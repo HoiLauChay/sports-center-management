@@ -27,7 +27,7 @@ export function ChangeEmailModal({ user, onClose }: ChangeEmailModalProps) {
       { email: parsed.data },
       {
         onSuccess: (updated) => {
-          message.success(`Đã đổi email sang ${updated.email}. Người dùng đăng nhập bằng email mới để đặt mật khẩu.`);
+          message.success(`Đã đổi email sang ${updated.email}. Hệ thống đã gửi link kích hoạt tới email mới.`);
           onClose();
         },
         onError: (err) => setError(toApiError(err).message),
@@ -53,7 +53,7 @@ export function ChangeEmailModal({ user, onClose }: ChangeEmailModalProps) {
           type="warning"
           showIcon
           title="Dùng khi người dùng mất email. Hãy xác minh đúng người trước khi đổi."
-          description="Người dùng bị đăng xuất khỏi mọi thiết bị và không đăng nhập được bằng mật khẩu cũ. Lần đăng nhập sau, hệ thống gửi mã tới email mới để họ đặt mật khẩu."
+          description="Người dùng bị đăng xuất khỏi mọi thiết bị và không đăng nhập được bằng mật khẩu cũ. Hệ thống gửi link kích hoạt tới email mới để họ đặt mật khẩu."
         />
         <div className="text-[15px] text-sc-muted">
           Email hiện tại: <b className="break-all text-sc-ink">{user.email}</b>

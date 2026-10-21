@@ -1,3 +1,4 @@
+export { ActivatePage } from './components/ActivatePage';
 export { ForgotPasswordPage } from './components/ForgotPasswordPage';
 export { LoginPage } from './components/LoginPage';
 export { RegisterPage } from './components/RegisterPage';
