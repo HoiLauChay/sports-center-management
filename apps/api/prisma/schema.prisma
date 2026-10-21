@@ -38,6 +38,7 @@ enum OtpPurpose {
   REGISTER
   PASSWORD_RESET
   ACCOUNT_SETUP
+  ACCOUNT_ACTIVATION
 
   @@map("otp_purpose")
 }

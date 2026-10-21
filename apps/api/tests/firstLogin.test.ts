@@ -1,4 +1,4 @@
-import type { Account, LoginStartResult } from '@sports-center/shared';
+import type { Account, ActivationInfo, LoginStartResult } from '@sports-center/shared';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -13,6 +13,7 @@ let server: Server;
 let users: Awaited<ReturnType<typeof startServer>>['request'];
 let authUrl: string;
 let codes: string[];
+let links: { to: string; url: string; reason: string }[];
 
 beforeAll(async () => {
   ({ server, request: users } = await startServer('/users'));
@@ -24,7 +25,11 @@ afterAll(() => server.close());
 beforeEach(async () => {
   await resetDatabase();
   codes = [];
+  links = [];
   spyOn(mailService, 'sendBatch').mockResolvedValue(undefined);
+  spyOn(mailService, 'sendActivation').mockImplementation(async (to, _fullName, url, reason) => {
+    links.push({ to, url, reason });
+  });
   spyOn(mailService, 'sendOtp').mockImplementation(async (_to, _purpose, code) => {
     codes.push(code);
   });
@@ -40,6 +45,15 @@ const post = (path: string, body: unknown) =>
   });
 
 const start = async (email: string) => readResult<LoginStartResult>(await post('/login/start', { email }));
+
+const tokenAt = (index: number) => new URL(links[index]?.url ?? 'http://invalid').searchParams.get('token') ?? '';
+
+const activate = (token: string, password = 'NewPassword1') =>
+  post('/activate', { token, password, confirmPassword: password });
+
+const expectInvalid = async (res: Response, code = 'TOKEN_INVALID') => {
+  expect([res.status, await readCode(res)]).toEqual([400, code]);
+};
 
 describe('first login', () => {
   test('a staff account created by a manager sets its first password with an emailed code', async () => {
@@ -77,6 +91,59 @@ describe('first login', () => {
     expect((await post('/set-password', body)).status).toBe(400);
     expect(await start(email)).toEqual({ next: 'PASSWORD' });
     expect((await post('/login', { email, password: 'NewPassword1' })).status).toBe(200);
+  });
+
+  test('the welcome email link sets the first password and logs in once', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const email = 'linked.coach@example.com';
+    await users('POST', '/', manager, { email, fullName: 'Lê Liên Kết', role: 'COACH' });
+    expect(links).toEqual([
+      { to: email, url: expect.stringMatching(/^http:\/\/localhost:5173\/activate\?token=/), reason: 'CREATED' },
+    ]);
+    const token = tokenAt(0);
+
+    const [id, secret] = token.split('.');
+    await expectInvalid(await post('/activation', { token: 'garbage' }));
+    await expectInvalid(await post('/activation', { token: `${id}.${secret}x` }));
+    for (let i = 0; i < 2; i += 1) {
+      const check = await post('/activation', { token });
+      expect(await readResult<ActivationInfo>(check)).toEqual({ email, fullName: 'Lê Liên Kết' });
+    }
+
+    const mismatch = await post('/activate', { token, password: 'NewPassword1', confirmPassword: 'Other1234' });
+    expect(mismatch.status).toBe(422);
+
+    const done = await activate(token);
+    expect(done.status).toBe(200);
+    expect(done.headers.getSetCookie().some((cookie) => cookie.startsWith('access_token='))).toBe(true);
+    const account = await readResult<Account>(done);
+    expect(account.mustSetPassword).toBe(false);
+    expect(account.emailVerifiedAt).not.toBeNull();
+
+    await expectInvalid(await activate(token, 'Another123'));
+    await expectInvalid(await post('/activation', { token }));
+    expect(await start(email)).toEqual({ next: 'PASSWORD' });
+    expect((await post('/login', { email, password: 'NewPassword1' })).status).toBe(200);
+  });
+
+  test('an expired link or one for an account that already set a password does not work', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    await users('POST', '/', manager, { email: 'late@example.com', fullName: 'Trễ Hạn', role: 'COACH' });
+    await users('POST', '/', manager, { email: 'otp@example.com', fullName: 'Dùng Mã', role: 'RECEPTIONIST' });
+    const [late, viaOtp] = [tokenAt(0), tokenAt(1)];
+
+    await prisma.otpCode.updateMany({
+      where: { email: 'late@example.com', purpose: 'ACCOUNT_ACTIVATION' },
+      data: { expiresAt: new Date(Date.now() - 1000) },
+    });
+    await expectInvalid(await post('/activation', { token: late }), 'TOKEN_EXPIRED');
+    await expectInvalid(await activate(late), 'TOKEN_EXPIRED');
+
+    await start('otp@example.com');
+    const [code] = codes;
+    const body = { email: 'otp@example.com', otp: code, password: 'NewPassword1', confirmPassword: 'NewPassword1' };
+    expect((await post('/set-password', body)).status).toBe(200);
+    await expectInvalid(await activate(viaOtp));
   });
 
   test('unknown, inactive and ordinary accounts go to the password step without an email', async () => {
@@ -121,6 +188,8 @@ describe('first login', () => {
     expect(await start('lost@example.com')).toEqual({ next: 'PASSWORD' });
     expect((await start('new@example.com')).next).toBe('SET_PASSWORD');
     expect(codes).toHaveLength(1);
+    expect(links.map(({ to, reason }) => [to, reason])).toEqual([['new@example.com', 'EMAIL_CHANGED']]);
+    expect((await activate(tokenAt(0))).status).toBe(200);
 
     const audit = await prisma.auditLog.findFirstOrThrow({ where: { entityId: member.id, action: 'UPDATE' } });
     expect(audit.oldValues).toMatchObject({ email: 'lost@example.com' });

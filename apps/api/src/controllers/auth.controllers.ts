@@ -46,6 +46,17 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đặt mật khẩu thành công', result: account }));
   };
 
+  checkActivation = async (req: Request, res: Response) => {
+    const result = await authService.checkActivation(req.body);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
+  activate = async (req: Request, res: Response) => {
+    const { account, accessToken, refreshToken } = await authService.activate(req.body, sessionMeta(req));
+    setAuthCookies(res, accessToken, refreshToken);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Kích hoạt tài khoản thành công', result: account }));
+  };
+
   refresh = async (req: Request, res: Response) => {
     try {
       const { accessToken, refreshToken } = await authService.refresh(

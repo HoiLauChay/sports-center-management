@@ -1,13 +1,15 @@
 import { AUTH } from '~/constants/auth';
 import type { OtpPurpose } from '~/generated/prisma/client';
 
-const TITLES: Record<OtpPurpose, string> = {
+export type CodePurpose = Exclude<OtpPurpose, 'ACCOUNT_ACTIVATION'>;
+
+const TITLES: Record<CodePurpose, string> = {
   REGISTER: 'Mã xác nhận đăng ký tài khoản',
   PASSWORD_RESET: 'Mã xác nhận đặt lại mật khẩu',
   ACCOUNT_SETUP: 'Mã xác nhận đặt mật khẩu tài khoản',
 };
 
-export const otpTemplate = (purpose: OtpPurpose, code: string) => {
+export const otpTemplate = (purpose: CodePurpose, code: string) => {
   const minutes = AUTH.OTP_TTL / 60;
   const title = TITLES[purpose];
 

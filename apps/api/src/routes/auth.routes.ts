@@ -1,4 +1,6 @@
 import {
+  activateAccountBodySchema,
+  activationBodySchema,
   changePasswordBodySchema,
   loginBodySchema,
   loginStartBodySchema,
@@ -14,6 +16,8 @@ import { Router } from 'express';
 import authController from '~/controllers/auth.controllers';
 import { auth } from '~/middlewares/auth.middlewares';
 import {
+  activateLimit,
+  activationLimit,
   loginLimit,
   loginStartLimit,
   refreshLimit,
@@ -38,6 +42,13 @@ authRouter.post(
   validate({ body: setPasswordBodySchema }),
   authController.setPassword,
 );
+authRouter.post(
+  '/activation',
+  activationLimit,
+  validate({ body: activationBodySchema }),
+  authController.checkActivation,
+);
+authRouter.post('/activate', activateLimit, validate({ body: activateAccountBodySchema }), authController.activate);
 authRouter.post('/refresh', refreshLimit, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);

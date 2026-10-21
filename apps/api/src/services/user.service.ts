@@ -19,6 +19,7 @@ import enrollmentRepository from '~/repositories/enrollment.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import authService from '~/services/auth.service';
 import notificationService, { type NotificationInput } from '~/services/notification.service';
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
@@ -111,7 +112,7 @@ class UserService {
     const passwordHash = await hashPassword(generateOpaqueToken());
 
     try {
-      const { account, notifications } = await runTransaction(async (tx) => {
+      const { account, activationUrl } = await runTransaction(async (tx) => {
         const created = await accountRepository.create(
           { email, fullName, phone, role, passwordHash, mustSetPassword: true, ...profileData(body) },
           tx,
@@ -127,24 +128,22 @@ class UserService {
             tx,
           );
         }
-        const notifications = await notificationService.create(
+        await notificationService.create(
           [
             {
               accountId: created.id,
               type: 'SYSTEM',
               title: 'Tài khoản của bạn đã được tạo',
-              message:
-                'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu.',
+              message: 'Quản lý trung tâm đã tạo tài khoản Sports Center cho bạn. Chào mừng bạn đến với Sports Center.',
               dedupKey: `welcome:${created.id}`,
-              sendEmail: true,
             },
           ],
           tx,
         );
-        return { account: created, notifications };
+        return { account: created, activationUrl: await authService.createActivationLink(email, tx) };
       });
 
-      notificationService.sendEmailsAfterCommit(notifications);
+      authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'CREATED');
       return toAccountResponse(account);
     } catch (err) {
       if (isUniqueViolation(err, 'email_key')) throw emailTaken();
@@ -235,8 +234,8 @@ class UserService {
     const passwordHash = await hashPassword(generateOpaqueToken());
 
     try {
-      const { account, notifications } = await this.replaceEmail(viewer, id, email, passwordHash, invalidState, ip);
-      notificationService.sendEmailsAfterCommit(notifications);
+      const { account, activationUrl } = await this.replaceEmail(viewer, id, email, passwordHash, invalidState, ip);
+      authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'EMAIL_CHANGED');
       return toAccountResponse(account);
     } catch (err) {
       if (isUniqueViolation(err, 'email_key')) throw emailTaken();
@@ -273,21 +272,19 @@ class UserService {
         },
         tx,
       );
-      const notifications = await notificationService.create(
+      await notificationService.create(
         [
           {
             accountId: id,
             type: 'SYSTEM',
             title: 'Email tài khoản đã được cập nhật',
-            message:
-              'Quản lý trung tâm đã đổi email đăng nhập Sports Center của bạn sang địa chỉ này. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu mới.',
+            message: `Quản lý trung tâm đã đổi email đăng nhập Sports Center của bạn sang ${email}.`,
             dedupKey: `email-changed:${id}:${next.passwordChangedAt.getTime()}`,
-            sendEmail: true,
           },
         ],
         tx,
       );
-      return { account: next, notifications };
+      return { account: next, activationUrl: await authService.createActivationLink(email, tx) };
     });
 
   private releaseCoachClasses = async (

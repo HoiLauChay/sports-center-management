@@ -9,6 +9,8 @@ const schema = z
     TOKEN_HASH_SECRET: z.string().min(32),
     RESEND_API_KEY: z.string().optional(),
     MAIL_FROM: z.string().min(1).default('Sports Center <onboarding@resend.dev>'),
+    APP_URL: z.url().optional(),
+    VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
     TURNSTILE_SECRET_KEY: z.string().optional(),
     UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
@@ -44,3 +46,7 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === 'production';
+export const appUrl = (
+  env.APP_URL ??
+  (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:5173')
+).replace(/\/+$/, '');
