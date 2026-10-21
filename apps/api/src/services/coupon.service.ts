@@ -7,6 +7,7 @@ import couponRepository, { type CouponRow } from '~/repositories/coupon.reposito
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import { isUniqueViolation } from '~/utils/dbError';
+import { sortByKeys } from '~/utils/pagination';
 import { runTransaction } from '~/utils/transaction';
 
 const notFound = () =>
@@ -62,10 +63,18 @@ const withCodeCheck = async <T>(fn: () => Promise<T>) => {
 };
 
 class CouponService {
-  list = async () => {
+  // Usable now first (expiring soonest), then not started yet (starting soonest), then off, expired or used up.
+  list = async (now = new Date()) => {
     const rows = await couponRepository.findAll();
     const used = await couponRepository.countOrders(rows.map(({ id }) => id));
-    return rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
+    const coupons = rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
+    return sortByKeys(coupons, ({ id, isActive, validFrom, validTo, maxUses, usedCount }) => {
+      const [from, to] = [new Date(validFrom).getTime(), new Date(validTo).getTime()];
+      const usable = isActive && now.getTime() < to && (maxUses === null || usedCount < maxUses);
+      if (usable && now.getTime() >= from) return [0, to, id];
+      if (usable) return [1, from, id];
+      return [2, -to, id];
+    });
   };
 
   create = async (managerId: string, body: CreateCouponBody, ip?: string) => {
