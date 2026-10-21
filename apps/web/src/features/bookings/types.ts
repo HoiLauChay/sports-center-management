@@ -1,39 +1,4 @@
-import type { FacilityPackagePreview, Person, Ref } from '@sports-center/shared';
-
-export type BookingStatus = 'CONFIRMED' | 'CANCELLED';
-export type BookingBenefit = 'NONE' | 'DISCOUNT' | 'GYM_ACCESS' | 'FREE_SLOT';
-
-export interface Booking {
-  id: string;
-  facility: Ref;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: BookingStatus;
-  unitPrice: number;
-  benefit: BookingBenefit;
-  paidAmount: number;
-  refundedAmount: number;
-  packageId: string | null;
-  orderItemId: string;
-  account: Person | null;
-  guestName: string | null;
-  guestPhone: string | null;
-  createdAt: string;
-}
-
-export interface FacilityPackage {
-  id: string;
-  facility: Ref;
-  startDate: string;
-  endDate: string;
-  daysOfWeek: number[];
-  startTime: string;
-  endTime: string;
-  status: 'ACTIVE' | 'CANCELLED';
-  unitPrice: number;
-  bookings: Booking[];
-}
+import type { FacilityPackagePreview } from '@sports-center/shared';
 
 export type {
   FacilityPackagePreview as PackagePreview,
