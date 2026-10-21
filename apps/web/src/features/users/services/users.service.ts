@@ -2,6 +2,7 @@ import type {
   Account,
   AccountSummary,
   ApiResponse,
+  ChangeUserEmailBody,
   CreateUserBody,
   ListUsersQuery,
   Paginated,
@@ -33,6 +34,11 @@ export const usersService = {
 
   updateStatus: async (id: string, payload: UpdateUserStatusBody) => {
     const { data } = await privateApi.patch<ApiResponse<Account>>(`/users/${encodeURIComponent(id)}/status`, payload);
+    return data.result;
+  },
+
+  changeEmail: async (id: string, payload: ChangeUserEmailBody) => {
+    const { data } = await privateApi.patch<ApiResponse<Account>>(`/users/${encodeURIComponent(id)}/email`, payload);
     return data.result;
   },
 };

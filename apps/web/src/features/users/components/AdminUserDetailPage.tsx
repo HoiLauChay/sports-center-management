@@ -1,13 +1,14 @@
 import { ACCOUNT_STATUSES, type Account, type AccountStatus } from '@sports-center/shared';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { Button, Dropdown } from 'antd';
-import { ChevronDown, PencilLine } from 'lucide-react';
+import { ChevronDown, Mail, PencilLine } from 'lucide-react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
 import { useCurrentUser } from '~/features/auth';
 import { StaffMembershipBlock } from '~/features/memberships';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { AdminUserEditForm } from './AdminUserEditForm';
+import { ChangeEmailModal } from './ChangeEmailModal';
 import { UserDetailLoader } from './UserDetailView';
 import { UserStatusModal } from './UserStatusModal';
 
@@ -17,12 +18,14 @@ interface UserActionsProps {
   user: Account;
   editing: boolean;
   canChangeStatus: boolean;
+  canChangeEmail: boolean;
   onEdit: () => void;
 }
 
-function UserActions({ user, editing, canChangeStatus, onEdit }: UserActionsProps) {
+function UserActions({ user, editing, canChangeStatus, canChangeEmail, onEdit }: UserActionsProps) {
   const [target, setTarget] = useState<AccountStatus>('ACTIVE');
   const [confirming, setConfirming] = useState(false);
+  const [changingEmail, setChangingEmail] = useState(false);
 
   const items = ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
     key: status,
@@ -54,7 +57,13 @@ function UserActions({ user, editing, canChangeStatus, onEdit }: UserActionsProp
           </Button>
         </Dropdown>
       )}
+      {canChangeEmail && (
+        <Button icon={<Mail size={16} />} disabled={editing} onClick={() => setChangingEmail(true)}>
+          Đổi email
+        </Button>
+      )}
       <UserStatusModal user={user} target={target} open={confirming} onClose={() => setConfirming(false)} />
+      {changingEmail && <ChangeEmailModal user={user} onClose={() => setChangingEmail(false)} />}
     </>
   );
 }
@@ -84,6 +93,7 @@ export function AdminUserDetailPage() {
           user={user}
           editing={editing}
           canChangeStatus={user.id !== viewer.id && user.role !== 'MANAGER'}
+          canChangeEmail={user.id !== viewer.id}
           onEdit={() => setEditingId(user.id)}
         />
       )}

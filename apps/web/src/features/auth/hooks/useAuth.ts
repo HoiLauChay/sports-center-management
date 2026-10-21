@@ -3,7 +3,7 @@ import type { Account } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch, type HistoryState } from '@tanstack/react-router';
 import { App } from 'antd';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { PATHS } from '~/constants/paths';
 import { useConfirm } from '~/hooks/useConfirm';
@@ -11,19 +11,15 @@ import { useFormApiError } from '~/hooks/useFormApiError';
 import { safeRedirectPath } from '~/lib/access';
 import {
   changePasswordSchema,
-  loginSchema,
   registerSchema,
-  resetPasswordSchema,
   type ChangePasswordFormValues,
-  type LoginFormValues,
   type RegisterFormValues,
-  type ResetPasswordFormValues,
 } from '../schemas/auth.schema';
 import { authService } from '../services/auth.service';
 import { sessionQueryOptions } from '../session';
 import { AUTH_ERROR_FIELDS, CHANGE_PASSWORD_ERROR_FIELDS } from '../utils/authErrorFields';
 
-function useCompleteAuth() {
+export function useCompleteAuth() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search: { redirect?: unknown } = useSearch({ strict: false });
@@ -57,31 +53,6 @@ function useEndSession() {
   );
 }
 
-export function useLogin() {
-  const { message } = App.useApp();
-  const completeAuth = useCompleteAuth();
-
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    mode: 'onTouched',
-    defaultValues: { email: '', password: '' },
-  });
-  const handleApiError = useFormApiError(form, AUTH_ERROR_FIELDS);
-
-  const mutation = useMutation({
-    mutationFn: (values: LoginFormValues) => authService.login(values),
-    onSuccess: (user) => {
-      message.success('Đăng nhập thành công');
-      completeAuth(user);
-    },
-    onError: handleApiError,
-  });
-
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
-
-  return { form, onSubmit, isSubmitting: mutation.isPending };
-}
-
 export function useRegister() {
   const { message } = App.useApp();
   const completeAuth = useCompleteAuth();
@@ -106,27 +77,6 @@ export function useRegister() {
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
 
   return { form, onSubmit, isSubmitting: mutation.isPending };
-}
-
-export function useResetPassword(defaultEmail = '') {
-  const [done, setDone] = useState(false);
-
-  const form = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
-    mode: 'onTouched',
-    defaultValues: { email: defaultEmail, otp: '', password: '', confirmPassword: '' },
-  });
-  const handleApiError = useFormApiError(form, AUTH_ERROR_FIELDS);
-
-  const mutation = useMutation({
-    mutationFn: (values: ResetPasswordFormValues) => authService.resetPassword(values),
-    onSuccess: () => setDone(true),
-    onError: handleApiError,
-  });
-
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
-
-  return { form, onSubmit, isSubmitting: mutation.isPending, done };
 }
 
 export function useLogout() {
