@@ -1,5 +1,5 @@
 import type { Account } from '@sports-center/shared';
-import { Avatar, Button, Card, Col, Result, Row } from 'antd';
+import { Avatar, Button, Card, Col, Result, Row, Tag } from 'antd';
 import { Cake, CalendarDays, ChevronLeft, Mail, MapPin, Phone, VenusAndMars } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { AccountRoleSection } from '~/components/data/AccountRoleSection';
@@ -34,6 +34,11 @@ function UserSummary({ user, actions }: { user: Account; actions?: ReactNode }) 
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14.5px] text-sc-muted">
             <RoleTag role={user.role} />
             <StatusTag status={user.status} />
+            {user.mustSetPassword && (
+              <Tag color="warning" className="!m-0">
+                Chưa đặt mật khẩu
+              </Tag>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <Mail size={14} />
               {user.email}

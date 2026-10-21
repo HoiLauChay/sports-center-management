@@ -1,4 +1,4 @@
-import type { Account, UpdateUserBody, UpdateUserStatusBody } from '@sports-center/shared';
+import type { Account, ChangeUserEmailBody, UpdateUserBody, UpdateUserStatusBody } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionQueryOptions } from '~/features/auth';
 import { usersService } from '../services/users.service';
@@ -30,6 +30,14 @@ export function useUpdateUserStatus(id: string) {
   const sync = useSyncUser();
   return useMutation({
     mutationFn: (payload: UpdateUserStatusBody) => usersService.updateStatus(id, payload),
+    onSuccess: sync,
+  });
+}
+
+export function useChangeUserEmail(id: string) {
+  const sync = useSyncUser();
+  return useMutation({
+    mutationFn: (payload: ChangeUserEmailBody) => usersService.changeEmail(id, payload),
     onSuccess: sync,
   });
 }
