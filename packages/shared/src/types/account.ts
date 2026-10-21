@@ -51,3 +51,8 @@ export interface LoginStartResult {
   next: LoginNextStep;
   retryAfter?: number;
 }
+
+export interface ActivationInfo {
+  email: string;
+  fullName: string;
+}

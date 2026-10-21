@@ -80,6 +80,17 @@ export const resetPasswordBodySchema = withPasswordConfirmation(
 
 export const setPasswordBodySchema = resetPasswordBodySchema;
 
+export const activationBodySchema = z.object({
+  token: z.string().trim().min(1, 'Link kích hoạt không hợp lệ').max(255, 'Link kích hoạt không hợp lệ'),
+});
+
+export const activateAccountBodySchema = withPasswordConfirmation(
+  activationBodySchema.extend({
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+  }),
+);
+
 export const changePasswordBodySchema = withPasswordConfirmation(
   z.object({
     currentPassword: z.string().min(1, 'Mật khẩu hiện tại không được để trống'),
@@ -96,6 +107,8 @@ export type LoginStartBody = z.infer<typeof loginStartBodySchema>;
 export type LoginBody = z.infer<typeof loginBodySchema>;
 export type VerifyOtpBody = z.infer<typeof verifyOtpBodySchema>;
 export type SetPasswordBody = z.infer<typeof setPasswordBodySchema>;
+export type ActivationBody = z.infer<typeof activationBodySchema>;
+export type ActivateAccountBody = z.infer<typeof activateAccountBodySchema>;
 export type RegisterBody = z.infer<typeof registerBodySchema>;
 export type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
 export type ChangePasswordBody = z.infer<typeof changePasswordBodySchema>;
