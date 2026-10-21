@@ -3,7 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { App } from 'antd';
 import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
-import { classesService, type ListClassesQuery } from '../services/classes.service';
+import { classesService, type CatalogClassesQuery } from '../services/classes.service';
 
 export function useClassCoaches() {
   return useQuery({
@@ -17,7 +17,7 @@ export function useClassCoaches() {
   });
 }
 
-export function useClasses(query: ListClassesQuery) {
+export function useClasses(query: CatalogClassesQuery) {
   return useQuery({
     queryKey: ['classes', 'list', query],
     queryFn: () => classesService.list(query),
