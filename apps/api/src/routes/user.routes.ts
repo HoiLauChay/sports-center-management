@@ -1,4 +1,5 @@
 import {
+  changeUserEmailBodySchema,
   counterTopUpBodySchema,
   createUserBodySchema,
   listUsersQuerySchema,
@@ -77,11 +78,11 @@ userRouter.patch(
   validate({ params: userIdParamsSchema, body: updateUserStatusBodySchema }),
   userController.updateStatus,
 );
-userRouter.post(
-  '/:id/reset-password',
+userRouter.patch(
+  '/:id/email',
   isRole('MANAGER'),
-  validate({ params: userIdParamsSchema }),
-  userController.resetPassword,
+  validate({ params: userIdParamsSchema, body: changeUserEmailBodySchema }),
+  userController.changeEmail,
 );
 
 export default userRouter;

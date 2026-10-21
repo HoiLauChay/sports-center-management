@@ -89,30 +89,44 @@ describe('first login', () => {
     expect(codes).toHaveLength(0);
   });
 
-  test('a manager reset logs the user out and sends them through the code step again', async () => {
+  test('a manager moves a lost account to a new email, logging the user out and sending the code there', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const receptionist = await createAccount('RECEPTIONIST', 'desk@example.com');
-    const member = await createAccount('MEMBER', 'member@example.com', {
+    await createAccount('COACH', 'taken@example.com');
+    const member = await createAccount('MEMBER', 'lost@example.com', {
       passwordHash: await hashPassword('OldPassword1'),
       emailVerifiedAt: new Date(),
     });
     expect((await post('/login', { email: member.email, password: 'OldPassword1' })).status).toBe(200);
 
-    expect((await users('POST', `/${member.id}/reset-password`, receptionist)).status).toBe(403);
-    const self = await users('POST', `/${manager.id}/reset-password`, manager);
+    const change = (email: string, viewer = manager, id = member.id) =>
+      users('PATCH', `/${id}/email`, viewer, { email });
+    expect((await change('new@example.com', receptionist)).status).toBe(403);
+    const self = await change('boss@example.com', manager, manager.id);
     expect([self.status, await readCode(self)]).toEqual([409, 'INVALID_STATE']);
+    const taken = await change('taken@example.com');
+    expect([taken.status, await readCode(taken)]).toEqual([409, 'EMAIL_TAKEN']);
+    const same = await change('lost@example.com');
+    expect([same.status, await readCode(same)]).toEqual([409, 'INVALID_STATE']);
 
-    const reset = await users('POST', `/${member.id}/reset-password`, manager);
-    expect(reset.status).toBe(200);
-    expect((await readResult<Account>(reset)).mustSetPassword).toBe(true);
+    const changed = await change('  New@Example.com ');
+    expect(changed.status).toBe(200);
+    expect(await readResult<Account>(changed)).toMatchObject({
+      email: 'new@example.com',
+      mustSetPassword: true,
+      emailVerifiedAt: null,
+    });
     expect(await prisma.refreshToken.count({ where: { accountId: member.id, revokedAt: null } })).toBe(0);
-    expect((await post('/login', { email: member.email, password: 'OldPassword1' })).status).toBe(401);
-    expect((await start(member.email)).next).toBe('SET_PASSWORD');
+    expect((await post('/login', { email: 'new@example.com', password: 'OldPassword1' })).status).toBe(401);
+    expect(await start('lost@example.com')).toEqual({ next: 'PASSWORD' });
+    expect((await start('new@example.com')).next).toBe('SET_PASSWORD');
+    expect(codes).toHaveLength(1);
 
     const audit = await prisma.auditLog.findFirstOrThrow({ where: { entityId: member.id, action: 'UPDATE' } });
-    expect(audit.newValues).toMatchObject({ mustSetPassword: true });
+    expect(audit.oldValues).toMatchObject({ email: 'lost@example.com' });
+    expect(audit.newValues).toMatchObject({ email: 'new@example.com', mustSetPassword: true });
     expect(
-      await prisma.notification.count({ where: { accountId: member.id, title: 'Mật khẩu của bạn đã được đặt lại' } }),
+      await prisma.notification.count({ where: { accountId: member.id, title: 'Email tài khoản đã được cập nhật' } }),
     ).toBe(1);
   });
 });

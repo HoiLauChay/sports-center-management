@@ -2,6 +2,7 @@ import type { COACH_PROFILE_FIELDS } from '@sports-center/shared';
 import {
   ERROR_CODE,
   MEMBER_PROFILE_FIELDS,
+  type ChangeUserEmailBody,
   type CreateUserBody,
   type ErrorCode,
   type ListUsersQuery,
@@ -227,22 +228,38 @@ class UserService {
     return toAccountResponse(account);
   };
 
-  resetPassword = async (viewer: Viewer, id: string, ip?: string) => {
-    if (id === viewer.id) {
-      throw new ErrorWithStatus({
-        status: HTTP_STATUS.CONFLICT,
-        code: ERROR_CODE.INVALID_STATE,
-        message: 'Không thể tự reset mật khẩu của mình, hãy dùng đổi mật khẩu',
-      });
-    }
+  changeEmail = async (viewer: Viewer, id: string, { email }: ChangeUserEmailBody, ip?: string) => {
+    const invalidState = (message: string) =>
+      new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
+    if (id === viewer.id) throw invalidState('Không thể tự đổi email của mình');
     const passwordHash = await hashPassword(generateOpaqueToken());
 
-    const { account, notifications } = await runTransaction(async (tx) => {
+    try {
+      const { account, notifications } = await this.replaceEmail(viewer, id, email, passwordHash, invalidState, ip);
+      notificationService.sendEmailsAfterCommit(notifications);
+      return toAccountResponse(account);
+    } catch (err) {
+      if (isUniqueViolation(err, 'email_key')) throw emailTaken();
+      throw err;
+    }
+  };
+
+  private replaceEmail = (
+    viewer: Viewer,
+    id: string,
+    email: string,
+    passwordHash: string,
+    invalidState: (message: string) => ErrorWithStatus,
+    ip?: string,
+  ) =>
+    runTransaction(async (tx) => {
       await lockRows(tx, { accounts: [id] });
       const current = await accountRepository.findById(id, undefined, tx);
       if (!current) throw notFound();
+      if (current.email === email) throw invalidState('Email mới trùng email hiện tại');
+      if (await accountRepository.existsByEmail(email)) throw emailTaken();
 
-      const next = await accountRepository.clearPassword(id, passwordHash, tx);
+      const next = await accountRepository.replaceEmail(id, email, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(id, tx);
       await auditService.record(
         {
@@ -261,10 +278,10 @@ class UserService {
           {
             accountId: id,
             type: 'SYSTEM',
-            title: 'Mật khẩu của bạn đã được đặt lại',
+            title: 'Email tài khoản đã được cập nhật',
             message:
-              'Quản lý trung tâm đã đặt lại mật khẩu tài khoản Sports Center của bạn. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu mới.',
-            dedupKey: `password-reset:${id}:${next.passwordChangedAt.getTime()}`,
+              'Quản lý trung tâm đã đổi email đăng nhập Sports Center của bạn sang địa chỉ này. Hãy đăng nhập bằng email này, hệ thống sẽ gửi mã xác nhận để bạn đặt mật khẩu mới.',
+            dedupKey: `email-changed:${id}:${next.passwordChangedAt.getTime()}`,
             sendEmail: true,
           },
         ],
@@ -272,10 +289,6 @@ class UserService {
       );
       return { account: next, notifications };
     });
-
-    notificationService.sendEmailsAfterCommit(notifications);
-    return toAccountResponse(account);
-  };
 
   private releaseCoachClasses = async (
     viewer: Viewer,
