@@ -4,6 +4,7 @@ export const PATHS = {
   register: '/register',
   forgotPassword: '/forgot-password',
   activate: '/activate',
+  setPassword: '/set-password',
   dashboard: '/dashboard',
   profile: '/profile',
   adminUsers: '/admin/users',

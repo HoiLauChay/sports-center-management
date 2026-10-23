@@ -4,6 +4,7 @@ import type {
   ActivationInfo,
   ApiResponse,
   ChangePasswordBody,
+  FirstPasswordBody,
   LoginBody,
   LoginStartResult,
   RegisterBody,
@@ -36,6 +37,11 @@ export const authService = {
 
   setPassword: async (payload: SetPasswordBody) => {
     const { data } = await publicApi.post<ApiResponse<Account>>('/auth/set-password', payload);
+    return data.result;
+  },
+
+  setFirstPassword: async (payload: FirstPasswordBody) => {
+    const { data } = await privateApi.post<ApiResponse<Account>>('/auth/first-password', payload);
     return data.result;
   },
 
