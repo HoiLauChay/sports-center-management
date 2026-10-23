@@ -78,6 +78,12 @@ class ScheduleRepository {
       select: sessionUsageSelect,
     });
 
+  findSessionsOfClasses = (classIds: string[], from: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.classSession.findMany({
+      where: { classId: { in: classIds }, status: 'SCHEDULED', sessionDate: { gte: new Date(from) } },
+      select: { classId: true, sessionDate: true, ...timeRange },
+    });
+
   findMemberCommitments = (accountIds: string[], dates: string[], tx: Prisma.TransactionClient = prisma) =>
     Promise.all([
       tx.facilityBooking.findMany({

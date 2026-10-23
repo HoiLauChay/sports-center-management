@@ -46,6 +46,7 @@ export interface ClassSummary {
   maxStudents: number;
   enrolledCount: number;
   cancelReason: string | null;
+  scheduleConflict?: boolean;
 }
 
 export interface ClassDetail extends ClassSummary {

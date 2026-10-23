@@ -1,4 +1,10 @@
-import { ERROR_CODE, type AssignCoachBody, type ListCoachRegistrationsQuery } from '@sports-center/shared';
+import {
+  COACH_WITHDRAW_NOTICE_DAYS,
+  ERROR_CODE,
+  type AssignCoachBody,
+  type ListCoachRegistrationsQuery,
+  type WithdrawClassBody,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
@@ -13,7 +19,7 @@ import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import scheduleService from '~/services/schedule.service';
-import { formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
+import { addDays, formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 const invalidState = (message: string) =>
@@ -221,7 +227,7 @@ class CoachAssignmentService {
     return toClassDetailResponse(row);
   };
 
-  withdraw = async (coachId: string, classId: string, ip?: string) => {
+  withdraw = async (coachId: string, classId: string, { reason }: WithdrawClassBody, ip?: string) => {
     const { row, notifications } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
       await lockRows(tx, { accounts: [coachId], classes: [classId] });
@@ -229,7 +235,14 @@ class CoachAssignmentService {
       if (current.coachId !== coachId) throw forbidden('Bạn không phải huấn luyện viên hiện tại của lớp');
       if (!['OPEN', 'PENDING_APPROVAL'].includes(current.status))
         throw invalidState('Không thể rút khỏi lớp ở trạng thái này');
-      assertNotStarted(current);
+      const firstDate = sessionsOf(current)
+        .map(({ sessionDate }) => formatDate(sessionDate))
+        .sort()[0];
+      if (!firstDate || firstDate < addDays(todayInCenter(), COACH_WITHDRAW_NOTICE_DAYS)) {
+        throw invalidState(
+          `Chỉ tự rút được khi buổi đầu còn ít nhất ${COACH_WITHDRAW_NOTICE_DAYS} ngày, hãy liên hệ quản lý trung tâm`,
+        );
+      }
       const row = await classRepository.update(
         classId,
         { coachId: null, status: 'PENDING_APPROVAL', approvedById: null, approvedAt: null },
@@ -266,7 +279,7 @@ class CoachAssignmentService {
             referenceType: 'CLASS',
             referenceId: classId,
             title: 'Lớp học cần phân công huấn luyện viên',
-            message: `Huấn luyện viên đã rút khỏi lớp "${current.name}". Vui lòng phân công HLV thay thế.`,
+            message: `Huấn luyện viên đã rút khỏi lớp "${current.name}". Lý do: ${reason}. Vui lòng phân công HLV thay thế.`,
           })),
         ],
         tx,

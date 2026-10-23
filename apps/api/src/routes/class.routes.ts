@@ -8,6 +8,7 @@ import {
   listCoachRegistrationsQuerySchema,
   reviewClassBodySchema,
   updateClassBodySchema,
+  withdrawClassBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
@@ -81,7 +82,7 @@ classRouter.post(
 classRouter.post(
   '/:id/withdraw',
   isRole('COACH'),
-  validate({ params: classIdParamsSchema }),
+  validate({ params: classIdParamsSchema, body: withdrawClassBodySchema }),
   classController.withdrawCoach,
 );
 

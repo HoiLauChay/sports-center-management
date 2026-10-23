@@ -230,6 +230,23 @@ class ScheduleService {
     };
   };
 
+  coachClashingClasses = async (coachId: string, classIds: string[], from: string, tx: Prisma.TransactionClient) => {
+    if (classIds.length === 0) return new Set<string>();
+    const sessions = await scheduleRepository.findSessionsOfClasses(classIds, from, tx);
+    const dates = [...new Set(sessions.map(({ sessionDate }) => formatDate(sessionDate)))];
+    if (dates.length === 0) return new Set<string>();
+    const busy = (await scheduleRepository.findCoachSessions(coachId, dates, tx)).map((session) =>
+      timed(session.sessionDate, session.startTime, session.endTime),
+    );
+    return new Set(
+      sessions
+        .filter((session) =>
+          busy.some((use) => sameDayOverlap(timed(session.sessionDate, session.startTime, session.endTime), use)),
+        )
+        .map(({ classId }) => classId),
+    );
+  };
+
   assertAvailable = async (tx: Prisma.TransactionClient, query: ConflictQuery) => {
     const conflicts = await this.findConflicts(tx, query);
     if (conflicts.length > 0) throw scheduleConflict(conflicts);

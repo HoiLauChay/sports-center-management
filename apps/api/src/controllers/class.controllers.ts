@@ -47,7 +47,12 @@ class ClassController {
   };
 
   withdrawCoach = async (req: Request, res: Response) => {
-    const result = await coachAssignmentService.withdraw(req.user!.id, req.params.id as string, getClientIp(req));
+    const result = await coachAssignmentService.withdraw(
+      req.user!.id,
+      req.params.id as string,
+      req.body,
+      getClientIp(req),
+    );
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã rút khỏi lớp', result }));
   };
 
