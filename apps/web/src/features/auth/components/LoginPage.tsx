@@ -1,5 +1,6 @@
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { useSearch } from '@tanstack/react-router';
+import { GOOGLE_LOGIN_ERROR } from '@sports-center/shared';
+import { getRouteApi } from '@tanstack/react-router';
 import { Button, Form, Input } from 'antd';
 import heroImg from '~/assets/images/sports/badminton.jpg';
 import { FormField, FormRootError } from '~/components/form/FormField';
@@ -11,11 +12,15 @@ import { INPUT_ICON_STYLE } from './inputIcon';
 import { NewPasswordStep } from './NewPasswordStep';
 import { OtpStep } from './OtpStep';
 
+const routeApi = getRouteApi('/_auth/login');
+
 export function LoginPage() {
   const flow = useLoginFlow();
   const { step } = flow;
-  const search: { error?: string } = useSearch({ strict: false });
-  const rootError = search.error || flow.emailForm.formState.errors.root?.message;
+  const { error: googleError } = routeApi.useSearch();
+  // A fresh error from the email form wins over the one left in the URL by an earlier Google attempt
+  const rootError =
+    flow.emailForm.formState.errors.root?.message ?? (googleError ? GOOGLE_LOGIN_ERROR[googleError] : undefined);
 
   return (
     <AuthShell
