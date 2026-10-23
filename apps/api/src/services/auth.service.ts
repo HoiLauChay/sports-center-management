@@ -52,6 +52,8 @@ const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3j
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const GOOGLE_TIMEOUT_MS = 10_000;
+
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
 const invalidActivation = () =>
@@ -454,6 +456,7 @@ class AuthService {
         redirect_uri: callbackUrl,
         grant_type: 'authorization_code',
       }),
+      signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     });
 
     if (!tokenResponse.ok) {
@@ -469,6 +472,7 @@ class AuthService {
 
     const userinfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
     });
 
     if (!userinfoResponse.ok) {
