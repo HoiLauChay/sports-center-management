@@ -11,6 +11,9 @@ const specializationSelect = {
   sportId: true,
   sport: { select: { name: true } },
   status: true,
+  experienceYears: true,
+  experienceNote: true,
+  certificateUrls: true,
   reviewNote: true,
   reviewedById: true,
   reviewedAt: true,
@@ -62,9 +65,18 @@ class SpecializationRepository {
       where: { coachId, sportId, status: 'APPROVED', coach: { role: 'COACH', status: 'ACTIVE' } },
     })) > 0;
 
-  create = (coachId: string, sportId: string, tx: Prisma.TransactionClient = prisma) =>
+  create = (
+    coachId: string,
+    data: {
+      sportId: string;
+      experienceYears: number | null;
+      experienceNote: string | null;
+      certificateUrls: string[];
+    },
+    tx: Prisma.TransactionClient = prisma,
+  ) =>
     tx.coachSpecialization.create({
-      data: { coachId, sportId },
+      data: { coachId, ...data },
       select: specializationSelect,
     });
 

@@ -13,7 +13,7 @@ class SpecializationController {
   };
 
   register = async (req: Request, res: Response) => {
-    const specialization = await specializationService.register(req.user!.id, req.body.sportId, getClientIp(req));
+    const specialization = await specializationService.register(req.user!.id, req.body, getClientIp(req));
     res
       .status(HTTP_STATUS.CREATED)
       .json(new ResponseClient({ message: 'Đã đăng ký chuyên môn', result: specialization }));

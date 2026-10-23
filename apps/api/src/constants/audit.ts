@@ -85,7 +85,15 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'noteChanged',
   ),
   CLASS_COACH_REGISTRATION: fields<ClassCoachRegistration>()('classId', 'coachId', 'source', 'status'),
-  COACH_SPECIALIZATION: fields<CoachSpecialization>()('coachId', 'sportId', 'status', 'reviewNote'),
+  COACH_SPECIALIZATION: fields<CoachSpecialization>()(
+    'coachId',
+    'sportId',
+    'status',
+    'experienceYears',
+    'experienceNote',
+    'certificateUrls',
+    'reviewNote',
+  ),
   MEMBER_EVALUATION: fields<MemberEvaluation>()('sessionId', 'accountId', 'coachId', 'rating', 'comment', 'deletedAt'),
   MEMBERSHIP: fields<Membership>()(
     'name',

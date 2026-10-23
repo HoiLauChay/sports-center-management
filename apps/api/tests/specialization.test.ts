@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, tes
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
+import { env } from '~/configs/env';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
 
@@ -26,7 +27,8 @@ interface SpecPage {
 
 const createSport = (name: string, isActive = true) => prisma.sport.create({ data: { name, isActive } });
 
-const register = (coach: Viewer, sportId: string) => request('POST', '/coach/specializations', coach, { sportId });
+const register = (coach: Viewer, sportId: string, profile: object = { experienceNote: 'Dạy 3 năm tại CLB' }) =>
+  request('POST', '/coach/specializations', coach, { sportId, ...profile });
 
 const registered = async (coach: Viewer, sportId: string) => readResult<Specialization>(await register(coach, sportId));
 
@@ -152,6 +154,52 @@ describe('register and review specialization', () => {
 
     const combined = await getPage(`status=PENDING&coachId=${secondCoach.id}&sportId=${yoga.id}`);
     expect(combined).toMatchObject({ total: 1, items: [{ id: fourth.id }] });
+  });
+});
+
+describe('specialization evidence', () => {
+  const certificate = (coach: Viewer) =>
+    `https://teststore.public.blob.vercel-storage.com/certificates/${coach.id}/${crypto.randomUUID()}.pdf`;
+
+  const storeId = env.BLOB_STORE_ID;
+  beforeAll(() => {
+    env.BLOB_STORE_ID = 'store_teststore';
+  });
+  afterAll(() => {
+    env.BLOB_STORE_ID = storeId;
+  });
+
+  test('a request needs an experience note or a certificate, and the manager sees both', async () => {
+    const coach = await createAccount('COACH', 'coach@example.com');
+    const manager = await createAccount('MANAGER', 'mgr@example.com');
+    const [swim, gym, yoga] = await Promise.all([createSport('Bơi lội'), createSport('Gym'), createSport('Yoga')]);
+
+    const empty = await register(coach, swim.id, { experienceYears: 3, experienceNote: '   ' });
+    expect(empty.status).toBe(422);
+    const body = (await empty.json()) as { errors?: { path: string }[] };
+    expect(body.errors?.map(({ path }) => path)).toContain('body.experienceNote');
+
+    const foreign = await register(coach, swim.id, { certificates: ['https://example.com/cert.pdf'] });
+    expect(foreign.status).toBe(422);
+
+    const file = certificate(coach);
+    const withFile = await readResult<Specialization>(await register(coach, swim.id, { certificates: [file, file] }));
+    expect(withFile).toMatchObject({ experienceNote: null, experienceYears: null, certificates: [file] });
+
+    const withNote = await readResult<Specialization>(
+      await register(coach, gym.id, { experienceYears: 4, experienceNote: 'PT tại phòng gym 4 năm' }),
+    );
+    expect(withNote).toMatchObject({ experienceYears: 4, certificates: [] });
+
+    const rejected = await registered(coach, yoga.id);
+    await review(manager, rejected.id, 'reject', { reviewNote: 'Bổ sung chứng chỉ' });
+    const again = await readResult<Specialization>(
+      await register(coach, yoga.id, { certificates: [certificate(coach)] }),
+    );
+    expect(again.status).toBe('PENDING');
+
+    const listed = await readResult<SpecPage>(await request('GET', `/specializations?coachId=${coach.id}`, manager));
+    expect(listed.items.find(({ id }) => id === withFile.id)?.certificates).toEqual([file]);
   });
 });
 
