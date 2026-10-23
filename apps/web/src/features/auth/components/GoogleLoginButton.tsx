@@ -1,6 +1,8 @@
 import { useSearch } from '@tanstack/react-router';
 import { Button } from 'antd';
 import { useState } from 'react';
+import { PATHS } from '~/constants/paths';
+import { safeRedirectPath } from '~/lib/access';
 
 function GoogleIcon() {
   return (
@@ -36,9 +38,9 @@ export function GoogleLoginButton({ text = 'Đăng nhập bằng Google', classN
 
   const handleClick = () => {
     setLoading(true);
-    const redirect = typeof search.redirect === 'string' ? search.redirect : undefined;
-    const query = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
-    window.location.href = `/api/v1/auth/google${query}`;
+    // Same landing spot as the email login (useAuth): the requested page, otherwise the dashboard
+    const redirect = safeRedirectPath(search.redirect) ?? PATHS.dashboard;
+    window.location.href = `/api/v1/auth/google?redirect=${encodeURIComponent(redirect)}`;
   };
 
   return (
