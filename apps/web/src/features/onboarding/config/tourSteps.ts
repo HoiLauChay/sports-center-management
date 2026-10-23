@@ -1,7 +1,7 @@
 import type { Role } from '@sports-center/shared';
 import type { NavPath } from '~/config/navigation';
 
-export type TourRole = Extract<Role, 'MEMBER' | 'RECEPTIONIST'>;
+export type TourRole = Exclude<Role, 'COACH'>;
 
 // Matches a `data-tour` attribute: nav links use their path, other anchors use a fixed key.
 export type TourTarget = NavPath | 'account' | 'more';
@@ -20,6 +20,10 @@ const WELCOME: Record<TourRole, TourStepConfig> = {
   RECEPTIONIST: {
     title: 'Chào mừng đến quầy lễ tân',
     description: 'Hướng dẫn nhanh các thao tác hằng ngày: check-in, bán hàng, nạp ví và hỗ trợ thành viên.',
+  },
+  MANAGER: {
+    title: 'Chào mừng đến trang quản lý',
+    description: 'Hướng dẫn nhanh các khu vực vận hành và danh mục để bạn quản lý trung tâm.',
   },
 };
 
@@ -120,6 +124,47 @@ export const ROLE_TOUR: Record<TourRole, TourStepConfig[]> = {
       target: '/reception/support',
       title: 'Hỗ trợ',
       description: 'Tiếp nhận và trả lời các yêu cầu hỗ trợ từ thành viên.',
+    },
+    NOTIFICATIONS,
+    ACCOUNT,
+  ],
+  MANAGER: [
+    WELCOME.MANAGER,
+    DASHBOARD,
+    {
+      target: '/admin/reports',
+      title: 'Báo cáo',
+      description: 'Theo dõi doanh thu, lượt đặt sân và tình hình lớp học theo thời gian.',
+    },
+    {
+      target: '/admin/bank-transactions',
+      title: 'Giao dịch ngân hàng',
+      description: 'Đối soát các khoản chuyển khoản vào tài khoản của trung tâm.',
+    },
+    {
+      target: '/admin/users',
+      title: 'Người dùng',
+      description: 'Tạo tài khoản nhân viên, phân quyền và khóa hoặc mở khóa tài khoản.',
+    },
+    {
+      target: '/admin/specializations',
+      title: 'Duyệt chuyên môn',
+      description: 'Xét duyệt chứng chỉ chuyên môn mà huấn luyện viên gửi lên.',
+    },
+    {
+      target: '/admin/audit-logs',
+      title: 'Lịch sử thao tác',
+      description: 'Xem lại ai đã làm gì và khi nào trong hệ thống.',
+    },
+    {
+      target: '/admin/facilities',
+      title: 'Danh mục',
+      description: 'Quản lý bộ môn, sân và phòng, khóa học, lớp học, gói thành viên, mã giảm giá và lịch bảo trì.',
+    },
+    {
+      target: '/admin/settings',
+      title: 'Cấu hình',
+      description: 'Thiết lập các thông số chung của trung tâm.',
     },
     NOTIFICATIONS,
     ACCOUNT,
