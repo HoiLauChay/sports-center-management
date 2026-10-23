@@ -507,7 +507,6 @@ class AuthService {
       return { account: toAccountResponse(account), ...tokens };
     }
 
-    // Unguessable placeholder: email login stays closed until the member sets a real password
     const placeholderHash = await hashPassword(generateOpaqueToken());
     return this.createMemberWithSession(
       {
@@ -516,7 +515,6 @@ class AuthService {
         avatarUrl: googleUser.picture ?? null,
         passwordHash: placeholderHash,
         emailVerifiedAt: new Date(),
-        // First Google sign-in: the web app sends them to set a real password before anything else
         mustSetPassword: true,
       },
       {
@@ -528,10 +526,6 @@ class AuthService {
     );
   };
 
-  /**
-   * Creates a member with its first session and welcome notification in one transaction.
-   * `before` runs first inside that transaction (e.g. consuming the sign-up OTP).
-   */
   private createMemberWithSession = async (
     data: Parameters<typeof accountRepository.createMember>[0],
     welcome: { message: string; sendEmail: boolean },

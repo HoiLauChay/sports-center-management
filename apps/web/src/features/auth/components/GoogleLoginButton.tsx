@@ -38,7 +38,6 @@ export function GoogleLoginButton({ text = 'Đăng nhập bằng Google', classN
 
   const handleClick = () => {
     setLoading(true);
-    // Same landing spot as the email login (useAuth): the requested page, otherwise the dashboard
     const redirect = safeRedirectPath(search.redirect) ?? PATHS.dashboard;
     window.location.href = `/api/v1/auth/google?redirect=${encodeURIComponent(redirect)}`;
   };

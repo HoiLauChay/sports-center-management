@@ -6,7 +6,6 @@ import { LoginPage } from '~/features/auth';
 export const Route = createFileRoute('/_auth/login')({
   validateSearch: z.object({
     redirect: z.string().optional().catch(undefined),
-    // Only the fixed codes from the Google callback survive; free text in ?error= is dropped
     error: z
       .enum(Object.keys(GOOGLE_LOGIN_ERROR) as [GoogleLoginErrorCode, ...GoogleLoginErrorCode[]])
       .optional()

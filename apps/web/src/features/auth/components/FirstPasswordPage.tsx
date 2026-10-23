@@ -8,9 +8,7 @@ import { useSession } from '../session';
 import { AuthShell } from './AuthShell';
 import { NewPasswordStep, type NewPasswordValues } from './NewPasswordStep';
 
-/** Shown right after a first Google sign-in: the new account picks its own password before entering the app. */
 export function FirstPasswordPage() {
-  // useSession, not useCurrentUser: the session turns null for a moment while "Đăng xuất" navigates away
   const user = useSession();
   const completeAuth = useCompleteAuth();
   const logout = useLogout();

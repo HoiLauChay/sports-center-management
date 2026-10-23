@@ -204,7 +204,6 @@ describe('first login', () => {
 describe('first Google sign-in', () => {
   const realFetch = globalThis.fetch;
 
-  /** Fakes Google's token and userinfo endpoints; `userinfo` replaces the profile Google would return. */
   const fakeGoogle = (userinfo: () => Response) =>
     spyOn(globalThis, 'fetch').mockImplementation((async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
@@ -213,7 +212,6 @@ describe('first Google sign-in', () => {
       return realFetch(input, init);
     }) as typeof fetch);
 
-  /** Starts the flow like the browser does and returns the state the server put in its cookie. */
   const begin = async (query = '') => {
     const res = await fetch(`${authUrl}/google${query}`, { redirect: 'manual' });
     const stateCookie = res.headers.getSetCookie().find((cookie) => cookie.startsWith('oauth_state=')) ?? '';
@@ -226,7 +224,6 @@ describe('first Google sign-in', () => {
       headers: cookieState ? { Cookie: `oauth_state=${cookieState}` } : {},
     });
 
-  /** Runs the redirect + callback round trip; without ?redirect the server lands on the dashboard. */
   const signInWithGoogle = async (email: string) => {
     fakeGoogle(() => Response.json({ email, email_verified: true, name: 'Người Dùng Google' }));
     const state = await begin();

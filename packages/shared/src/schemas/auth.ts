@@ -80,7 +80,6 @@ export const resetPasswordBodySchema = withPasswordConfirmation(
 
 export const setPasswordBodySchema = resetPasswordBodySchema;
 
-/** Signed-in account that has no password of its own yet (created through Google sign-in). */
 export const firstPasswordBodySchema = withPasswordConfirmation(
   z.object({
     password: passwordSchema,

@@ -9,7 +9,6 @@ export const Route = createFileRoute('/set-password')({
   beforeLoad: async ({ context, search }) => {
     const user = await context.queryClient.ensureQueryData(sessionQueryOptions).catch(() => null);
     if (!user) throw redirect({ to: PATHS.login });
-    // Already has a password (or just set one): nothing to do here
     if (!user.mustSetPassword) throw redirect({ href: safeRedirectPath(search.redirect) ?? PATHS.dashboard });
   },
   component: FirstPasswordPage,

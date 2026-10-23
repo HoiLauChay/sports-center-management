@@ -16,23 +16,29 @@ const sessionMeta = (req: Request): SessionMeta => ({
   ip: getClientIp(req),
 });
 
-// Fixed from config, never from request headers, so it always matches the URI registered with Google
 const googleCallbackUrl = env.GOOGLE_CALLBACK_URL ?? `${appUrl}/api/v1/auth/google/callback`;
 
 const DEFAULT_AFTER_LOGIN = '/dashboard';
 
-/** Same-origin path to land on after sign-in; anything else falls back to the dashboard, like the email login. */
 const safeRedirectPath = (value: unknown) =>
   typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')
     ? value
     : DEFAULT_AFTER_LOGIN;
+
+const landingPath = (state: string) => {
+  try {
+    const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) as { redirect?: unknown };
+    return safeRedirectPath(parsed.redirect);
+  } catch {
+    return DEFAULT_AFTER_LOGIN;
+  }
+};
 
 const toLoginWithError = (res: Response, code: GoogleLoginErrorCode) => {
   clearOAuthStateCookie(res);
   res.redirect(`${appUrl}/login?error=${code}`);
 };
 
-/** Only the fixed codes reach the browser; anything unexpected is logged here instead of shown to the user. */
 const googleErrorCode = (err: unknown): GoogleLoginErrorCode => {
   if (err instanceof ErrorWithStatus) {
     if (err.code === ERROR_CODE.ACCOUNT_INACTIVE) return 'ACCOUNT_INACTIVE';
@@ -167,7 +173,6 @@ class AuthController {
 
   googleCallback = async (req: Request, res: Response) => {
     if (req.query.error) {
-      // access_denied is the user pressing Cancel on Google's screen
       return toLoginWithError(res, req.query.error === 'access_denied' ? 'CANCELLED' : 'FAILED');
     }
 
@@ -178,13 +183,7 @@ class AuthController {
       return toLoginWithError(res, 'STATE_MISMATCH');
     }
 
-    let redirect = DEFAULT_AFTER_LOGIN;
-    try {
-      const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) as { redirect?: unknown };
-      redirect = safeRedirectPath(parsed.redirect);
-    } catch {
-      // Malformed state still matched the cookie, so only the landing page falls back to the default
-    }
+    const redirect = landingPath(state);
 
     try {
       const { accessToken, refreshToken } = await authService.loginWithGoogle(

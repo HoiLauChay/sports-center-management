@@ -18,7 +18,6 @@ export function LoginPage() {
   const flow = useLoginFlow();
   const { step } = flow;
   const { error: googleError } = routeApi.useSearch();
-  // A fresh error from the email form wins over the one left in the URL by an earlier Google attempt
   const rootError =
     flow.emailForm.formState.errors.root?.message ?? (googleError ? GOOGLE_LOGIN_ERROR[googleError] : undefined);
 

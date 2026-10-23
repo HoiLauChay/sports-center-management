@@ -1,4 +1,3 @@
-/** Codes the Google sign-in callback puts in /login?error=; the web shows only these fixed messages. */
 export const GOOGLE_LOGIN_ERROR = {
   CANCELLED: 'Bạn đã huỷ đăng nhập bằng Google.',
   NOT_CONFIGURED: 'Đăng nhập bằng Google đang tạm thời không khả dụng.',
