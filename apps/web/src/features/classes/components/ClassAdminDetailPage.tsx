@@ -171,6 +171,18 @@ export function ClassAdminDetailPage() {
     { title: 'Giờ', render: (_, session) => `${session.startTime}–${session.endTime}` },
     { title: 'Sân / phòng', dataIndex: ['facility', 'name'] },
     {
+      title: 'HLV',
+      key: 'coach',
+      render: (_, session) =>
+        session.isSubstitute ? (
+          <Tag color="purple" className="!m-0">
+            Dạy thay: {session.coach?.fullName}
+          </Tag>
+        ) : (
+          <span className="text-sc-muted">{session.coach?.fullName ?? '—'}</span>
+        ),
+    },
+    {
       title: 'Trạng thái',
       key: 'status',
       render: (_, session) =>
