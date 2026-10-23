@@ -1,7 +1,7 @@
 import type { Account } from '@sports-center/shared';
 import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Dropdown, type MenuProps } from 'antd';
-import { Ellipsis, LogOut, UserRound } from 'lucide-react';
+import { Compass, Ellipsis, LogOut, UserRound } from 'lucide-react';
 import { PATHS } from '~/constants/paths';
 import { ROLE_LABEL } from '~/constants/roles';
 import { useLogout } from '~/features/auth';
@@ -12,15 +12,17 @@ interface AccountMenuProps {
   user: Account;
   collapsed?: boolean;
   onNavigate?: () => void;
+  onStartTour?: () => void;
 }
 
-export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenuProps) {
+export function AccountMenu({ user, collapsed = false, onNavigate, onStartTour }: AccountMenuProps) {
   const navigate = useNavigate();
   const logout = useLogout();
   const roleColor = ROLE_COLOR_ON_DARK[user.role];
 
   const items: MenuProps['items'] = [
     { key: 'profile', icon: <UserRound size={16} />, label: 'Hồ sơ cá nhân' },
+    ...(onStartTour ? [{ key: 'tour', icon: <Compass size={16} />, label: 'Hướng dẫn sử dụng' }] : []),
     { type: 'divider' },
     { key: 'logout', icon: <LogOut size={16} />, label: 'Đăng xuất', danger: true },
   ];
@@ -28,6 +30,7 @@ export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenu
   const onClick: MenuProps['onClick'] = ({ key }) => {
     onNavigate?.();
     if (key === 'profile') void navigate({ to: PATHS.profile });
+    if (key === 'tour') onStartTour?.();
     if (key === 'logout') void logout();
   };
 
@@ -36,6 +39,7 @@ export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenu
       <button
         type="button"
         aria-label="Menu tài khoản"
+        data-tour="account"
         className={`flex w-full cursor-pointer items-center gap-2.5 rounded-xl border-0 bg-transparent [font:inherit] text-white [transition:background_0.15s] hover:bg-[rgba(255,255,255,0.08)] ${collapsed ? 'justify-center p-1.5' : 'p-2'}`}
       >
         <Avatar

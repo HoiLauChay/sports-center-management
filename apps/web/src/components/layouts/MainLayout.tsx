@@ -7,6 +7,7 @@ import { PATHS } from '~/constants/paths';
 import { useSession } from '~/features/auth';
 import { CartButton } from '~/features/checkout';
 import { NotificationBell } from '~/features/notifications';
+import { AppTour, isTourRole, useAppTour } from '~/features/onboarding';
 import { BottomNav } from './BottomNav';
 import { SidebarNav } from './SidebarNav';
 
@@ -33,8 +34,11 @@ export function MainLayout({ children }: { children?: ReactNode }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = Grid.useBreakpoint().md === false;
+  const tour = useAppTour(user);
 
   if (!user) return <PageLoading fullScreen />;
+
+  const onStartTour = tour.enabled ? tour.start : undefined;
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -44,7 +48,9 @@ export function MainLayout({ children }: { children?: ReactNode }) {
 
   return (
     <Layout className="min-h-screen" hasSider={!isMobile}>
-      {!isMobile && <SidebarNav user={user} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />}
+      {!isMobile && (
+        <SidebarNav user={user} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} onStartTour={onStartTour} />
+      )}
       {isMobile && (
         <Drawer
           placement="left"
@@ -54,7 +60,13 @@ export function MainLayout({ children }: { children?: ReactNode }) {
           size={288}
           styles={{ body: { padding: 0, background: 'var(--sc-ink)' } }}
         >
-          <SidebarNav user={user} mobile onClose={() => setDrawerOpen(false)} onNavigate={() => setDrawerOpen(false)} />
+          <SidebarNav
+            user={user}
+            mobile
+            onClose={() => setDrawerOpen(false)}
+            onNavigate={() => setDrawerOpen(false)}
+            onStartTour={onStartTour}
+          />
         </Drawer>
       )}
 
@@ -80,6 +92,7 @@ export function MainLayout({ children }: { children?: ReactNode }) {
         </Layout.Content>
         {isMobile && <BottomNav user={user} onMore={() => setDrawerOpen(true)} />}
       </Layout>
+      {isTourRole(user.role) && <AppTour role={user.role} open={tour.open} onClose={tour.close} />}
     </Layout>
   );
 }

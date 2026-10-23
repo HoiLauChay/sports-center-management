@@ -31,7 +31,13 @@ export function BottomNav({ user, onMore }: { user: Account; onMore: () => void 
       {items.map(({ path, label, icon: Icon }) => {
         const active = path === activePath;
         return (
-          <Link key={path} to={path} className={itemClass(active)} aria-current={active ? 'page' : undefined}>
+          <Link
+            key={path}
+            to={path}
+            data-tour={path}
+            className={itemClass(active)}
+            aria-current={active ? 'page' : undefined}
+          >
             <span
               className={`flex h-7 w-12 items-center justify-center rounded-full ${active ? 'bg-sc-primary-soft' : ''}`}
             >
@@ -41,7 +47,13 @@ export function BottomNav({ user, onMore }: { user: Account; onMore: () => void 
           </Link>
         );
       })}
-      <button type="button" className={itemClass(moreActive)} onClick={onMore} aria-label="Mở menu đầy đủ">
+      <button
+        type="button"
+        data-tour="more"
+        className={itemClass(moreActive)}
+        onClick={onMore}
+        aria-label="Mở menu đầy đủ"
+      >
         <span
           className={`flex h-7 w-12 items-center justify-center rounded-full ${moreActive ? 'bg-sc-primary-soft' : ''}`}
         >

@@ -20,6 +20,7 @@ interface SidebarNavProps {
   onClose?: () => void;
   onNavigate?: () => void;
   onToggleCollapsed?: () => void;
+  onStartTour?: () => void;
 }
 
 export function SidebarNav({
@@ -29,6 +30,7 @@ export function SidebarNav({
   onClose,
   onNavigate,
   onToggleCollapsed,
+  onStartTour,
 }: SidebarNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const groups = useMemo(() => navGroupsFor(user.role), [user.role]);
@@ -119,6 +121,7 @@ export function SidebarNav({
               const link = (
                 <Link
                   to={path}
+                  data-tour={path}
                   onClick={onNavigate}
                   className={`group relative mb-0.5 flex h-[38px] items-center gap-2.5 rounded-lg text-[15px] font-medium no-underline ![transition:background_0.15s,color_0.15s] ${collapsed ? 'justify-center p-0' : 'px-2.5'} ${active ? `!bg-[rgba(255,255,255,0.08)] !text-white ${collapsed ? '' : "before:absolute before:top-[9px] before:bottom-[9px] before:-left-3 before:w-[3px] before:rounded-[0_3px_3px_0] before:bg-sc-lime before:content-['']"}` : '!text-[rgba(255,255,255,0.66)] hover:!bg-[rgba(255,255,255,0.06)] hover:!text-white'}`}
                   aria-current={active ? 'page' : undefined}
@@ -152,7 +155,7 @@ export function SidebarNav({
       </nav>
 
       <div className="border-t border-t-[rgba(255,255,255,0.06)] p-3">
-        <AccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} />
+        <AccountMenu user={user} collapsed={collapsed} onNavigate={onNavigate} onStartTour={onStartTour} />
       </div>
     </div>
   );
