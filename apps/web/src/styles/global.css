@@ -224,3 +224,26 @@ html .ant-tag.ant-tag-green {
     padding-right: 12px !important;
   }
 }
+
+/* App tour: ring the highlighted item, since the mask barely changes the dark sidebar. */
+[data-tour-active] {
+  outline: 2px solid var(--sc-lime);
+  outline-offset: 2px;
+  animation: sc-tour-pulse 1.8s var(--sc-ease) infinite;
+}
+
+@keyframes sc-tour-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(214, 242, 75, 0.45);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px rgba(214, 242, 75, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tour-active] {
+    animation: none;
+  }
+}

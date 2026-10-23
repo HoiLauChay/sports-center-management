@@ -1,5 +1,5 @@
 import { Button, Grid, Tour, type TourProps } from 'antd';
-import { ArrowRight, Check, CircleUserRound, Menu, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, CircleUserRound, Clock3, Menu, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useMemo, useRef, useState } from 'react';
 import logoMark from '~/assets/brand/logo-mark.svg';
@@ -17,7 +17,18 @@ function resolveTarget(target: TourTarget, inDrawer: boolean) {
     ) ?? null;
   // antd only scrolls when the target is outside the window, not when the sidebar's own scroll area hides it.
   node?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (node && !node.hasAttribute(ACTIVE_ATTR)) {
+    clearActive();
+    node.setAttribute(ACTIVE_ATTR, '');
+  }
   return node;
+}
+
+// Styled in global.css: a lime ring, because the mask alone barely changes the dark sidebar.
+const ACTIVE_ATTR = 'data-tour-active';
+
+function clearActive() {
+  document.querySelectorAll(`[${ACTIVE_ATTR}]`).forEach((node) => node.removeAttribute(ACTIVE_ATTR));
 }
 
 // antd measures the highlight once per step and only again on window resize/scroll, so while the drawer
@@ -69,58 +80,124 @@ function firstNameOf(fullName: string) {
   return fullName.trim().split(/\s+/).at(-1) ?? fullName;
 }
 
-interface StepCoverProps {
-  index: number;
+const SLIDE_IN = {
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+function ProgressBar({ index, total }: { index: number; total: number }) {
+  return (
+    <div className="relative mt-4 flex gap-1" aria-hidden>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={`h-1 flex-1 rounded-full [transition:background-color_0.3s_var(--sc-ease)] ${i <= index ? 'bg-sc-lime' : 'bg-white/15'}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Court markings echo the sports theme without competing with the copy.
+function CourtLines() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 380 150"
+      preserveAspectRatio="xMaxYMid slice"
+      className="pointer-events-none absolute inset-0 size-full text-sc-lime opacity-[0.13]"
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="330" cy="75" r="44" />
+        <circle cx="330" cy="75" r="4" fill="currentColor" />
+        <line x1="330" y1="-10" x2="330" y2="160" />
+        <rect x="250" y="20" width="160" height="110" rx="2" />
+      </g>
+    </svg>
+  );
+}
+
+interface WelcomeCoverProps {
   total: number;
-  meta?: StepMeta;
   role: TourRole;
   userName: string;
 }
 
-function StepCover({ index, total, meta, role, userName }: StepCoverProps) {
-  const Icon = meta?.icon;
-
+function WelcomeCover({ total, role, userName }: WelcomeCoverProps) {
   return (
-    <div className="bg-sc-ink px-5 pt-5 pb-4 text-left text-white">
-      <motion.div
-        key={index}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-center gap-3 pr-8"
-      >
-        {Icon ? (
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sc-lime text-sc-ink">
-            <Icon size={22} strokeWidth={2.2} />
-          </span>
-        ) : (
-          <img src={logoMark} width={44} height={44} alt="" className="block !size-11 shrink-0" />
-        )}
+    <div className="relative overflow-hidden bg-sc-ink bg-[radial-gradient(120%_90%_at_100%_0%,rgba(214,242,75,0.16),transparent_60%)] px-5 pt-6 pb-4 text-left text-white">
+      <CourtLines />
+      <motion.div {...SLIDE_IN} className="relative flex items-center gap-3.5 pr-8">
+        <img src={logoMark} width={52} height={52} alt="" className="block !size-13 shrink-0" />
         <div className="min-w-0">
-          <div className="font-display text-[13px] font-bold tracking-[0.14em] text-white/45 uppercase">
-            {meta ? meta.group : `Xin chào, ${firstNameOf(userName)}`}
-          </div>
-          {meta ? (
-            <div className="font-display text-[17px] font-bold text-white tabular-nums">
-              {String(index + 1).padStart(2, '0')}
-              <span className="text-white/35"> / {String(total).padStart(2, '0')}</span>
-            </div>
-          ) : (
-            <div className="font-display text-[17px] font-bold" style={{ color: ROLE_COLOR_ON_DARK[role] }}>
-              {ROLE_LABEL[role]}
-            </div>
-          )}
+          <div className="font-display text-[26px] leading-none font-extrabold">Xin chào, {firstNameOf(userName)}!</div>
+          <span
+            className="mt-1.5 inline-block rounded-full bg-white/8 px-2.5 py-0.5 font-display text-[14px] font-bold tracking-[0.04em]"
+            style={{ color: ROLE_COLOR_ON_DARK[role] }}
+          >
+            {ROLE_LABEL[role]}
+          </span>
         </div>
       </motion.div>
-      <div className="mt-4 flex gap-1" aria-hidden>
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1 flex-1 rounded-full [transition:background-color_0.3s_var(--sc-ease)] ${i <= index ? 'bg-sc-lime' : 'bg-white/15'}`}
-          />
-        ))}
-      </div>
+      <ProgressBar index={0} total={total} />
     </div>
+  );
+}
+
+interface StepCoverProps {
+  index: number;
+  total: number;
+  meta: StepMeta;
+}
+
+function StepCover({ index, total, meta }: StepCoverProps) {
+  const Icon = meta.icon;
+
+  return (
+    <div className="relative overflow-hidden bg-sc-ink px-5 pt-5 pb-4 text-left text-white">
+      <motion.div key={index} {...SLIDE_IN} className="relative flex items-center gap-3 pr-8">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sc-lime text-sc-ink shadow-[0_6px_18px_-6px_rgba(214,242,75,0.6)]">
+          <Icon size={22} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <div className="font-display text-[13px] font-bold tracking-[0.14em] text-white/45 uppercase">
+            {meta.group}
+          </div>
+          <div className="font-display text-[17px] font-bold text-white tabular-nums">
+            {String(index + 1).padStart(2, '0')}
+            <span className="text-white/35"> / {String(total).padStart(2, '0')}</span>
+          </div>
+        </div>
+      </motion.div>
+      <ProgressBar index={index} total={total} />
+    </div>
+  );
+}
+
+// Roughly how long a tour of `total` steps takes, at about six seconds a step.
+function minutesFor(total: number) {
+  return Math.max(1, Math.round((total * 6) / 60));
+}
+
+function WelcomeDescription({ text, groups, total }: { text: string; groups: string[]; total: number }) {
+  return (
+    <>
+      {text}
+      <span className="mt-3.5 flex flex-wrap gap-1.5">
+        {groups.map((group) => (
+          <span
+            key={group}
+            className="rounded-full border border-sc-border bg-sc-paper px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-ink-2"
+          >
+            {group}
+          </span>
+        ))}
+      </span>
+      <span className="mt-3 flex items-center gap-1.5 text-[13.5px] text-sc-muted">
+        <Clock3 size={14} /> {total} bước · khoảng {minutesFor(total)} phút
+      </span>
+    </>
   );
 }
 
@@ -158,28 +235,38 @@ export function AppTour({ role, userName, open, onClose, onNavMenuChange }: AppT
 
   const steps = useMemo<TourProps['steps']>(() => {
     const meta = stepMetaFor(role);
-    return ROLE_TOUR[role].map(({ target, title, description }, index) => ({
-      title,
-      description: <StepDescription text={description} inDrawer={inDrawer[index]} />,
-      cover: (
-        <StepCover
-          index={index}
-          total={total}
-          meta={target ? meta.get(target) : undefined}
-          role={role}
-          userName={userName}
-        />
-      ),
-      // Sidebar items get the card beside them; on mobile the card sits above the bottom bar or below drawer items.
-      placement: isMobile ? (inDrawer[index] ? 'bottom' : 'top') : 'right',
-      // antd centers the step when the target resolves to null; its typings just don't allow the union.
-      target: target ? () => resolveTarget(target, inDrawer[index]) as HTMLElement : null,
-    }));
+    const stepMeta = ROLE_TOUR[role].map(({ target }) => (target ? meta.get(target) : undefined));
+    // The named menu sections this tour walks through, previewed on the welcome step.
+    const groups = [
+      ...new Set(stepMeta.flatMap((m) => (m && m.group !== 'Chung' && m.group !== 'Tài khoản' ? [m.group] : []))),
+    ];
+
+    return ROLE_TOUR[role].map(({ target, title, description }, index) => {
+      const current = stepMeta[index];
+      return {
+        title,
+        description: current ? (
+          <StepDescription text={description} inDrawer={inDrawer[index]} />
+        ) : (
+          <WelcomeDescription text={description} groups={groups} total={total} />
+        ),
+        cover: current ? (
+          <StepCover index={index} total={total} meta={current} />
+        ) : (
+          <WelcomeCover total={total} role={role} userName={userName} />
+        ),
+        // Sidebar items get the card beside them; on mobile the card sits above the bottom bar or below drawer items.
+        placement: isMobile ? (inDrawer[index] ? 'bottom' : 'top') : 'right',
+        // antd centers the step when the target resolves to null; its typings just don't allow the union.
+        target: target ? () => resolveTarget(target, inDrawer[index]) as HTMLElement : null,
+      };
+    });
   }, [role, total, userName, isMobile, inDrawer]);
 
   const stopFollowing = useRef<() => void>(undefined);
 
   const goTo = (index: number) => {
+    clearActive();
     setCurrent(index);
     if (!onNavMenuChange || inDrawer[index] === inDrawer[current]) return;
     onNavMenuChange(inDrawer[index]);
@@ -192,6 +279,7 @@ export function AppTour({ role, userName, open, onClose, onNavMenuChange }: AppT
 
   const close = () => {
     stopFollowing.current?.();
+    clearActive();
     setCurrent(0);
     onNavMenuChange?.(false);
     onClose();
@@ -212,7 +300,8 @@ export function AppTour({ role, userName, open, onClose, onNavMenuChange }: AppT
       gap={{ offset: 6, radius: 12 }}
       mask={{ color: 'rgba(20, 19, 15, 0.62)' }}
       classNames={{
-        // `root` also lands on the mask, so only size the popup itself.
+        // `root` also lands on the mask, so only size the popup itself. No position transition: antd parks
+        // the popup far off-screen before aligning it, so it would glide in from there.
         root: '[&.ant-tour]:!w-[380px] [&.ant-tour]:!max-w-[calc(100vw-32px)]',
         section:
           '!overflow-hidden !rounded-2xl !p-0 !shadow-[0_24px_60px_-12px_rgba(20,19,15,0.5),0_0_0_1px_rgba(20,19,15,0.06)]',
