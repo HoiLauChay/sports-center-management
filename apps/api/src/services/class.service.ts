@@ -7,6 +7,7 @@ import {
   type UpdateClassBody,
 } from '@sports-center/shared';
 
+import { prisma } from '~/configs/db';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { toClassDetailResponse, toClassSummaryResponse } from '~/mappers/class.mapper';
@@ -211,11 +212,17 @@ class ClassService {
 
   list = async (viewer: ClassViewer, query: ListClassesQuery) => {
     const [rows, total] = await classRepository.findPage(viewer, query);
-    return toPage(
-      rows.map((row) => toClassSummaryResponse(row)),
-      total,
-      query,
-    );
+    const items = rows.map((row) => toClassSummaryResponse(row));
+    if (viewer.role === 'COACH' && query.needsCoach) {
+      const clashing = await scheduleService.coachClashingClasses(
+        viewer.id,
+        items.map(({ id }) => id),
+        todayInCenter(),
+        prisma,
+      );
+      for (const item of items) item.scheduleConflict = clashing.has(item.id);
+    }
+    return toPage(items, total, query);
   };
 
   get = async (viewer: ClassViewer, id: string) => {

@@ -2,16 +2,22 @@ import {
   assignCoachBodySchema,
   cancelClassBodySchema,
   classIdParamsSchema,
+  classStudentParamsSchema,
   createAnnouncementBodySchema,
   createClassBodySchema,
   listClassesQuerySchema,
   listCoachRegistrationsQuerySchema,
+  progressReviewParamsSchema,
   reviewClassBodySchema,
+  saveProgressReviewBodySchema,
+  saveTrainingPlanBodySchema,
   updateClassBodySchema,
+  withdrawClassBodySchema,
 } from '@sports-center/shared';
 import { Router } from 'express';
 
 import classController from '~/controllers/class.controllers';
+import classTrainingController from '~/controllers/classTraining.controllers';
 import enrollmentController from '~/controllers/enrollment.controllers';
 import trainingController from '~/controllers/training.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
@@ -81,7 +87,7 @@ classRouter.post(
 classRouter.post(
   '/:id/withdraw',
   isRole('COACH'),
-  validate({ params: classIdParamsSchema }),
+  validate({ params: classIdParamsSchema, body: withdrawClassBodySchema }),
   classController.withdrawCoach,
 );
 
@@ -96,4 +102,46 @@ classRouter.post(
   isRole('COACH', 'MANAGER'),
   validate({ params: classIdParamsSchema, body: createAnnouncementBodySchema }),
   trainingController.announce,
+);
+classRouter.get(
+  '/:id/roster',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: classIdParamsSchema }),
+  classTrainingController.roster,
+);
+classRouter.get(
+  '/:id/plans',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: classIdParamsSchema }),
+  classTrainingController.plans,
+);
+classRouter.put(
+  '/:id/plan',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema, body: saveTrainingPlanBodySchema }),
+  classTrainingController.saveClassPlan,
+);
+classRouter.put(
+  '/:id/students/:accountId/reviews/:milestone',
+  isRole('COACH'),
+  validate({ params: progressReviewParamsSchema, body: saveProgressReviewBodySchema }),
+  classTrainingController.saveReview,
+);
+classRouter.put(
+  '/:id/students/:accountId/plan',
+  isRole('COACH'),
+  validate({ params: classStudentParamsSchema, body: saveTrainingPlanBodySchema }),
+  classTrainingController.saveMemberPlan,
+);
+classRouter.get(
+  '/:id/students/:accountId',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: classStudentParamsSchema }),
+  classTrainingController.student,
+);
+classRouter.get(
+  '/:id/announcements',
+  isRole('COACH', 'MANAGER', 'MEMBER'),
+  validate({ params: classIdParamsSchema }),
+  trainingController.listAnnouncements,
 );

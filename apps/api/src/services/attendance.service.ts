@@ -1,12 +1,13 @@
-import { ERROR_CODE, type MyAttendanceQuery, type SaveAttendanceBody } from '@sports-center/shared';
+import { ATTENDANCE_RULES, ERROR_CODE, type MyAttendanceQuery, type SaveAttendanceBody } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import { toAttendanceResponse } from '~/mappers/attendance.mapper';
-import { toSessionResponse } from '~/mappers/class.mapper';
+import { sessionCoachId, toSessionResponse } from '~/mappers/class.mapper';
 import attendanceRepository, { type AttendanceSessionRow } from '~/repositories/attendance.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
+import { addDays, formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 type Actor = { id: string; role: Role };
@@ -28,7 +29,7 @@ const invalidState = (message: string) =>
 
 const requireSession = (session: AttendanceSessionRow | null, actor: Actor) => {
   if (!session || session.class.deletedAt) throw notFound();
-  if (actor.role !== 'MANAGER' && (actor.role !== 'COACH' || session.class.coachId !== actor.id)) throw forbidden();
+  if (actor.role !== 'MANAGER' && (actor.role !== 'COACH' || sessionCoachId(session) !== actor.id)) throw forbidden();
   return session;
 };
 
@@ -50,6 +51,18 @@ class AttendanceService {
       await lockRows(tx, { classes: [found.classId] });
       const session = requireSession(await attendanceRepository.findSession(id, tx), actor);
       if (session.status === 'CANCELLED') throw invalidState('Không thể điểm danh buổi học đã hủy');
+      if (actor.role === 'COACH') {
+        const date = formatDate(session.sessionDate);
+        const opensAt = toCenterDateTime(date, fromDbTime(session.startTime) - ATTENDANCE_RULES.OPENS_MINUTES_BEFORE);
+        if (new Date() < opensAt) {
+          throw invalidState(`Điểm danh mở từ ${ATTENDANCE_RULES.OPENS_MINUTES_BEFORE} phút trước giờ học`);
+        }
+        if (todayInCenter() > addDays(date, ATTENDANCE_RULES.COACH_EDIT_DAYS)) {
+          throw invalidState(
+            `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học, hãy liên hệ quản lý để sửa điểm danh`,
+          );
+        }
+      }
       const roster = await attendanceRepository.findRoster(session, tx);
       const valid = new Set(roster.map(({ id }) => id));
       if (body.records.some(({ accountId }) => !valid.has(accountId))) {

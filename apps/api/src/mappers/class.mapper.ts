@@ -18,9 +18,14 @@ export const toSessionResponse = (row: ClassSessionRow): ClassSession => ({
   startTime: formatTime(fromDbTime(row.startTime)),
   endTime: formatTime(fromDbTime(row.endTime)),
   facility: row.facility,
+  coach: row.coach ?? row.class.coach,
+  isSubstitute: row.coach !== null,
   status: row.status,
   cancelReason: row.cancelReason,
 });
+
+export const sessionCoachId = (session: { coachId: string | null; class: { coachId: string | null } }) =>
+  session.coachId ?? session.class.coachId;
 
 export const toClassSummaryResponse = (row: ClassSummaryRow, now = new Date()): ClassSummary => ({
   id: row.id,

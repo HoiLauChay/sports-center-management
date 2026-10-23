@@ -1,4 +1,9 @@
-import { ERROR_CODE, type ListSpecializationsQuery, type ReviewSpecializationBody } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type CreateSpecializationBody,
+  type ListSpecializationsQuery,
+  type ReviewSpecializationBody,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toSpecializationResponse } from '~/mappers/specialization.mapper';
@@ -6,6 +11,7 @@ import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
+import uploadService from '~/services/upload.service';
 import { isUniqueViolation } from '~/utils/dbError';
 import { toPage } from '~/utils/pagination';
 import { runTransaction } from '~/utils/transaction';
@@ -57,7 +63,15 @@ class SpecializationService {
     return toPage(rows.map(toSpecializationResponse), total, query);
   };
 
-  register = async (coachId: string, sportId: string, ip?: string) => {
+  register = async (
+    coachId: string,
+    { sportId, experienceYears, experienceNote, certificates }: CreateSpecializationBody,
+    ip?: string,
+  ) => {
+    const certificateUrls = [...new Set(certificates)];
+    certificateUrls.forEach((url, index) =>
+      uploadService.assertUploadedFile(url, null, 'CERTIFICATE', coachId, `body.certificates.${index}`),
+    );
     try {
       const specialization = await runTransaction(async (tx) => {
         const sport = await specializationRepository.lockSport(sportId, tx);
@@ -67,7 +81,16 @@ class SpecializationService {
         const existing = await specializationRepository.findExisting(coachId, sportId, tx);
         if (existing) throw alreadyRegistered();
 
-        const created = await specializationRepository.create(coachId, sportId, tx);
+        const created = await specializationRepository.create(
+          coachId,
+          {
+            sportId,
+            experienceYears: experienceYears ?? null,
+            experienceNote: experienceNote ?? null,
+            certificateUrls,
+          },
+          tx,
+        );
         await auditService.record(
           {
             accountId: coachId,

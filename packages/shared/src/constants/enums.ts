@@ -19,6 +19,7 @@ export const UPLOAD_PURPOSES = [
   'SESSION_ATTACHMENT',
   'COURSE_THUMBNAIL',
   'SPORT_ICON',
+  'CERTIFICATE',
 ] as const;
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 export const AUDIT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'RESOLVE', 'IGNORE'] as const;
@@ -40,6 +41,7 @@ export const AUDIT_ENTITY_TYPES = [
   'CLASS_COACH_REGISTRATION',
   'COACH_SPECIALIZATION',
   'MEMBER_EVALUATION',
+  'PROGRESS_REVIEW',
   'MEMBERSHIP',
   'MEMBER_MEMBERSHIP',
   'COUPON',
@@ -49,6 +51,12 @@ export const AUDIT_ENTITY_TYPES = [
   'WALLET_TRANSACTION',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
+
+export const PROGRESS_MILESTONES = ['MID', 'FINAL'] as const;
+export type ProgressMilestone = (typeof PROGRESS_MILESTONES)[number];
+
+export const ANNOUNCEMENT_KINDS = ['NOTICE', 'HOMEWORK'] as const;
+export type AnnouncementKind = (typeof ANNOUNCEMENT_KINDS)[number];
 
 export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
 export type CreatableRole = (typeof CREATABLE_ROLES)[number];

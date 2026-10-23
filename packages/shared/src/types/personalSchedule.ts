@@ -26,4 +26,6 @@ export type MemberScheduleItem = MemberBookingScheduleItem | MemberClassSchedule
 
 export interface CoachScheduleItem extends ClassSession {
   class: Ref;
+  attendance: { marked: number; total: number };
+  hasNote: boolean;
 }

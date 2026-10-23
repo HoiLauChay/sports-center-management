@@ -93,6 +93,12 @@ model Account {
   updatedAttendances         ClassAttendance[]        @relation("AttendanceUpdater")
   evaluations                MemberEvaluation[]       @relation("EvaluationMember")
   givenEvaluations           MemberEvaluation[]       @relation("EvaluationCoach")
+  substituteSessions         ClassSession[]           @relation("SessionCoach")
+  trainingPlans              TrainingPlan[]           @relation("TrainingPlanMember")
+  updatedTrainingPlans       TrainingPlan[]           @relation("TrainingPlanUpdater")
+  progressReviews            ProgressReview[]         @relation("ProgressReviewMember")
+  givenProgressReviews       ProgressReview[]         @relation("ProgressReviewCoach")
+  sentAnnouncements          ClassAnnouncement[]      @relation("AnnouncementSender")
 
   @@index([role, status], map: "idx_accounts_role_status")
   @@map("accounts")
@@ -437,6 +443,9 @@ model Class {
   coachRegistrations ClassCoachRegistration[]
   sessions           ClassSession[]
   enrollments        ClassEnrollment[]
+  trainingPlans      TrainingPlan[]
+  progressReviews    ProgressReview[]
+  announcements      ClassAnnouncement[]
 
   @@index([courseId, status], map: "idx_classes_course_status")
   @@index([coachId], map: "idx_classes_coach")
@@ -468,6 +477,8 @@ model ClassSession {
   class           Class         @relation(fields: [classId], references: [id], onDelete: Restrict)
   facilityId      String        @map("facility_id") @db.Uuid
   facility        Facility      @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  coachId         String?       @map("coach_id") @db.Uuid
+  coach           Account?      @relation("SessionCoach", fields: [coachId], references: [id], onDelete: Restrict)
   sessionNumber   Int           @map("session_number")
   sessionDate     DateTime      @map("session_date") @db.Date
   startTime       DateTime      @map("start_time") @db.Time()
@@ -476,6 +487,7 @@ model ClassSession {
   cancelReason    String?       @map("cancel_reason") @db.VarChar(500)
   noteTitle       String?       @map("note_title") @db.VarChar(255)
   noteContent     String?       @map("note_content")
+  noteHomework    String?       @map("note_homework")
   noteAttachments Json?         @map("note_attachments")
   noteUpdatedAt   DateTime?     @map("note_updated_at") @db.Timestamptz()
   createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz()
@@ -487,6 +499,7 @@ model ClassSession {
   @@unique([classId, sessionNumber], map: "uq_cs_class_session_num")
   @@index([facilityId, sessionDate, startTime], map: "idx_cs_facility_date_time")
   @@index([sessionDate, startTime], map: "idx_cs_date_time")
+  @@index([coachId, sessionDate], map: "idx_cs_coach_date")
   @@map("class_sessions")
 }
 
@@ -897,17 +910,20 @@ enum SpecializationStatus {
 }
 
 model CoachSpecialization {
-  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  coachId      String               @map("coach_id") @db.Uuid
-  coach        Account              @relation("SpecializationCoach", fields: [coachId], references: [id], onDelete: Restrict)
-  sportId      String               @map("sport_id") @db.Uuid
-  sport        Sport                @relation(fields: [sportId], references: [id], onDelete: Restrict)
-  status       SpecializationStatus @default(PENDING)
-  reviewNote   String?              @map("review_note") @db.VarChar(500)
-  reviewedById String?              @map("reviewed_by") @db.Uuid
-  reviewedBy   Account?             @relation("SpecializationReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
-  reviewedAt   DateTime?            @map("reviewed_at") @db.Timestamptz()
-  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coachId         String               @map("coach_id") @db.Uuid
+  coach           Account              @relation("SpecializationCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  sportId         String               @map("sport_id") @db.Uuid
+  sport           Sport                @relation(fields: [sportId], references: [id], onDelete: Restrict)
+  status          SpecializationStatus @default(PENDING)
+  experienceYears Int?                 @map("experience_years")
+  experienceNote  String?              @map("experience_note") @db.VarChar(1000)
+  certificateUrls Json                 @default("[]") @map("certificate_urls")
+  reviewNote      String?              @map("review_note") @db.VarChar(500)
+  reviewedById    String?              @map("reviewed_by") @db.Uuid
+  reviewedBy      Account?             @relation("SpecializationReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  reviewedAt      DateTime?            @map("reviewed_at") @db.Timestamptz()
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz()
 
   @@unique([coachId, sportId], map: "uq_coach_spec_active", where: raw("status = ANY (ARRAY['PENDING'::specialization_status, 'APPROVED'::specialization_status])"))
   @@index([coachId, sportId], map: "idx_coach_spec_coach_sport")
@@ -921,6 +937,20 @@ enum AttendanceStatus {
   LATE
 
   @@map("attendance_status")
+}
+
+enum ProgressMilestone {
+  MID
+  FINAL
+
+  @@map("progress_milestone")
+}
+
+enum AnnouncementKind {
+  NOTICE
+  HOMEWORK
+
+  @@map("announcement_kind")
 }
 
 model CenterCheckin {
@@ -971,4 +1001,59 @@ model MemberEvaluation {
   @@index([sessionId, accountId], map: "idx_eval_session_account")
   @@index([accountId], map: "idx_eval_account")
   @@map("member_evaluations")
+}
+
+model TrainingPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId     String   @map("class_id") @db.Uuid
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Restrict)
+  accountId   String?  @map("account_id") @db.Uuid
+  account     Account? @relation("TrainingPlanMember", fields: [accountId], references: [id], onDelete: Restrict)
+  goals       String   @db.VarChar(1000)
+  content     String
+  updatedById String   @map("updated_by") @db.Uuid
+  updatedBy   Account  @relation("TrainingPlanUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([classId], map: "uq_tp_class_plan", where: raw("account_id IS NULL"))
+  @@unique([classId, accountId], map: "uq_tp_member_plan", where: raw("account_id IS NOT NULL"))
+  @@index([accountId], map: "idx_tp_account")
+  @@map("training_plans")
+}
+
+model ProgressReview {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId   String            @map("class_id") @db.Uuid
+  class     Class             @relation(fields: [classId], references: [id], onDelete: Restrict)
+  accountId String            @map("account_id") @db.Uuid
+  account   Account           @relation("ProgressReviewMember", fields: [accountId], references: [id], onDelete: Restrict)
+  coachId   String            @map("coach_id") @db.Uuid
+  coach     Account           @relation("ProgressReviewCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  milestone ProgressMilestone
+  technique Int
+  fitness   Int
+  attitude  Int
+  comment   String            @db.VarChar(2000)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([classId, accountId, milestone], map: "uq_pr_class_account_milestone")
+  @@index([accountId], map: "idx_pr_account")
+  @@map("progress_reviews")
+}
+
+model ClassAnnouncement {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId   String           @map("class_id") @db.Uuid
+  class     Class            @relation(fields: [classId], references: [id], onDelete: Restrict)
+  senderId  String           @map("sender_id") @db.Uuid
+  sender    Account          @relation("AnnouncementSender", fields: [senderId], references: [id], onDelete: Restrict)
+  kind      AnnouncementKind
+  title     String           @db.VarChar(255)
+  body      String           @db.VarChar(2000)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([classId, createdAt], map: "idx_ca_class_date")
+  @@map("class_announcements")
 }

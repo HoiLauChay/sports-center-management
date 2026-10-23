@@ -1,11 +1,11 @@
-import type { Attendance, MyAttendance } from '@sports-center/shared';
+import type { Attendance, CoachScheduleItem, MyAttendance } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import attendanceJobService from '~/services/attendanceJob.service';
-import { addDays } from '~/utils/time';
+import { addDays, todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
 import { readResult, startServer } from './helpers/http';
@@ -21,6 +21,34 @@ beforeAll(async () => {
 });
 afterAll(() => server.close());
 beforeEach(resetDatabase);
+
+describe('attendance window', () => {
+  test('a coach marks from 15 minutes before the start until 7 days after; the manager is not limited', async () => {
+    const f = await setupAttendance();
+    const record = { records: [{ accountId: f.member.id, status: 'PRESENT' }] };
+    const put = (sessionId: string, who = f.coach) => request('PUT', `/sessions/${sessionId}/attendance`, who, record);
+
+    expect((await put(f.session.id)).status).toBe(200);
+    const schedule = await readResult<CoachScheduleItem[]>(
+      await request('GET', `/coach/schedule?from=${f.date}&to=${f.date}`, f.coach),
+    );
+    expect(schedule.find(({ id }) => id === f.session.id)).toMatchObject({
+      attendance: { marked: 1, total: 2 },
+      hasNote: false,
+    });
+
+    const tomorrow = await f.makeSession({ sessionDate: new Date(addDays(todayInCenter(), 1)) });
+    expect((await put(tomorrow.id)).status).toBe(409);
+
+    await prisma.classEnrollment.update({
+      where: { id: f.enrollment.id },
+      data: { enrolledAt: new Date(addDays(todayInCenter(), -30)) },
+    });
+    const old = await f.makeSession({ sessionDate: new Date(addDays(todayInCenter(), -8)) });
+    expect((await put(old.id)).status).toBe(409);
+    expect((await put(old.id, f.manager)).status).toBe(200);
+  });
+});
 
 describe('attendance #175', () => {
   test('assigned coach sees the roster including unmarked members; another coach gets 403 for both reads and writes', async () => {

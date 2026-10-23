@@ -109,8 +109,10 @@ describe('coach assignment', () => {
     expect(await prisma.classCoachRegistration.count()).toBe(0);
   });
 
-  test('a coach leaving before the start keeps the students enrolled and tells them; a started class refuses', async () => {
-    const cls = await seedOpenClass();
+  test('a coach leaving a week ahead with a reason keeps the students enrolled; later or without a reason refuses', async () => {
+    const today = todayInCenter();
+    const cls = await seedOpenClass({ startDate: addDays(today, 7), endDate: addDays(today, 14) });
+    const manager = await createAccount('MANAGER', 'manager@example.com');
     const coach = await coachOf(cls.id);
     const member = await createAccount('MEMBER', 'member@example.com');
     await seedBalance(member.id, 300_000);
@@ -122,14 +124,37 @@ describe('coach assignment', () => {
     });
     expect(bought.status).toBe(201);
 
-    const response = await request('POST', `/${cls.id}/withdraw`, coach);
+    const missing = await request('POST', `/${cls.id}/withdraw`, coach, {});
+    expect(missing.status).toBe(422);
+
+    const response = await request('POST', `/${cls.id}/withdraw`, coach, { reason: 'Chấn thương vai' });
     expect(response.status).toBe(200);
     expect(await readResult<ClassDetail>(response)).toMatchObject({ status: 'PENDING_APPROVAL', coach: null });
     expect(await prisma.classEnrollment.count({ where: { classId: cls.id, status: 'ENROLLED' } })).toBe(1);
     expect(await prisma.notification.count({ where: { accountId: member.id, referenceId: cls.id } })).toBe(1);
+    const told = await prisma.notification.findFirstOrThrow({ where: { accountId: manager.id, referenceId: cls.id } });
+    expect(told.message).toContain('Chấn thương vai');
 
-    const started = await seedOpenClass({ startDate: todayInCenter() });
-    const denied = await request('POST', `/${started.id}/withdraw`, await coachOf(started.id));
-    expect([denied.status, await readCode(denied)]).toEqual([409, 'INVALID_STATE']);
+    for (const startDate of [addDays(today, 6), today]) {
+      const soon = await seedOpenClass({ startDate, endDate: addDays(today, 14) });
+      const denied = await request('POST', `/${soon.id}/withdraw`, await coachOf(soon.id), { reason: 'Bận việc' });
+      expect([denied.status, await readCode(denied)]).toEqual([409, 'INVALID_STATE']);
+    }
+  });
+
+  test('open classes that clash with what the coach already teaches are flagged', async () => {
+    const draft = await seedDraftClass();
+    const free = await seedDraftClass({
+      startDate: addDays(todayInCenter(), 4),
+      endDate: addDays(todayInCenter(), 11),
+    });
+    const coach = await qualifiedCoach('busy@example.com', draft.sportId);
+    await prisma.coachSpecialization.create({ data: { coachId: coach.id, sportId: free.sportId, status: 'APPROVED' } });
+    const teaching = await seedOpenClass();
+    await prisma.class.update({ where: { id: teaching.id }, data: { coachId: coach.id } });
+
+    const page = await readResult<Paginated<ClassSummary>>(await request('GET', '/?needsCoach=true', coach));
+    const flags = Object.fromEntries(page.items.map(({ id, scheduleConflict }) => [id, scheduleConflict]));
+    expect(flags).toEqual({ [draft.id]: true, [free.id]: false });
   });
 });

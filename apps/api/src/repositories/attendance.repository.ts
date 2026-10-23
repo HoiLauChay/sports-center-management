@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import { Prisma } from '~/generated/prisma/client';
+import { sessionSelect as baseSessionSelect } from '~/repositories/class.repository';
 import { formatDate, fromDbTime, toCenterDateTime } from '~/utils/time';
 
 const person = { select: { id: true, fullName: true } } as const;
@@ -15,16 +16,8 @@ const attendanceSelect = {
 } satisfies Prisma.ClassAttendanceSelect;
 
 const sessionSelect = {
-  id: true,
-  classId: true,
-  sessionNumber: true,
-  sessionDate: true,
-  startTime: true,
-  endTime: true,
-  facility: { select: { id: true, name: true } },
-  status: true,
-  cancelReason: true,
-  class: { select: { coachId: true, deletedAt: true } },
+  ...baseSessionSelect,
+  class: { select: { coachId: true, coach: person, deletedAt: true } },
 } satisfies Prisma.ClassSessionSelect;
 
 export type AttendanceRow = Prisma.ClassAttendanceGetPayload<{ select: typeof attendanceSelect }>;
@@ -78,13 +71,23 @@ class AttendanceRepository {
       select: attendanceSelect,
     });
 
+  findOne = (sessionId: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.classAttendance.findUnique({
+      where: { sessionId_accountId: { sessionId, accountId } },
+      select: { status: true },
+    });
+
   findMine = async (accountId: string, classId?: string) => {
     const sessions = await prisma.classSession.findMany({
       where: { classId, class: { enrollments: { some: { accountId } } } },
       select: {
         ...sessionSelect,
         class: {
-          select: { enrollments: { where: { accountId }, select: { enrolledAt: true, cancelledAt: true } } },
+          select: {
+            coachId: true,
+            coach: person,
+            enrollments: { where: { accountId }, select: { enrolledAt: true, cancelledAt: true } },
+          },
         },
         attendances: { where: { accountId }, select: { status: true, note: true } },
       },

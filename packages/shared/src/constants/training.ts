@@ -1,0 +1,4 @@
+export const ATTENDANCE_RULES = {
+  OPENS_MINUTES_BEFORE: 15,
+  COACH_EDIT_DAYS: 7,
+} as const;

@@ -40,7 +40,7 @@ class ReminderJobService {
       ...sessions.filter(soon).flatMap((session) =>
         [
           ...new Set([
-            ...(session.class.coachId ? [session.class.coachId] : []),
+            ...[session.coachId ?? session.class.coachId].filter((id): id is string => id !== null),
             ...session.class.enrollments.map(({ accountId }) => accountId),
           ]),
         ].map((accountId): NotificationInput => ({

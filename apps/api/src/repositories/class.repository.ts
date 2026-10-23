@@ -24,9 +24,18 @@ const classSelect = {
 
 const ref = { select: { id: true, name: true } } as const;
 
+const person = { select: { id: true, fullName: true } } as const;
+
+export const taughtBy = (coachId: string): Prisma.ClassSessionWhereInput => ({
+  OR: [{ coachId }, { coachId: null, class: { coachId } }],
+});
+
 export const sessionSelect = {
   id: true,
   classId: true,
+  coachId: true,
+  coach: person,
+  class: { select: { coachId: true, coach: person } },
   sessionNumber: true,
   sessionDate: true,
   startTime: true,

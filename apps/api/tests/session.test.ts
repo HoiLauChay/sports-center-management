@@ -8,7 +8,7 @@ import notificationService from '~/services/notification.service';
 import { addDays, todayInCenter } from '~/utils/time';
 import { seedOpenClass } from './helpers/class';
 import { resetDatabase } from './helpers/db';
-import { createAccount, readCode, readResult, startServer } from './helpers/http';
+import { buildFetcher, createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
 import { seedBooking, seedFacility } from './helpers/schedule';
 
 let server: Server;
@@ -153,5 +153,57 @@ describe('viewing class sessions', () => {
     });
     expect((await request('GET', `/${first.id}`, stranger)).status).toBe(403);
     expect((await request('GET', `/${first.id}`, member)).status).toBe(403);
+  });
+});
+
+describe('substitute coach for one session', () => {
+  test('the manager hands one session to another coach, who then runs it instead of the class coach', async () => {
+    const { manager, member, other, cls, first, last } = await setup();
+    const course = await prisma.course.findUniqueOrThrow({ where: { id: cls.courseId } });
+    const classCoach: Viewer = { id: cls.coachId!, role: 'COACH' };
+    const substitute = await createAccount('COACH', 'substitute@example.com');
+    await prisma.coachSpecialization.create({
+      data: { coachId: substitute.id, sportId: course.sportId, status: 'APPROVED' },
+    });
+    const outsider = await createAccount('COACH', 'outsider@example.com');
+    const api = buildFetcher(`http://localhost:${(server.address() as { port: number }).port}/api/v1`);
+    const scheduleOf = async (coach: Viewer) =>
+      (await readResult<ClassSession[]>(await api('GET', `/coach/schedule?from=${date(0)}&to=${date(30)}`, coach))).map(
+        ({ id }) => id,
+      );
+
+    const wrongSport = await request('PATCH', `/${first.id}`, manager, { coachId: outsider.id });
+    expect(wrongSport.status).toBe(422);
+
+    const handed = await request('PATCH', `/${first.id}`, manager, { coachId: substitute.id });
+    expect(handed.status).toBe(200);
+    expect(await readResult<ClassSession>(handed)).toMatchObject({
+      coach: { id: substitute.id },
+      isSubstitute: true,
+    });
+    const told = await prisma.notification.findMany({ where: { title: 'Đổi huấn luyện viên buổi học' } });
+    expect(told.map(({ accountId }) => accountId).sort()).toEqual(
+      [classCoach.id, substitute.id, member.id, other.id].sort(),
+    );
+
+    expect((await request('GET', `/${first.id}/attendance`, substitute)).status).toBe(200);
+    expect((await request('GET', `/${first.id}/attendance`, classCoach)).status).toBe(403);
+    expect((await request('GET', `/${first.id}`, classCoach)).status).toBe(200);
+    expect(await scheduleOf(substitute)).toEqual([first.id]);
+    expect(await scheduleOf(classCoach)).toEqual([last.id]);
+
+    const busy = await seedOpenClass();
+    await prisma.class.update({ where: { id: busy.id }, data: { coachId: substitute.id } });
+    const clash = await request('PATCH', `/${last.id}`, manager, { coachId: substitute.id });
+    expect([clash.status, await readCode(clash)]).toEqual([409, 'SCHEDULE_CONFLICT']);
+
+    const back = await request('PATCH', `/${first.id}`, manager, { coachId: null });
+    expect(await readResult<ClassSession>(back)).toMatchObject({ coach: { id: classCoach.id }, isSubstitute: false });
+
+    await request('PATCH', `/${first.id}`, manager, { coachId: substitute.id });
+    await prisma.class.update({ where: { id: busy.id }, data: { coachId: null, status: 'DRAFT' } });
+    const deactivated = await api('PATCH', `/users/${substitute.id}/status`, manager, { status: 'INACTIVE' });
+    expect(deactivated.status).toBe(200);
+    expect((await prisma.classSession.findUniqueOrThrow({ where: { id: first.id } })).coachId).toBeNull();
   });
 });

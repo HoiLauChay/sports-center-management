@@ -9,8 +9,12 @@ import {
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
+import { sessionCoachId } from '~/mappers/class.mapper';
+import { toAnnouncementResponse } from '~/mappers/classTraining.mapper';
 import { toEvaluationResponse, toSessionNoteResponse } from '~/mappers/training.mapper';
+import attendanceRepository from '~/repositories/attendance.repository';
 import classRepository from '~/repositories/class.repository';
+import classTrainingRepository from '~/repositories/classTraining.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import trainingRepository, { type TrainingSessionRow } from '~/repositories/training.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -18,6 +22,7 @@ import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import uploadService from '~/services/upload.service';
 import { isUniqueViolation } from '~/utils/dbError';
+import { formatDate, fromDbTime, toCenterDateTime } from '~/utils/time';
 import { runTransaction } from '~/utils/transaction';
 
 type Actor = { id: string; role: Role };
@@ -51,8 +56,11 @@ const requireSession = async (id: string) => {
   return session;
 };
 
+const followsSession = (actor: Actor, session: TrainingSessionRow) =>
+  teaches(actor, sessionCoachId(session)) || teaches(actor, session.class.coachId);
+
 const assertStaff = (actor: Actor, session: TrainingSessionRow) => {
-  if (actor.role !== 'MANAGER' && !teaches(actor, session.class.coachId)) {
+  if (actor.role !== 'MANAGER' && !followsSession(actor, session)) {
     throw forbidden('Bạn chỉ thao tác được lớp mình phụ trách');
   }
 };
@@ -72,14 +80,18 @@ class TrainingService {
     const allowed =
       actor.role === 'MEMBER'
         ? await enrollmentRepository.hasActive(session.classId, actor.id)
-        : actor.role === 'MANAGER' || teaches(actor, session.class.coachId);
+        : actor.role === 'MANAGER' || followsSession(actor, session);
     if (!allowed) throw forbidden('Bạn không xem được ghi chú của buổi học này');
     return toSessionNoteResponse(session);
   };
 
-  saveNote = async (actor: Actor, sessionId: string, { title, content, attachments }: SaveSessionNoteBody) => {
+  saveNote = async (
+    actor: Actor,
+    sessionId: string,
+    { title, content, homework, attachments }: SaveSessionNoteBody,
+  ) => {
     const session = await requireSession(sessionId);
-    if (!teaches(actor, session.class.coachId)) throw forbidden('Chỉ huấn luyện viên của lớp được viết ghi chú');
+    if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được viết ghi chú');
     const current = new Set(Array.isArray(session.noteAttachments) ? (session.noteAttachments as string[]) : []);
     attachments.forEach((url, index) => {
       const kept = current.has(url) ? url : null;
@@ -88,6 +100,7 @@ class TrainingService {
     const row = await trainingRepository.saveNote(sessionId, {
       noteTitle: title,
       noteContent: content,
+      noteHomework: homework || null,
       noteAttachments: attachments,
       noteUpdatedAt: new Date(),
     });
@@ -103,9 +116,20 @@ class TrainingService {
     const { row, notifications } = await runTransaction(async (tx) => {
       const session = await trainingRepository.findSession(sessionId, tx);
       if (!session || session.class.deletedAt) throw notFound('Không tìm thấy buổi học');
-      if (!teaches(actor, session.class.coachId)) throw forbidden('Chỉ huấn luyện viên của lớp được đánh giá');
-      if (session.status === 'CANCELLED') throw invalidState('Không thể đánh giá buổi học đã hủy');
+      if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được ghi kết quả');
+      if (session.status === 'CANCELLED') throw invalidState('Không thể ghi kết quả buổi học đã hủy');
+      if (toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.startTime)) > new Date()) {
+        throw invalidState('Buổi học chưa bắt đầu');
+      }
       if (!(await enrollmentRepository.hasActive(session.classId, body.accountId, tx))) throw invalidStudent();
+      const attendance = await attendanceRepository.findOne(sessionId, body.accountId, tx);
+      if (attendance?.status !== 'PRESENT' && attendance?.status !== 'LATE') {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          code: ERROR_CODE.VALIDATION,
+          message: 'Chỉ ghi kết quả cho học viên có mặt hoặc đi muộn',
+        });
+      }
       if (await trainingRepository.hasEvaluation(sessionId, body.accountId, tx)) throw alreadyEvaluated();
       const row = await trainingRepository.createEvaluation(
         { sessionId, accountId: body.accountId, coachId: actor.id, rating: body.rating, comment: body.comment || null },
@@ -191,27 +215,43 @@ class TrainingService {
   listMyEvaluations = async (accountId: string, { classId }: MyEvaluationsQuery) =>
     (await trainingRepository.findMemberEvaluations(accountId, classId)).map(toEvaluationResponse);
 
-  announce = async (actor: Actor, classId: string, { title, body }: CreateAnnouncementBody) => {
+  announce = async (actor: Actor, classId: string, { kind, title, body }: CreateAnnouncementBody) => {
     const cls = await classRepository.findDetail(classId);
     if (!cls) throw notFound('Không tìm thấy lớp học');
     if (actor.role !== 'MANAGER' && !teaches(actor, cls.coachId)) {
       throw forbidden('Bạn chỉ gửi thông báo cho lớp mình phụ trách');
     }
-    const notifications = await runTransaction(async (tx) => {
+    const { announcement, notifications } = await runTransaction(async (tx) => {
+      const announcement = await classTrainingRepository.createAnnouncement(
+        { classId, senderId: actor.id, kind, title, body },
+        tx,
+      );
       const students = await enrollmentRepository.findActiveByClass(classId, tx);
-      return notificationService.create(
+      const notifications = await notificationService.create(
         students.map(({ accountId }) => ({
           accountId,
           type: 'TRAINING' as const,
-          title,
+          title: kind === 'HOMEWORK' ? `Bài tập về nhà: ${title}` : title,
           message: body,
           referenceType: 'CLASS',
           referenceId: classId,
         })),
         tx,
       );
+      return { announcement, notifications };
     });
-    return { recipients: notifications.length };
+    return { ...toAnnouncementResponse(announcement), recipients: notifications.length };
+  };
+
+  listAnnouncements = async (actor: Actor, classId: string) => {
+    const cls = await classRepository.findDetail(classId);
+    if (!cls) throw notFound('Không tìm thấy lớp học');
+    const allowed =
+      actor.role === 'MEMBER'
+        ? await enrollmentRepository.hasActive(classId, actor.id)
+        : actor.role === 'MANAGER' || teaches(actor, cls.coachId);
+    if (!allowed) throw forbidden('Bạn không xem được thông báo của lớp này');
+    return (await classTrainingRepository.findAnnouncements(classId)).map(toAnnouncementResponse);
   };
 }
 

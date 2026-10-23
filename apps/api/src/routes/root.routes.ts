@@ -28,7 +28,7 @@ import settingRouter from '~/routes/setting.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
 import { mySupportRouter, supportRouter } from '~/routes/support.routes';
-import { evaluationRouter, myEvaluationRouter } from '~/routes/training.routes';
+import { evaluationRouter, myClassRouter, myEvaluationRouter } from '~/routes/training.routes';
 import uploadRouter from '~/routes/upload.routes';
 import userRouter from '~/routes/user.routes';
 import { myWalletRouter, walletRouter } from '~/routes/wallet.routes';
@@ -64,6 +64,7 @@ export const apiRoutes: [string, Router][] = [
   ['/memberships', membershipRouter],
   ['/me/bookings', myBookingRouter],
   ['/me/checkins', myCheckinRouter],
+  ['/me/classes', myClassRouter],
   ['/me/enrollments', myEnrollmentRouter],
   ['/me/evaluations', myEvaluationRouter],
   ['/me/facility-packages', myFacilityPackageRouter],

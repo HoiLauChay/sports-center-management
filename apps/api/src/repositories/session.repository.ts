@@ -34,6 +34,7 @@ class SessionRepository {
             name: true,
             status: true,
             coachId: true,
+            coach: { select: { id: true, fullName: true } },
             startDate: true,
             endDate: true,
             course: { select: { sportId: true } },
@@ -55,6 +56,12 @@ class SessionRepository {
 
   update = (id: string, data: Prisma.ClassSessionUncheckedUpdateInput, tx: Prisma.TransactionClient) =>
     tx.classSession.update({ where: { id }, data, select: { ...sessionSelect, facilityId: true } });
+
+  clearSubstitutes = (coachId: string, from: string, tx: Prisma.TransactionClient) =>
+    tx.classSession.updateMany({
+      where: { coachId, status: 'SCHEDULED', sessionDate: { gte: new Date(from) } },
+      data: { coachId: null },
+    });
 
   dateBounds = (classId: string, tx: Prisma.TransactionClient) =>
     tx.classSession.aggregate({
