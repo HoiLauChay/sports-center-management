@@ -1,4 +1,4 @@
-import { ATTENDANCE_RULES } from '@sports-center/shared';
+import { ATTENDANCE_RULES, type ClassSession, type ProgressMilestone } from '@sports-center/shared';
 import { addDays, fromMinutes, isPast, todayVN, toMinutes } from '~/lib/time';
 
 export type SessionPhase = 'UPCOMING' | 'LIVE' | 'DONE';
@@ -30,4 +30,17 @@ export function attendanceLockReason({ date, startTime }: Timed): string | null 
     return `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học. Liên hệ quản lý nếu cần sửa điểm danh.`;
   }
   return null;
+}
+
+export const MILESTONE_LABEL: Record<ProgressMilestone, string> = { MID: 'Giữa khóa', FINAL: 'Cuối khóa' };
+
+/** Which progress reviews are open for a class (BR_4.9): mid once half the sessions started, final from the last day. */
+export function reachedMilestones(sessions: ClassSession[]): Record<ProgressMilestone, boolean> {
+  const scheduled = sessions.filter((session) => session.status === 'SCHEDULED');
+  const started = scheduled.filter((session) => isPast(session.date, session.startTime)).length;
+  const last = scheduled.at(-1);
+  return {
+    MID: scheduled.length > 0 && started >= Math.ceil(scheduled.length / 2),
+    FINAL: Boolean(last && todayVN() >= last.date),
+  };
 }

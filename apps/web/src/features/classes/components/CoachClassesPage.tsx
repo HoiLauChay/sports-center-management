@@ -1,6 +1,6 @@
 import type { ClassSummary } from '@sports-center/shared';
+import { Link } from '@tanstack/react-router';
 import { Button, Card, Popconfirm, Space, Table, type TableColumnsType } from 'antd';
-import { useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
@@ -9,7 +9,6 @@ import { todayVN } from '~/lib/time';
 import { useMyClasses, useWithdrawFromClass } from '../hooks/useCoachClasses';
 import { classDateRange } from '../utils';
 import { ClassStatusTag, WeeklyTags } from './ClassTableParts';
-import { CoachClassStudentsModal } from './CoachClassStudentsModal';
 
 /** The API lets a coach leave an open or pending class before its first session. */
 const canWithdraw = (item: ClassSummary) =>
@@ -19,16 +18,15 @@ const canWithdraw = (item: ClassSummary) =>
 export function CoachClassesPage() {
   const classes = useMyClasses();
   const withdraw = useWithdrawFromClass();
-  const [studentsOf, setStudentsOf] = useState<ClassSummary | null>(null);
 
   const columns: TableColumnsType<ClassSummary> = [
     {
       title: 'Lớp',
       dataIndex: 'name',
       render: (name: string, record) => (
-        <Button type="link" className="!h-auto !p-0 !font-semibold" onClick={() => setStudentsOf(record)}>
+        <Link to="/coach/classes/$classId" params={{ classId: record.id }} className="font-semibold">
           {name}
-        </Button>
+        </Link>
       ),
     },
     {
@@ -47,9 +45,9 @@ export function CoachClassesPage() {
       align: 'right',
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => setStudentsOf(record)}>
-            Chi tiết
-          </Button>
+          <Link to="/coach/classes/$classId" params={{ classId: record.id }}>
+            <Button size="small">Chi tiết</Button>
+          </Link>
           {canWithdraw(record) && (
             <Popconfirm
               title="Rút khỏi lớp này?"
@@ -93,7 +91,6 @@ export function CoachClassesPage() {
           />
         )}
       </Card>
-      <CoachClassStudentsModal gymClass={studentsOf} onClose={() => setStudentsOf(null)} />
     </>
   );
 }

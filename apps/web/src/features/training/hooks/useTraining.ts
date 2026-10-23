@@ -104,9 +104,13 @@ export function useSaveNote(sessionId: string) {
 
 export function useSendAnnouncement(classId: string) {
   const { message } = App.useApp();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateAnnouncementBody) => trainingService.announce(classId, body),
-    onSuccess: ({ recipients }) => message.success(`Đã gửi thông báo cho ${recipients} học viên.`),
+    onSuccess: ({ recipients }) => {
+      void queryClient.invalidateQueries({ queryKey: ['training', 'class', classId, 'announcements'] });
+      message.success(`Đã gửi cho ${recipients} học viên.`);
+    },
     onError: (error) => message.error(describeApiError(error)),
   });
 }
