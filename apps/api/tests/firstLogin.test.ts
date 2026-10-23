@@ -4,10 +4,11 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import { prisma } from '~/configs/db';
+import { env } from '~/configs/env';
 import mailService from '~/services/mail.service';
 import { hashPassword } from '~/utils/password';
 import { resetDatabase } from './helpers/db';
-import { createAccount, readCode, readResult, startServer } from './helpers/http';
+import { buildFetcher, createAccount, readCode, readResult, startServer } from './helpers/http';
 
 let server: Server;
 let users: Awaited<ReturnType<typeof startServer>>['request'];
@@ -197,5 +198,111 @@ describe('first login', () => {
     expect(
       await prisma.notification.count({ where: { accountId: member.id, title: 'Email tài khoản đã được cập nhật' } }),
     ).toBe(1);
+  });
+});
+
+describe('first Google sign-in', () => {
+  const realFetch = globalThis.fetch;
+
+  /** Fakes Google's token and userinfo endpoints; `userinfo` replaces the profile Google would return. */
+  const fakeGoogle = (userinfo: () => Response) =>
+    spyOn(globalThis, 'fetch').mockImplementation((async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.startsWith('https://oauth2.googleapis.com/token')) return Response.json({ access_token: 'google-token' });
+      if (url.startsWith('https://www.googleapis.com/oauth2/v3/userinfo')) return userinfo();
+      return realFetch(input, init);
+    }) as typeof fetch);
+
+  /** Starts the flow like the browser does and returns the state the server put in its cookie. */
+  const begin = async (query = '') => {
+    const res = await fetch(`${authUrl}/google${query}`, { redirect: 'manual' });
+    const stateCookie = res.headers.getSetCookie().find((cookie) => cookie.startsWith('oauth_state=')) ?? '';
+    return decodeURIComponent(/^oauth_state=([^;]*)/.exec(stateCookie)?.[1] ?? '');
+  };
+
+  const callback = (query: string, cookieState?: string) =>
+    fetch(`${authUrl}/google/callback?${query}`, {
+      redirect: 'manual',
+      headers: cookieState ? { Cookie: `oauth_state=${cookieState}` } : {},
+    });
+
+  /** Runs the redirect + callback round trip; without ?redirect the server lands on the dashboard. */
+  const signInWithGoogle = async (email: string) => {
+    fakeGoogle(() => Response.json({ email, email_verified: true, name: 'Người Dùng Google' }));
+    const state = await begin();
+    const done = await callback(`code=abc&state=${state}`, state);
+    expect(done.headers.get('location')).toBe('http://localhost:5173/dashboard');
+    return prisma.account.findUniqueOrThrow({ where: { email } });
+  };
+
+  beforeAll(() => {
+    env.GOOGLE_CLIENT_ID = 'test-client.apps.googleusercontent.com';
+    env.GOOGLE_CLIENT_SECRET = 'test-secret';
+  });
+
+  test('a new account must pick a password, then signs in with it like any other', async () => {
+    const created = await signInWithGoogle('first.google@example.com');
+    expect([created.role, created.mustSetPassword]).toEqual(['MEMBER', true]);
+
+    const me = buildFetcher(authUrl);
+    const mismatch = await me('POST', '/first-password', created, {
+      password: 'NewPassword1',
+      confirmPassword: 'Other1234',
+    });
+    expect(mismatch.status).toBe(422);
+
+    const body = { password: 'NewPassword1', confirmPassword: 'NewPassword1' };
+    const set = await me('POST', '/first-password', created, body);
+    expect(set.status).toBe(200);
+    expect(set.headers.getSetCookie().some((cookie) => cookie.startsWith('access_token='))).toBe(true);
+    expect((await readResult<Account>(set)).mustSetPassword).toBe(false);
+
+    const again = await me('POST', '/first-password', created, body);
+    expect([again.status, await readCode(again)]).toEqual([409, 'INVALID_STATE']);
+    expect((await post('/login', { email: created.email, password: 'NewPassword1' })).status).toBe(200);
+  });
+
+  test('an email that already has an account just signs in, keeping its password and role', async () => {
+    const coach = await createAccount('COACH', 'coach.google@example.com', {
+      passwordHash: await hashPassword('OldPassword1'),
+      emailVerifiedAt: new Date(),
+    });
+
+    const signedIn = await signInWithGoogle(coach.email);
+    expect([signedIn.id, signedIn.role, signedIn.mustSetPassword]).toEqual([coach.id, 'COACH', false]);
+    expect((await post('/login', { email: coach.email, password: 'OldPassword1' })).status).toBe(200);
+
+    const blocked = await buildFetcher(authUrl)('POST', '/first-password', coach, {
+      password: 'NewPassword1',
+      confirmPassword: 'NewPassword1',
+    });
+    expect([blocked.status, await readCode(blocked)]).toEqual([409, 'INVALID_STATE']);
+  });
+
+  test('failures come back to /login as fixed codes, never as raw error text', async () => {
+    const loginError = async (res: Response) => new URL(res.headers.get('location') ?? '').searchParams.get('error');
+
+    expect(await loginError(await callback('error=access_denied'))).toBe('CANCELLED');
+    expect(await loginError(await callback('error=server_error'))).toBe('FAILED');
+
+    const state = await begin('?redirect=//evil.example');
+    expect(JSON.parse(Buffer.from(state, 'base64url').toString('utf8')).redirect).toBe('/dashboard');
+    expect(await loginError(await callback(`code=abc&state=${state}`))).toBe('STATE_MISMATCH');
+    expect(await loginError(await callback(`code=abc&state=${state}`, 'other'))).toBe('STATE_MISMATCH');
+
+    await createAccount('MEMBER', 'off@example.com', { status: 'INACTIVE' });
+    fakeGoogle(() => Response.json({ email: 'off@example.com', email_verified: true }));
+    expect(await loginError(await callback(`code=abc&state=${state}`, state))).toBe('ACCOUNT_INACTIVE');
+
+    fakeGoogle(() => Response.json({ email: 'unverified@example.com', email_verified: false }));
+    expect(await loginError(await callback(`code=abc&state=${state}`, state))).toBe('EMAIL_UNVERIFIED');
+
+    spyOn(console, 'error').mockImplementation(() => undefined);
+    fakeGoogle(() => {
+      throw new Error('Invalid `prisma.account.findUnique()` invocation');
+    });
+    const crashed = await callback(`code=abc&state=${state}`, state);
+    expect(await loginError(crashed)).toBe('FAILED');
+    expect(crashed.headers.get('location')).not.toContain('prisma');
   });
 });
