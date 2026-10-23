@@ -2,11 +2,12 @@ import { ERROR_CODE, type ListSessionsQuery, type Role, type UpdateSessionBody }
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
-import { toSessionResponse } from '~/mappers/class.mapper';
+import { sessionCoachId, toSessionResponse } from '~/mappers/class.mapper';
 import { toSessionDetailResponse } from '~/mappers/session.mapper';
 import classRepository from '~/repositories/class.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import sessionRepository from '~/repositories/session.repository';
+import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
@@ -47,7 +48,7 @@ class SessionService {
   get = async (actor: { id: string; role: Role }, id: string) => {
     const row = await sessionRepository.findDetail(id);
     if (!row) throw notFound();
-    if (actor.role === 'COACH' && row.class.coachId !== actor.id) throw forbidden();
+    if (actor.role === 'COACH' && sessionCoachId(row) !== actor.id && row.class.coachId !== actor.id) throw forbidden();
     return toSessionDetailResponse(row);
   };
 
@@ -77,17 +78,38 @@ class SessionService {
     if (!current) throw notFound();
     const cls = current.class;
     const now = new Date();
+    const moving =
+      body.date !== undefined ||
+      body.startTime !== undefined ||
+      body.endTime !== undefined ||
+      body.facilityId !== undefined;
+    const currentDate = formatDate(current.sessionDate);
     if (
       cls.status === 'CANCELLED' ||
       current.status !== 'SCHEDULED' ||
-      toCenterDateTime(formatDate(current.sessionDate), fromDbTime(current.startTime)) <= now
+      toCenterDateTime(currentDate, fromDbTime(current.endTime)) <= now ||
+      (moving && toCenterDateTime(currentDate, fromDbTime(current.startTime)) <= now)
     ) {
       throw new ErrorWithStatus({
         status: HTTP_STATUS.CONFLICT,
         code: ERROR_CODE.INVALID_STATE,
-        message: 'Chỉ được sửa buổi chưa diễn ra và chưa bị hủy',
+        message: moving
+          ? 'Chỉ được dời hoặc đổi phòng buổi chưa diễn ra và chưa bị hủy'
+          : 'Chỉ được đổi huấn luyện viên của buổi chưa kết thúc và chưa bị hủy',
       });
     }
+
+    const currentCoachId = sessionCoachId(current);
+    let substituteId = current.coachId;
+    if (body.coachId !== undefined) {
+      const target = body.coachId ?? cls.coachId;
+      substituteId = target === cls.coachId ? null : target;
+      if (substituteId && !(await specializationRepository.isQualified(substituteId, cls.course.sportId, tx))) {
+        throw invalid('coachId', 'Huấn luyện viên không hoạt động hoặc chưa được duyệt bộ môn');
+      }
+    }
+    const nextCoachId = substituteId ?? cls.coachId;
+    const coachChanged = nextCoachId !== currentCoachId;
 
     const date = body.date ?? formatDate(current.sessionDate);
     const start = body.startTime === undefined ? fromDbTime(current.startTime) : parseTime(body.startTime);
@@ -100,21 +122,30 @@ class SessionService {
     if (!facility.sports.some(({ sport }) => sport.id === cls.course.sportId)) {
       throw invalid('facilityId', 'Cơ sở không hỗ trợ bộ môn của khóa học');
     }
-    await scheduleService.assertAvailable(tx, {
-      ranges: [{ date, start, end }],
-      facility: { id: facilityId, exclusive: true },
-      coachId: cls.coachId ?? undefined,
-      accountIds: cls.enrollments.map(({ accountId }) => accountId),
-      ignoreSessionIds: [id],
-      now,
-    });
+    const moved =
+      date !== currentDate ||
+      start !== fromDbTime(current.startTime) ||
+      end !== fromDbTime(current.endTime) ||
+      facilityId !== current.facilityId;
+    if (moved) {
+      await scheduleService.assertAvailable(tx, {
+        ranges: [{ date, start, end }],
+        facility: { id: facilityId, exclusive: true },
+        coachId: nextCoachId ?? undefined,
+        accountIds: cls.enrollments.map(({ accountId }) => accountId),
+        ignoreSessionIds: [id],
+        now,
+      });
+    } else if (coachChanged && nextCoachId) {
+      await scheduleService.assertAvailable(tx, {
+        ranges: [{ date, start, end }],
+        coachId: nextCoachId,
+        ignoreSessionIds: [id],
+        now,
+      });
+    }
 
-    if (
-      date === formatDate(current.sessionDate) &&
-      start === fromDbTime(current.startTime) &&
-      end === fromDbTime(current.endTime) &&
-      facilityId === current.facilityId
-    ) {
+    if (!moved && substituteId === current.coachId) {
       return { row: { ...current, facility: { id: facility.id, name: facility.name } }, notifications: [] };
     }
 
@@ -125,6 +156,7 @@ class SessionService {
         startTime: toDbTime(start),
         endTime: toDbTime(end),
         facilityId,
+        coachId: substituteId,
       },
       tx,
     );
@@ -160,21 +192,32 @@ class SessionService {
         tx,
       );
     }
-    const recipients = [
-      ...new Set([...(cls.coachId ? [cls.coachId] : []), ...cls.enrollments.map(({ accountId }) => accountId)]),
-    ];
-    const notifications = await notificationService.create(
-      recipients.map((accountId) => ({
-        accountId,
-        type: 'CLASS',
-        title: 'Lịch buổi học đã thay đổi',
-        message: `Buổi ${current.sessionNumber} lớp "${cls.name}" đổi từ ${formatCenterDate(formatDate(current.sessionDate))} ${formatTime(fromDbTime(current.startTime))}–${formatTime(fromDbTime(current.endTime))} sang ${formatCenterDate(date)} ${formatTime(start)}–${formatTime(end)}, tại ${facility.name}.`,
-        referenceType: 'CLASS',
-        referenceId: cls.id,
-        sendEmail: true,
-      })),
-      tx,
-    );
+    const students = cls.enrollments.map(({ accountId }) => accountId);
+    const reference = { type: 'CLASS', referenceType: 'CLASS', referenceId: cls.id } as const;
+    const moveInputs = moved
+      ? [...new Set([...(nextCoachId ? [nextCoachId] : []), ...students])].map((accountId) => ({
+          ...reference,
+          accountId,
+          title: 'Lịch buổi học đã thay đổi',
+          message: `Buổi ${current.sessionNumber} lớp "${cls.name}" đổi từ ${formatCenterDate(currentDate)} ${formatTime(fromDbTime(current.startTime))}–${formatTime(fromDbTime(current.endTime))} sang ${formatCenterDate(date)} ${formatTime(start)}–${formatTime(end)}, tại ${facility.name}.`,
+          sendEmail: true,
+        }))
+      : [];
+    const coachName = (row.coach ?? row.class.coach)?.fullName ?? 'chưa có';
+    const coachInputs = coachChanged
+      ? [
+          ...new Set([
+            ...[currentCoachId, nextCoachId].filter((accountId): accountId is string => accountId !== null),
+            ...students,
+          ]),
+        ].map((accountId) => ({
+          ...reference,
+          accountId,
+          title: 'Đổi huấn luyện viên buổi học',
+          message: `Buổi ${current.sessionNumber} lớp "${cls.name}" ngày ${formatCenterDate(date)} ${formatTime(start)}–${formatTime(end)} do HLV ${coachName} ${substituteId ? 'dạy thay' : 'phụ trách'}.`,
+        }))
+      : [];
+    const notifications = await notificationService.create([...moveInputs, ...coachInputs], tx);
     return { row, notifications };
   };
 }

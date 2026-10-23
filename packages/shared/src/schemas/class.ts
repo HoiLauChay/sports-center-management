@@ -120,6 +120,7 @@ export const updateSessionBodySchema = z
     startTime: timeOfDaySchema.optional(),
     endTime: timeOfDaySchema.optional(),
     facilityId: z.uuid('Mã cơ sở không hợp lệ').optional(),
+    coachId: z.uuid('Mã huấn luyện viên không hợp lệ').nullable().optional(),
   })
   .refine((body) => Object.values(body).some((value) => value !== undefined), 'Cần ít nhất một trường để cập nhật')
   .refine(({ startTime, endTime }) => startTime === undefined || endTime === undefined || startTime < endTime, {

@@ -17,6 +17,7 @@ import accountRepository, { type AccountWithProfile } from '~/repositories/accou
 import classRepository from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
+import sessionRepository from '~/repositories/session.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import authService from '~/services/auth.service';
@@ -24,6 +25,7 @@ import notificationService, { type NotificationInput } from '~/services/notifica
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
 import { toPage } from '~/utils/pagination';
+import { todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 interface Viewer {
@@ -297,6 +299,7 @@ class UserService {
       });
     }
 
+    await sessionRepository.clearSubstitutes(coach.id, todayInCenter(), tx);
     const classes = await classRepository.findNotStartedForCoach(coach.id, tx);
     if (classes.length === 0) return [];
 

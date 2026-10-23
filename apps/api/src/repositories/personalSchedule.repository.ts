@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { sessionSelect as baseSessionSelect, taughtBy } from '~/repositories/class.repository';
 
 const ref = { select: { id: true, name: true } } as const;
 
@@ -13,16 +14,8 @@ const bookingSelect = {
 } satisfies Prisma.FacilityBookingSelect;
 
 const sessionSelect = {
-  id: true,
-  classId: true,
-  sessionNumber: true,
-  sessionDate: true,
-  startTime: true,
-  endTime: true,
-  status: true,
-  cancelReason: true,
-  facility: ref,
-  class: { select: { id: true, name: true, coach: { select: { id: true, fullName: true } } } },
+  ...baseSessionSelect,
+  class: { select: { id: true, name: true, coachId: true, coach: { select: { id: true, fullName: true } } } },
 } satisfies Prisma.ClassSessionSelect;
 
 export type PersonalBookingRow = Prisma.FacilityBookingGetPayload<{ select: typeof bookingSelect }>;
@@ -61,7 +54,7 @@ class PersonalScheduleRepository {
 
   findCoachSessions = (coachId: string, from: string, to: string) =>
     prisma.classSession.findMany({
-      where: { class: { coachId }, sessionDate: between(from, to) },
+      where: { ...taughtBy(coachId), sessionDate: between(from, to) },
       select: sessionSelect,
       orderBy,
     });

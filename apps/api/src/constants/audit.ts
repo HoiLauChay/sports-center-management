@@ -76,7 +76,15 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'cancelReason',
     'deletedAt',
   ),
-  CLASS_SESSION: fields<ClassSession>()('facilityId', 'sessionDate', 'startTime', 'endTime', 'status', 'cancelReason'),
+  CLASS_SESSION: fields<ClassSession>()(
+    'facilityId',
+    'coachId',
+    'sessionDate',
+    'startTime',
+    'endTime',
+    'status',
+    'cancelReason',
+  ),
   CLASS_ATTENDANCE: fields<ClassAttendance & { noteChanged: boolean }>()(
     'sessionId',
     'accountId',

@@ -1,5 +1,6 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { taughtBy } from '~/repositories/class.repository';
 import { minutesInCenter, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
 
 const facilityRef = { select: { id: true, name: true } } as const;
@@ -74,7 +75,7 @@ class ScheduleRepository {
 
   findCoachSessions = (coachId: string, dates: string[], tx: Prisma.TransactionClient = prisma) =>
     tx.classSession.findMany({
-      where: { ...liveSession, class: { ...liveSession.class, coachId }, sessionDate: { in: toDays(dates) } },
+      where: { ...liveSession, ...taughtBy(coachId), sessionDate: { in: toDays(dates) } },
       select: sessionUsageSelect,
     });
 
@@ -120,6 +121,7 @@ class ScheduleRepository {
       where: { ...liveSession, sessionDate: { in: toDays(dates) } },
       select: {
         ...sessionSelect,
+        coachId: true,
         class: {
           select: {
             id: true,

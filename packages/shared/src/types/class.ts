@@ -23,6 +23,8 @@ export interface ClassSession {
   startTime: string;
   endTime: string;
   facility: Ref;
+  coach: Person | null;
+  isSubstitute: boolean;
   status: 'SCHEDULED' | 'CANCELLED';
   cancelReason: string | null;
 }

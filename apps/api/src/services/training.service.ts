@@ -9,6 +9,7 @@ import {
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
+import { sessionCoachId } from '~/mappers/class.mapper';
 import { toEvaluationResponse, toSessionNoteResponse } from '~/mappers/training.mapper';
 import classRepository from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
@@ -51,8 +52,11 @@ const requireSession = async (id: string) => {
   return session;
 };
 
+const followsSession = (actor: Actor, session: TrainingSessionRow) =>
+  teaches(actor, sessionCoachId(session)) || teaches(actor, session.class.coachId);
+
 const assertStaff = (actor: Actor, session: TrainingSessionRow) => {
-  if (actor.role !== 'MANAGER' && !teaches(actor, session.class.coachId)) {
+  if (actor.role !== 'MANAGER' && !followsSession(actor, session)) {
     throw forbidden('Bạn chỉ thao tác được lớp mình phụ trách');
   }
 };
@@ -72,14 +76,14 @@ class TrainingService {
     const allowed =
       actor.role === 'MEMBER'
         ? await enrollmentRepository.hasActive(session.classId, actor.id)
-        : actor.role === 'MANAGER' || teaches(actor, session.class.coachId);
+        : actor.role === 'MANAGER' || followsSession(actor, session);
     if (!allowed) throw forbidden('Bạn không xem được ghi chú của buổi học này');
     return toSessionNoteResponse(session);
   };
 
   saveNote = async (actor: Actor, sessionId: string, { title, content, attachments }: SaveSessionNoteBody) => {
     const session = await requireSession(sessionId);
-    if (!teaches(actor, session.class.coachId)) throw forbidden('Chỉ huấn luyện viên của lớp được viết ghi chú');
+    if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được viết ghi chú');
     const current = new Set(Array.isArray(session.noteAttachments) ? (session.noteAttachments as string[]) : []);
     attachments.forEach((url, index) => {
       const kept = current.has(url) ? url : null;
@@ -103,7 +107,7 @@ class TrainingService {
     const { row, notifications } = await runTransaction(async (tx) => {
       const session = await trainingRepository.findSession(sessionId, tx);
       if (!session || session.class.deletedAt) throw notFound('Không tìm thấy buổi học');
-      if (!teaches(actor, session.class.coachId)) throw forbidden('Chỉ huấn luyện viên của lớp được đánh giá');
+      if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được ghi kết quả');
       if (session.status === 'CANCELLED') throw invalidState('Không thể đánh giá buổi học đã hủy');
       if (!(await enrollmentRepository.hasActive(session.classId, body.accountId, tx))) throw invalidStudent();
       if (await trainingRepository.hasEvaluation(sessionId, body.accountId, tx)) throw alreadyEvaluated();

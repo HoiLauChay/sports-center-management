@@ -1,20 +1,8 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
+import { sessionSelect } from '~/repositories/class.repository';
 
-const ref = { select: { id: true, name: true } } as const;
 const person = { select: { id: true, fullName: true } } as const;
-
-const sessionSelect = {
-  id: true,
-  classId: true,
-  sessionNumber: true,
-  sessionDate: true,
-  startTime: true,
-  endTime: true,
-  facility: ref,
-  status: true,
-  cancelReason: true,
-} satisfies Prisma.ClassSessionSelect;
 
 const noteSessionSelect = {
   ...sessionSelect,
@@ -22,7 +10,7 @@ const noteSessionSelect = {
   noteContent: true,
   noteAttachments: true,
   noteUpdatedAt: true,
-  class: { select: { coachId: true, status: true, deletedAt: true } },
+  class: { select: { coachId: true, coach: { select: { id: true, fullName: true } }, status: true, deletedAt: true } },
 } satisfies Prisma.ClassSessionSelect;
 
 const evaluationSelect = {
