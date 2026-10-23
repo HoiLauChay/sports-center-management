@@ -97,10 +97,9 @@ class AccountRepository {
     data: {
       email: string;
       fullName: string;
-      passwordHash: string;
+      passwordHash: string | null;
       emailVerifiedAt: Date;
       avatarUrl?: string | null;
-      mustSetPassword?: boolean;
     },
     tx: Prisma.TransactionClient = prisma,
   ) =>
@@ -153,10 +152,10 @@ class AccountRepository {
       select: { id: true },
     });
 
-  replaceEmail = (id: string, email: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
+  replaceEmail = (id: string, email: string, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({
       where: { id },
-      data: { email, emailVerifiedAt: null, passwordHash, passwordChangedAt: new Date(), mustSetPassword: true },
+      data: { email, emailVerifiedAt: null, passwordHash: null, passwordChangedAt: new Date() },
       include: accountProfileInclude,
     });
 
@@ -180,7 +179,6 @@ class AccountRepository {
       data: {
         passwordHash,
         passwordChangedAt: new Date(),
-        mustSetPassword: false,
         emailVerifiedAt: account.emailVerifiedAt ?? new Date(),
       },
       include: accountProfileInclude,

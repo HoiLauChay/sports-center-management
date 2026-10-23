@@ -91,7 +91,7 @@ class AuthService {
 
   loginStart = async ({ email }: LoginStartBody): Promise<LoginStartResult> => {
     const account = await accountRepository.findByEmail(email);
-    if (!account || account.status !== 'ACTIVE' || !account.mustSetPassword) return { next: 'PASSWORD' };
+    if (!account || account.status !== 'ACTIVE' || account.passwordHash !== null) return { next: 'PASSWORD' };
 
     const retryAfter = await this.otpCooldown(email, 'ACCOUNT_SETUP');
     if (retryAfter) return { next: 'SET_PASSWORD', retryAfter };
@@ -106,7 +106,7 @@ class AuthService {
   setPassword = async ({ email, otp, password }: SetPasswordBody, meta: SessionMeta) => {
     const record = await this.verifyOtp(email, 'ACCOUNT_SETUP', otp);
     const account = await accountRepository.findByEmail(email);
-    if (!account || !account.mustSetPassword) {
+    if (!account || account.passwordHash !== null) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu, vui lòng đăng nhập');
     }
     if (account.status !== 'ACTIVE') {
@@ -126,7 +126,7 @@ class AuthService {
 
   setFirstPassword = async (accountId: string, { password }: FirstPasswordBody, meta: SessionMeta) => {
     const account = await accountRepository.findById(accountId);
-    if (!account || !account.mustSetPassword) {
+    if (!account || account.passwordHash !== null) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu');
     }
     if (account.status !== 'ACTIVE') {
@@ -210,7 +210,7 @@ class AuthService {
     const account = await accountRepository.findByEmail(email);
     const valid = await verifyPassword(password, account?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
-    if (!account || !valid || account.mustSetPassword) {
+    if (!account?.passwordHash || !valid) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng');
     }
     if (account.status !== 'ACTIVE') {
@@ -323,7 +323,7 @@ class AuthService {
 
   changePassword = async (accountId: string, { currentPassword, password }: ChangePasswordBody) => {
     const account = await accountRepository.findById(accountId);
-    if (!account || !(await verifyPassword(currentPassword, account.passwordHash))) {
+    if (!account?.passwordHash || !(await verifyPassword(currentPassword, account.passwordHash))) {
       throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng');
     }
 
@@ -391,7 +391,7 @@ class AuthService {
     }
 
     const account = await accountRepository.findByEmail(record.email);
-    if (!account || account.status !== 'ACTIVE' || !account.mustSetPassword) throw invalidActivation();
+    if (!account || account.status !== 'ACTIVE' || account.passwordHash !== null) throw invalidActivation();
     return { record, account };
   };
 
@@ -507,15 +507,13 @@ class AuthService {
       return { account: toAccountResponse(account), ...tokens };
     }
 
-    const placeholderHash = await hashPassword(generateOpaqueToken());
     return this.createMemberWithSession(
       {
         email,
         fullName: googleUser.name?.trim() || email.split('@')[0] || 'Member',
         avatarUrl: googleUser.picture ?? null,
-        passwordHash: placeholderHash,
+        passwordHash: null,
         emailVerifiedAt: new Date(),
-        mustSetPassword: true,
       },
       {
         message:

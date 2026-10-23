@@ -148,7 +148,7 @@ describe('first login', () => {
   });
 
   test('unknown, inactive and ordinary accounts go to the password step without an email', async () => {
-    await createAccount('COACH', 'inactive@example.com', { mustSetPassword: true, status: 'INACTIVE' });
+    await createAccount('COACH', 'inactive@example.com', { passwordHash: null, status: 'INACTIVE' });
     await createAccount('MEMBER', 'member@example.com');
 
     expect(await start('nobody@example.com')).toEqual({ next: 'PASSWORD' });
@@ -239,7 +239,7 @@ describe('first Google sign-in', () => {
 
   test('a new account has no password until it sets one, then signs in with it like any other', async () => {
     const created = await signInWithGoogle('first.google@example.com');
-    expect([created.role, created.mustSetPassword]).toEqual(['MEMBER', true]);
+    expect([created.role, created.passwordHash]).toEqual(['MEMBER', null]);
 
     const me = buildFetcher(authUrl);
     const mismatch = await me('POST', '/first-password', created, {
@@ -266,7 +266,7 @@ describe('first Google sign-in', () => {
     });
 
     const signedIn = await signInWithGoogle(coach.email);
-    expect([signedIn.id, signedIn.role, signedIn.mustSetPassword]).toEqual([coach.id, 'COACH', false]);
+    expect([signedIn.id, signedIn.role, signedIn.passwordHash]).toEqual([coach.id, 'COACH', coach.passwordHash]);
     expect((await post('/login', { email: coach.email, password: 'OldPassword1' })).status).toBe(200);
 
     const blocked = await buildFetcher(authUrl)('POST', '/first-password', coach, {
@@ -277,7 +277,7 @@ describe('first Google sign-in', () => {
   });
 
   test('an account the manager created is verified and gets the Google picture, but still needs a password', async () => {
-    const coach = await createAccount('COACH', 'staff.google@example.com', { mustSetPassword: true });
+    const coach = await createAccount('COACH', 'staff.google@example.com', { passwordHash: null });
     fakeGoogle(() =>
       Response.json({ email: coach.email, email_verified: true, picture: 'https://lh3.googleusercontent.com/a/x' }),
     );
@@ -286,7 +286,7 @@ describe('first Google sign-in', () => {
 
     const signedIn = await prisma.account.findUniqueOrThrow({ where: { id: coach.id } });
     expect(signedIn.emailVerifiedAt).not.toBeNull();
-    expect([signedIn.avatarUrl, signedIn.mustSetPassword]).toEqual(['https://lh3.googleusercontent.com/a/x', true]);
+    expect([signedIn.avatarUrl, signedIn.passwordHash]).toEqual(['https://lh3.googleusercontent.com/a/x', null]);
   });
 
   test('failures come back to /login as fixed codes, never as raw error text', async () => {
