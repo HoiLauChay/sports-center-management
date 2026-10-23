@@ -4,6 +4,7 @@ import type { ClassSession } from './class';
 export interface SessionNote {
   title: string;
   content: string;
+  homework: string | null;
   attachments: string[];
   updatedAt: string;
 }

@@ -71,6 +71,12 @@ class AttendanceRepository {
       select: attendanceSelect,
     });
 
+  findOne = (sessionId: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
+    tx.classAttendance.findUnique({
+      where: { sessionId_accountId: { sessionId, accountId } },
+      select: { status: true },
+    });
+
   findMine = async (accountId: string, classId?: string) => {
     const sessions = await prisma.classSession.findMany({
       where: { classId, class: { enrollments: { some: { accountId } } } },

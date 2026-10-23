@@ -6,6 +6,7 @@ const commentSchema = z.string().trim().max(2000, 'Nhận xét tối đa 2000 k�
 export const saveSessionNoteBodySchema = z.object({
   title: z.string('Vui lòng nhập tiêu đề').trim().min(1, 'Vui lòng nhập tiêu đề').max(255, 'Tiêu đề tối đa 255 ký tự'),
   content: z.string('Vui lòng nhập nội dung').trim().min(1, 'Vui lòng nhập nội dung').max(20_000, 'Nội dung quá dài'),
+  homework: z.string().trim().max(5000, 'Bài tập về nhà tối đa 5000 ký tự').optional(),
   attachments: z
     .array(z.url('Tệp đính kèm không hợp lệ'), 'Tệp đính kèm không hợp lệ')
     .max(10, 'Tối đa 10 tệp')

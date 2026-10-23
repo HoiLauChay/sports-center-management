@@ -9,6 +9,7 @@ export const toSessionNoteResponse = (row: TrainingSessionRow): SessionNote | nu
     : {
         title: row.noteTitle,
         content: row.noteContent ?? '',
+        homework: row.noteHomework,
         attachments: Array.isArray(row.noteAttachments) ? (row.noteAttachments as string[]) : [],
         updatedAt: row.noteUpdatedAt.toISOString(),
       };

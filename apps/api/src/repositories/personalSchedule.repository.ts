@@ -18,8 +18,21 @@ const sessionSelect = {
   class: { select: { id: true, name: true, coachId: true, coach: { select: { id: true, fullName: true } } } },
 } satisfies Prisma.ClassSessionSelect;
 
+const coachSessionSelect = {
+  ...sessionSelect,
+  noteTitle: true,
+  _count: { select: { attendances: true } },
+  class: {
+    select: {
+      ...sessionSelect.class.select,
+      enrollments: { select: { enrolledAt: true, cancelledAt: true } },
+    },
+  },
+} satisfies Prisma.ClassSessionSelect;
+
 export type PersonalBookingRow = Prisma.FacilityBookingGetPayload<{ select: typeof bookingSelect }>;
 export type PersonalSessionRow = Prisma.ClassSessionGetPayload<{ select: typeof sessionSelect }>;
+export type CoachSessionRow = Prisma.ClassSessionGetPayload<{ select: typeof coachSessionSelect }>;
 
 const between = (from: string, to: string) => ({ gte: new Date(from), lte: new Date(to) });
 const orderBy = [
@@ -55,7 +68,7 @@ class PersonalScheduleRepository {
   findCoachSessions = (coachId: string, from: string, to: string) =>
     prisma.classSession.findMany({
       where: { ...taughtBy(coachId), sessionDate: between(from, to) },
-      select: sessionSelect,
+      select: coachSessionSelect,
       orderBy,
     });
 }

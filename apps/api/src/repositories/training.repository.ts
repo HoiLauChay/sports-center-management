@@ -8,6 +8,7 @@ const noteSessionSelect = {
   ...sessionSelect,
   noteTitle: true,
   noteContent: true,
+  noteHomework: true,
   noteAttachments: true,
   noteUpdatedAt: true,
   class: { select: { coachId: true, coach: { select: { id: true, fullName: true } }, status: true, deletedAt: true } },

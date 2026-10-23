@@ -11,6 +11,7 @@ import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import { sessionCoachId } from '~/mappers/class.mapper';
 import { toEvaluationResponse, toSessionNoteResponse } from '~/mappers/training.mapper';
+import attendanceRepository from '~/repositories/attendance.repository';
 import classRepository from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import trainingRepository, { type TrainingSessionRow } from '~/repositories/training.repository';
@@ -19,6 +20,7 @@ import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import uploadService from '~/services/upload.service';
 import { isUniqueViolation } from '~/utils/dbError';
+import { formatDate, fromDbTime, toCenterDateTime } from '~/utils/time';
 import { runTransaction } from '~/utils/transaction';
 
 type Actor = { id: string; role: Role };
@@ -81,7 +83,11 @@ class TrainingService {
     return toSessionNoteResponse(session);
   };
 
-  saveNote = async (actor: Actor, sessionId: string, { title, content, attachments }: SaveSessionNoteBody) => {
+  saveNote = async (
+    actor: Actor,
+    sessionId: string,
+    { title, content, homework, attachments }: SaveSessionNoteBody,
+  ) => {
     const session = await requireSession(sessionId);
     if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được viết ghi chú');
     const current = new Set(Array.isArray(session.noteAttachments) ? (session.noteAttachments as string[]) : []);
@@ -92,6 +98,7 @@ class TrainingService {
     const row = await trainingRepository.saveNote(sessionId, {
       noteTitle: title,
       noteContent: content,
+      noteHomework: homework || null,
       noteAttachments: attachments,
       noteUpdatedAt: new Date(),
     });
@@ -108,8 +115,19 @@ class TrainingService {
       const session = await trainingRepository.findSession(sessionId, tx);
       if (!session || session.class.deletedAt) throw notFound('Không tìm thấy buổi học');
       if (!teaches(actor, sessionCoachId(session))) throw forbidden('Chỉ huấn luyện viên của buổi được ghi kết quả');
-      if (session.status === 'CANCELLED') throw invalidState('Không thể đánh giá buổi học đã hủy');
+      if (session.status === 'CANCELLED') throw invalidState('Không thể ghi kết quả buổi học đã hủy');
+      if (toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.startTime)) > new Date()) {
+        throw invalidState('Buổi học chưa bắt đầu');
+      }
       if (!(await enrollmentRepository.hasActive(session.classId, body.accountId, tx))) throw invalidStudent();
+      const attendance = await attendanceRepository.findOne(sessionId, body.accountId, tx);
+      if (attendance?.status !== 'PRESENT' && attendance?.status !== 'LATE') {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          code: ERROR_CODE.VALIDATION,
+          message: 'Chỉ ghi kết quả cho học viên có mặt hoặc đi muộn',
+        });
+      }
       if (await trainingRepository.hasEvaluation(sessionId, body.accountId, tx)) throw alreadyEvaluated();
       const row = await trainingRepository.createEvaluation(
         { sessionId, accountId: body.accountId, coachId: actor.id, rating: body.rating, comment: body.comment || null },
