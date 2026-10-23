@@ -1,6 +1,6 @@
 import type {
   CreateAnnouncementBody,
-  CreateEvaluationBody,
+  Evaluation,
   ListMyCheckInsQuery,
   SaveAttendanceBody,
   SaveSessionNoteBody,
@@ -63,17 +63,33 @@ function useSessionAction<V, R>(
   });
 }
 
-export function useSaveAttendance(sessionId: string) {
+export interface RosterSave {
+  attendance: SaveAttendanceBody['records'] | null;
+  results: { accountId: string; evaluation?: Evaluation; rating: number; comment: string }[];
+}
+
+/** Saves attendance first (results need the student marked present), then each changed result. */
+export function useSaveSessionRoster(sessionId: string) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: SaveAttendanceBody) => trainingService.saveAttendance(sessionId, body),
-    onSuccess: (records) => {
-      queryClient.setQueryData(sessionKey(sessionId, 'attendance'), records);
-      void queryClient.invalidateQueries({ queryKey: ['training', 'mine'] });
-      message.success('Đã lưu điểm danh cả lớp.');
+    mutationFn: async ({ attendance, results }: RosterSave) => {
+      if (attendance) await trainingService.saveAttendance(sessionId, { records: attendance });
+      for (const { accountId, evaluation, rating, comment } of results) {
+        if (!rating) await trainingService.deleteEvaluation(evaluation!.id);
+        else if (evaluation) await trainingService.updateEvaluation(evaluation.id, { rating, comment });
+        else await trainingService.createEvaluation(sessionId, { accountId, rating, comment: comment || undefined });
+      }
     },
+    onSuccess: () => message.success('Đã lưu điểm danh và kết quả buổi.'),
     onError: (error) => message.error(describeApiError(error)),
+    onSettled: () => {
+      for (const part of ['attendance', 'evaluations']) {
+        void queryClient.invalidateQueries({ queryKey: sessionKey(sessionId, part) });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['training', 'mine'] });
+      void queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    },
   });
 }
 
@@ -84,30 +100,6 @@ export function useSaveNote(sessionId: string) {
     'Đã lưu ghi chú buổi học.',
     ['note'],
   );
-}
-
-export function useCreateEvaluation(sessionId: string) {
-  return useSessionAction(
-    sessionId,
-    (body: CreateEvaluationBody) => trainingService.createEvaluation(sessionId, body),
-    'Đã lưu đánh giá.',
-    ['evaluations'],
-  );
-}
-
-export function useUpdateEvaluation(sessionId: string) {
-  return useSessionAction(
-    sessionId,
-    ({ id, ...body }: { id: string; rating: number; comment: string }) => trainingService.updateEvaluation(id, body),
-    'Đã cập nhật đánh giá.',
-    ['evaluations'],
-  );
-}
-
-export function useDeleteEvaluation(sessionId: string) {
-  return useSessionAction(sessionId, (id: string) => trainingService.deleteEvaluation(id), 'Đã xóa đánh giá.', [
-    'evaluations',
-  ]);
 }
 
 export function useSendAnnouncement(classId: string) {

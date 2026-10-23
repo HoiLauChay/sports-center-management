@@ -20,7 +20,7 @@ interface NoteFormProps {
 
 function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
   const { message } = App.useApp();
-  const [form] = Form.useForm<{ title: string; content: string }>();
+  const [form] = Form.useForm<{ title: string; content: string; homework: string }>();
   const save = useSaveNote(sessionId);
   const [attachments, setAttachments] = useState(saved?.attachments ?? []);
   const [picking, setPicking] = useState(false);
@@ -44,7 +44,7 @@ function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
       form={form}
       layout="vertical"
       disabled={!editable}
-      initialValues={{ title: saved?.title ?? '', content: saved?.content ?? '' }}
+      initialValues={{ title: saved?.title ?? '', content: saved?.content ?? '', homework: saved?.homework ?? '' }}
       onFinish={(values) => save.mutate({ ...values, attachments })}
       className="max-w-3xl"
     >
@@ -68,10 +68,13 @@ function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
       </Form.Item>
       <Form.Item
         name="content"
-        label="Nội dung buổi học và bài tập về nhà"
+        label="Nội dung buổi học"
         rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập nội dung' }]}
       >
         <Input.TextArea rows={8} maxLength={4000} showCount />
+      </Form.Item>
+      <Form.Item name="homework" label="Bài tập về nhà">
+        <Input.TextArea rows={4} maxLength={5000} showCount placeholder="Không bắt buộc" />
       </Form.Item>
       <Form.Item label={`Tệp đính kèm (${attachments.length}/${MAX_ATTACHMENTS})`}>
         <div className="flex flex-col items-start gap-1.5">
@@ -115,7 +118,7 @@ function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
   );
 }
 
-/** One session note per session (BR_4.4): title, content and up to 10 uploaded files. */
+/** One session note per session (BR_4.4): title, content, homework and up to 10 uploaded files. */
 export function NoteTab({ sessionId, editable }: { sessionId: string; editable: boolean }) {
   const note = useSessionNote(sessionId);
   if (note.isPending) return <Spin />;
