@@ -11,7 +11,10 @@ function findVisible(target: TourTarget) {
 // On mobile most nav items live behind the "Thêm" button; with no anchor at all the step is centered.
 function resolveTarget(target?: TourTarget) {
   if (!target) return null;
-  return findVisible(target) ?? findVisible('more');
+  const node = findVisible(target) ?? findVisible('more');
+  // antd only scrolls when the target is outside the window, not when the sidebar's own scroll area hides it.
+  node?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  return node;
 }
 
 interface AppTourProps {
