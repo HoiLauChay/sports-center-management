@@ -94,7 +94,7 @@ class AccountRepository {
     });
 
   createMember = (
-    data: { email: string; fullName: string; passwordHash: string; emailVerifiedAt: Date },
+    data: { email: string; fullName: string; passwordHash: string; emailVerifiedAt: Date; avatarUrl?: string | null },
     tx: Prisma.TransactionClient = prisma,
   ) =>
     tx.account.create({
