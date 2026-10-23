@@ -47,6 +47,7 @@ export function GoogleLoginButton({ text = 'Đăng nhập bằng Google', classN
       block
       size="large"
       icon={<GoogleIcon />}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={handleClick}
       loading={loading}
       className={`!h-[46px] !font-medium !text-sc-ink !border-sc-border hover:!border-sc-ink/40 hover:!bg-[#f7f5f0] ${className ?? ''}`}
