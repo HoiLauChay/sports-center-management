@@ -1,5 +1,5 @@
 import type { Account } from '@sports-center/shared';
-import { queryOptions, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery, useSuspenseQuery, type QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { authService } from './services/auth.service';
 
@@ -29,4 +29,10 @@ export function useCurrentUser(): Account {
 
 export function useIsLoggedIn() {
   return useQuery(sessionQueryOptions).data != null;
+}
+
+export async function endSessionHere(queryClient: QueryClient) {
+  await authService.logout().catch(() => undefined);
+  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+  queryClient.setQueryData(sessionQueryOptions.queryKey, null);
 }

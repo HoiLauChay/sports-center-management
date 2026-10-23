@@ -1,5 +1,5 @@
 import { createRouter } from '@tanstack/react-router';
-import { sessionQueryOptions } from '~/features/auth';
+import { sessionQueryOptions, syncSessionAcrossTabs } from '~/features/auth';
 import { configureHttpAuthRefreshFailed } from '~/lib/http';
 import { routeTree } from '../routeTree.gen';
 import { queryClient } from './queryClient';
@@ -8,6 +8,8 @@ export const router = createRouter({
   routeTree,
   context: { queryClient },
 });
+
+syncSessionAcrossTabs(queryClient);
 
 configureHttpAuthRefreshFailed(() => {
   if (!queryClient.getQueryData(sessionQueryOptions.queryKey)) return;

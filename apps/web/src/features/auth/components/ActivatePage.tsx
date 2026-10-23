@@ -9,7 +9,7 @@ import { authService } from '../services/auth.service';
 import { AuthShell } from './AuthShell';
 import { NewPasswordStep, type NewPasswordValues } from './NewPasswordStep';
 
-const routeApi = getRouteApi('/_auth/activate');
+const routeApi = getRouteApi('/activate');
 
 export function ActivatePage() {
   const { token = '' } = routeApi.useSearch();

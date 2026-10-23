@@ -10,4 +10,5 @@ export {
   useLogoutAll,
   useSetFirstPassword,
 } from './hooks/useAuth';
-export { sessionQueryOptions, useCurrentUser, useIsLoggedIn, useSession } from './session';
+export { endSessionHere, sessionQueryOptions, useCurrentUser, useIsLoggedIn, useSession } from './session';
+export { syncSessionAcrossTabs } from './sessionSync';
