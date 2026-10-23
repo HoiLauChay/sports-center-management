@@ -14,4 +14,5 @@ export const COOKIE = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   REFRESH_PATH: '/api/v1/auth',
+  OAUTH_STATE: 'oauth_state',
 } as const;

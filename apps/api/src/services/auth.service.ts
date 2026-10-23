@@ -456,7 +456,6 @@ class AuthService {
       redirect_uri: callbackUrl,
       response_type: 'code',
       scope: 'openid email profile',
-      access_type: 'offline',
       prompt: 'select_account',
       state,
     });
@@ -508,7 +507,7 @@ class AuthService {
     };
 
     if (!googleUser.email || !googleUser.email_verified) {
-      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Email Google chưa được xác thực');
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.FORBIDDEN, 'Email Google chưa được xác thực');
     }
 
     const email = googleUser.email.toLowerCase().trim();

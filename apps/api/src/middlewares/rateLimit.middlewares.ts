@@ -56,4 +56,5 @@ export const activateLimit = rateLimit(createLimiter('auth:activate', 30, '15 m'
 export const registerLimit = rateLimit(createLimiter('auth:register', 30, '15 m'));
 export const resetPasswordLimit = rateLimit(createLimiter('auth:reset-password', 30, '15 m'));
 export const refreshLimit = rateLimit(createLimiter('auth:refresh', 120, '15 m'));
+export const googleAuthLimit = rateLimit(createLimiter('auth:google', 30, '15 m'));
 export const uploadLimit = rateLimit(createLimiter('uploads:token', 30, '1 h'), byAccount);

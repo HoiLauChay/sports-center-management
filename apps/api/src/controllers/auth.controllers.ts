@@ -1,8 +1,10 @@
+import { ERROR_CODE, type GoogleLoginErrorCode } from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { appUrl, env } from '~/configs/env';
 import { COOKIE } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
+import { ErrorWithStatus } from '~/rules/error';
 import { ResponseClient } from '~/rules/response';
 import authService, { type SessionMeta } from '~/services/auth.service';
 import { clearAuthCookies, clearOAuthStateCookie, setAuthCookies, setOAuthStateCookie } from '~/utils/cookie';
@@ -14,16 +16,32 @@ const sessionMeta = (req: Request): SessionMeta => ({
   ip: getClientIp(req),
 });
 
-const getGoogleCallbackUrl = (req?: Request) => {
-  if (env.GOOGLE_CALLBACK_URL) return env.GOOGLE_CALLBACK_URL;
-  if (req) {
-    const forwardedHost = req.get('x-forwarded-host') || req.get('host');
-    const forwardedProto = req.get('x-forwarded-proto') || req.protocol;
-    if (forwardedHost) {
-      return `${forwardedProto}://${forwardedHost}/api/v1/auth/google/callback`;
-    }
+// Fixed from config, never from request headers, so it always matches the URI registered with Google
+const googleCallbackUrl = env.GOOGLE_CALLBACK_URL ?? `${appUrl}/api/v1/auth/google/callback`;
+
+const DEFAULT_AFTER_LOGIN = '/dashboard';
+
+/** Same-origin path to land on after sign-in; anything else falls back to the dashboard, like the email login. */
+const safeRedirectPath = (value: unknown) =>
+  typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')
+    ? value
+    : DEFAULT_AFTER_LOGIN;
+
+const toLoginWithError = (res: Response, code: GoogleLoginErrorCode) => {
+  clearOAuthStateCookie(res);
+  res.redirect(`${appUrl}/login?error=${code}`);
+};
+
+/** Only the fixed codes reach the browser; anything unexpected is logged here instead of shown to the user. */
+const googleErrorCode = (err: unknown): GoogleLoginErrorCode => {
+  if (err instanceof ErrorWithStatus) {
+    if (err.code === ERROR_CODE.ACCOUNT_INACTIVE) return 'ACCOUNT_INACTIVE';
+    if (err.code === ERROR_CODE.FORBIDDEN) return 'EMAIL_UNVERIFIED';
+    if (err.code === ERROR_CODE.INTERNAL) return 'NOT_CONFIGURED';
+    return 'FAILED';
   }
-  return `${appUrl}/api/v1/auth/google/callback`;
+  console.error('Google sign-in failed:', err);
+  return 'FAILED';
 };
 
 class AuthController {
@@ -132,67 +150,53 @@ class AuthController {
       .json(new ResponseClient({ message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.' }));
   };
 
-  googleAuth = async (req: Request, res: Response) => {
-    const rawRedirect = req.query.redirect;
-    const redirectPath =
-      typeof rawRedirect === 'string' && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
-        ? rawRedirect
-        : '/';
-
+  googleAuth = (req: Request, res: Response) => {
     const nonce = generateOpaqueToken();
-    const state = Buffer.from(JSON.stringify({ nonce, redirect: redirectPath })).toString('base64url');
-    setOAuthStateCookie(res, state);
+    const state = Buffer.from(JSON.stringify({ nonce, redirect: safeRedirectPath(req.query.redirect) })).toString(
+      'base64url',
+    );
 
-    const callbackUrl = getGoogleCallbackUrl(req);
     try {
-      const authUrl = authService.getGoogleAuthUrl(state, callbackUrl);
+      const authUrl = authService.getGoogleAuthUrl(state, googleCallbackUrl);
+      setOAuthStateCookie(res, state);
       res.redirect(authUrl);
     } catch (err) {
-      clearOAuthStateCookie(res);
-      const msg = err instanceof Error ? err.message : 'Google OAuth chưa được cấu hình';
-      res.redirect(`${appUrl}/login?error=${encodeURIComponent(msg)}`);
+      toLoginWithError(res, googleErrorCode(err));
     }
   };
 
   googleCallback = async (req: Request, res: Response) => {
-    const error = req.query.error as string | undefined;
-    if (error) {
-      clearOAuthStateCookie(res);
-      return res.redirect(`${appUrl}/login?error=${encodeURIComponent(error)}`);
+    if (req.query.error) {
+      // access_denied is the user pressing Cancel on Google's screen
+      return toLoginWithError(res, req.query.error === 'access_denied' ? 'CANCELLED' : 'FAILED');
     }
 
-    const code = req.query.code as string | undefined;
-    const state = req.query.state as string | undefined;
-    const cookieState = req.cookies.oauth_state as string | undefined;
-
-    if (!code || !state || !cookieState || state !== cookieState) {
-      clearOAuthStateCookie(res);
-      return res.redirect(
-        `${appUrl}/login?error=${encodeURIComponent('Xác thực trạng thái OAuth thất bại (CSRF check)')}`,
-      );
+    const code = req.query.code;
+    const state = req.query.state;
+    const cookieState: unknown = req.cookies[COOKIE.OAUTH_STATE];
+    if (typeof code !== 'string' || typeof state !== 'string' || !code || state !== cookieState) {
+      return toLoginWithError(res, 'STATE_MISMATCH');
     }
 
-    let targetRedirect = '/';
+    let redirect = DEFAULT_AFTER_LOGIN;
     try {
-      const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-      if (typeof parsed.redirect === 'string' && parsed.redirect.startsWith('/') && !parsed.redirect.startsWith('//')) {
-        targetRedirect = parsed.redirect;
-      }
+      const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8')) as { redirect?: unknown };
+      redirect = safeRedirectPath(parsed.redirect);
     } catch {
-      targetRedirect = '/';
+      // Malformed state still matched the cookie, so only the landing page falls back to the default
     }
 
-    const callbackUrl = getGoogleCallbackUrl(req);
-
     try {
-      const { accessToken, refreshToken } = await authService.loginWithGoogle(code, callbackUrl, sessionMeta(req));
+      const { accessToken, refreshToken } = await authService.loginWithGoogle(
+        code,
+        googleCallbackUrl,
+        sessionMeta(req),
+      );
       setAuthCookies(res, accessToken, refreshToken);
       clearOAuthStateCookie(res);
-      return res.redirect(`${appUrl}${targetRedirect}`);
+      return res.redirect(`${appUrl}${redirect}`);
     } catch (err) {
-      clearOAuthStateCookie(res);
-      const message = err instanceof Error ? err.message : 'Đăng nhập Google thất bại';
-      return res.redirect(`${appUrl}/login?error=${encodeURIComponent(message)}`);
+      return toLoginWithError(res, googleErrorCode(err));
     }
   };
 }

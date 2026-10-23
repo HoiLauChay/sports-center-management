@@ -19,6 +19,7 @@ import { auth } from '~/middlewares/auth.middlewares';
 import {
   activateLimit,
   activationLimit,
+  googleAuthLimit,
   loginLimit,
   loginStartLimit,
   refreshLimit,
@@ -32,8 +33,8 @@ import { validate } from '~/utils/validation';
 
 const authRouter = Router();
 
-authRouter.get('/google', authController.googleAuth);
-authRouter.get('/google/callback', authController.googleCallback);
+authRouter.get('/google', googleAuthLimit, authController.googleAuth);
+authRouter.get('/google/callback', googleAuthLimit, authController.googleCallback);
 
 authRouter.post('/send-otp', sendOtpLimit, validate({ body: sendOtpBodySchema }), authController.sendOtp);
 authRouter.post('/register', registerLimit, validate({ body: registerBodySchema }), authController.register);

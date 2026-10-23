@@ -24,9 +24,9 @@ export const clearAuthCookies = (res: Response) => {
 };
 
 export const setOAuthStateCookie = (res: Response, state: string) => {
-  res.cookie('oauth_state', state, { ...base, maxAge: 10 * 60 * 1000 });
+  res.cookie(COOKIE.OAUTH_STATE, state, { ...base, maxAge: 10 * 60 * 1000 });
 };
 
 export const clearOAuthStateCookie = (res: Response) => {
-  res.clearCookie('oauth_state', base);
+  res.clearCookie(COOKIE.OAUTH_STATE, base);
 };
