@@ -237,7 +237,7 @@ describe('first Google sign-in', () => {
     env.GOOGLE_CLIENT_SECRET = 'test-secret';
   });
 
-  test('a new account must pick a password, then signs in with it like any other', async () => {
+  test('a new account has no password until it sets one, then signs in with it like any other', async () => {
     const created = await signInWithGoogle('first.google@example.com');
     expect([created.role, created.mustSetPassword]).toEqual(['MEMBER', true]);
 
