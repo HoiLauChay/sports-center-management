@@ -15,6 +15,7 @@ import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, todayVN } from '~/lib/time';
 import { useMyAttendance, useMyCheckIns, useMyEvaluations, useSessionNote } from '../hooks/useTraining';
 import { ATTENDANCE_TAG } from '../types';
+import { MyClassTrainingTabs } from './MyClassTrainingTabs';
 
 function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: () => void }) {
   const note = useSessionNote(sessionId ?? undefined);
@@ -24,6 +25,12 @@ function NoteModal({ sessionId, onClose }: { sessionId: string | null; onClose: 
         <div className="flex flex-col gap-3">
           <h3 className="m-0 text-[16px] font-semibold">{note.data.title}</h3>
           <p className="m-0 whitespace-pre-line text-sc-ink-2">{note.data.content}</p>
+          {note.data.homework && (
+            <div className="rounded-lg bg-sc-paper p-3">
+              <div className="mb-1 text-[13.5px] font-semibold text-sc-muted">Bài tập về nhà</div>
+              <p className="m-0 whitespace-pre-line">{note.data.homework}</p>
+            </div>
+          )}
           {note.data.attachments.length > 0 && (
             <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[15px]">
               {note.data.attachments.map((link) => (
@@ -331,7 +338,7 @@ export function TrainingClassPage({ classId }: { classId: string }) {
         }
       />
       <Card>
-        <AttendanceSection classId={classId} />
+        <MyClassTrainingTabs classId={classId} sessions={<AttendanceSection classId={classId} />} />
       </Card>
     </>
   );
