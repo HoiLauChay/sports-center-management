@@ -1,11 +1,11 @@
 import { Modal } from 'antd';
 import { Users } from 'lucide-react';
-import type { GymClass } from '../types';
+import type { ClassSummary } from '../types';
 import { ClassStudentsTable } from './ClassStudentsTable';
 
 interface CoachClassStudentsModalProps {
   /** The class whose students are shown; `null` keeps the modal closed. */
-  gymClass: GymClass | null;
+  gymClass: ClassSummary | null;
   onClose: () => void;
 }
 

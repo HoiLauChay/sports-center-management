@@ -3,6 +3,7 @@ import {
   type ApiResponse,
   type AssignCoachBody,
   type CancelClassResult,
+  type ClassDetail,
   type ClassSession,
   type ClassSummary,
   type Paginated,
@@ -26,8 +27,8 @@ const listClasses = async (params: Record<string, unknown>) => {
  * cancel, `assign-coach` and `PATCH /sessions/{id}`; the dashboard overview reads `GET /classes` by status.
  */
 export const classAdminService = {
-  get: async (id: string) => {
-    const { data } = await privateApi.get<ApiResponse<ClassAdminDetail>>(path(id));
+  get: async (id: string): Promise<ClassAdminDetail> => {
+    const { data } = await privateApi.get<ApiResponse<ClassDetail>>(path(id));
     return { ...data.result, coachRegistrations: data.result.coachRegistrations ?? [] };
   },
 
@@ -45,22 +46,22 @@ export const classAdminService = {
   },
 
   update: async (id: string, body: UpdateClassBody) => {
-    const { data } = await privateApi.patch<ApiResponse<ClassAdminDetail>>(path(id), body);
+    const { data } = await privateApi.patch<ApiResponse<ClassDetail>>(path(id), body);
     return data.result;
   },
 
   approve: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/approve`, {});
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/approve`, {});
     return data.result;
   },
 
   reject: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/reject`, {});
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/reject`, {});
     return data.result;
   },
 
   assignCoach: async (id: string, body: AssignCoachBody) => {
-    const { data } = await privateApi.post<ApiResponse<ClassAdminDetail>>(`${path(id)}/assign-coach`, body);
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/assign-coach`, body);
     return data.result;
   },
 
