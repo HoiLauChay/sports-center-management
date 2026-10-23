@@ -20,12 +20,12 @@ import {
 import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
-import { appUrl } from '~/configs/env';
+import { appUrl, env } from '~/configs/env';
 import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
 import { toAccountResponse } from '~/mappers/account.mapper';
-import accountRepository from '~/repositories/account.repository';
+import accountRepository, { accountProfileInclude } from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -421,6 +421,143 @@ class AuthService {
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
     await mailService.sendOtp(email, purpose, code);
+  };
+
+  getGoogleAuthUrl = (state: string, callbackUrl: string) => {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw fail(
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODE.INTERNAL,
+        'Google OAuth chưa được cấu hình trên server (thiếu GOOGLE_CLIENT_ID hoặc GOOGLE_CLIENT_SECRET)',
+      );
+    }
+    const params = new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      redirect_uri: callbackUrl,
+      response_type: 'code',
+      scope: 'openid email profile',
+      access_type: 'offline',
+      prompt: 'select_account',
+      state,
+    });
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  };
+
+  loginWithGoogle = async (code: string, callbackUrl: string, meta: SessionMeta) => {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw fail(HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODE.INTERNAL, 'Google OAuth chưa được cấu hình trên server');
+    }
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: callbackUrl,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Google token exchange failed:', errorText);
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không thể xác thực mã với Google');
+    }
+
+    const tokenData = (await tokenResponse.json()) as { access_token?: string };
+    if (!tokenData.access_token) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không nhận được access token từ Google');
+    }
+
+    const userinfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    if (!userinfoResponse.ok) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không thể lấy thông tin người dùng từ Google');
+    }
+
+    const googleUser = (await userinfoResponse.json()) as {
+      sub: string;
+      email?: string;
+      email_verified?: boolean;
+      name?: string;
+      picture?: string;
+    };
+
+    if (!googleUser.email || !googleUser.email_verified) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Email Google chưa được xác thực');
+    }
+
+    const email = googleUser.email.toLowerCase().trim();
+    let account = await accountRepository.findByEmail(email);
+
+    if (account) {
+      if (account.status !== 'ACTIVE') {
+        throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
+      }
+
+      const updates: Prisma.AccountUpdateInput = {};
+      if (!account.emailVerifiedAt) updates.emailVerifiedAt = new Date();
+      if (!account.avatarUrl && googleUser.picture) updates.avatarUrl = googleUser.picture;
+
+      if (Object.keys(updates).length > 0) {
+        account = await prisma.account.update({
+          where: { id: account.id },
+          data: updates,
+          include: accountProfileInclude,
+        });
+      }
+
+      const tokens = await this.issueTokens(account.id, account.role, meta);
+      return { account: toAccountResponse(account), ...tokens };
+    }
+
+    const dummyHash = await hashPassword(generateOpaqueToken());
+    const refreshToken = generateOpaqueToken();
+    const fullName = googleUser.name?.trim() || email.split('@')[0] || 'Member';
+
+    const { account: created, notifications } = await prisma.$transaction(async (tx) => {
+      const createdAccount = await accountRepository.createMember(
+        {
+          email,
+          fullName,
+          avatarUrl: googleUser.picture ?? null,
+          passwordHash: dummyHash,
+          emailVerifiedAt: new Date(),
+        },
+        tx,
+      );
+
+      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, createdAccount.id, meta), tx);
+
+      const notifications = await notificationService.create(
+        [
+          {
+            accountId: createdAccount.id,
+            type: 'SYSTEM',
+            title: 'Chào mừng bạn đến với Sports Center',
+            message:
+              'Tài khoản của bạn đã được liên kết thành công với Google. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+            dedupKey: `welcome:${createdAccount.id}`,
+            sendEmail: false,
+          },
+        ],
+        tx,
+      );
+
+      return { account: createdAccount, notifications };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+
+    return {
+      account: toAccountResponse(created),
+      accessToken: signAccessToken(created.id, created.role),
+      refreshToken,
+    };
   };
 
   private issueTokens = async (accountId: string, role: Role, meta: SessionMeta) => {

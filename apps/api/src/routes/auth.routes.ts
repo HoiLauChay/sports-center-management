@@ -31,6 +31,9 @@ import { validate } from '~/utils/validation';
 
 const authRouter = Router();
 
+authRouter.get('/google', authController.googleAuth);
+authRouter.get('/google/callback', authController.googleCallback);
+
 authRouter.post('/send-otp', sendOtpLimit, validate({ body: sendOtpBodySchema }), authController.sendOtp);
 authRouter.post('/register', registerLimit, validate({ body: registerBodySchema }), authController.register);
 authRouter.post('/login/start', loginStartLimit, validate({ body: loginStartBodySchema }), authController.loginStart);
