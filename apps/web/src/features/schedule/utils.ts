@@ -1,5 +1,5 @@
 import type { CoachScheduleItem, MemberScheduleItem, PersonalScheduleQuery } from '@sports-center/shared';
-import { DATE_FORMAT, addDays, dayOfWeek, parseDate } from '~/lib/time';
+import { DATE_FORMAT, addDays, dayOfWeek, isPast, parseDate } from '~/lib/time';
 import type { CalendarEvent, CalendarView, ScheduleKind } from './types';
 
 /** Monday of the week the date falls in (weeks run Monday to Sunday). */
@@ -96,6 +96,11 @@ export function eventsOfCoach(entries: CoachScheduleItem[]): CalendarEvent[] {
     sessionId: entry.id,
     classId: entry.classId,
     facility: entry.facility,
+    substitute: entry.isSubstitute,
+    attendance:
+      entry.status === 'SCHEDULED' && isPast(entry.date, entry.endTime)
+        ? { ...entry.attendance, complete: entry.attendance.marked >= entry.attendance.total }
+        : undefined,
   }));
 }
 

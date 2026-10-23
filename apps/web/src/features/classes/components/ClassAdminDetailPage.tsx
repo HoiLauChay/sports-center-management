@@ -9,6 +9,7 @@ import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
+import { RosterTab } from '~/features/training/components/class/RosterTab';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -170,6 +171,18 @@ export function ClassAdminDetailPage() {
     },
     { title: 'Giờ', render: (_, session) => `${session.startTime}–${session.endTime}` },
     { title: 'Sân / phòng', dataIndex: ['facility', 'name'] },
+    {
+      title: 'HLV',
+      key: 'coach',
+      render: (_, session) =>
+        session.isSubstitute ? (
+          <Tag color="purple" className="!m-0">
+            Dạy thay: {session.coach?.fullName}
+          </Tag>
+        ) : (
+          <span className="text-sc-muted">{session.coach?.fullName ?? '—'}</span>
+        ),
+    },
     {
       title: 'Trạng thái',
       key: 'status',
@@ -333,6 +346,11 @@ export function ClassAdminDetailPage() {
               key: 'students',
               label: `Học viên (${item.enrolledCount})`,
               children: <ClassStudentsTable classId={item.id} showPayment />,
+            },
+            {
+              key: 'progress',
+              label: 'Tiến độ học viên',
+              children: <RosterTab classId={item.id} sessions={item.sessions} readOnly />,
             },
             {
               key: 'coaches',

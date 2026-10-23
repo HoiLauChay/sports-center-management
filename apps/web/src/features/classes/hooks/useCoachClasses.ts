@@ -31,7 +31,7 @@ export function useMyClasses() {
 }
 
 /** Registering to teach / withdrawing: refreshes every class list and reports the outcome. */
-function useCoachAction(run: (classId: string) => Promise<unknown>, success: string) {
+function useCoachAction<V>(run: (variables: V) => Promise<unknown>, success: string) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   return useMutation({

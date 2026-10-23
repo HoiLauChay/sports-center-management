@@ -1,4 +1,4 @@
-import type { ApiResponse, Paginated } from '@sports-center/shared';
+import type { ApiResponse, CreateSpecializationInput, Paginated } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
 import type { ListSpecializationsQuery, Specialization } from '../types';
 
@@ -17,8 +17,8 @@ export const specializationsService = {
     return data.result;
   },
 
-  register: async (sportId: string) => {
-    const { data } = await privateApi.post<ApiResponse<Specialization>>('/coach/specializations', { sportId });
+  register: async (body: CreateSpecializationInput) => {
+    const { data } = await privateApi.post<ApiResponse<Specialization>>('/coach/specializations', body);
     return data.result;
   },
 

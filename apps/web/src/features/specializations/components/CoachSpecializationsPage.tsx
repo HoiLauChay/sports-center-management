@@ -1,19 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import {
-  Alert,
-  Avatar,
-  Button,
-  Card,
-  Col,
-  Divider,
-  Form,
-  Modal,
-  Row,
-  Select,
-  Table,
-  Tag,
-  type TableColumnsType,
-} from 'antd';
+import { Alert, Avatar, Button, Card, Col, Divider, Row, Table, Tag, type TableColumnsType } from 'antd';
 import {
   AlertCircle,
   Award,
@@ -23,6 +8,7 @@ import {
   FileText,
   GraduationCap,
   Plus,
+  RotateCcw,
   ShieldCheck,
   XCircle,
 } from 'lucide-react';
@@ -31,60 +17,25 @@ import { ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
 import { useCurrentUser } from '~/features/auth';
-import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { formatDateTime } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { useMySpecializations, useRegisterSpecialization } from '../hooks/useSpecializations';
+import { useMySpecializations } from '../hooks/useSpecializations';
 import type { Specialization } from '../types';
+import { EvidenceView } from './EvidenceView';
+import { RegisterModal } from './RegisterModal';
 
 const cardHeader = { header: { minHeight: 48 } };
-
-function RegisterModal({ open, taken, onClose }: { open: boolean; taken: Set<string>; onClose: () => void }) {
-  const [form] = Form.useForm<{ sportId: string }>();
-  const sports = useQuery(sportsQueryOptions);
-  const register = useRegisterSpecialization();
-
-  return (
-    <Modal
-      title="Đăng ký bộ môn chuyên môn"
-      open={open}
-      centered
-      destroyOnHidden
-      okText="Gửi Quản lý duyệt"
-      cancelText="Đóng"
-      confirmLoading={register.isPending}
-      onCancel={onClose}
-      onOk={() => form.submit()}
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        className="!mt-4"
-        onFinish={({ sportId }) => register.mutate(sportId, { onSuccess: onClose })}
-      >
-        <Form.Item name="sportId" label="Bộ môn" rules={[{ required: true, message: 'Chọn bộ môn' }]}>
-          <Select
-            showSearch={{ optionFilterProp: 'label' }}
-            placeholder="Chọn bộ môn"
-            loading={sports.isPending}
-            options={(sports.data ?? [])
-              .filter((sport) => sport.isActive)
-              .map((sport) => ({ value: sport.id, label: sport.name, disabled: taken.has(sport.id) }))}
-          />
-        </Form.Item>
-      </Form>
-      <p className="m-0 text-[13.5px] text-sc-muted-2">
-        Mỗi bộ môn chỉ có một yêu cầu đang chờ hoặc đã duyệt; bộ môn đó bị mờ. Bị từ chối thì có thể gửi lại được.
-      </p>
-    </Modal>
-  );
-}
 
 /** `/coach/specializations` (UC_1.13, BR_1.12): the sports I may teach, my requests and the manager's decisions. */
 export function CoachSpecializationsPage() {
   const user = useCurrentUser();
   const specializations = useMySpecializations();
   const [open, setOpen] = useState(false);
+  const [resend, setResend] = useState<Specialization | null>(null);
+  const start = (entry: Specialization | null) => {
+    setResend(entry);
+    setOpen(true);
+  };
 
   const mine = [...(specializations.data ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const approved = mine.filter((entry) => entry.status === 'APPROVED');
@@ -164,6 +115,11 @@ export function CoachSpecializationsPage() {
               ) : (
                 <span className="text-[13.5px] text-sc-muted-2">—</span>
               )}
+              {!taken.has(entry.sport.id) && (
+                <Button size="small" className="w-fit" icon={<RotateCcw size={13} />} onClick={() => start(entry)}>
+                  Gửi lại
+                </Button>
+              )}
             </div>
           );
         }
@@ -191,7 +147,7 @@ export function CoachSpecializationsPage() {
       <PageHeader
         title="Chuyên môn của tôi"
         extra={
-          <Button type="primary" icon={<Plus size={16} />} onClick={() => setOpen(true)}>
+          <Button type="primary" icon={<Plus size={16} />} onClick={() => start(null)}>
             Đăng ký bộ môn
           </Button>
         }
@@ -235,7 +191,7 @@ export function CoachSpecializationsPage() {
           </Row>
 
           {/* Main 2-Column Section */}
-          <div className="grid items-start gap-4 lg:grid-cols-[380px_minmax(0,1fr)]">
+          <div className="grid items-start gap-4 2xl:grid-cols-[340px_minmax(0,1fr)]">
             {/* Left Column: Coach Profile & Approved Sports */}
             <Card title="Hồ sơ & Chuyên môn" className="overflow-hidden" styles={cardHeader}>
               {/* Coach Identity */}
@@ -328,7 +284,7 @@ export function CoachSpecializationsPage() {
                 type="dashed"
                 block
                 icon={<Plus size={14} />}
-                onClick={() => setOpen(true)}
+                onClick={() => start(null)}
                 className="!text-[13.5px]"
               >
                 Đăng ký thêm bộ môn
@@ -349,6 +305,7 @@ export function CoachSpecializationsPage() {
                 loading={specializations.isPending}
                 pagination={false}
                 scroll={{ x: 620 }}
+                expandable={{ expandedRowRender: (entry) => <EvidenceView entry={entry} /> }}
                 locale={{ emptyText: 'Bạn chưa đăng ký bộ môn nào' }}
               />
             </Card>
@@ -356,7 +313,9 @@ export function CoachSpecializationsPage() {
         </div>
       )}
 
-      <RegisterModal open={open} taken={taken} onClose={() => setOpen(false)} />
+      {open && (
+        <RegisterModal key={resend?.id ?? 'new'} open taken={taken} resend={resend} onClose={() => setOpen(false)} />
+      )}
     </>
   );
 }

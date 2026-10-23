@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Button, Card, Col, Row } from 'antd';
-import { BadgeCheck, CalendarDays, GraduationCap, IdCard, MapPin, School, Wallet } from 'lucide-react';
+import { BadgeCheck, CalendarDays, IdCard, MapPin, School, Wallet } from 'lucide-react';
 import { useMemo } from 'react';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -8,8 +8,8 @@ import { SectionTitle } from '~/components/ui/SectionTitle';
 import { StatCard } from '~/components/ui/StatCard';
 import { useCurrentUser } from '~/features/auth';
 import { useMyMemberships } from '~/features/memberships/hooks/useMyMemberships';
-import { useCoachSchedule, useMySchedule } from '~/features/schedule';
-import { eventsOfCoach, eventsOfMember } from '~/features/schedule/utils';
+import { useMySchedule } from '~/features/schedule';
+import { eventsOfMember } from '~/features/schedule/utils';
 import { useMyWallet } from '~/features/wallet';
 import { addDays, nowVN, parseDate, todayVN } from '~/lib/time';
 import { UpcomingList } from './UpcomingList';
@@ -101,51 +101,6 @@ export function MemberDashboard() {
                 <Button>Xem lớp học</Button>
               </Link>
             </div>
-          }
-        />
-      </Card>
-    </>
-  );
-}
-
-export function CoachDashboard() {
-  const today = todayVN();
-  const schedule = useCoachSchedule({ from: today, to: addDays(today, HORIZON_DAYS) });
-  const events = useMemo(() => upcoming(eventsOfCoach(schedule.data ?? [])), [schedule.data]);
-  const todayCount = events.filter((event) => event.date === today).length;
-  const classCount = new Set(events.map((event) => event.classId)).size;
-
-  return (
-    <>
-      <Greeting />
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={8}>
-          <StatCard icon={GraduationCap} label="Buổi dạy hôm nay" loading={schedule.isPending} value={todayCount} />
-        </Col>
-        <Col xs={24} md={8}>
-          <StatCard
-            icon={CalendarDays}
-            label="Buổi dạy 14 ngày tới"
-            loading={schedule.isPending}
-            value={events.length}
-          />
-        </Col>
-        <Col xs={24} md={8}>
-          <StatCard icon={IdCard} label="Lớp đang phụ trách" loading={schedule.isPending} value={classCount} />
-        </Col>
-      </Row>
-      <Card className="!mt-4">
-        <SectionTitle>Buổi dạy sắp tới</SectionTitle>
-        <UpcomingList
-          events={events.slice(0, UPCOMING_LIMIT)}
-          loading={schedule.isPending}
-          empty={null}
-          action={(event) =>
-            event.sessionId ? (
-              <Link key="open" to="/coach/sessions/$sessionId" params={{ sessionId: event.sessionId }}>
-                <Button size="small">Mở buổi học</Button>
-              </Link>
-            ) : null
           }
         />
       </Card>

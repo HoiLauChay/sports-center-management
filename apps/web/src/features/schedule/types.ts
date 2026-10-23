@@ -19,4 +19,8 @@ export interface CalendarEvent {
   classId?: string;
   facility: Ref;
   coach?: string | null;
+  /** Taught by this coach in place of the class's own coach. */
+  substitute?: boolean;
+  /** A past session's attendance: complete, or still missing marks. */
+  attendance?: { marked: number; total: number; complete: boolean };
 }

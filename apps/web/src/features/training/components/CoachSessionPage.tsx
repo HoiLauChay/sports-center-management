@@ -1,21 +1,27 @@
 import { getRouteApi } from '@tanstack/react-router';
 import { Card, Tabs, Tag } from 'antd';
+import { useEffect, useReducer } from 'react';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { toApiError } from '~/lib/http-errors';
-import { formatDayLabel, isPast } from '~/lib/time';
+import { formatDayLabel } from '~/lib/time';
 import { useTrainingSession } from '../hooks/useTraining';
-import { AnnouncementTab } from './AnnouncementTab';
-import { AttendanceTab } from './AttendanceTab';
-import { EvaluationsTab } from './EvaluationsTab';
+import { attendanceLockReason, SESSION_PHASE_TAG, sessionPhase } from '../utils';
 import { NoteTab } from './NoteTab';
+import { SessionRosterTab } from './SessionRosterTab';
 
 const routeApi = getRouteApi('/_authenticated/_coach/coach/sessions/$sessionId');
 
-/** `/coach/sessions/{id}`: attendance, session note, evaluations and class announcements for one session. */
+/** `/coach/sessions/{id}`: attendance with results in one table, and the session note. */
 export function CoachSessionPage() {
   const { sessionId } = routeApi.useParams();
   const detail = useTrainingSession(sessionId);
+  const [, tick] = useReducer((count: number) => count + 1, 0);
+
+  useEffect(() => {
+    const timer = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   if (detail.isPending) return <PageLoading />;
   if (detail.isError) {
@@ -26,7 +32,7 @@ export function CoachSessionPage() {
           apiError.status === 404
             ? 'Không tìm thấy buổi học.'
             : apiError.status === 403
-              ? 'Bạn không phụ trách lớp của buổi học này.'
+              ? 'Bạn không phụ trách buổi học này.'
               : apiError.message
         }
         onRetry={apiError.status ? undefined : () => void detail.refetch()}
@@ -35,8 +41,9 @@ export function CoachSessionPage() {
   }
 
   const session = detail.data;
-  const editable = session.status === 'SCHEDULED';
-  const upcoming = !isPast(session.date, session.startTime);
+  const cancelled = session.status === 'CANCELLED';
+  const phase = sessionPhase(session);
+  const attendanceLock = cancelled ? 'Buổi học đã bị hủy nên không điểm danh được.' : attendanceLockReason(session);
 
   return (
     <>
@@ -46,16 +53,19 @@ export function CoachSessionPage() {
           <span className="flex flex-wrap items-center gap-2">
             Buổi {session.sessionNumber} · {formatDayLabel(session.date)} · {session.startTime}–{session.endTime} ·{' '}
             {session.facility.name}
-            {session.status === 'CANCELLED' ? (
+            {cancelled ? (
               <Tag color="error" className="!m-0">
                 Đã hủy
               </Tag>
-            ) : upcoming ? (
-              <Tag color="processing" className="!m-0">
-                Sắp tới
-              </Tag>
             ) : (
-              <Tag className="!m-0">Đã diễn ra</Tag>
+              <Tag color={SESSION_PHASE_TAG[phase].color} className="!m-0">
+                {SESSION_PHASE_TAG[phase].label}
+              </Tag>
+            )}
+            {session.isSubstitute && (
+              <Tag color="purple" className="!m-0">
+                Dạy thay
+              </Tag>
             )}
             <Tag className="!m-0">{session.class.enrolledCount} học viên</Tag>
           </span>
@@ -66,20 +76,20 @@ export function CoachSessionPage() {
         <Tabs
           items={[
             {
-              key: 'attendance',
-              label: 'Điểm danh',
-              children: <AttendanceTab sessionId={sessionId} editable={editable} upcoming={upcoming} />,
+              key: 'roster',
+              label: 'Điểm danh & kết quả',
+              children: (
+                <SessionRosterTab
+                  sessionId={sessionId}
+                  attendanceLock={attendanceLock}
+                  started={!cancelled && phase !== 'UPCOMING'}
+                />
+              ),
             },
-            { key: 'note', label: 'Ghi chú buổi học', children: <NoteTab sessionId={sessionId} editable={editable} /> },
             {
-              key: 'evaluations',
-              label: 'Đánh giá học viên',
-              children: <EvaluationsTab sessionId={sessionId} editable={editable} />,
-            },
-            {
-              key: 'announce',
-              label: 'Thông báo lớp',
-              children: <AnnouncementTab classId={session.class.id} />,
+              key: 'note',
+              label: 'Ghi chú buổi học',
+              children: <NoteTab sessionId={sessionId} editable={!cancelled} />,
             },
           ]}
         />
