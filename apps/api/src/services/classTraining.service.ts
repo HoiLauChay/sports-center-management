@@ -1,4 +1,10 @@
-import { ERROR_CODE, type RosterEntry, type StudentProgress } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type ClassPlans,
+  type RosterEntry,
+  type SaveTrainingPlanBody,
+  type StudentProgress,
+} from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
@@ -7,9 +13,12 @@ import { toProgressReviewResponse, toTrainingPlanResponse } from '~/mappers/clas
 import { toEvaluationResponse } from '~/mappers/training.mapper';
 import attendanceRepository from '~/repositories/attendance.repository';
 import classTrainingRepository, { type TrainingClassRow } from '~/repositories/classTraining.repository';
+import enrollmentRepository from '~/repositories/enrollment.repository';
 import trainingRepository from '~/repositories/training.repository';
 import { ErrorWithStatus } from '~/rules/error';
-import { formatDate, fromDbTime, toCenterDateTime } from '~/utils/time';
+import notificationService from '~/services/notification.service';
+import { formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
+import { lockRows, runTransaction } from '~/utils/transaction';
 
 type Actor = { id: string; role: Role };
 
@@ -17,6 +26,15 @@ const notFound = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.NOT_FOUND, code: ERROR_CODE.NOT_FOUND, message });
 const forbidden = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
+
+const invalidState = (message: string) =>
+  new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
+const notStudent = () =>
+  new ErrorWithStatus({
+    status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+    code: ERROR_CODE.VALIDATION,
+    message: 'Học viên không thuộc lớp này',
+  });
 
 const startOf = (session: TrainingClassRow['sessions'][number]) =>
   toCenterDateTime(formatDate(session.sessionDate), fromDbTime(session.startTime));
@@ -28,6 +46,20 @@ const requireStaffClass = async (actor: Actor, classId: string) => {
     throw forbidden('Bạn chỉ xem được học viên của lớp mình phụ trách');
   }
   return cls;
+};
+
+const requireCoachOf = (actor: Actor, cls: TrainingClassRow | null) => {
+  if (!cls) throw notFound('Không tìm thấy lớp học');
+  if (actor.role !== 'COACH' || cls.coachId !== actor.id) {
+    throw forbidden('Chỉ huấn luyện viên của lớp được thao tác');
+  }
+  return cls;
+};
+
+const assertRunning = (cls: TrainingClassRow) => {
+  if (cls.status === 'CANCELLED' || (cls.endDate && formatDate(cls.endDate) < todayInCenter())) {
+    throw invalidState('Lớp đã hủy hoặc đã kết thúc');
+  }
 };
 
 class ClassTrainingService {
@@ -74,6 +106,50 @@ class ClassTrainingService {
         reviews: reviews.filter((review) => review.accountId === account.id).map(({ milestone }) => milestone),
       };
     });
+  };
+
+  plans = async (actor: Actor, classId: string): Promise<ClassPlans> => {
+    await requireStaffClass(actor, classId);
+    const [plans, students] = await Promise.all([
+      classTrainingRepository.findPlans(classId),
+      classTrainingRepository.findStudents(classId),
+    ]);
+    const active = new Set(students.map(({ account }) => account.id));
+    const classPlan = plans.find(({ accountId }) => accountId === null);
+    return {
+      classPlan: classPlan ? toTrainingPlanResponse(classPlan) : null,
+      memberPlans: plans
+        .filter(({ accountId }) => accountId !== null && active.has(accountId))
+        .map(toTrainingPlanResponse),
+    };
+  };
+
+  savePlan = async (actor: Actor, classId: string, accountId: string | null, body: SaveTrainingPlanBody) => {
+    const { row, notifications } = await runTransaction(async (tx) => {
+      await lockRows(tx, { classes: [classId] });
+      const cls = requireCoachOf(actor, await classTrainingRepository.findClass(classId, tx));
+      assertRunning(cls);
+      if (accountId && !(await enrollmentRepository.hasActive(classId, accountId, tx))) throw notStudent();
+      const row = await classTrainingRepository.savePlan(classId, accountId, { ...body, updatedById: actor.id }, tx);
+      const notifications = accountId
+        ? await notificationService.create(
+            [
+              {
+                accountId,
+                type: 'TRAINING',
+                title: 'Kế hoạch tập luyện của bạn đã được cập nhật',
+                message: `Mục tiêu: ${body.goals}`,
+                referenceType: 'CLASS',
+                referenceId: classId,
+              },
+            ],
+            tx,
+          )
+        : [];
+      return { row, notifications };
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toTrainingPlanResponse(row);
   };
 
   student = async (actor: Actor, classId: string, accountId: string): Promise<StudentProgress> => {

@@ -8,6 +8,7 @@ import {
   listClassesQuerySchema,
   listCoachRegistrationsQuerySchema,
   reviewClassBodySchema,
+  saveTrainingPlanBodySchema,
   updateClassBodySchema,
   withdrawClassBodySchema,
 } from '@sports-center/shared';
@@ -105,6 +106,24 @@ classRouter.get(
   isRole('COACH', 'MANAGER'),
   validate({ params: classIdParamsSchema }),
   classTrainingController.roster,
+);
+classRouter.get(
+  '/:id/plans',
+  isRole('COACH', 'MANAGER'),
+  validate({ params: classIdParamsSchema }),
+  classTrainingController.plans,
+);
+classRouter.put(
+  '/:id/plan',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema, body: saveTrainingPlanBodySchema }),
+  classTrainingController.saveClassPlan,
+);
+classRouter.put(
+  '/:id/students/:accountId/plan',
+  isRole('COACH'),
+  validate({ params: classStudentParamsSchema, body: saveTrainingPlanBodySchema }),
+  classTrainingController.saveMemberPlan,
 );
 classRouter.get(
   '/:id/students/:accountId',

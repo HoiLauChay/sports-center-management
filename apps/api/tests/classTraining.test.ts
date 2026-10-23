@@ -1,4 +1,4 @@
-import type { RosterEntry, StudentProgress } from '@sports-center/shared';
+import type { ClassPlans, RosterEntry, StudentProgress, TrainingPlan } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { Server } from 'node:http';
 
@@ -51,5 +51,31 @@ describe('class roster', () => {
     expect(detail.attendance.map(({ status, note }) => [status, note])).toEqual([['LATE', 'Kẹt xe']]);
     expect(detail.results.map(({ rating }) => rating)).toEqual([4]);
     expect((await request('GET', `/${f.cls.id}/students/${f.outsider.id}`, f.coach)).status).toBe(404);
+  });
+});
+
+describe('training plans', () => {
+  test('only the class coach writes plans; the student is notified and the plan shows in the roster', async () => {
+    const f = await setupAttendance();
+    const body = { goals: 'Hoàn thiện kỹ thuật', content: 'Tuần 1: khởi động, tuần 2: bài nâng cao' };
+
+    const classPlan = await readResult<TrainingPlan>(await request('PUT', `/${f.cls.id}/plan`, f.coach, body));
+    expect(classPlan).toMatchObject({ account: null, goals: body.goals });
+    await request('PUT', `/${f.cls.id}/plan`, f.coach, { ...body, goals: 'Mục tiêu mới' });
+    expect(await prisma.trainingPlan.count({ where: { classId: f.cls.id, accountId: null } })).toBe(1);
+
+    await readResult<TrainingPlan>(await request('PUT', `/${f.cls.id}/students/${f.member.id}/plan`, f.coach, body));
+    expect(await prisma.notification.count({ where: { accountId: f.member.id, type: 'TRAINING' } })).toBe(1);
+    expect((await request('PUT', `/${f.cls.id}/students/${f.outsider.id}/plan`, f.coach, body)).status).toBe(422);
+    expect((await request('PUT', `/${f.cls.id}/plan`, f.otherCoach, body)).status).toBe(403);
+
+    const plans = await readResult<ClassPlans>(await request('GET', `/${f.cls.id}/plans`, f.manager));
+    expect(plans.classPlan?.goals).toBe('Mục tiêu mới');
+    expect(plans.memberPlans.map(({ account }) => account?.id)).toEqual([f.member.id]);
+    const roster = await readResult<RosterEntry[]>(await request('GET', `/${f.cls.id}/roster`, f.coach));
+    expect(roster.find(({ account }) => account.id === f.member.id)?.planUpdatedAt).not.toBeNull();
+
+    await prisma.class.update({ where: { id: f.cls.id }, data: { status: 'CANCELLED' } });
+    expect((await request('PUT', `/${f.cls.id}/plan`, f.coach, body)).status).toBe(409);
   });
 });

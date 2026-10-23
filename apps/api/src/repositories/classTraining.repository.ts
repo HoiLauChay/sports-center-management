@@ -108,6 +108,18 @@ class ClassTrainingRepository {
       orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
     });
 
+  savePlan = async (
+    classId: string,
+    accountId: string | null,
+    data: { goals: string; content: string; updatedById: string },
+    tx: Prisma.TransactionClient,
+  ) => {
+    const current = await tx.trainingPlan.findFirst({ where: { classId, accountId }, select: { id: true } });
+    return current
+      ? tx.trainingPlan.update({ where: { id: current.id }, data, select: planSelect })
+      : tx.trainingPlan.create({ data: { classId, accountId, ...data }, select: planSelect });
+  };
+
   findReviews = (classId: string, accountId?: string) =>
     prisma.progressReview.findMany({
       where: { classId, accountId },
