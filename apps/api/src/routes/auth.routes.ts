@@ -2,6 +2,7 @@ import {
   activateAccountBodySchema,
   activationBodySchema,
   changePasswordBodySchema,
+  firstPasswordBodySchema,
   loginBodySchema,
   loginStartBodySchema,
   registerBodySchema,
@@ -58,6 +59,7 @@ authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);
 authRouter.patch('/me', auth, validate({ body: updateMeBodySchema }), authController.updateMe);
 authRouter.post('/change-password', auth, validate({ body: changePasswordBodySchema }), authController.changePassword);
+authRouter.post('/first-password', auth, validate({ body: firstPasswordBodySchema }), authController.setFirstPassword);
 authRouter.post(
   '/reset-password',
   resetPasswordLimit,

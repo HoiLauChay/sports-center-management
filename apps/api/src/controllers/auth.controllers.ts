@@ -60,6 +60,16 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đặt mật khẩu thành công', result: account }));
   };
 
+  setFirstPassword = async (req: Request, res: Response) => {
+    const { account, accessToken, refreshToken } = await authService.setFirstPassword(
+      req.user!.id,
+      req.body,
+      sessionMeta(req),
+    );
+    setAuthCookies(res, accessToken, refreshToken);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đặt mật khẩu thành công', result: account }));
+  };
+
   checkActivation = async (req: Request, res: Response) => {
     const result = await authService.checkActivation(req.body);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));

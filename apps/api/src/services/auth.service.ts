@@ -7,6 +7,7 @@ import {
   type ActivationInfo,
   type ChangePasswordBody,
   type ErrorCode,
+  type FirstPasswordBody,
   type LoginBody,
   type LoginStartBody,
   type LoginStartResult,
@@ -113,6 +114,25 @@ class AuthService {
     const passwordHash = await hashPassword(password);
     const updated = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
+      await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
+      return accountRepository.setOwnPassword(account, passwordHash, tx);
+    });
+
+    const tokens = await this.issueTokens(updated.id, updated.role, meta);
+    return { account: toAccountResponse(updated), ...tokens };
+  };
+
+  setFirstPassword = async (accountId: string, { password }: FirstPasswordBody, meta: SessionMeta) => {
+    const account = await accountRepository.findById(accountId);
+    if (!account || !account.mustSetPassword) {
+      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu');
+    }
+    if (account.status !== 'ACTIVE') {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
+    }
+
+    const passwordHash = await hashPassword(password);
+    const updated = await prisma.$transaction(async (tx) => {
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
       return accountRepository.setOwnPassword(account, passwordHash, tx);
     });
@@ -527,6 +547,8 @@ class AuthService {
           avatarUrl: googleUser.picture ?? null,
           passwordHash: dummyHash,
           emailVerifiedAt: new Date(),
+          // First Google sign-in: the web app sends them to set a real password before anything else
+          mustSetPassword: true,
         },
         tx,
       );
