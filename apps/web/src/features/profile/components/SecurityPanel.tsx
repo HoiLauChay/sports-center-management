@@ -4,7 +4,13 @@ import { LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { SectionTitle } from '~/components/ui/SectionTitle';
-import { useChangePassword, useCurrentUser, useForgotCurrentPassword, useLogoutAll } from '~/features/auth';
+import {
+  useChangePassword,
+  useCurrentUser,
+  useForgotCurrentPassword,
+  useLogoutAll,
+  useSetFirstPassword,
+} from '~/features/auth';
 
 function SettingsSection({
   title,
@@ -89,17 +95,71 @@ function ChangePasswordForm() {
   );
 }
 
+function FirstPasswordForm() {
+  const { form, onSubmit, isSubmitting } = useSetFirstPassword();
+
+  return (
+    <Form layout="vertical" requiredMark={false} onFinish={() => void onSubmit()}>
+      <FormRootError message={form.formState.errors.root?.message} />
+      <div className="grid gap-x-4 sm:grid-cols-2">
+        <FormField
+          control={form.control}
+          name="password"
+          label="Mật khẩu"
+          extra="Tối thiểu 8 ký tự, gồm chữ và số"
+          render={(field, invalid) => (
+            <Input.Password
+              {...field}
+              status={invalid ? 'error' : undefined}
+              autoComplete="new-password"
+              prefix={<LockOutlined />}
+            />
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          label="Nhập lại mật khẩu"
+          render={(field, invalid) => (
+            <Input.Password
+              {...field}
+              status={invalid ? 'error' : undefined}
+              autoComplete="new-password"
+              prefix={<LockOutlined />}
+            />
+          )}
+        />
+      </div>
+      <div className="flex justify-end">
+        <Button type="primary" htmlType="submit" loading={isSubmitting}>
+          Đặt mật khẩu
+        </Button>
+      </div>
+    </Form>
+  );
+}
+
 export function SecurityPanel() {
+  const user = useCurrentUser();
   const logoutAll = useLogoutAll();
 
   return (
     <div className="@container">
-      <SettingsSection
-        title="Đổi mật khẩu"
-        description="Sau khi đổi, bạn sẽ bị đăng xuất khỏi mọi thiết bị và cần đăng nhập lại."
-      >
-        <ChangePasswordForm />
-      </SettingsSection>
+      {user.mustSetPassword ? (
+        <SettingsSection
+          title="Đặt mật khẩu"
+          description="Tài khoản của bạn chưa có mật khẩu. Đặt mật khẩu để đăng nhập bằng email, kể cả khi không dùng Google."
+        >
+          <FirstPasswordForm />
+        </SettingsSection>
+      ) : (
+        <SettingsSection
+          title="Đổi mật khẩu"
+          description="Sau khi đổi, bạn sẽ bị đăng xuất khỏi mọi thiết bị và cần đăng nhập lại."
+        >
+          <ChangePasswordForm />
+        </SettingsSection>
+      )}
 
       <Divider className="!my-7" />
 

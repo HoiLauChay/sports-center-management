@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Account } from '@sports-center/shared';
+import { firstPasswordBodySchema, type Account, type FirstPasswordBody } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch, type HistoryState } from '@tanstack/react-router';
 import { App } from 'antd';
@@ -101,6 +101,32 @@ export function useChangePassword() {
   const mutation = useMutation({
     mutationFn: (values: ChangePasswordFormValues) => authService.changePassword(values),
     onSuccess: () => endSession('Đổi mật khẩu thành công, vui lòng đăng nhập lại'),
+    onError: handleApiError,
+  });
+
+  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+
+  return { form, onSubmit, isSubmitting: mutation.isPending };
+}
+
+export function useSetFirstPassword() {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+
+  const form = useForm<FirstPasswordBody>({
+    resolver: zodResolver(firstPasswordBodySchema),
+    mode: 'onTouched',
+    defaultValues: { password: '', confirmPassword: '' },
+  });
+  const handleApiError = useFormApiError(form);
+
+  const mutation = useMutation({
+    mutationFn: (values: FirstPasswordBody) => authService.setFirstPassword(values),
+    onSuccess: (user) => {
+      queryClient.setQueryData(sessionQueryOptions.queryKey, user);
+      form.reset();
+      message.success('Đã đặt mật khẩu, lần sau bạn có thể đăng nhập bằng email và mật khẩu này');
+    },
     onError: handleApiError,
   });
 
