@@ -47,13 +47,7 @@ export function BottomNav({ user, onMore }: { user: Account; onMore: () => void 
           </Link>
         );
       })}
-      <button
-        type="button"
-        data-tour="more"
-        className={itemClass(moreActive)}
-        onClick={onMore}
-        aria-label="Mở menu đầy đủ"
-      >
+      <button type="button" className={itemClass(moreActive)} onClick={onMore} aria-label="Mở menu đầy đủ">
         <span
           className={`flex h-7 w-12 items-center justify-center rounded-full ${moreActive ? 'bg-sc-primary-soft' : ''}`}
         >

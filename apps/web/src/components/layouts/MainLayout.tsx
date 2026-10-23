@@ -93,7 +93,13 @@ export function MainLayout({ children }: { children?: ReactNode }) {
         {isMobile && <BottomNav user={user} onMore={() => setDrawerOpen(true)} />}
       </Layout>
       {isTourRole(user.role) && (
-        <AppTour role={user.role} userName={user.fullName} open={tour.open} onClose={tour.close} />
+        <AppTour
+          role={user.role}
+          userName={user.fullName}
+          open={tour.open}
+          onClose={tour.close}
+          onNavMenuChange={isMobile ? setDrawerOpen : undefined}
+        />
       )}
     </Layout>
   );

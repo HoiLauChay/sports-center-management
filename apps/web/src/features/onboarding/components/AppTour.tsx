@@ -1,26 +1,54 @@
 import { Button, Grid, Tour, type TourProps } from 'antd';
 import { ArrowRight, Check, CircleUserRound, Menu, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import logoMark from '~/assets/brand/logo-mark.svg';
-import { navGroupsFor } from '~/config/navigation';
+import { bottomNavFor, navGroupsFor } from '~/config/navigation';
 import { ROLE_LABEL } from '~/constants/roles';
 import { ROLE_COLOR_ON_DARK } from '~/styles/antd-theme';
 import { ROLE_TOUR, type TourRole, type TourTarget } from '../config/tourSteps';
 
-// The sidebar is also rendered inside the (hidden) mobile drawer, so pick the copy that is on screen.
-function findVisible(target: TourTarget) {
+// On mobile the dashboard link exists both in the bottom bar and in the drawer, so look in the right one.
+function resolveTarget(target: TourTarget, inDrawer: boolean) {
   const nodes = document.querySelectorAll<HTMLElement>(`[data-tour="${target}"]`);
-  return Array.from(nodes).find((node) => node.getClientRects().length > 0) ?? null;
-}
-
-// On mobile most nav items live behind the "Thêm" button; with no anchor at all the step is centered.
-function resolveTarget(target?: TourTarget) {
-  if (!target) return null;
-  const node = findVisible(target) ?? findVisible('more');
+  const node =
+    Array.from(nodes).find(
+      (candidate) => !!candidate.closest('.ant-drawer') === inDrawer && candidate.getClientRects().length > 0,
+    ) ?? null;
   // antd only scrolls when the target is outside the window, not when the sidebar's own scroll area hides it.
   node?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   return node;
+}
+
+// antd measures the highlight once per step and only again on window resize/scroll, so while the drawer
+// slides in we nudge it to re-measure until the drawer has moved and come to rest. Slow devices and
+// background tabs can delay the slide by seconds, hence the generous cap; leaving the step cancels it.
+const FOLLOW_INTERVAL_MS = 50;
+const FOLLOW_MAX_MS = 15000;
+const FOLLOW_SETTLED_CHECKS = 4;
+
+function followSlidingTarget(getNode: () => Element | null) {
+  const startedAt = Date.now();
+  let lastX: number | undefined;
+  let moved = false;
+  let still = 0;
+
+  const timer = window.setInterval(() => {
+    const x = getNode()?.getBoundingClientRect().x;
+    if (lastX !== undefined && x !== lastX) {
+      moved = true;
+      still = 0;
+    } else {
+      still += 1;
+    }
+    lastX = x;
+    window.dispatchEvent(new Event('resize'));
+    if ((moved && still >= FOLLOW_SETTLED_CHECKS) || Date.now() - startedAt > FOLLOW_MAX_MS) {
+      window.clearInterval(timer);
+    }
+  }, FOLLOW_INTERVAL_MS);
+
+  return () => window.clearInterval(timer);
 }
 
 interface StepMeta {
@@ -96,14 +124,11 @@ function StepCover({ index, total, meta, role, userName }: StepCoverProps) {
   );
 }
 
-function StepDescription({ text, target }: { text: string; target?: TourTarget }) {
-  // Read at render time: the step only renders while the layout (and so the nav) is mounted.
-  const behindMore = !!target && !findVisible(target) && !!findVisible('more');
-
+function StepDescription({ text, inDrawer }: { text: string; inDrawer: boolean }) {
   return (
     <>
       {text}
-      {behindMore && (
+      {inDrawer && (
         <span className="mt-3 flex w-fit items-center gap-1.5 rounded-lg bg-sc-paper px-2.5 py-1 text-[13.5px] font-semibold text-sc-ink-2">
           <Menu size={14} /> Mở trong menu “Thêm”
         </span>
@@ -117,18 +142,25 @@ interface AppTourProps {
   userName: string;
   open: boolean;
   onClose: () => void;
+  // Given only on mobile, where most nav items sit in the drawer behind the "Thêm" button.
+  onNavMenuChange?: (open: boolean) => void;
 }
 
-export function AppTour({ role, userName, open, onClose }: AppTourProps) {
+export function AppTour({ role, userName, open, onClose, onNavMenuChange }: AppTourProps) {
   const [current, setCurrent] = useState(0);
   const isMobile = Grid.useBreakpoint().md === false;
   const total = ROLE_TOUR[role].length;
+
+  const inDrawer = useMemo(() => {
+    const bottomPaths = new Set<TourTarget>(bottomNavFor(role).map((item) => item.path));
+    return ROLE_TOUR[role].map(({ target }) => !!onNavMenuChange && !!target && !bottomPaths.has(target));
+  }, [role, onNavMenuChange]);
 
   const steps = useMemo<TourProps['steps']>(() => {
     const meta = stepMetaFor(role);
     return ROLE_TOUR[role].map(({ target, title, description }, index) => ({
       title,
-      description: <StepDescription text={description} target={target} />,
+      description: <StepDescription text={description} inDrawer={inDrawer[index]} />,
       cover: (
         <StepCover
           index={index}
@@ -138,15 +170,30 @@ export function AppTour({ role, userName, open, onClose }: AppTourProps) {
           userName={userName}
         />
       ),
-      // Nav anchors sit in the left sidebar on desktop and the bottom bar on mobile.
-      placement: isMobile ? 'top' : 'right',
+      // Sidebar items get the card beside them; on mobile the card sits above the bottom bar or below drawer items.
+      placement: isMobile ? (inDrawer[index] ? 'bottom' : 'top') : 'right',
       // antd centers the step when the target resolves to null; its typings just don't allow the union.
-      target: target ? () => resolveTarget(target) as HTMLElement : null,
+      target: target ? () => resolveTarget(target, inDrawer[index]) as HTMLElement : null,
     }));
-  }, [role, total, userName, isMobile]);
+  }, [role, total, userName, isMobile, inDrawer]);
+
+  const stopFollowing = useRef<() => void>(undefined);
+
+  const goTo = (index: number) => {
+    setCurrent(index);
+    if (!onNavMenuChange || inDrawer[index] === inDrawer[current]) return;
+    onNavMenuChange(inDrawer[index]);
+    stopFollowing.current?.();
+    // Bottom-bar targets never move, so only the drawer opening needs following.
+    if (inDrawer[index]) {
+      stopFollowing.current = followSlidingTarget(() => document.querySelector('.ant-drawer-content-wrapper'));
+    }
+  };
 
   const close = () => {
+    stopFollowing.current?.();
     setCurrent(0);
+    onNavMenuChange?.(false);
     onClose();
   };
 
@@ -156,7 +203,7 @@ export function AppTour({ role, userName, open, onClose }: AppTourProps) {
     <Tour
       open={open}
       current={current}
-      onChange={setCurrent}
+      onChange={goTo}
       onClose={close}
       onFinish={close}
       steps={steps}
@@ -189,15 +236,11 @@ export function AppTour({ role, userName, open, onClose }: AppTourProps) {
       actionsRender={() => (
         <>
           {current > 0 && (
-            <Button onClick={() => setCurrent(current - 1)} className="!h-9 !px-4">
+            <Button onClick={() => goTo(current - 1)} className="!h-9 !px-4">
               Trước
             </Button>
           )}
-          <Button
-            type="primary"
-            onClick={isLast ? close : () => setCurrent(current + 1)}
-            className="!h-9 !gap-1.5 !px-4"
-          >
+          <Button type="primary" onClick={isLast ? close : () => goTo(current + 1)} className="!h-9 !gap-1.5 !px-4">
             {current === 0 ? 'Bắt đầu' : isLast ? 'Hoàn tất' : 'Tiếp'}
             {isLast ? <Check size={16} /> : <ArrowRight size={16} />}
           </Button>

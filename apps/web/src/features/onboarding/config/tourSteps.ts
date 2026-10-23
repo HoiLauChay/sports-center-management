@@ -4,7 +4,7 @@ import type { NavPath } from '~/config/navigation';
 export type TourRole = Exclude<Role, 'COACH'>;
 
 // Matches a `data-tour` attribute: nav links use their path, other anchors use a fixed key.
-export type TourTarget = NavPath | 'account' | 'more';
+export type TourTarget = NavPath | 'account';
 
 export interface TourStepConfig {
   target?: TourTarget;
