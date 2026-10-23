@@ -1,6 +1,7 @@
 import {
   ERROR_CODE,
   type ClassPlans,
+  type MyClassTraining,
   type ProgressMilestone,
   type RosterEntry,
   type SaveProgressReviewBody,
@@ -11,7 +12,11 @@ import {
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import { toSessionResponse } from '~/mappers/class.mapper';
-import { toProgressReviewResponse, toTrainingPlanResponse } from '~/mappers/classTraining.mapper';
+import {
+  toAnnouncementResponse,
+  toProgressReviewResponse,
+  toTrainingPlanResponse,
+} from '~/mappers/classTraining.mapper';
 import { toEvaluationResponse } from '~/mappers/training.mapper';
 import attendanceRepository from '~/repositories/attendance.repository';
 import classTrainingRepository, { type TrainingClassRow } from '~/repositories/classTraining.repository';
@@ -218,6 +223,28 @@ class ClassTrainingService {
     });
     notificationService.sendEmailsAfterCommit(notifications);
     return toProgressReviewResponse(row);
+  };
+
+  myTraining = async (accountId: string, classId: string): Promise<MyClassTraining> => {
+    if (
+      !(await classTrainingRepository.findClass(classId)) ||
+      !(await enrollmentRepository.hasActive(classId, accountId))
+    ) {
+      throw notFound('Không tìm thấy lớp học');
+    }
+    const [plans, reviews, announcements] = await Promise.all([
+      classTrainingRepository.findPlans(classId),
+      classTrainingRepository.findReviews(classId, accountId),
+      classTrainingRepository.findAnnouncements(classId),
+    ]);
+    const classPlan = plans.find((plan) => plan.accountId === null);
+    const myPlan = plans.find((plan) => plan.accountId === accountId);
+    return {
+      classPlan: classPlan ? toTrainingPlanResponse(classPlan) : null,
+      myPlan: myPlan ? toTrainingPlanResponse(myPlan) : null,
+      reviews: reviews.map(toProgressReviewResponse),
+      announcements: announcements.map(toAnnouncementResponse),
+    };
   };
 
   student = async (actor: Actor, classId: string, accountId: string): Promise<StudentProgress> => {

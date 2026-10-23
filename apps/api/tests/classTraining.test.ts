@@ -1,4 +1,11 @@
-import type { ClassPlans, ProgressReview, RosterEntry, StudentProgress, TrainingPlan } from '@sports-center/shared';
+import type {
+  ClassPlans,
+  MyClassTraining,
+  ProgressReview,
+  RosterEntry,
+  StudentProgress,
+  TrainingPlan,
+} from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { Server } from 'node:http';
 
@@ -107,5 +114,26 @@ describe('progress reviews', () => {
       await request('GET', `/${f.cls.id}/students/${f.member.id}`, f.coach),
     );
     expect(detail.reviews.map(({ milestone, fitness }) => [milestone, fitness])).toEqual([['MID', 4]]);
+  });
+});
+
+describe('member training view', () => {
+  test('a student reads the class plan, their own plan, reviews and announcements; others get 404', async () => {
+    const f = await setupAttendance();
+    const body = { goals: 'Mục tiêu', content: 'Nội dung' };
+    await request('PUT', `/${f.cls.id}/plan`, f.coach, body);
+    await request('PUT', `/${f.cls.id}/students/${f.member.id}/plan`, f.coach, { ...body, goals: 'Riêng' });
+    await request('PUT', `/${f.cls.id}/students/${f.second.id}/plan`, f.coach, { ...body, goals: 'Bạn khác' });
+    await prisma.classAnnouncement.create({
+      data: { classId: f.cls.id, senderId: f.coach.id, kind: 'NOTICE', title: 'Đổi sân', body: 'Sân 2' },
+    });
+
+    const { server: meServer, request: me } = await startServer('/me/classes');
+    const view = await readResult<MyClassTraining>(await me('GET', `/${f.cls.id}/training`, f.member));
+    expect(view.classPlan?.goals).toBe('Mục tiêu');
+    expect(view.myPlan?.goals).toBe('Riêng');
+    expect(view.announcements.map(({ title }) => title)).toEqual(['Đổi sân']);
+    expect((await me('GET', `/${f.cls.id}/training`, f.outsider)).status).toBe(404);
+    meServer.close();
   });
 });

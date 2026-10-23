@@ -36,6 +36,11 @@ class ClassTrainingController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã lưu đánh giá tiến độ', result }));
   };
 
+  myTraining = async (req: Request, res: Response) => {
+    const result = await classTrainingService.myTraining(req.user!.id, req.params.id as string);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
   roster = async (req: Request, res: Response) => {
     const result = await classTrainingService.roster(req.user!, req.params.id as string);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
