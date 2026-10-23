@@ -1,5 +1,5 @@
 import type { ClassSummary } from '@sports-center/shared';
-import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
@@ -7,7 +7,7 @@ import { useMySpecializations } from '~/features/specializations/hooks/useSpecia
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useOpenClasses, usePendingRegistrations, useRegisterToTeach } from '../hooks/useCoachClasses';
-import { CLASS_STATUS_TAG, classDateRange } from '../utils';
+import { classDateRange } from '../utils';
 import { WeeklyTags } from './ClassTableParts';
 
 /** `/coach/open-classes` (UC_2.13, BR_2.14): drafts of the coach's approved sports that still need a coach. */
@@ -22,6 +22,15 @@ export function CoachOpenClassesPage() {
 
   const action = (record: ClassSummary) => {
     if (pending.data?.has(record.id)) return <Tag color="warning">Đã đăng ký, chờ duyệt</Tag>;
+    if (record.scheduleConflict) {
+      return (
+        <Tooltip title="Lớp có buổi trùng giờ với lịch dạy hiện tại của bạn.">
+          <Button size="small" disabled>
+            Đăng ký dạy
+          </Button>
+        </Tooltip>
+      );
+    }
     return (
       <Button
         type="primary"
@@ -60,11 +69,31 @@ export function CoachOpenClassesPage() {
       ),
     },
     {
-      title: 'Trạng thái lớp',
-      render: (_, record) => {
-        const tag = CLASS_STATUS_TAG[record.status];
-        return <Tag color={tag.color}>{tag.label}</Tag>;
-      },
+      title: 'Quy mô',
+      render: (_, record) => (
+        <div className="flex flex-col text-[14.5px] whitespace-nowrap">
+          <span>{record.course.totalSessions} buổi</span>
+          <span className="text-sc-muted">
+            {record.enrolledCount > 0 ? `${record.enrolledCount}/` : ''}
+            {record.minStudents}–{record.maxStudents} học viên
+          </span>
+        </div>
+      ),
+    },
+    {
+      title: 'Trạng thái',
+      render: (_, record) => (
+        <div className="flex flex-col items-start gap-1">
+          <Tag color="processing" className="!m-0">
+            Đang tuyển HLV
+          </Tag>
+          {record.scheduleConflict && (
+            <Tag color="error" className="!m-0">
+              Trùng lịch dạy của bạn
+            </Tag>
+          )}
+        </div>
+      ),
     },
     { key: 'action', align: 'right', width: 220, render: (_, record) => action(record) },
   ];

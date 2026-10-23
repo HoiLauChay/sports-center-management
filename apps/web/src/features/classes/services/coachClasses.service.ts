@@ -5,6 +5,7 @@ import type {
   CoachRegistration,
   ListCoachRegistrationsQuery,
   Paginated,
+  WithdrawClassBody,
 } from '@sports-center/shared';
 import { PAGINATION } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
@@ -36,10 +37,11 @@ export const coachClassesService = {
     return data.result;
   },
 
-  /** Leaves a class that has not started; it goes back to waiting for a coach. */
-  withdraw: async (classId: string) => {
+  /** Leaves a class at least a week before it starts; it goes back to waiting for a coach. */
+  withdraw: async ({ classId, ...body }: WithdrawClassBody & { classId: string }) => {
     const { data } = await privateApi.post<ApiResponse<ClassDetail>>(
       `/classes/${encodeURIComponent(classId)}/withdraw`,
+      body,
     );
     return data.result;
   },
