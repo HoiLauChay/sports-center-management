@@ -7,7 +7,9 @@ import {
   createClassBodySchema,
   listClassesQuerySchema,
   listCoachRegistrationsQuerySchema,
+  progressReviewParamsSchema,
   reviewClassBodySchema,
+  saveProgressReviewBodySchema,
   saveTrainingPlanBodySchema,
   updateClassBodySchema,
   withdrawClassBodySchema,
@@ -118,6 +120,12 @@ classRouter.put(
   isRole('COACH'),
   validate({ params: classIdParamsSchema, body: saveTrainingPlanBodySchema }),
   classTrainingController.saveClassPlan,
+);
+classRouter.put(
+  '/:id/students/:accountId/reviews/:milestone',
+  isRole('COACH'),
+  validate({ params: progressReviewParamsSchema, body: saveProgressReviewBodySchema }),
+  classTrainingController.saveReview,
 );
 classRouter.put(
   '/:id/students/:accountId/plan',

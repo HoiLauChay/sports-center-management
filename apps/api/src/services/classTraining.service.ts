@@ -1,7 +1,9 @@
 import {
   ERROR_CODE,
   type ClassPlans,
+  type ProgressMilestone,
   type RosterEntry,
+  type SaveProgressReviewBody,
   type SaveTrainingPlanBody,
   type StudentProgress,
 } from '@sports-center/shared';
@@ -16,6 +18,7 @@ import classTrainingRepository, { type TrainingClassRow } from '~/repositories/c
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import trainingRepository from '~/repositories/training.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
 import { formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction } from '~/utils/transaction';
@@ -60,6 +63,18 @@ const assertRunning = (cls: TrainingClassRow) => {
   if (cls.status === 'CANCELLED' || (cls.endDate && formatDate(cls.endDate) < todayInCenter())) {
     throw invalidState('Lớp đã hủy hoặc đã kết thúc');
   }
+};
+
+const assertMilestoneReached = (cls: TrainingClassRow, milestone: ProgressMilestone) => {
+  const sessions = cls.sessions.filter(({ status }) => status === 'SCHEDULED');
+  const now = new Date();
+  if (milestone === 'MID') {
+    const started = sessions.filter((session) => startOf(session) <= now).length;
+    if (started < Math.ceil(sessions.length / 2)) throw invalidState('Lớp chưa học đến nửa khóa');
+    return;
+  }
+  const last = sessions.at(-1);
+  if (!last || formatDate(last.sessionDate) > todayInCenter()) throw invalidState('Lớp chưa đến buổi cuối');
 };
 
 class ClassTrainingService {
@@ -150,6 +165,59 @@ class ClassTrainingService {
     });
     notificationService.sendEmailsAfterCommit(notifications);
     return toTrainingPlanResponse(row);
+  };
+
+  saveReview = async (
+    actor: Actor,
+    params: { id: string; accountId: string; milestone: ProgressMilestone },
+    body: SaveProgressReviewBody,
+    ip?: string,
+  ) => {
+    const { id: classId, accountId, milestone } = params;
+    const { row, notifications } = await runTransaction(async (tx) => {
+      await lockRows(tx, { classes: [classId] });
+      const cls = requireCoachOf(actor, await classTrainingRepository.findClass(classId, tx));
+      if (cls.status === 'CANCELLED') throw invalidState('Lớp đã hủy');
+      if (!(await enrollmentRepository.hasActive(classId, accountId, tx))) throw notStudent();
+      assertMilestoneReached(cls, milestone);
+      const current = await classTrainingRepository.findReview(classId, accountId, milestone, tx);
+      const row = await classTrainingRepository.saveReview(
+        { classId, accountId, milestone },
+        { ...body, coachId: actor.id },
+        tx,
+      );
+      await auditService.record(
+        {
+          accountId: actor.id,
+          action: current ? 'UPDATE' : 'CREATE',
+          entityType: 'PROGRESS_REVIEW',
+          entityId: row.id,
+          oldValues: current ?? undefined,
+          newValues: row,
+          ipAddress: ip,
+        },
+        tx,
+      );
+      const notifications = current
+        ? []
+        : await notificationService.create(
+            [
+              {
+                accountId,
+                type: 'TRAINING',
+                title: milestone === 'MID' ? 'Bạn có đánh giá giữa khóa mới' : 'Bạn có đánh giá cuối khóa mới',
+                message: body.comment,
+                referenceType: 'CLASS',
+                referenceId: classId,
+                sendEmail: true,
+              },
+            ],
+            tx,
+          );
+      return { row, notifications };
+    });
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toProgressReviewResponse(row);
   };
 
   student = async (actor: Actor, classId: string, accountId: string): Promise<StudentProgress> => {

@@ -1,5 +1,5 @@
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import type { Prisma, ProgressMilestone } from '~/generated/prisma/client';
 
 const person = { select: { id: true, fullName: true } } as const;
 
@@ -50,7 +50,9 @@ const planSelect = {
 
 const reviewSelect = {
   id: true,
+  classId: true,
   accountId: true,
+  coachId: true,
   account: person,
   milestone: true,
   technique: true,
@@ -119,6 +121,24 @@ class ClassTrainingRepository {
       ? tx.trainingPlan.update({ where: { id: current.id }, data, select: planSelect })
       : tx.trainingPlan.create({ data: { classId, accountId, ...data }, select: planSelect });
   };
+
+  findReview = (classId: string, accountId: string, milestone: ProgressMilestone, tx: Prisma.TransactionClient) =>
+    tx.progressReview.findUnique({
+      where: { classId_accountId_milestone: { classId, accountId, milestone } },
+      select: reviewSelect,
+    });
+
+  saveReview = (
+    key: { classId: string; accountId: string; milestone: ProgressMilestone },
+    data: { technique: number; fitness: number; attitude: number; comment: string; coachId: string },
+    tx: Prisma.TransactionClient,
+  ) =>
+    tx.progressReview.upsert({
+      where: { classId_accountId_milestone: key },
+      create: { ...key, ...data },
+      update: data,
+      select: reviewSelect,
+    });
 
   findReviews = (classId: string, accountId?: string) =>
     prisma.progressReview.findMany({

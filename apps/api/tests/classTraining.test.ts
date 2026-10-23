@@ -1,8 +1,9 @@
-import type { ClassPlans, RosterEntry, StudentProgress, TrainingPlan } from '@sports-center/shared';
+import type { ClassPlans, ProgressReview, RosterEntry, StudentProgress, TrainingPlan } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
+import { addDays, todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
 import { readResult, startServer } from './helpers/http';
@@ -77,5 +78,34 @@ describe('training plans', () => {
 
     await prisma.class.update({ where: { id: f.cls.id }, data: { status: 'CANCELLED' } });
     expect((await request('PUT', `/${f.cls.id}/plan`, f.coach, body)).status).toBe(409);
+  });
+});
+
+describe('progress reviews', () => {
+  test('mid review opens at half the course, final after the last session; the first save notifies the student', async () => {
+    const f = await setupAttendance();
+    const later = await f.makeSession({ sessionDate: new Date(addDays(todayInCenter(), 3)) });
+    await f.makeSession({ sessionDate: new Date(addDays(todayInCenter(), 4)) });
+    const body = { technique: 4, fitness: 3, attitude: 5, comment: 'Tiến bộ rõ' };
+    const path = (milestone: string) => `/${f.cls.id}/students/${f.member.id}/reviews/${milestone}`;
+
+    expect((await request('PUT', path('MID'), f.coach, body)).status).toBe(409);
+    await prisma.classSession.delete({ where: { id: later.id } });
+    const mid = await readResult<ProgressReview>(await request('PUT', path('MID'), f.coach, body));
+    expect(mid).toMatchObject({ milestone: 'MID', technique: 4, coach: { id: f.coach.id } });
+    await readResult<ProgressReview>(await request('PUT', path('MID'), f.coach, { ...body, fitness: 4 }));
+    expect(await prisma.notification.count({ where: { accountId: f.member.id, type: 'TRAINING' } })).toBe(1);
+    expect(await prisma.auditLog.count({ where: { entityType: 'PROGRESS_REVIEW' } })).toBe(2);
+
+    expect((await request('PUT', path('FINAL'), f.coach, body)).status).toBe(409);
+    expect((await request('PUT', path('MID'), f.otherCoach, body)).status).toBe(403);
+    expect((await request('PUT', `/${f.cls.id}/students/${f.outsider.id}/reviews/MID`, f.coach, body)).status).toBe(
+      422,
+    );
+
+    const detail = await readResult<StudentProgress>(
+      await request('GET', `/${f.cls.id}/students/${f.member.id}`, f.coach),
+    );
+    expect(detail.reviews.map(({ milestone, fitness }) => [milestone, fitness])).toEqual([['MID', 4]]);
   });
 });
