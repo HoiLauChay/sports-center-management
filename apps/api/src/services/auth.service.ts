@@ -26,7 +26,7 @@ import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
 import { toAccountResponse } from '~/mappers/account.mapper';
-import accountRepository, { accountProfileInclude } from '~/repositories/account.repository';
+import accountRepository from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -499,16 +499,8 @@ class AuthService {
         throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
       }
 
-      const updates: Prisma.AccountUpdateInput = {};
-      if (!account.emailVerifiedAt) updates.emailVerifiedAt = new Date();
-      if (!account.avatarUrl && googleUser.picture) updates.avatarUrl = googleUser.picture;
-
-      if (Object.keys(updates).length > 0) {
-        account = await prisma.account.update({
-          where: { id: account.id },
-          data: updates,
-          include: accountProfileInclude,
-        });
+      if (!account.emailVerifiedAt || (!account.avatarUrl && googleUser.picture)) {
+        account = await accountRepository.fillFromGoogle(account, googleUser.picture ?? null);
       }
 
       const tokens = await this.issueTokens(account.id, account.role, meta);

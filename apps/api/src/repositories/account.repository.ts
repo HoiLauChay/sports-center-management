@@ -160,6 +160,16 @@ class AccountRepository {
       include: accountProfileInclude,
     });
 
+  fillFromGoogle = (
+    account: { id: string; emailVerifiedAt: Date | null; avatarUrl: string | null },
+    picture: string | null,
+  ) =>
+    prisma.account.update({
+      where: { id: account.id },
+      data: { emailVerifiedAt: account.emailVerifiedAt ?? new Date(), avatarUrl: account.avatarUrl ?? picture },
+      include: accountProfileInclude,
+    });
+
   setOwnPassword = async (
     account: { id: string; emailVerifiedAt: Date | null },
     passwordHash: string,
