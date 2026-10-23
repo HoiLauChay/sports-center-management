@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Input, Modal, Segmented, Select, type TableColumnsType } from 'antd';
+import { Card, Divider, Input, Modal, Segmented, Select, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { RowActions } from '~/components/data/RowActions';
@@ -16,6 +16,7 @@ import {
   type Specialization,
   type SpecializationStatus,
 } from '../types';
+import { EvidenceView } from './EvidenceView';
 
 interface Review {
   entry: Specialization;
@@ -39,6 +40,8 @@ function ReviewModal({ review, onClose }: { review: Review; onClose: () => void 
       onCancel={onClose}
       onOk={() => mutation.mutate({ id: entry.id, approve, reviewNote: note }, { onSuccess: onClose })}
     >
+      <EvidenceView entry={entry} />
+      <Divider className="!my-4" />
       <p className="mt-0 text-sc-muted">
         {approve
           ? 'HLV sẽ được đăng ký dạy và được phân công các lớp thuộc bộ môn này.'
@@ -83,6 +86,17 @@ export function ManagerSpecializationsPage() {
       title: 'Bộ môn',
       key: 'sport',
       render: (_, entry) => <SportTag name={entry.sport.name} />,
+    },
+    {
+      title: 'Hồ sơ',
+      key: 'evidence',
+      render: (_, entry) => (
+        <span className="text-[14.5px] whitespace-nowrap">
+          {entry.experienceYears !== null ? `${entry.experienceYears} năm · ` : ''}
+          {entry.certificates.length} tệp chứng chỉ
+          {entry.experienceNote ? ' · có mô tả' : ''}
+        </span>
+      ),
     },
     {
       title: 'Gửi lúc',
@@ -180,6 +194,7 @@ export function ManagerSpecializationsPage() {
             setLimit(nextLimit);
           }}
           emptyTitle={status === 'PENDING' ? 'Không có yêu cầu nào đang chờ' : 'Không có yêu cầu nào'}
+          expandable={{ expandedRowRender: (entry) => <EvidenceView entry={entry} /> }}
         />
       </Card>
       {review && <ReviewModal key={review.entry.id} review={review} onClose={() => setReview(null)} />}
