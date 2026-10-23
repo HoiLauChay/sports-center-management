@@ -279,6 +279,19 @@ describe('first Google sign-in', () => {
     expect([blocked.status, await readCode(blocked)]).toEqual([409, 'INVALID_STATE']);
   });
 
+  test('an account the manager created is verified and gets the Google picture, but still needs a password', async () => {
+    const coach = await createAccount('COACH', 'staff.google@example.com', { mustSetPassword: true });
+    fakeGoogle(() =>
+      Response.json({ email: coach.email, email_verified: true, picture: 'https://lh3.googleusercontent.com/a/x' }),
+    );
+    const state = await begin();
+    await callback(`code=abc&state=${state}`, state);
+
+    const signedIn = await prisma.account.findUniqueOrThrow({ where: { id: coach.id } });
+    expect(signedIn.emailVerifiedAt).not.toBeNull();
+    expect([signedIn.avatarUrl, signedIn.mustSetPassword]).toEqual(['https://lh3.googleusercontent.com/a/x', true]);
+  });
+
   test('failures come back to /login as fixed codes, never as raw error text', async () => {
     const loginError = async (res: Response) => new URL(res.headers.get('location') ?? '').searchParams.get('error');
 
