@@ -19,6 +19,7 @@ export const UPLOAD_PURPOSES = [
   'SESSION_ATTACHMENT',
   'COURSE_THUMBNAIL',
   'SPORT_ICON',
+  'CERTIFICATE',
 ] as const;
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 export const AUDIT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'RESOLVE', 'IGNORE'] as const;

@@ -21,6 +21,7 @@ const FOLDER: Record<UploadPurpose, string> = {
   SESSION_ATTACHMENT: 'session-attachments',
   COURSE_THUMBNAIL: 'course-thumbnails',
   SPORT_ICON: 'sport-icons',
+  CERTIFICATE: 'certificates',
 };
 
 const EXTENSION: Record<string, string> = {

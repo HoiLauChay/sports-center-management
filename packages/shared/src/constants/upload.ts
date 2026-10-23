@@ -19,4 +19,5 @@ export const UPLOAD_RULES: Record<
   SESSION_ATTACHMENT: { contentTypes: ATTACHMENT_CONTENT_TYPES, maxSize: 20 * MB, roles: ['COACH'] },
   COURSE_THUMBNAIL: { contentTypes: IMAGE_CONTENT_TYPES, maxSize: 5 * MB, roles: ['MANAGER'] },
   SPORT_ICON: { contentTypes: IMAGE_CONTENT_TYPES, maxSize: 5 * MB, roles: ['MANAGER'] },
+  CERTIFICATE: { contentTypes: ATTACHMENT_CONTENT_TYPES, maxSize: 10 * MB, roles: ['COACH'] },
 };
