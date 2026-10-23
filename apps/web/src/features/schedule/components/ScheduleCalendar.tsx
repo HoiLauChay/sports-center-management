@@ -17,6 +17,8 @@ interface ScheduleCalendarProps {
   onChange: (next: { view: CalendarView; anchor: string }) => void;
   /** Extra content under the details of an event (e.g. a link to the class). */
   detailExtra?: (event: CalendarEvent) => ReactNode;
+  /** Opens an event somewhere else instead of the details dialog (e.g. the coach's session page). */
+  onOpen?: (event: CalendarEvent) => void;
   /** Kinds named in the colour legend; defaults to all of them. */
   legend?: ScheduleKind[];
   empty?: ReactNode;
@@ -31,6 +33,11 @@ function EventChip({ event, compact, onOpen }: { event: CalendarEvent; compact?:
       className={`w-full cursor-pointer rounded-md border-0 border-l-[3px] border-solid px-2 py-1 text-left text-[13.5px] leading-snug text-sc-ink ${style.chip} ${event.cancelled ? 'opacity-55' : ''}`}
     >
       <span className={`block font-semibold ${event.cancelled ? 'line-through' : ''} ${compact ? 'truncate' : ''}`}>
+        {event.attendance && (
+          <span
+            className={`mr-1 inline-block size-2 rounded-full align-middle ${event.attendance.complete ? 'bg-sc-success' : 'bg-sc-warning'}`}
+          />
+        )}
         {event.startTime} {event.title}
       </span>
       {!compact && (
@@ -39,6 +46,14 @@ function EventChip({ event, compact, onOpen }: { event: CalendarEvent; compact?:
           {event.subtitle ? ` · ${event.subtitle}` : ''}
         </span>
       )}
+      {!compact && event.attendance && (
+        <span className={`block ${event.attendance.complete ? 'text-sc-success' : 'text-sc-warning'}`}>
+          {event.attendance.complete
+            ? 'Đã điểm danh'
+            : `Điểm danh ${event.attendance.marked}/${event.attendance.total}`}
+        </span>
+      )}
+      {event.substitute && <span className="block font-semibold text-sc-role-coach">Dạy thay</span>}
     </button>
   );
 }
@@ -51,6 +66,7 @@ export function ScheduleCalendar({
   anchor,
   onChange,
   detailExtra,
+  onOpen,
   legend,
   empty,
 }: ScheduleCalendarProps) {
@@ -61,6 +77,7 @@ export function ScheduleCalendar({
   const month = parseDate(anchor).month();
 
   const goTo = (date: string, nextView: CalendarView = view) => onChange({ view: nextView, anchor: date });
+  const open = (event: CalendarEvent) => (onOpen ? onOpen(event) : setSelected(event));
   const nothingShown = !loading && days.every((date) => !byDate.get(date)?.length);
 
   return (
@@ -128,7 +145,7 @@ export function ScheduleCalendar({
                 {list.length === 0 ? (
                   <span className="text-[13.5px] text-sc-muted-2">—</span>
                 ) : (
-                  list.map((event) => <EventChip key={event.key} event={event} onOpen={() => setSelected(event)} />)
+                  list.map((event) => <EventChip key={event.key} event={event} onOpen={() => open(event)} />)
                 )}
               </div>
             );
@@ -161,7 +178,7 @@ export function ScheduleCalendar({
                   </button>
                   <div className="hidden flex-col gap-1 md:flex">
                     {list.slice(0, MONTH_CHIPS).map((event) => (
-                      <EventChip key={event.key} compact event={event} onOpen={() => setSelected(event)} />
+                      <EventChip key={event.key} compact event={event} onOpen={() => open(event)} />
                     ))}
                     {list.length > MONTH_CHIPS && (
                       <button

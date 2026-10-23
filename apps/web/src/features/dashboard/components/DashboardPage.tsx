@@ -1,7 +1,8 @@
 import { useCurrentUser } from '~/features/auth';
+import { CoachDashboard } from './CoachDashboard';
 import { ManagerDashboard } from './ManagerDashboard';
 import { ReceptionistDashboard } from './ReceptionistDashboard';
-import { CoachDashboard, MemberDashboard } from './RoleDashboards';
+import { MemberDashboard } from './RoleDashboards';
 
 /** `/dashboard`: every role lands on its own overview. */
 export function DashboardPage() {

@@ -9,18 +9,17 @@ interface UpcomingListProps {
   events: CalendarEvent[];
   loading?: boolean;
   empty: ReactNode;
-  action?: (event: CalendarEvent) => ReactNode;
 }
 
-/** The next few bookings / sessions as a compact list, shared by the member and coach dashboards. */
-export function UpcomingList({ events, loading, empty, action }: UpcomingListProps) {
+/** The next few bookings / sessions of a member as a compact list. */
+export function UpcomingList({ events, loading, empty }: UpcomingListProps) {
   return (
     <List
       loading={loading}
       dataSource={events}
       locale={{ emptyText: <EmptyState title="Chưa có lịch sắp tới" action={empty} /> }}
       renderItem={(event) => (
-        <List.Item actions={action ? [action(event)] : undefined}>
+        <List.Item>
           <div className="flex min-w-0 items-center gap-3">
             <span className={`h-9 w-1 shrink-0 rounded ${KIND_STYLE[event.kind].dot}`} />
             <div className="flex min-w-0 flex-col">

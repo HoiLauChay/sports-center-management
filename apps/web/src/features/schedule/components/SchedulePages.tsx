@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Button } from 'antd';
 import { useMemo, useState } from 'react';
 import { ErrorState } from '~/components/feedback/States';
@@ -71,6 +71,7 @@ export function SchedulePage() {
 
 /** `/coach/schedule`: the sessions a coach teaches by week or month. */
 export function CoachSchedulePage() {
+  const navigate = useNavigate();
   const { state, setState, range } = useCalendarState();
   const schedule = useCoachSchedule(range);
   const events = useMemo(() => eventsOfCoach(schedule.data ?? []), [schedule.data]);
@@ -93,14 +94,9 @@ export function CoachSchedulePage() {
           view={state.view}
           anchor={state.anchor}
           onChange={setState}
-          detailExtra={(event) =>
-            event.sessionId && !event.cancelled ? (
-              <Link to="/coach/sessions/$sessionId" params={{ sessionId: event.sessionId }}>
-                <Button type="primary" block>
-                  Mở buổi học
-                </Button>
-              </Link>
-            ) : null
+          onOpen={(event) =>
+            event.sessionId &&
+            void navigate({ to: '/coach/sessions/$sessionId', params: { sessionId: event.sessionId } })
           }
         />
       )}
