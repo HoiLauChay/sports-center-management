@@ -192,39 +192,16 @@ class AuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    const refreshToken = generateOpaqueToken();
-
-    const { account, notifications } = await prisma.$transaction(async (tx) => {
-      await otpRepository.consume(record.id, tx);
-      const created = await accountRepository.createMember(
-        { email, fullName, passwordHash, emailVerifiedAt: new Date() },
-        tx,
-      );
-      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
-      const notifications = await notificationService.create(
-        [
-          {
-            accountId: created.id,
-            type: 'SYSTEM',
-            title: 'Chào mừng bạn đến với Sports Center',
-            message:
-              'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
-            dedupKey: `welcome:${created.id}`,
-            sendEmail: true,
-          },
-        ],
-        tx,
-      );
-      return { account: created, notifications };
-    });
-
-    notificationService.sendEmailsAfterCommit(notifications);
-
-    return {
-      account: toAccountResponse(account),
-      accessToken: signAccessToken(account.id, account.role),
-      refreshToken,
-    };
+    return this.createMemberWithSession(
+      { email, fullName, passwordHash, emailVerifiedAt: new Date() },
+      {
+        message:
+          'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+        sendEmail: true,
+      },
+      meta,
+      (tx) => otpRepository.consume(record.id, tx),
+    );
   };
 
   login = async ({ email, password }: LoginBody, meta: SessionMeta) => {
@@ -534,49 +511,64 @@ class AuthService {
       return { account: toAccountResponse(account), ...tokens };
     }
 
-    const dummyHash = await hashPassword(generateOpaqueToken());
+    // Unguessable placeholder: email login stays closed until the member sets a real password
+    const placeholderHash = await hashPassword(generateOpaqueToken());
+    return this.createMemberWithSession(
+      {
+        email,
+        fullName: googleUser.name?.trim() || email.split('@')[0] || 'Member',
+        avatarUrl: googleUser.picture ?? null,
+        passwordHash: placeholderHash,
+        emailVerifiedAt: new Date(),
+        // First Google sign-in: the web app sends them to set a real password before anything else
+        mustSetPassword: true,
+      },
+      {
+        message:
+          'Tài khoản của bạn đã được liên kết thành công với Google. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+        sendEmail: false,
+      },
+      meta,
+    );
+  };
+
+  /**
+   * Creates a member with its first session and welcome notification in one transaction.
+   * `before` runs first inside that transaction (e.g. consuming the sign-up OTP).
+   */
+  private createMemberWithSession = async (
+    data: Parameters<typeof accountRepository.createMember>[0],
+    welcome: { message: string; sendEmail: boolean },
+    meta: SessionMeta,
+    before?: (tx: Prisma.TransactionClient) => Promise<unknown>,
+  ) => {
     const refreshToken = generateOpaqueToken();
-    const fullName = googleUser.name?.trim() || email.split('@')[0] || 'Member';
 
-    const { account: created, notifications } = await prisma.$transaction(async (tx) => {
-      const createdAccount = await accountRepository.createMember(
-        {
-          email,
-          fullName,
-          avatarUrl: googleUser.picture ?? null,
-          passwordHash: dummyHash,
-          emailVerifiedAt: new Date(),
-          // First Google sign-in: the web app sends them to set a real password before anything else
-          mustSetPassword: true,
-        },
-        tx,
-      );
-
-      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, createdAccount.id, meta), tx);
-
+    const { account, notifications } = await prisma.$transaction(async (tx) => {
+      await before?.(tx);
+      const created = await accountRepository.createMember(data, tx);
+      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
       const notifications = await notificationService.create(
         [
           {
-            accountId: createdAccount.id,
+            accountId: created.id,
             type: 'SYSTEM',
             title: 'Chào mừng bạn đến với Sports Center',
-            message:
-              'Tài khoản của bạn đã được liên kết thành công với Google. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
-            dedupKey: `welcome:${createdAccount.id}`,
-            sendEmail: false,
+            message: welcome.message,
+            dedupKey: `welcome:${created.id}`,
+            sendEmail: welcome.sendEmail,
           },
         ],
         tx,
       );
-
-      return { account: createdAccount, notifications };
+      return { account: created, notifications };
     });
 
     notificationService.sendEmailsAfterCommit(notifications);
 
     return {
-      account: toAccountResponse(created),
-      accessToken: signAccessToken(created.id, created.role),
+      account: toAccountResponse(account),
+      accessToken: signAccessToken(account.id, account.role),
       refreshToken,
     };
   };
