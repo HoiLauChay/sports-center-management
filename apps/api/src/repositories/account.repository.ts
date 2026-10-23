@@ -94,7 +94,13 @@ class AccountRepository {
     });
 
   createMember = (
-    data: { email: string; fullName: string; passwordHash: string; emailVerifiedAt: Date },
+    data: {
+      email: string;
+      fullName: string;
+      passwordHash: string | null;
+      emailVerifiedAt: Date;
+      avatarUrl?: string | null;
+    },
     tx: Prisma.TransactionClient = prisma,
   ) =>
     tx.account.create({
@@ -146,10 +152,20 @@ class AccountRepository {
       select: { id: true },
     });
 
-  replaceEmail = (id: string, email: string, passwordHash: string, tx: Prisma.TransactionClient = prisma) =>
+  replaceEmail = (id: string, email: string, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({
       where: { id },
-      data: { email, emailVerifiedAt: null, passwordHash, passwordChangedAt: new Date(), mustSetPassword: true },
+      data: { email, emailVerifiedAt: null, passwordHash: null, passwordChangedAt: new Date() },
+      include: accountProfileInclude,
+    });
+
+  fillFromGoogle = (
+    account: { id: string; emailVerifiedAt: Date | null; avatarUrl: string | null },
+    picture: string | null,
+  ) =>
+    prisma.account.update({
+      where: { id: account.id },
+      data: { emailVerifiedAt: account.emailVerifiedAt ?? new Date(), avatarUrl: account.avatarUrl ?? picture },
       include: accountProfileInclude,
     });
 
@@ -163,7 +179,6 @@ class AccountRepository {
       data: {
         passwordHash,
         passwordChangedAt: new Date(),
-        mustSetPassword: false,
         emailVerifiedAt: account.emailVerifiedAt ?? new Date(),
       },
       include: accountProfileInclude,

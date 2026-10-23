@@ -2,6 +2,7 @@ import {
   activateAccountBodySchema,
   activationBodySchema,
   changePasswordBodySchema,
+  firstPasswordBodySchema,
   loginBodySchema,
   loginStartBodySchema,
   registerBodySchema,
@@ -18,6 +19,7 @@ import { auth } from '~/middlewares/auth.middlewares';
 import {
   activateLimit,
   activationLimit,
+  googleAuthLimit,
   loginLimit,
   loginStartLimit,
   refreshLimit,
@@ -30,6 +32,9 @@ import {
 import { validate } from '~/utils/validation';
 
 const authRouter = Router();
+
+authRouter.get('/google', googleAuthLimit, authController.googleAuth);
+authRouter.get('/google/callback', googleAuthLimit, authController.googleCallback);
 
 authRouter.post('/send-otp', sendOtpLimit, validate({ body: sendOtpBodySchema }), authController.sendOtp);
 authRouter.post('/register', registerLimit, validate({ body: registerBodySchema }), authController.register);
@@ -55,6 +60,7 @@ authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);
 authRouter.patch('/me', auth, validate({ body: updateMeBodySchema }), authController.updateMe);
 authRouter.post('/change-password', auth, validate({ body: changePasswordBodySchema }), authController.changePassword);
+authRouter.post('/first-password', auth, validate({ body: firstPasswordBodySchema }), authController.setFirstPassword);
 authRouter.post(
   '/reset-password',
   resetPasswordLimit,

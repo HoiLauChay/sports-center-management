@@ -8,6 +8,7 @@ import { useRegister } from '../hooks/useAuth';
 import { useCaptchaToken } from '../hooks/useCaptchaToken';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
 import { CaptchaField, type CaptchaHandle } from './CaptchaField';
+import { AuthDivider, GoogleLoginButton } from './GoogleLoginButton';
 import { INPUT_ICON_STYLE } from './inputIcon';
 import { OtpField } from './OtpField';
 
@@ -131,6 +132,9 @@ export function RegisterPage() {
           Đăng ký
         </Button>
       </Form>
+
+      <AuthDivider text="hoặc" />
+      <GoogleLoginButton text="Đăng ký nhanh bằng Google" />
 
       <AuthAlt>
         Đã có tài khoản? <AuthLink to={PATHS.login}>Đăng nhập</AuthLink>

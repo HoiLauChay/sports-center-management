@@ -7,6 +7,7 @@ import {
   type ActivationInfo,
   type ChangePasswordBody,
   type ErrorCode,
+  type FirstPasswordBody,
   type LoginBody,
   type LoginStartBody,
   type LoginStartResult,
@@ -20,7 +21,7 @@ import {
 import { waitUntil } from '@vercel/functions';
 
 import { prisma } from '~/configs/db';
-import { appUrl } from '~/configs/env';
+import { appUrl, env } from '~/configs/env';
 import { AUTH } from '~/constants/auth';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma, Role } from '~/generated/prisma/client';
@@ -50,6 +51,8 @@ export interface SessionMeta {
 const DUMMY_PASSWORD_HASH = '$2b$12$SEvy3IQfyF7ckWidOI9vuuK7OSqjxXI1X/MCEfh52T3jfMglIeK/q';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const GOOGLE_TIMEOUT_MS = 10_000;
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
@@ -88,7 +91,7 @@ class AuthService {
 
   loginStart = async ({ email }: LoginStartBody): Promise<LoginStartResult> => {
     const account = await accountRepository.findByEmail(email);
-    if (!account || account.status !== 'ACTIVE' || !account.mustSetPassword) return { next: 'PASSWORD' };
+    if (!account || account.status !== 'ACTIVE' || account.passwordHash !== null) return { next: 'PASSWORD' };
 
     const retryAfter = await this.otpCooldown(email, 'ACCOUNT_SETUP');
     if (retryAfter) return { next: 'SET_PASSWORD', retryAfter };
@@ -103,7 +106,7 @@ class AuthService {
   setPassword = async ({ email, otp, password }: SetPasswordBody, meta: SessionMeta) => {
     const record = await this.verifyOtp(email, 'ACCOUNT_SETUP', otp);
     const account = await accountRepository.findByEmail(email);
-    if (!account || !account.mustSetPassword) {
+    if (!account || account.passwordHash !== null) {
       throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu, vui lòng đăng nhập');
     }
     if (account.status !== 'ACTIVE') {
@@ -113,6 +116,25 @@ class AuthService {
     const passwordHash = await hashPassword(password);
     const updated = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
+      await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
+      return accountRepository.setOwnPassword(account, passwordHash, tx);
+    });
+
+    const tokens = await this.issueTokens(updated.id, updated.role, meta);
+    return { account: toAccountResponse(updated), ...tokens };
+  };
+
+  setFirstPassword = async (accountId: string, { password }: FirstPasswordBody, meta: SessionMeta) => {
+    const account = await accountRepository.findById(accountId);
+    if (!account || account.passwordHash !== null) {
+      throw fail(HTTP_STATUS.CONFLICT, ERROR_CODE.INVALID_STATE, 'Tài khoản đã có mật khẩu');
+    }
+    if (account.status !== 'ACTIVE') {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
+    }
+
+    const passwordHash = await hashPassword(password);
+    const updated = await prisma.$transaction(async (tx) => {
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
       return accountRepository.setOwnPassword(account, passwordHash, tx);
     });
@@ -172,46 +194,23 @@ class AuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    const refreshToken = generateOpaqueToken();
-
-    const { account, notifications } = await prisma.$transaction(async (tx) => {
-      await otpRepository.consume(record.id, tx);
-      const created = await accountRepository.createMember(
-        { email, fullName, passwordHash, emailVerifiedAt: new Date() },
-        tx,
-      );
-      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
-      const notifications = await notificationService.create(
-        [
-          {
-            accountId: created.id,
-            type: 'SYSTEM',
-            title: 'Chào mừng bạn đến với Sports Center',
-            message:
-              'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
-            dedupKey: `welcome:${created.id}`,
-            sendEmail: true,
-          },
-        ],
-        tx,
-      );
-      return { account: created, notifications };
-    });
-
-    notificationService.sendEmailsAfterCommit(notifications);
-
-    return {
-      account: toAccountResponse(account),
-      accessToken: signAccessToken(account.id, account.role),
-      refreshToken,
-    };
+    return this.createMemberWithSession(
+      { email, fullName, passwordHash, emailVerifiedAt: new Date() },
+      {
+        message:
+          'Tài khoản của bạn đã được tạo thành công. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+        sendEmail: true,
+      },
+      meta,
+      (tx) => otpRepository.consume(record.id, tx),
+    );
   };
 
   login = async ({ email, password }: LoginBody, meta: SessionMeta) => {
     const account = await accountRepository.findByEmail(email);
     const valid = await verifyPassword(password, account?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
-    if (!account || !valid || account.mustSetPassword) {
+    if (!account?.passwordHash || !valid) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.INVALID_CREDENTIALS, 'Email hoặc mật khẩu không đúng');
     }
     if (account.status !== 'ACTIVE') {
@@ -324,7 +323,7 @@ class AuthService {
 
   changePassword = async (accountId: string, { currentPassword, password }: ChangePasswordBody) => {
     const account = await accountRepository.findById(accountId);
-    if (!account || !(await verifyPassword(currentPassword, account.passwordHash))) {
+    if (!account?.passwordHash || !(await verifyPassword(currentPassword, account.passwordHash))) {
       throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.INVALID_CREDENTIALS, 'Mật khẩu hiện tại không đúng');
     }
 
@@ -392,7 +391,7 @@ class AuthService {
     }
 
     const account = await accountRepository.findByEmail(record.email);
-    if (!account || account.status !== 'ACTIVE' || !account.mustSetPassword) throw invalidActivation();
+    if (!account || account.status !== 'ACTIVE' || account.passwordHash !== null) throw invalidActivation();
     return { record, account };
   };
 
@@ -421,6 +420,145 @@ class AuthService {
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
     await mailService.sendOtp(email, purpose, code);
+  };
+
+  getGoogleAuthUrl = (state: string, callbackUrl: string) => {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw fail(
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODE.INTERNAL,
+        'Google OAuth chưa được cấu hình trên server (thiếu GOOGLE_CLIENT_ID hoặc GOOGLE_CLIENT_SECRET)',
+      );
+    }
+    const params = new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      redirect_uri: callbackUrl,
+      response_type: 'code',
+      scope: 'openid email profile',
+      prompt: 'select_account',
+      state,
+    });
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  };
+
+  loginWithGoogle = async (code: string, callbackUrl: string, meta: SessionMeta) => {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      throw fail(HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODE.INTERNAL, 'Google OAuth chưa được cấu hình trên server');
+    }
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: callbackUrl,
+        grant_type: 'authorization_code',
+      }),
+      signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Google token exchange failed:', errorText);
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không thể xác thực mã với Google');
+    }
+
+    const tokenData = (await tokenResponse.json()) as { access_token?: string };
+    if (!tokenData.access_token) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không nhận được access token từ Google');
+    }
+
+    const userinfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
+    });
+
+    if (!userinfoResponse.ok) {
+      throw fail(HTTP_STATUS.BAD_REQUEST, ERROR_CODE.UNAUTHORIZED, 'Không thể lấy thông tin người dùng từ Google');
+    }
+
+    const googleUser = (await userinfoResponse.json()) as {
+      sub: string;
+      email?: string;
+      email_verified?: boolean;
+      name?: string;
+      picture?: string;
+    };
+
+    if (!googleUser.email || !googleUser.email_verified) {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.FORBIDDEN, 'Email Google chưa được xác thực');
+    }
+
+    const email = googleUser.email.toLowerCase().trim();
+    let account = await accountRepository.findByEmail(email);
+
+    if (account) {
+      if (account.status !== 'ACTIVE') {
+        throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.ACCOUNT_INACTIVE, 'Tài khoản đã bị vô hiệu hóa');
+      }
+
+      if (!account.emailVerifiedAt || (!account.avatarUrl && googleUser.picture)) {
+        account = await accountRepository.fillFromGoogle(account, googleUser.picture ?? null);
+      }
+
+      const tokens = await this.issueTokens(account.id, account.role, meta);
+      return { account: toAccountResponse(account), ...tokens };
+    }
+
+    return this.createMemberWithSession(
+      {
+        email,
+        fullName: googleUser.name?.trim() || email.split('@')[0] || 'Member',
+        avatarUrl: googleUser.picture ?? null,
+        passwordHash: null,
+        emailVerifiedAt: new Date(),
+      },
+      {
+        message:
+          'Tài khoản của bạn đã được liên kết thành công với Google. Bạn có thể đặt sân, đăng ký lớp học và mua gói thành viên ngay trên hệ thống.',
+        sendEmail: false,
+      },
+      meta,
+    );
+  };
+
+  private createMemberWithSession = async (
+    data: Parameters<typeof accountRepository.createMember>[0],
+    welcome: { message: string; sendEmail: boolean },
+    meta: SessionMeta,
+    before?: (tx: Prisma.TransactionClient) => Promise<unknown>,
+  ) => {
+    const refreshToken = generateOpaqueToken();
+
+    const { account, notifications } = await prisma.$transaction(async (tx) => {
+      await before?.(tx);
+      const created = await accountRepository.createMember(data, tx);
+      await refreshTokenRepository.create(this.refreshTokenData(refreshToken, created.id, meta), tx);
+      const notifications = await notificationService.create(
+        [
+          {
+            accountId: created.id,
+            type: 'SYSTEM',
+            title: 'Chào mừng bạn đến với Sports Center',
+            message: welcome.message,
+            dedupKey: `welcome:${created.id}`,
+            sendEmail: welcome.sendEmail,
+          },
+        ],
+        tx,
+      );
+      return { account: created, notifications };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+
+    return {
+      account: toAccountResponse(account),
+      accessToken: signAccessToken(account.id, account.role),
+      refreshToken,
+    };
   };
 
   private issueTokens = async (accountId: string, role: Role, meta: SessionMeta) => {

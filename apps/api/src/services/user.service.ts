@@ -24,8 +24,6 @@ import notificationService, { type NotificationInput } from '~/services/notifica
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
 import { toPage } from '~/utils/pagination';
-import { hashPassword } from '~/utils/password';
-import { generateOpaqueToken } from '~/utils/token';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
 
 interface Viewer {
@@ -46,6 +44,11 @@ const taken = (code: ErrorCode, field: 'email' | 'phone', message: string) =>
 
 const emailTaken = () => taken(ERROR_CODE.EMAIL_TAKEN, 'email', 'Email đã được đăng ký');
 const phoneTaken = () => taken(ERROR_CODE.PHONE_TAKEN, 'phone', 'Số điện thoại đã được sử dụng');
+
+const withPasswordState = <T extends { passwordHash: string | null }>(account: T) => ({
+  ...account,
+  mustSetPassword: account.passwordHash === null,
+});
 
 const notFound = () =>
   new ErrorWithStatus({
@@ -109,17 +112,12 @@ class UserService {
     if (await accountRepository.existsByEmail(email)) throw emailTaken();
     if (phone && (await accountRepository.existsByPhone(phone))) throw phoneTaken();
 
-    const passwordHash = await hashPassword(generateOpaqueToken());
-
     try {
       const { account, activationUrl } = await runTransaction(async (tx) => {
-        const created = await accountRepository.create(
-          { email, fullName, phone, role, passwordHash, mustSetPassword: true, ...profileData(body) },
-          tx,
-        );
+        const created = await accountRepository.create({ email, fullName, phone, role, ...profileData(body) }, tx);
         const profile = role === 'COACH' ? created.coachProfile : created.receptionistProfile;
         const entries = [
-          ['ACCOUNT', created],
+          ['ACCOUNT', withPasswordState(created)],
           [role === 'COACH' ? 'COACH_PROFILE' : 'RECEPTIONIST_PROFILE', profile],
         ] as const;
         for (const [entityType, newValues] of entries) {
@@ -231,10 +229,9 @@ class UserService {
     const invalidState = (message: string) =>
       new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
     if (id === viewer.id) throw invalidState('Không thể tự đổi email của mình');
-    const passwordHash = await hashPassword(generateOpaqueToken());
 
     try {
-      const { account, activationUrl } = await this.replaceEmail(viewer, id, email, passwordHash, invalidState, ip);
+      const { account, activationUrl } = await this.replaceEmail(viewer, id, email, invalidState, ip);
       authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'EMAIL_CHANGED');
       return toAccountResponse(account);
     } catch (err) {
@@ -247,7 +244,6 @@ class UserService {
     viewer: Viewer,
     id: string,
     email: string,
-    passwordHash: string,
     invalidState: (message: string) => ErrorWithStatus,
     ip?: string,
   ) =>
@@ -258,7 +254,7 @@ class UserService {
       if (current.email === email) throw invalidState('Email mới trùng email hiện tại');
       if (await accountRepository.existsByEmail(email)) throw emailTaken();
 
-      const next = await accountRepository.replaceEmail(id, email, passwordHash, tx);
+      const next = await accountRepository.replaceEmail(id, email, tx);
       await refreshTokenRepository.revokeAllByAccountId(id, tx);
       await auditService.record(
         {
@@ -266,8 +262,8 @@ class UserService {
           action: 'UPDATE',
           entityType: 'ACCOUNT',
           entityId: id,
-          oldValues: current,
-          newValues: next,
+          oldValues: withPasswordState(current),
+          newValues: withPasswordState(next),
           ipAddress: ip,
         },
         tx,

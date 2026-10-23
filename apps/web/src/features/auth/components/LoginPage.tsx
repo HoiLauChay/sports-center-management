@@ -1,17 +1,25 @@
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
+import { GOOGLE_LOGIN_ERROR } from '@sports-center/shared';
+import { getRouteApi } from '@tanstack/react-router';
 import { Button, Form, Input } from 'antd';
 import heroImg from '~/assets/images/sports/badminton.jpg';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { PATHS } from '~/constants/paths';
 import { useLoginFlow } from '../hooks/useLoginFlow';
 import { AuthAlt, AuthHeading, AuthLink, AuthShell } from './AuthShell';
+import { AuthDivider, GoogleLoginButton } from './GoogleLoginButton';
 import { INPUT_ICON_STYLE } from './inputIcon';
 import { NewPasswordStep } from './NewPasswordStep';
 import { OtpStep } from './OtpStep';
 
+const routeApi = getRouteApi('/_auth/login');
+
 export function LoginPage() {
   const flow = useLoginFlow();
   const { step } = flow;
+  const { error: googleError } = routeApi.useSearch();
+  const rootError =
+    flow.emailForm.formState.errors.root?.message ?? (googleError ? GOOGLE_LOGIN_ERROR[googleError] : undefined);
 
   return (
     <AuthShell
@@ -31,7 +39,7 @@ export function LoginPage() {
       {step.kind === 'email' && (
         <>
           <AuthHeading title="Đăng nhập" description="Dùng email đã đăng ký tại quầy hoặc trên trang này." />
-          <FormRootError message={flow.emailForm.formState.errors.root?.message} />
+          <FormRootError message={rootError} />
           <Form layout="vertical" requiredMark={false} onFinish={() => void flow.submitEmail()}>
             <FormField
               control={flow.emailForm.control}
@@ -54,6 +62,8 @@ export function LoginPage() {
               Tiếp theo
             </Button>
           </Form>
+          <AuthDivider text="hoặc" />
+          <GoogleLoginButton text="Đăng nhập bằng Google" />
           <AuthAlt>
             Chưa có tài khoản? <AuthLink to={PATHS.register}>Đăng ký tập thử miễn phí</AuthLink>
           </AuthAlt>

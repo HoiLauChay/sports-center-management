@@ -23,6 +23,9 @@ const schema = z
     SEPAY_WEBHOOK_API_KEY: z.string().optional(),
     SEPAY_API_BASE_URL: z.url().optional(),
     SEPAY_API_TOKEN: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CALLBACK_URL: z.url().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;

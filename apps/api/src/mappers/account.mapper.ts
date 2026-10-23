@@ -52,7 +52,7 @@ export const toAccountResponse = (account: AccountWithProfile): Account => ({
   role: account.role,
   status: account.status,
   emailVerifiedAt: account.emailVerifiedAt?.toISOString() ?? null,
-  mustSetPassword: account.mustSetPassword,
+  mustSetPassword: account.passwordHash === null,
   createdAt: account.createdAt.toISOString(),
   profile: toProfile(account),
 });

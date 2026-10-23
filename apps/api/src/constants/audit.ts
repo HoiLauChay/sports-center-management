@@ -31,7 +31,7 @@ const fields =
     keys;
 
 export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
-  ACCOUNT: fields<Account & { statusReason: string | null }>()(
+  ACCOUNT: fields<Account & { statusReason: string | null; mustSetPassword: boolean }>()(
     'email',
     'phone',
     'fullName',

@@ -80,6 +80,13 @@ export const resetPasswordBodySchema = withPasswordConfirmation(
 
 export const setPasswordBodySchema = resetPasswordBodySchema;
 
+export const firstPasswordBodySchema = withPasswordConfirmation(
+  z.object({
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+  }),
+);
+
 export const activationBodySchema = z.object({
   token: z.string().trim().min(1, 'Link kích hoạt không hợp lệ').max(255, 'Link kích hoạt không hợp lệ'),
 });
@@ -107,6 +114,7 @@ export type LoginStartBody = z.infer<typeof loginStartBodySchema>;
 export type LoginBody = z.infer<typeof loginBodySchema>;
 export type VerifyOtpBody = z.infer<typeof verifyOtpBodySchema>;
 export type SetPasswordBody = z.infer<typeof setPasswordBodySchema>;
+export type FirstPasswordBody = z.infer<typeof firstPasswordBodySchema>;
 export type ActivationBody = z.infer<typeof activationBodySchema>;
 export type ActivateAccountBody = z.infer<typeof activateAccountBodySchema>;
 export type RegisterBody = z.infer<typeof registerBodySchema>;

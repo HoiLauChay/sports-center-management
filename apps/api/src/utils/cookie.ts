@@ -22,3 +22,11 @@ export const clearAuthCookies = (res: Response) => {
   res.clearCookie(COOKIE.ACCESS_TOKEN, base);
   res.clearCookie(COOKIE.REFRESH_TOKEN, { ...base, path: COOKIE.REFRESH_PATH });
 };
+
+export const setOAuthStateCookie = (res: Response, state: string) => {
+  res.cookie(COOKIE.OAUTH_STATE, state, { ...base, maxAge: 10 * 60 * 1000 });
+};
+
+export const clearOAuthStateCookie = (res: Response) => {
+  res.clearCookie(COOKIE.OAUTH_STATE, base);
+};
