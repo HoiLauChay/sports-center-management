@@ -1,5 +1,4 @@
 export { ActivatePage } from './components/ActivatePage';
-export { FirstPasswordPage } from './components/FirstPasswordPage';
 export { ForgotPasswordPage } from './components/ForgotPasswordPage';
 export { GoogleLoginButton } from './components/GoogleLoginButton';
 export { LoginPage } from './components/LoginPage';

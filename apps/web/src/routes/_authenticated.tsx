@@ -11,9 +11,6 @@ export const Route = createFileRoute('/_authenticated')({
     if (!user) {
       throw redirect({ to: PATHS.login, search: { redirect: location.href } });
     }
-    if (user.mustSetPassword) {
-      throw redirect({ to: PATHS.setPassword, search: { redirect: location.href } });
-    }
     return { user };
   },
   pendingComponent: () => <PageLoading fullScreen />,
