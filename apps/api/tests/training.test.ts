@@ -1,4 +1,4 @@
-import type { AnnouncementResult, Evaluation, SessionNote } from '@sports-center/shared';
+import type { AnnouncementResult, ClassAnnouncement, Evaluation, SessionNote } from '@sports-center/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 import type { Server } from 'node:http';
 
@@ -108,7 +108,24 @@ describe('training', () => {
       title: 'Nghỉ lễ',
       body: 'Lớp nghỉ thứ Hai',
     });
-    expect(await readResult<AnnouncementResult>(sent)).toEqual({ recipients: 1 });
+    expect(await readResult<AnnouncementResult>(sent)).toMatchObject({ kind: 'NOTICE', recipients: 1 });
     expect(await prisma.notification.count({ where: { accountId: student.id, title: 'Nghỉ lễ' } })).toBe(1);
+
+    await request('POST', `/classes/${cls.id}/announcements`, coach, {
+      kind: 'HOMEWORK',
+      title: 'Thở bong bóng',
+      body: '5 phút mỗi ngày',
+    });
+    const history = await readResult<ClassAnnouncement[]>(
+      await request('GET', `/classes/${cls.id}/announcements`, student),
+    );
+    expect(history.map(({ kind, title }) => [kind, title])).toEqual([
+      ['HOMEWORK', 'Thở bong bóng'],
+      ['NOTICE', 'Nghỉ lễ'],
+    ]);
+    expect((await request('GET', `/classes/${cls.id}/announcements`, outsider)).status).toBe(403);
+    expect(
+      await prisma.notification.count({ where: { accountId: student.id, title: 'Bài tập về nhà: Thở bong bóng' } }),
+    ).toBe(1);
   });
 });

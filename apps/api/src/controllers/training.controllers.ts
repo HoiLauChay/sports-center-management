@@ -56,6 +56,11 @@ class TrainingController {
     const result = await trainingService.announce(req.user!, req.params.id as string, req.body);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã gửi thông báo lớp', result }));
   };
+
+  listAnnouncements = async (req: Request, res: Response) => {
+    const result = await trainingService.listAnnouncements(req.user!, req.params.id as string);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
 }
 
 export default new TrainingController();

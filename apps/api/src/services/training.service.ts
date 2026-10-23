@@ -10,9 +10,11 @@ import {
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import { sessionCoachId } from '~/mappers/class.mapper';
+import { toAnnouncementResponse } from '~/mappers/classTraining.mapper';
 import { toEvaluationResponse, toSessionNoteResponse } from '~/mappers/training.mapper';
 import attendanceRepository from '~/repositories/attendance.repository';
 import classRepository from '~/repositories/class.repository';
+import classTrainingRepository from '~/repositories/classTraining.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import trainingRepository, { type TrainingSessionRow } from '~/repositories/training.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -213,27 +215,43 @@ class TrainingService {
   listMyEvaluations = async (accountId: string, { classId }: MyEvaluationsQuery) =>
     (await trainingRepository.findMemberEvaluations(accountId, classId)).map(toEvaluationResponse);
 
-  announce = async (actor: Actor, classId: string, { title, body }: CreateAnnouncementBody) => {
+  announce = async (actor: Actor, classId: string, { kind, title, body }: CreateAnnouncementBody) => {
     const cls = await classRepository.findDetail(classId);
     if (!cls) throw notFound('Không tìm thấy lớp học');
     if (actor.role !== 'MANAGER' && !teaches(actor, cls.coachId)) {
       throw forbidden('Bạn chỉ gửi thông báo cho lớp mình phụ trách');
     }
-    const notifications = await runTransaction(async (tx) => {
+    const { announcement, notifications } = await runTransaction(async (tx) => {
+      const announcement = await classTrainingRepository.createAnnouncement(
+        { classId, senderId: actor.id, kind, title, body },
+        tx,
+      );
       const students = await enrollmentRepository.findActiveByClass(classId, tx);
-      return notificationService.create(
+      const notifications = await notificationService.create(
         students.map(({ accountId }) => ({
           accountId,
           type: 'TRAINING' as const,
-          title,
+          title: kind === 'HOMEWORK' ? `Bài tập về nhà: ${title}` : title,
           message: body,
           referenceType: 'CLASS',
           referenceId: classId,
         })),
         tx,
       );
+      return { announcement, notifications };
     });
-    return { recipients: notifications.length };
+    return { ...toAnnouncementResponse(announcement), recipients: notifications.length };
+  };
+
+  listAnnouncements = async (actor: Actor, classId: string) => {
+    const cls = await classRepository.findDetail(classId);
+    if (!cls) throw notFound('Không tìm thấy lớp học');
+    const allowed =
+      actor.role === 'MEMBER'
+        ? await enrollmentRepository.hasActive(classId, actor.id)
+        : actor.role === 'MANAGER' || teaches(actor, cls.coachId);
+    if (!allowed) throw forbidden('Bạn không xem được thông báo của lớp này');
+    return (await classTrainingRepository.findAnnouncements(classId)).map(toAnnouncementResponse);
   };
 }
 

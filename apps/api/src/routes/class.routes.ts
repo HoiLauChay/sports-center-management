@@ -98,3 +98,9 @@ classRouter.post(
   validate({ params: classIdParamsSchema, body: createAnnouncementBodySchema }),
   trainingController.announce,
 );
+classRouter.get(
+  '/:id/announcements',
+  isRole('COACH', 'MANAGER', 'MEMBER'),
+  validate({ params: classIdParamsSchema }),
+  trainingController.listAnnouncements,
+);
