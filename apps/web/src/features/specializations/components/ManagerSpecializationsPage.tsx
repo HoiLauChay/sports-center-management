@@ -72,30 +72,27 @@ export function ManagerSpecializationsPage() {
 
   const columns: TableColumnsType<Specialization> = [
     {
-      title: '#',
-      key: 'index',
-      width: 56,
-      render: (_, __, index) => (
-        <span className="font-display text-xl font-extrabold text-sc-muted-2">
-          {String((page - 1) * limit + index + 1).padStart(2, '0')}
-        </span>
+      title: 'HLV · Bộ môn',
+      key: 'coach',
+      render: (_, entry) => (
+        <div className="flex flex-col items-start gap-1">
+          <span className="font-semibold">{entry.coach.fullName}</span>
+          <SportTag name={entry.sport.name} />
+        </div>
       ),
-    },
-    { title: 'HLV', key: 'coach', render: (_, entry) => <span className="font-semibold">{entry.coach.fullName}</span> },
-    {
-      title: 'Bộ môn',
-      key: 'sport',
-      render: (_, entry) => <SportTag name={entry.sport.name} />,
     },
     {
       title: 'Hồ sơ',
       key: 'evidence',
       render: (_, entry) => (
-        <span className="text-[14.5px] whitespace-nowrap">
-          {entry.experienceYears !== null ? `${entry.experienceYears} năm · ` : ''}
-          {entry.certificates.length} tệp chứng chỉ
-          {entry.experienceNote ? ' · có mô tả' : ''}
-        </span>
+        <div className="flex flex-col text-[14.5px] whitespace-nowrap">
+          <span>
+            {entry.experienceYears !== null ? `${entry.experienceYears} năm kinh nghiệm` : 'Không khai số năm'}
+          </span>
+          <span className="text-sc-muted">
+            {entry.certificates.length} tệp chứng chỉ{entry.experienceNote ? ' · có mô tả' : ''}
+          </span>
+        </div>
       ),
     },
     {
@@ -105,21 +102,16 @@ export function ManagerSpecializationsPage() {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      render: (value: SpecializationStatus) => <MappedTag value={value} map={SPECIALIZATION_STATUS_TAG} />,
-    },
-    {
-      title: 'Xét duyệt',
-      key: 'review',
-      render: (_, entry) =>
-        entry.reviewedAt ? (
-          <div className="flex max-w-64 flex-col gap-0.5 text-[14.5px]">
+      key: 'status',
+      render: (_, entry) => (
+        <div className="flex max-w-56 flex-col items-start gap-1 text-[14.5px]">
+          <MappedTag value={entry.status} map={SPECIALIZATION_STATUS_TAG} />
+          {entry.reviewedAt && (
             <span className="whitespace-nowrap text-sc-muted">{formatDateTime(entry.reviewedAt)}</span>
-            {entry.reviewNote && <span className="[overflow-wrap:anywhere]">{entry.reviewNote}</span>}
-          </div>
-        ) : (
-          <span className="text-sc-muted-2">—</span>
-        ),
+          )}
+          {entry.reviewNote && <span className="[overflow-wrap:anywhere]">{entry.reviewNote}</span>}
+        </div>
+      ),
     },
     {
       title: 'Thao tác',
@@ -194,7 +186,9 @@ export function ManagerSpecializationsPage() {
             setLimit(nextLimit);
           }}
           emptyTitle={status === 'PENDING' ? 'Không có yêu cầu nào đang chờ' : 'Không có yêu cầu nào'}
-          expandable={{ expandedRowRender: (entry) => <EvidenceView entry={entry} /> }}
+          size="middle"
+          expandable={{ expandedRowRender: (entry) => <EvidenceView entry={entry} />, expandRowByClick: true }}
+          rowClassName="cursor-pointer"
         />
       </Card>
       {review && <ReviewModal key={review.entry.id} review={review} onClose={() => setReview(null)} />}
