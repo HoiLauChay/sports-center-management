@@ -4,6 +4,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { clickableRow } from '~/hooks/useRowLink';
 import { formatDateTime, initialsOf, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useAuditActors } from '../hooks/useAuditActors';
@@ -243,7 +244,7 @@ export function AuditLogsPage() {
               loading={logs.isPending}
               pagination={false}
               scroll={{ x: 'max-content' }}
-              onRow={(log) => ({ onClick: () => setSelected(log), className: 'cursor-pointer' })}
+              onRow={(log) => clickableRow(() => setSelected(log))}
               locale={{
                 emptyText: logs.isPending ? (
                   ' '

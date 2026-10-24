@@ -5,6 +5,7 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
+import { clickableRow } from '~/hooks/useRowLink';
 import { formatDateTime, formatRelative } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useSupportRequests, useUpdateSupportRequest } from '../hooks/useSupport';
@@ -237,8 +238,7 @@ export function ReceptionSupportPage() {
             setLimit(nextLimit);
           }}
           emptyTitle="Không có yêu cầu hỗ trợ"
-          rowClassName="cursor-pointer"
-          onRow={(request) => ({ onClick: () => setOpenId(request.id) })}
+          onRow={(request) => clickableRow(() => setOpenId(request.id))}
         />
       </Card>
       <RequestDrawer request={open} onClose={() => setOpenId(null)} />

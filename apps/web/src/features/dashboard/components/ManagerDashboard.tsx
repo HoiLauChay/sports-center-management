@@ -26,6 +26,7 @@ import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/us
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
 import { useSessionsOn } from '~/features/schedule';
 import { useCheckInsToday } from '~/features/training/hooks/useTraining';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND } from '~/lib/format';
 import { DATE_FORMAT, formatDayLabel, nowVN, todayVN } from '~/lib/time';
 
@@ -170,6 +171,10 @@ export function ManagerDashboard() {
   const checkIns = useCheckInsToday();
   const sessions = useSessionsOn(today);
   const classes = useClassOverview();
+  const classLink = useRowLink((item: ClassSummary) => ({
+    to: '/admin/classes/$classId',
+    params: { classId: item.id },
+  }));
   const revenue = useRevenueReport({
     from: nowVN()
       .subtract(MONTHS - 1, 'month')
@@ -472,6 +477,7 @@ export function ManagerDashboard() {
           rowKey="id"
           columns={classColumns}
           dataSource={classes.data?.running}
+          onRow={classLink}
           loading={classes.isPending}
           pagination={{ pageSize: 8, hideOnSinglePage: true }}
           scroll={{ x: 'max-content' }}

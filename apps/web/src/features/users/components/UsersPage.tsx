@@ -6,7 +6,7 @@ import {
   type ListUsersQuery,
 } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { Button, Card, Select, type TableColumnsType } from 'antd';
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
@@ -16,6 +16,7 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
 import { useCurrentUser } from '~/features/auth';
+import { useRowLink } from '~/hooks/useRowLink';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
 import { STATUS_ACTION } from '../utils/statusActions';
@@ -28,7 +29,7 @@ const routeApi = getRouteApi('/_authenticated/_manager/admin/users/');
 export function UsersPage() {
   const search = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
-  const navigateTo = useNavigate();
+  const rowLink = useRowLink((user: AccountSummary) => ({ to: '/admin/users/$userId', params: { userId: user.id } }));
   const viewer = useCurrentUser();
   const [creating, setCreating] = useState(false);
   const [statusChange, setStatusChange] = useState<{ user: AccountSummary; target: AccountStatus } | null>(null);
@@ -43,8 +44,6 @@ export function UsersPage() {
 
   const updateSearch = (patch: Partial<ListUsersQuery>) =>
     void navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
-
-  const openDetail = (id: string) => void navigateTo({ to: '/admin/users/$userId', params: { userId: id } });
 
   const cols = userColumns(search.q);
   const columns: TableColumnsType<AccountSummary> = [
@@ -125,10 +124,7 @@ export function UsersPage() {
             updateSearch({ page: nextLimit === limit ? nextPage : undefined, limit: nextLimit })
           }
           emptyTitle="Không có người dùng phù hợp"
-          rowClassName="cursor-pointer"
-          onRow={(user) => ({
-            onClick: () => openDetail(user.id),
-          })}
+          onRow={rowLink}
         />
       </Card>
       <CreateUserModal open={creating} onClose={() => setCreating(false)} />

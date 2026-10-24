@@ -1,4 +1,4 @@
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { Card, DatePicker, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
@@ -26,7 +26,6 @@ export function ReceptionOrderDetailPage() {
 }
 
 export function ReceptionOrdersPage() {
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [term, setTerm] = useState('');
@@ -95,7 +94,7 @@ export function ReceptionOrdersPage() {
             setPage(nextLimit === limit ? nextPage : 1);
             setLimit(nextLimit);
           }}
-          onOpen={(order) => void navigate({ to: '/reception/orders/$orderId', params: { orderId: order.id } })}
+          link={(order) => ({ to: '/reception/orders/$orderId', params: { orderId: order.id } })}
         />
       </Card>
     </>

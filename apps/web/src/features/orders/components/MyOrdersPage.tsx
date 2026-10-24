@@ -1,5 +1,4 @@
 import type { OrderStatus } from '@sports-center/shared';
-import { useNavigate } from '@tanstack/react-router';
 import { Card, Segmented } from 'antd';
 import { useState } from 'react';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
@@ -11,7 +10,6 @@ import { useOrders } from '../hooks/useOrders';
 import { OrdersTable } from './OrdersTable';
 
 export function MyOrdersPage() {
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [orderNumber, setOrderNumber] = useState('');
@@ -76,7 +74,7 @@ export function MyOrdersPage() {
             setPage(nextLimit === limit ? nextPage : 1);
             setLimit(nextLimit);
           }}
-          onOpen={(order) => void navigate({ to: '/orders/$orderId', params: { orderId: order.id } })}
+          link={(order) => ({ to: '/orders/$orderId', params: { orderId: order.id } })}
         />
       </Card>
     </>

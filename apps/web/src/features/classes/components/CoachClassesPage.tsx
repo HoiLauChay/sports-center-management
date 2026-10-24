@@ -1,12 +1,13 @@
 import type { ClassSummary } from '@sports-center/shared';
 import { COACH_WITHDRAW_NOTICE_DAYS } from '@sports-center/shared';
 import { useQueries } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Button, Card, Form, Input, Modal, Progress, Segmented, Table, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
+import { useRowLink } from '~/hooks/useRowLink';
 import { toApiError } from '~/lib/http-errors';
 import { addDays, isPast, todayVN } from '~/lib/time';
 import { useMyClasses, useWithdrawFromClass } from '../hooks/useCoachClasses';
@@ -30,7 +31,10 @@ const canWithdraw = (item: ClassSummary) =>
 
 /** `/coach/classes`: the classes this coach teaches, by phase, with each class's progress (UC_2.21). */
 export function CoachClassesPage() {
-  const navigate = useNavigate();
+  const rowLink = useRowLink((record: ClassSummary) => ({
+    to: '/coach/classes/$classId',
+    params: { classId: record.id },
+  }));
   const classes = useMyClasses();
   const withdraw = useWithdrawFromClass();
   const [leaving, setLeaving] = useState<ClassSummary | null>(null);
@@ -148,10 +152,7 @@ export function CoachClassesPage() {
               columns={columns}
               dataSource={shown}
               loading={classes.isPending}
-              onRow={(record) => ({
-                onClick: () => void navigate({ to: '/coach/classes/$classId', params: { classId: record.id } }),
-                className: 'cursor-pointer',
-              })}
+              onRow={rowLink}
               scroll={{ x: 'max-content' }}
               pagination={{ pageSize: 10, hideOnSinglePage: true }}
               locale={{

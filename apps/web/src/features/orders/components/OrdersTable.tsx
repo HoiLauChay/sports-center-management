@@ -1,4 +1,5 @@
 import type { Paginated } from '@sports-center/shared';
+import type { NavigateOptions } from '@tanstack/react-router';
 import { Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { DataTable } from '~/components/data/DataTable';
@@ -7,6 +8,7 @@ import { MappedTag } from '~/components/ui/MappedTag';
 import { ORDER_STATUS_TAG, PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, type Order } from '~/features/checkout/types';
 import { refundedOf } from '~/features/checkout/utils';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND, VN_TIMEZONE } from '~/lib/format';
 
 interface OrdersTableProps {
@@ -18,11 +20,13 @@ interface OrdersTableProps {
   limit: number;
   onPageChange: (page: number, limit: number) => void;
   showBuyer?: boolean;
-  onOpen: (order: Order) => void;
+  /** The page an order row opens. */
+  link: (order: Order) => NavigateOptions;
   keyword?: string;
 }
 
-export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: OrdersTableProps) {
+export function OrdersTable({ showBuyer = false, link, keyword, ...table }: OrdersTableProps) {
+  const rowLink = useRowLink(link);
   const columns: TableColumnsType<Order> = [
     {
       title: 'Mã đơn',
@@ -136,8 +140,7 @@ export function OrdersTable({ showBuyer = false, onOpen, keyword, ...table }: Or
       columns={columns}
       emptyTitle="Chưa có đơn hàng"
       emptyDescription="Đơn hàng xuất hiện sau mỗi lần thanh toán thành công."
-      rowClassName="cursor-pointer hover:bg-slate-50/70 transition-colors"
-      onRow={(order) => ({ onClick: () => onOpen(order) })}
+      onRow={rowLink}
       scroll={{ x: 'max-content' }}
       {...table}
     />

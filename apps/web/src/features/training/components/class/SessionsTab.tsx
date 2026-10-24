@@ -1,19 +1,23 @@
 import type { ClassDetail, ClassSession } from '@sports-center/shared';
-import { useNavigate } from '@tanstack/react-router';
 import { Table, Tag, type TableColumnsType } from 'antd';
 import { useMemo } from 'react';
 import { EmptyState } from '~/components/feedback/States';
 import { useCurrentUser } from '~/features/auth';
 import { useCoachScheduleSpan } from '~/features/schedule';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatDayLabel } from '~/lib/time';
 import { SESSION_PHASE_TAG, sessionPhase } from '../../utils';
 
 /** Every session of the class with its attendance and note; a click opens the ones the coach teaches. */
 export function SessionsTab({ gymClass }: { gymClass: ClassDetail }) {
   const user = useCurrentUser();
-  const navigate = useNavigate();
   const schedule = useCoachScheduleSpan(gymClass.startDate, gymClass.endDate);
   const taught = useMemo(() => new Map(schedule.data.map((item) => [item.id, item])), [schedule.data]);
+  const rowLink = useRowLink((session: ClassSession) =>
+    taught.has(session.id) && session.status !== 'CANCELLED'
+      ? { to: '/coach/sessions/$sessionId', params: { sessionId: session.id } }
+      : null,
+  );
 
   const columns: TableColumnsType<ClassSession> = [
     { title: 'Buổi', dataIndex: 'sessionNumber', width: 64 },
@@ -94,14 +98,7 @@ export function SessionsTab({ gymClass }: { gymClass: ClassDetail }) {
       loading={schedule.isPending}
       pagination={false}
       scroll={{ x: 'max-content' }}
-      onRow={(session) =>
-        taught.has(session.id) && session.status !== 'CANCELLED'
-          ? {
-              onClick: () => void navigate({ to: '/coach/sessions/$sessionId', params: { sessionId: session.id } }),
-              className: 'cursor-pointer',
-            }
-          : {}
-      }
+      onRow={rowLink}
       locale={{ emptyText: <EmptyState title="Lớp chưa có buổi học" /> }}
     />
   );

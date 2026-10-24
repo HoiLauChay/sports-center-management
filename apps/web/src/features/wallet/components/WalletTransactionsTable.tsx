@@ -1,9 +1,9 @@
 import type { Paginated, WalletTransaction } from '@sports-center/shared';
-import { Link } from '@tanstack/react-router';
 import type { TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PAYMENT_METHOD_LABEL, WALLET_TX_TAG } from '~/constants/payment';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatDateTime, formatVND } from '~/lib/format';
 
 const SOURCE_LABEL = { BANK_TRANSFER: 'Chuyển khoản', COUNTER: 'Tại quầy' } as const;
@@ -46,15 +46,6 @@ const columns: TableColumnsType<WalletTransaction> = [
           {transaction.method && ` · ${PAYMENT_METHOD_LABEL[transaction.method]}`}
           {transaction.createdBy && ` · ${transaction.createdBy.fullName}`}
         </span>
-        {transaction.orderId && (
-          <Link
-            to="/orders/$orderId"
-            params={{ orderId: transaction.orderId }}
-            className="text-[14.5px] font-semibold underline underline-offset-2"
-          >
-            Xem đơn hàng
-          </Link>
-        )}
       </div>
     ),
   },
@@ -93,10 +84,15 @@ interface WalletTransactionsTableProps {
   onPageChange: (page: number, limit: number) => void;
 }
 
+/** Rows of a payment open the order it paid for. */
 export function WalletTransactionsTable(props: WalletTransactionsTableProps) {
+  const rowLink = useRowLink((transaction: WalletTransaction) =>
+    transaction.orderId ? { to: '/orders/$orderId', params: { orderId: transaction.orderId } } : null,
+  );
   return (
     <DataTable<WalletTransaction>
       columns={columns}
+      onRow={rowLink}
       emptyTitle="Chưa có giao dịch ví"
       emptyDescription="Nạp tiền, thanh toán và hoàn tiền sẽ hiện ở đây."
       {...props}

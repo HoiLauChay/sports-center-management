@@ -12,6 +12,7 @@ import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses/hooks/useCourses';
 import { useConfirm } from '~/hooks/useConfirm';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
@@ -42,6 +43,10 @@ export function ClassesAdminPage() {
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const confirm = useConfirm();
+  const rowLink = useRowLink((record: ClassSummary) => ({
+    to: '/admin/classes/$classId',
+    params: { classId: record.id },
+  }));
   const { courseId } = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const courses = useCourses();
@@ -243,10 +248,7 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            onRow={(record) => ({
-              onClick: () => void navigate({ to: '/admin/classes/$classId', params: { classId: record.id } }),
-              className: 'cursor-pointer',
-            })}
+            onRow={rowLink}
             scroll={{ x: 'max-content' }}
             pagination={{
               current: page,

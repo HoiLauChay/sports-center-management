@@ -3,6 +3,7 @@ import { PROGRESS_MILESTONES } from '@sports-center/shared';
 import { Rate, Table, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { clickableRow } from '~/hooks/useRowLink';
 import { toApiError } from '~/lib/http-errors';
 import { useRoster } from '../../hooks/useClassTraining';
 import { MILESTONE_LABEL, reachedMilestones } from '../../utils';
@@ -109,13 +110,12 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
         loading={roster.isPending}
         pagination={false}
         scroll={{ x: 'max-content' }}
-        onRow={(entry) => ({
-          onClick: () => {
+        onRow={(entry) =>
+          clickableRow(() => {
             setSelected(entry);
             setOpen(true);
-          },
-          className: 'cursor-pointer',
-        })}
+          })
+        }
         locale={{ emptyText: <EmptyState title="Lớp chưa có học viên" /> }}
       />
       <StudentDrawer
