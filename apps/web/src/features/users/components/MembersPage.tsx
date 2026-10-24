@@ -1,10 +1,11 @@
 import type { AccountSummary } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { Card, type TableColumnsType } from 'antd';
 import { DataTable } from '~/components/data/DataTable';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useRowLink } from '~/hooks/useRowLink';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
 import { userColumns } from './userColumns';
@@ -14,7 +15,10 @@ const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/')
 export function MembersPage() {
   const search = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
-  const navigateTo = useNavigate();
+  const rowLink = useRowLink((member: AccountSummary) => ({
+    to: '/reception/members/$memberId',
+    params: { memberId: member.id },
+  }));
   const { page, limit } = withPaginationDefaults(search);
   const query = { q: search.q, page, limit };
 
@@ -58,10 +62,7 @@ export function MembersPage() {
             updateSearch({ page: nextLimit === limit ? nextPage : undefined, limit: nextLimit })
           }
           emptyTitle={search.q ? 'Không tìm thấy hội viên phù hợp' : 'Chưa có hội viên'}
-          rowClassName="cursor-pointer"
-          onRow={(member) => ({
-            onClick: () => void navigateTo({ to: '/reception/members/$memberId', params: { memberId: member.id } }),
-          })}
+          onRow={rowLink}
         />
       </Card>
     </>

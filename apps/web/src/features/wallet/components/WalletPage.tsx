@@ -14,6 +14,7 @@ import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { WalletCard } from '~/components/ui/WalletCard';
 import { INVOICE_STATUS_TAG, WALLET_TX_TAG, invoiceStatusOf } from '~/constants/payment';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useMyWallet } from '../hooks/useWallet';
@@ -53,16 +54,14 @@ const invoiceColumns: TableColumnsType<Invoice> = [
     title: 'Thao tác',
     key: 'actions',
     align: 'right',
-    render: (_, invoice) => {
-      const pending = invoiceStatusOf(invoice) === 'PENDING';
-      return (
+    render: (_, invoice) =>
+      invoiceStatusOf(invoice) === 'PENDING' ? (
         <Link to="/invoices/$invoiceId" params={{ invoiceId: invoice.id }}>
-          <Button size="small" type={pending ? 'primary' : 'default'}>
-            {pending ? 'Thanh toán' : 'Chi tiết'}
+          <Button size="small" type="primary">
+            Thanh toán
           </Button>
         </Link>
-      );
-    },
+      ) : null,
   },
 ];
 
@@ -104,6 +103,10 @@ function TransactionsTab() {
 }
 
 function TopUpInvoicesTab() {
+  const rowLink = useRowLink((invoice: Invoice) => ({
+    to: '/invoices/$invoiceId',
+    params: { invoiceId: invoice.id },
+  }));
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [status, setStatus] = useState<Invoice['status'] | undefined>();
@@ -140,6 +143,7 @@ function TopUpInvoicesTab() {
           setPage(nextLimit === limit ? nextPage : 1);
           setLimit(nextLimit);
         }}
+        onRow={rowLink}
         emptyTitle="Chưa có hóa đơn nạp ví"
         emptyDescription="Mỗi lần bạn tạo yêu cầu nạp tiền sẽ có một hóa đơn."
       />

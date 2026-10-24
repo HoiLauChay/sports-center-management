@@ -12,6 +12,7 @@ import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses/hooks/useCourses';
 import { useConfirm } from '~/hooks/useConfirm';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
@@ -42,6 +43,10 @@ export function ClassesAdminPage() {
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
   const confirm = useConfirm();
+  const rowLink = useRowLink((record: ClassSummary) => ({
+    to: '/admin/classes/$classId',
+    params: { classId: record.id },
+  }));
   const { courseId } = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const courses = useCourses();
@@ -75,7 +80,7 @@ export function ClassesAdminPage() {
       title: 'Lớp',
       dataIndex: 'name',
       render: (_, record) => (
-        <div className="flex min-w-56 flex-col gap-1">
+        <div className="flex w-60 flex-col gap-1">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -91,10 +96,6 @@ export function ClassesAdminPage() {
           </div>
         </div>
       ),
-    },
-    {
-      title: 'Phòng / sân',
-      render: (_, record) => <span className="font-medium text-sc-ink">{record.facility.name}</span>,
     },
     {
       title: 'HLV',
@@ -117,13 +118,14 @@ export function ClassesAdminPage() {
       ),
     },
     {
-      title: 'Lịch',
+      title: 'Lịch · Phòng / sân',
       render: (_, record) => (
         <div className="flex flex-col gap-0.5 whitespace-nowrap">
           {weeklyLines(record.weeklySchedule).map((line) => (
             <span key={line}>{line}</span>
           ))}
           <span className="text-[14.5px] text-sc-muted">{classDateRange(record)}</span>
+          <span className="text-[14.5px] text-sc-muted">{record.facility.name}</span>
         </div>
       ),
     },
@@ -134,6 +136,7 @@ export function ClassesAdminPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      hidden: phase !== 'PENDING',
       align: 'right',
       render: (_, record) => (
         <RowActions
@@ -245,7 +248,8 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={{ x: 1000 }}
+            onRow={rowLink}
+            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,

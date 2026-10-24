@@ -2,9 +2,11 @@ import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES, listAuditLogsQuerySchema, type Audit
 import { Alert, Avatar, Button, Card, DatePicker, Form, Select, Spin, Table, Tag, type TableColumnsType } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
+import { DateTimeCell } from '~/components/data/DateTimeCell';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { formatDateTime, initialsOf, VN_TIMEZONE } from '~/lib/format';
+import { clickableRow } from '~/hooks/useRowLink';
+import { initialsOf, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useAuditActors } from '../hooks/useAuditActors';
 import { useAuditLogs, type AuditLogFilters } from '../hooks/useAuditLogs';
@@ -96,13 +98,12 @@ export function AuditLogsPage() {
     {
       title: 'Thời gian',
       key: 'createdAt',
-      width: 145,
-      render: (_, log) => <span className="whitespace-nowrap">{formatDateTime(log.createdAt)}</span>,
+      render: (_, log) => <DateTimeCell value={log.createdAt} />,
     },
     {
       title: 'Người thực hiện',
       key: 'account',
-      width: 180,
+      width: 160,
       render: (_, log) =>
         log.account ? (
           <div className="flex min-w-0 items-center gap-2.5">
@@ -130,7 +131,7 @@ export function AuditLogsPage() {
     {
       title: 'Đối tượng',
       key: 'entity',
-      width: 170,
+      width: 140,
       render: (_, log) => (
         <div className="flex flex-col text-[14.5px] leading-tight">
           <span className="text-sc-ink">{AUDIT_ENTITY_LABEL[log.entityType]}</span>
@@ -143,7 +144,7 @@ export function AuditLogsPage() {
     {
       title: 'Chi tiết',
       key: 'details',
-      render: (_, log) => <span className="text-[14.5px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
+      render: (_, log) => <span className="block w-64 text-[14.5px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
     },
   ];
 
@@ -243,7 +244,7 @@ export function AuditLogsPage() {
               loading={logs.isPending}
               pagination={false}
               scroll={{ x: 'max-content' }}
-              onRow={(log) => ({ onClick: () => setSelected(log), className: 'cursor-pointer' })}
+              onRow={(log) => clickableRow(() => setSelected(log))}
               locale={{
                 emptyText: logs.isPending ? (
                   ' '

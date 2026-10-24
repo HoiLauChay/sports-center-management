@@ -26,6 +26,7 @@ import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/us
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
 import { useSessionsOn } from '~/features/schedule';
 import { useCheckInsToday } from '~/features/training/hooks/useTraining';
+import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND } from '~/lib/format';
 import { DATE_FORMAT, formatDayLabel, nowVN, todayVN } from '~/lib/time';
 
@@ -116,27 +117,18 @@ const classColumns: TableColumnsType<ClassSummary> = [
   },
   {
     title: 'Đã đăng ký',
-    key: 'enrolled',
-    width: 180,
+    key: 'fill',
+    width: 200,
     render: (_, item) => (
       <div className="flex flex-col gap-1 py-3">
         <span className="text-[15px] font-bold text-sc-ink tabular-nums">
           {item.enrolledCount} / {item.maxStudents} HV
+          <span
+            className={`ml-1.5 text-[14.5px] font-normal ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+          >
+            (tối thiểu {item.minStudents})
+          </span>
         </span>
-        <span
-          className={`text-[14.5px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
-        >
-          (Tối thiểu: {item.minStudents} HV)
-        </span>
-      </div>
-    ),
-  },
-  {
-    title: 'Tỷ lệ lấp đầy',
-    key: 'fill',
-    width: 200,
-    render: (_, item) => (
-      <div className="py-3">
         <Progress
           percent={Math.round((item.enrolledCount / (item.maxStudents || 1)) * 100)}
           size="small"
@@ -170,6 +162,10 @@ export function ManagerDashboard() {
   const checkIns = useCheckInsToday();
   const sessions = useSessionsOn(today);
   const classes = useClassOverview();
+  const classLink = useRowLink((item: ClassSummary) => ({
+    to: '/admin/classes/$classId',
+    params: { classId: item.id },
+  }));
   const revenue = useRevenueReport({
     from: nowVN()
       .subtract(MONTHS - 1, 'month')
@@ -472,6 +468,7 @@ export function ManagerDashboard() {
           rowKey="id"
           columns={classColumns}
           dataSource={classes.data?.running}
+          onRow={classLink}
           loading={classes.isPending}
           pagination={{ pageSize: 8, hideOnSinglePage: true }}
           scroll={{ x: 'max-content' }}

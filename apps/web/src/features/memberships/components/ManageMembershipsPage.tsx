@@ -91,7 +91,7 @@ export function ManageMembershipsPage() {
       title: 'Tên gói',
       key: 'name',
       render: (_, membership) => (
-        <div className="flex min-w-[150px] flex-col gap-0.5">
+        <div className="flex w-56 flex-col gap-0.5">
           <span className="font-semibold text-sc-ink">{membership.name}</span>
           {membership.description && (
             <span className="text-[13.5px] text-sc-muted line-clamp-2">{membership.description}</span>
@@ -100,74 +100,50 @@ export function ManageMembershipsPage() {
       ),
     },
     {
-      title: 'Giá',
+      title: 'Giá · Thời hạn',
       key: 'price',
       width: 110,
       align: 'right',
-      render: (_, membership) => <span className="whitespace-nowrap tabular-nums">{formatVND(membership.price)}</span>,
+      render: (_, membership) => (
+        <div className="flex flex-col items-end whitespace-nowrap">
+          <span className="tabular-nums">{formatVND(membership.price)}</span>
+          <span className="text-[14.5px] text-sc-muted">{membership.durationDays} ngày</span>
+        </div>
+      ),
       sorter: (a, b) => a.price - b.price,
     },
     {
-      title: 'Thời hạn',
-      key: 'durationDays',
-      width: 90,
-      align: 'center',
-      render: (_, membership) => <span className="whitespace-nowrap">{membership.durationDays} ngày</span>,
-      sorter: (a, b) => a.durationDays - b.durationDays,
-    },
-    {
-      title: 'Gym',
-      key: 'gymAccess',
-      width: 80,
-      align: 'center',
-      render: (_, membership) =>
-        membership.gymAccess ? (
-          <Tag color="green" className="!m-0">
-            Miễn phí
-          </Tag>
+      title: 'Quyền lợi',
+      key: 'benefits',
+      render: (_, membership) => {
+        const tags = [
+          membership.gymAccess && (
+            <Tag key="gym" color="green" className="!m-0">
+              Gym miễn phí
+            </Tag>
+          ),
+          membership.bookingDiscountPct > 0 && (
+            <Tag key="booking" color="cyan" className="!m-0">
+              Sân −{membership.bookingDiscountPct}%
+            </Tag>
+          ),
+          membership.classDiscountPct > 0 && (
+            <Tag key="class" color="geekblue" className="!m-0">
+              Lớp −{membership.classDiscountPct}%
+            </Tag>
+          ),
+          membership.freeBookingSlotsPerMonth > 0 && (
+            <Tag key="slots" className="!m-0">
+              {membership.freeBookingSlotsPerMonth} slot free/tháng
+            </Tag>
+          ),
+        ].filter(Boolean);
+        return tags.length > 0 ? (
+          <div className="flex w-52 flex-wrap gap-1">{tags}</div>
         ) : (
           <span className="text-sc-muted-2">—</span>
-        ),
-    },
-    {
-      title: 'Giảm sân',
-      key: 'bookingDiscountPct',
-      width: 90,
-      align: 'center',
-      render: (_, membership) =>
-        membership.bookingDiscountPct ? (
-          <Tag color="cyan" className="!m-0">
-            −{membership.bookingDiscountPct}%
-          </Tag>
-        ) : (
-          <span className="text-sc-muted-2">—</span>
-        ),
-    },
-    {
-      title: 'Giảm lớp',
-      key: 'classDiscountPct',
-      width: 90,
-      align: 'center',
-      render: (_, membership) =>
-        membership.classDiscountPct ? (
-          <Tag color="geekblue" className="!m-0">
-            −{membership.classDiscountPct}%
-          </Tag>
-        ) : (
-          <span className="text-sc-muted-2">—</span>
-        ),
-    },
-    {
-      title: 'Slot free/tháng',
-      key: 'freeBookingSlotsPerMonth',
-      width: 105,
-      align: 'center',
-      render: (_, membership) =>
-        membership.freeBookingSlotsPerMonth ? (
-          <span className="text-sc-ink tabular-nums">{membership.freeBookingSlotsPerMonth}</span>
-        ) : (
-          <span className="text-sc-muted-2">—</span>
-        ),
+        );
+      },
     },
     {
       title: 'Đang bán',
@@ -289,7 +265,7 @@ export function ManageMembershipsPage() {
         ) : (
           <Table<MembershipPackage>
             rowKey="id"
-            scroll={{ x: 960 }}
+            scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={rows}
             loading={packages.isFetching}

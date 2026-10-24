@@ -101,6 +101,9 @@ export function CouponsPage() {
           {coupon.maxDiscount !== null && (
             <span className="text-[14.5px] text-sc-muted">tối đa {formatVND(coupon.maxDiscount)}</span>
           )}
+          {coupon.minOrderAmount ? (
+            <span className="text-[14.5px] text-sc-muted">đơn từ {formatVND(coupon.minOrderAmount)}</span>
+          ) : null}
         </div>
       ),
     },
@@ -131,19 +134,12 @@ export function CouponsPage() {
         ),
     },
     {
-      title: 'Đơn tối thiểu',
-      dataIndex: 'minOrderAmount',
-      align: 'right',
-      render: (value: number | null) =>
-        value ? <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span> : '—',
-    },
-    {
       title: 'Lượt dùng',
       key: 'uses',
       render: (_, coupon) => (
-        <div>
+        <div className="w-36">
           {coupon.maxUses === null ? (
-            <span className="tabular-nums text-[15px]">{coupon.usedCount} / không giới hạn</span>
+            <span className="tabular-nums text-[15px]">{coupon.usedCount} lượt</span>
           ) : (
             <Progress
               percent={Math.min(100, Math.round((coupon.usedCount / coupon.maxUses) * 100))}
@@ -151,23 +147,11 @@ export function CouponsPage() {
               format={() => `${coupon.usedCount}/${coupon.maxUses}`}
             />
           )}
-          <div className="text-[14.5px] text-sc-muted">{coupon.maxUsesPerUser} lượt / người</div>
+          <div className="text-[14.5px] text-sc-muted">
+            {coupon.maxUses === null && 'Không giới hạn · '}
+            {coupon.maxUsesPerUser} lượt / người
+          </div>
         </div>
-      ),
-    },
-    {
-      title: 'Bật',
-      key: 'isActive',
-      width: 65,
-      align: 'center',
-      render: (_, coupon) => (
-        <Switch
-          checked={coupon.isActive}
-          aria-label={`Bật mã ${coupon.code}`}
-          loading={toggle.isPending && toggle.variables.id === coupon.id}
-          disabled={remove.isPending}
-          onChange={(isActive) => toggle.mutate({ id: coupon.id, isActive })}
-        />
       ),
     },
     {
@@ -175,25 +159,34 @@ export function CouponsPage() {
       key: 'actions',
       align: 'right',
       render: (_, coupon) => (
-        <RowActions
-          label={`Thao tác với mã ${coupon.code}`}
-          actions={[
-            { key: 'edit', label: 'Sửa', onClick: () => openForm(coupon) },
-            {
-              key: 'delete',
-              label: 'Xóa',
-              danger: true,
-              loading: remove.isPending && remove.variables.id === coupon.id,
-              onClick: () =>
-                confirm({
-                  title: `Xóa mã ${coupon.code}?`,
-                  content: 'Đơn đã dùng mã này vẫn giữ nguyên thông tin giảm giá.',
-                  okText: 'Xóa mã',
-                  onOk: () => remove.mutateAsync(coupon).catch(() => undefined),
-                }),
-            },
-          ]}
-        />
+        <div className="flex items-center justify-end gap-3">
+          <Switch
+            checked={coupon.isActive}
+            aria-label={`Bật mã ${coupon.code}`}
+            loading={toggle.isPending && toggle.variables.id === coupon.id}
+            disabled={remove.isPending}
+            onChange={(isActive) => toggle.mutate({ id: coupon.id, isActive })}
+          />
+          <RowActions
+            label={`Thao tác với mã ${coupon.code}`}
+            actions={[
+              { key: 'edit', label: 'Sửa', onClick: () => openForm(coupon) },
+              {
+                key: 'delete',
+                label: 'Xóa',
+                danger: true,
+                loading: remove.isPending && remove.variables.id === coupon.id,
+                onClick: () =>
+                  confirm({
+                    title: `Xóa mã ${coupon.code}?`,
+                    content: 'Đơn đã dùng mã này vẫn giữ nguyên thông tin giảm giá.',
+                    okText: 'Xóa mã',
+                    onOk: () => remove.mutateAsync(coupon).catch(() => undefined),
+                  }),
+              },
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -249,6 +242,7 @@ export function CouponsPage() {
         ) : (
           <Table<Coupon>
             rowKey="id"
+            size="middle"
             columns={columns}
             dataSource={filteredCoupons}
             loading={coupons.isFetching}

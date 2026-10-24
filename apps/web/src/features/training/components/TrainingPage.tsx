@@ -85,8 +85,9 @@ function AttendanceSection({ classId }: { classId: string }) {
         const evaluation = evaluationOf.get(row.session.id);
         return (
           <div className="flex flex-col gap-1">
-            <span className="md:whitespace-nowrap">
-              {formatDayLabel(row.session.date)} · {row.session.startTime}–{row.session.endTime}
+            <span className="md:whitespace-nowrap">{formatDayLabel(row.session.date)}</span>
+            <span className="text-[14.5px] text-sc-muted">
+              {row.session.startTime}–{row.session.endTime}
             </span>
             <div className="flex flex-col items-start gap-1 md:hidden">
               {row.note && <span className="text-[14.5px] text-sc-muted">{row.note}</span>}
@@ -142,7 +143,7 @@ function AttendanceSection({ classId }: { classId: string }) {
       render: (_, row) => {
         const evaluation = evaluationOf.get(row.session.id);
         return evaluation ? (
-          <div className="flex min-w-40 flex-col gap-0.5">
+          <div className="flex w-56 flex-col gap-0.5">
             <Rate disabled value={evaluation.rating} />
             {evaluation.comment && <span className="text-[14.5px] text-sc-ink-2">{evaluation.comment}</span>}
           </div>

@@ -5,6 +5,7 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
+import { clickableRow } from '~/hooks/useRowLink';
 import { formatDateTime, formatRelative } from '~/lib/format';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useSupportRequests, useUpdateSupportRequest } from '../hooks/useSupport';
@@ -123,22 +124,16 @@ export function ReceptionSupportPage() {
 
   const columns: TableColumnsType<SupportRequest> = [
     {
-      title: 'Thành viên',
-      key: 'account',
-      render: (_, request) => (
-        <b>
-          <Highlight keyword={q}>{request.account.fullName}</Highlight>
-        </b>
-      ),
-    },
-    {
       title: 'Yêu cầu',
       key: 'subject',
       render: (_, request) => (
-        <div className="flex max-w-md min-w-48 flex-col gap-0.5">
+        <div className="flex w-80 flex-col gap-0.5">
           <b className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{request.subject}</Highlight>
           </b>
+          <span className="text-[14.5px] text-sc-ink-2">
+            <Highlight keyword={q}>{request.account.fullName}</Highlight>
+          </span>
           <span className="truncate text-[14.5px] text-sc-muted">{request.description}</span>
         </div>
       ),
@@ -149,14 +144,14 @@ export function ReceptionSupportPage() {
       render: (value: SupportRequest['category']) => <Tag className="!m-0">{SUPPORT_CATEGORY_LABEL[value]}</Tag>,
     },
     {
-      title: 'Người xử lý',
+      title: 'Xử lý',
       key: 'handledBy',
-      render: (_, request) => request.handledBy?.fullName ?? <span className="text-sc-muted-2">—</span>,
-    },
-    {
-      title: 'Cập nhật',
-      dataIndex: 'updatedAt',
-      render: (value: string) => <span className="whitespace-nowrap">{formatRelative(value)}</span>,
+      render: (_, request) => (
+        <div className="flex flex-col text-[14.5px]">
+          <span className="whitespace-nowrap">{formatRelative(request.updatedAt)}</span>
+          <span className="text-sc-muted">{request.handledBy?.fullName ?? 'Chưa có người nhận'}</span>
+        </div>
+      ),
     },
     {
       title: 'Trạng thái',
@@ -165,20 +160,6 @@ export function ReceptionSupportPage() {
         <Tag color={SUPPORT_STATUS_TAG[value].color} className="!m-0">
           {SUPPORT_STATUS_TAG[value].label}
         </Tag>
-      ),
-    },
-    {
-      title: '',
-      key: 'open',
-      align: 'right',
-      render: (_, request) => (
-        <Button
-          size="small"
-          type={request.status === 'OPEN' ? 'primary' : 'default'}
-          onClick={() => setOpenId(request.id)}
-        >
-          {request.status === 'OPEN' ? 'Tiếp nhận' : 'Mở'}
-        </Button>
       ),
     },
   ];
@@ -236,9 +217,9 @@ export function ReceptionSupportPage() {
             setPage(nextLimit === limit ? nextPage : 1);
             setLimit(nextLimit);
           }}
+          size="middle"
           emptyTitle="Không có yêu cầu hỗ trợ"
-          rowClassName="cursor-pointer"
-          onRow={(request) => ({ onClick: () => setOpenId(request.id) })}
+          onRow={(request) => clickableRow(() => setOpenId(request.id))}
         />
       </Card>
       <RequestDrawer request={open} onClose={() => setOpenId(null)} />

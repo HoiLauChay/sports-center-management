@@ -2,11 +2,12 @@ import type { ClassSummary } from '@sports-center/shared';
 import { COACH_WITHDRAW_NOTICE_DAYS } from '@sports-center/shared';
 import { useQueries } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Form, Input, Modal, Progress, Segmented, Space, Table, type TableColumnsType } from 'antd';
+import { Button, Card, Form, Input, Modal, Progress, Segmented, Table, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
+import { useRowLink } from '~/hooks/useRowLink';
 import { toApiError } from '~/lib/http-errors';
 import { addDays, isPast, todayVN } from '~/lib/time';
 import { useMyClasses, useWithdrawFromClass } from '../hooks/useCoachClasses';
@@ -30,6 +31,10 @@ const canWithdraw = (item: ClassSummary) =>
 
 /** `/coach/classes`: the classes this coach teaches, by phase, with each class's progress (UC_2.21). */
 export function CoachClassesPage() {
+  const rowLink = useRowLink((record: ClassSummary) => ({
+    to: '/coach/classes/$classId',
+    params: { classId: record.id },
+  }));
   const classes = useMyClasses();
   const withdraw = useWithdrawFromClass();
   const [leaving, setLeaving] = useState<ClassSummary | null>(null);
@@ -109,17 +114,12 @@ export function CoachClassesPage() {
       key: 'actions',
       align: 'right',
       render: (_, record) => (
-        <div className="flex flex-col items-end gap-1">
-          <Space>
-            <Link to="/coach/classes/$classId" params={{ classId: record.id }}>
-              <Button size="small">Chi tiết</Button>
-            </Link>
-            {canWithdraw(record) && (
-              <Button size="small" danger onClick={() => setLeaving(record)}>
-                Rút khỏi lớp
-              </Button>
-            )}
-          </Space>
+        <div className="flex flex-col items-end gap-1" onClick={(event) => event.stopPropagation()}>
+          {canWithdraw(record) && (
+            <Button size="small" danger onClick={() => setLeaving(record)}>
+              Rút khỏi lớp
+            </Button>
+          )}
           {group === 'UPCOMING' && !canWithdraw(record) && record.status !== 'CANCELLED' && (
             <span className="w-52 text-right text-[13px] whitespace-normal text-sc-muted">
               Còn dưới {COACH_WITHDRAW_NOTICE_DAYS} ngày đến buổi đầu, liên hệ Manager nếu cần rút.
@@ -152,6 +152,7 @@ export function CoachClassesPage() {
               columns={columns}
               dataSource={shown}
               loading={classes.isPending}
+              onRow={rowLink}
               scroll={{ x: 'max-content' }}
               pagination={{ pageSize: 10, hideOnSinglePage: true }}
               locale={{
