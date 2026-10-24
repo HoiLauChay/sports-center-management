@@ -65,10 +65,10 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
           {
             title: 'Người mua',
             key: 'buyer',
-            width: 180,
+            width: 150,
             render: (_: unknown, order: Order) =>
               order.account ? (
-                <span className="font-medium text-sc-ink block truncate max-w-[170px]" title={order.account.fullName}>
+                <span className="font-medium text-sc-ink block truncate max-w-[140px]" title={order.account.fullName}>
                   <Highlight keyword={keyword}>{order.account.fullName}</Highlight>
                 </span>
               ) : (
@@ -95,15 +95,20 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
       title: 'Dịch vụ',
       key: 'items',
       responsive: ['md'],
-      render: (_, order) => (
-        <div className="flex flex-wrap gap-1">
-          {order.items.map((item) => (
-            <Tag key={item.id} className="!m-0">
-              {ORDER_ITEM_TYPE_LABEL[item.type]}
-            </Tag>
-          ))}
-        </div>
-      ),
+      render: (_, order) => {
+        const counts = new Map<Order['items'][number]['type'], number>();
+        for (const item of order.items) counts.set(item.type, (counts.get(item.type) ?? 0) + 1);
+        return (
+          <div className="flex w-44 flex-wrap gap-1">
+            {[...counts].map(([type, count]) => (
+              <Tag key={type} className="!m-0">
+                {ORDER_ITEM_TYPE_LABEL[type]}
+                {count > 1 && ` ×${count}`}
+              </Tag>
+            ))}
+          </div>
+        );
+      },
     },
     {
       title: 'Tổng tiền',
