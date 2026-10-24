@@ -17,11 +17,11 @@ export const userColumns = (q?: string) =>
           <Avatar src={user.avatarUrl ?? undefined} className="shrink-0 !bg-sc-primary">
             {initialsOf(user.fullName)}
           </Avatar>
-          <div className="flex min-w-0 flex-col">
+          <div className="flex w-56 min-w-0 flex-col">
             <span className="font-semibold">
               <Highlight keyword={q}>{user.fullName}</Highlight>
             </span>
-            <span className="text-[14.5px] text-sc-muted">
+            <span className="text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
               <Highlight keyword={q}>{user.email}</Highlight>
             </span>
           </div>

@@ -117,27 +117,18 @@ const classColumns: TableColumnsType<ClassSummary> = [
   },
   {
     title: 'Đã đăng ký',
-    key: 'enrolled',
-    width: 180,
+    key: 'fill',
+    width: 200,
     render: (_, item) => (
       <div className="flex flex-col gap-1 py-3">
         <span className="text-[15px] font-bold text-sc-ink tabular-nums">
           {item.enrolledCount} / {item.maxStudents} HV
+          <span
+            className={`ml-1.5 text-[14.5px] font-normal ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
+          >
+            (tối thiểu {item.minStudents})
+          </span>
         </span>
-        <span
-          className={`text-[14.5px] ${item.enrolledCount < item.minStudents ? 'text-amber-600 font-medium' : 'text-sc-muted'}`}
-        >
-          (Tối thiểu: {item.minStudents} HV)
-        </span>
-      </div>
-    ),
-  },
-  {
-    title: 'Tỷ lệ lấp đầy',
-    key: 'fill',
-    width: 200,
-    render: (_, item) => (
-      <div className="py-3">
         <Progress
           percent={Math.round((item.enrolledCount / (item.maxStudents || 1)) * 100)}
           size="small"

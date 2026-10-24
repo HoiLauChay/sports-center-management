@@ -36,9 +36,7 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
     {
       title: 'Mục tiêu',
       render: (_, entry) => (
-        <span className="line-clamp-2 min-w-40">
-          {entry.fitnessGoals ?? <span className="text-sc-muted-2">—</span>}
-        </span>
+        <span className="line-clamp-2 w-32">{entry.fitnessGoals ?? <span className="text-sc-muted-2">—</span>}</span>
       ),
     },
     {
@@ -55,21 +53,23 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
     {
       title: 'Chuyên cần',
       render: (_, { attendance }) => (
-        <span className="text-[14px] whitespace-nowrap">
-          <span className="text-sc-success">{attendance.present} có mặt</span> · {attendance.late} muộn ·{' '}
-          <span className={attendance.absent ? 'text-sc-error' : ''}>{attendance.absent} vắng</span>
-          {attendance.unmarked > 0 && <span className="text-sc-muted"> · {attendance.unmarked} chưa điểm danh</span>}
-        </span>
+        <div className="flex flex-col text-[14px] whitespace-nowrap">
+          <span>
+            <span className="text-sc-success">{attendance.present} có mặt</span> · {attendance.late} muộn ·{' '}
+            <span className={attendance.absent ? 'text-sc-error' : ''}>{attendance.absent} vắng</span>
+          </span>
+          {attendance.unmarked > 0 && <span className="text-sc-muted">{attendance.unmarked} chưa điểm danh</span>}
+        </div>
       ),
     },
     {
       title: 'Kết quả gần nhất',
       render: (_, entry) =>
         entry.lastResult ? (
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <div className="flex flex-col whitespace-nowrap">
             <Rate disabled value={entry.lastResult.rating} className="!text-[14px]" />
             <span className="text-[13px] text-sc-muted">buổi {entry.lastResult.sessionNumber}</span>
-          </span>
+          </div>
         ) : (
           <span className="text-sc-muted-2">—</span>
         ),
@@ -77,7 +77,7 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
     {
       title: 'Kế hoạch · Đánh giá',
       render: (_, entry) => (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex w-44 flex-wrap gap-1">
           <Tag color={entry.planUpdatedAt ? 'success' : undefined} className="!m-0">
             {entry.planUpdatedAt ? 'Có kế hoạch' : 'Chưa có kế hoạch'}
           </Tag>

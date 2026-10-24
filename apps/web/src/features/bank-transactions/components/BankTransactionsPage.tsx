@@ -8,6 +8,7 @@ import { Alert, Card, DatePicker, Segmented, Table, Tabs, Tag, type TableColumns
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
+import { DateTimeCell } from '~/components/data/DateTimeCell';
 import { RowActions } from '~/components/data/RowActions';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
@@ -46,7 +47,7 @@ function TransactionsTab() {
     {
       title: 'Thời gian',
       dataIndex: 'transactionDate',
-      render: (value: string) => <span className="whitespace-nowrap">{formatDateTime(value)}</span>,
+      render: (value: string) => <DateTimeCell value={value} />,
     },
     {
       title: 'Số tiền',
@@ -58,7 +59,7 @@ function TransactionsTab() {
       title: 'Nội dung chuyển khoản',
       key: 'content',
       render: (_, transaction) => (
-        <div className="flex max-w-xs min-w-44 flex-col gap-0.5">
+        <div className="flex w-52 flex-col gap-0.5">
           <span className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{transaction.content}</Highlight>
           </span>
@@ -99,7 +100,7 @@ function TransactionsTab() {
         const member = invoice?.account ?? transaction.resolvedAccount;
         if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
-          <div className="flex max-w-xs flex-col gap-0.5 text-[14.5px]">
+          <div className="flex w-44 flex-col gap-0.5 text-[14.5px]">
             {member ? (
               <span className="font-medium">{member.fullName}</span>
             ) : (

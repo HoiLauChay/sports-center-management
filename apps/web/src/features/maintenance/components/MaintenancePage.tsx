@@ -74,16 +74,20 @@ export function MaintenancePage() {
       render: (name: string) => <span className="font-semibold">{name}</span>,
     },
     {
-      title: 'Từ',
-      dataIndex: 'startAt',
-      render: (value: string) => <span className="whitespace-nowrap">{formatAt(value)}</span>,
+      title: 'Thời gian',
+      key: 'period',
+      render: (_, item) => (
+        <div className="flex flex-col whitespace-nowrap">
+          <span>{formatAt(item.startAt)}</span>
+          <span className="text-sc-muted">→ {formatAt(item.endAt)}</span>
+        </div>
+      ),
     },
     {
-      title: 'Đến',
-      dataIndex: 'endAt',
-      render: (value: string) => <span className="whitespace-nowrap">{formatAt(value)}</span>,
+      title: 'Lý do',
+      dataIndex: 'reason',
+      render: (reason: string) => <span className="block w-60 [overflow-wrap:anywhere]">{reason}</span>,
     },
-    { title: 'Lý do', dataIndex: 'reason' },
     {
       title: 'Trạng thái',
       key: 'phase',

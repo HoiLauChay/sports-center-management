@@ -109,15 +109,11 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       align: 'right',
-      render: (value: number) => <span className="tabular-nums text-sc-ink whitespace-nowrap">{formatVND(value)}</span>,
-    },
-    {
-      title: 'Thanh toán',
-      dataIndex: 'paymentMethod',
-      responsive: ['md'],
-      width: 110,
-      render: (method: Order['paymentMethod']) => (
-        <span className="whitespace-nowrap">{PAYMENT_METHOD_LABEL[method]}</span>
+      render: (value: number, order) => (
+        <div className="flex flex-col items-end whitespace-nowrap">
+          <span className="tabular-nums text-sc-ink">{formatVND(value)}</span>
+          <span className="text-[14.5px] text-sc-muted">{PAYMENT_METHOD_LABEL[order.paymentMethod]}</span>
+        </div>
       ),
     },
     {
