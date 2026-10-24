@@ -168,20 +168,6 @@ export function ReceptionSupportPage() {
         </Tag>
       ),
     },
-    {
-      title: '',
-      key: 'open',
-      align: 'right',
-      render: (_, request) => (
-        <Button
-          size="small"
-          type={request.status === 'OPEN' ? 'primary' : 'default'}
-          onClick={() => setOpenId(request.id)}
-        >
-          {request.status === 'OPEN' ? 'Tiếp nhận' : 'Mở'}
-        </Button>
-      ),
-    },
   ];
 
   const reset = () => setPage(1);
