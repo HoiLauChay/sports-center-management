@@ -5,7 +5,7 @@ import {
   type WalletTransactionType,
 } from '@sports-center/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Button, Card, Segmented, Select, Tabs, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -53,16 +53,14 @@ const invoiceColumns: TableColumnsType<Invoice> = [
     title: 'Thao tác',
     key: 'actions',
     align: 'right',
-    render: (_, invoice) => {
-      const pending = invoiceStatusOf(invoice) === 'PENDING';
-      return (
+    render: (_, invoice) =>
+      invoiceStatusOf(invoice) === 'PENDING' ? (
         <Link to="/invoices/$invoiceId" params={{ invoiceId: invoice.id }}>
-          <Button size="small" type={pending ? 'primary' : 'default'}>
-            {pending ? 'Thanh toán' : 'Chi tiết'}
+          <Button size="small" type="primary">
+            Thanh toán
           </Button>
         </Link>
-      );
-    },
+      ) : null,
   },
 ];
 
@@ -104,6 +102,7 @@ function TransactionsTab() {
 }
 
 function TopUpInvoicesTab() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [status, setStatus] = useState<Invoice['status'] | undefined>();
@@ -140,6 +139,10 @@ function TopUpInvoicesTab() {
           setPage(nextLimit === limit ? nextPage : 1);
           setLimit(nextLimit);
         }}
+        onRow={(invoice) => ({
+          onClick: () => void navigate({ to: '/invoices/$invoiceId', params: { invoiceId: invoice.id } }),
+          className: 'cursor-pointer',
+        })}
         emptyTitle="Chưa có hóa đơn nạp ví"
         emptyDescription="Mỗi lần bạn tạo yêu cầu nạp tiền sẽ có một hóa đơn."
       />

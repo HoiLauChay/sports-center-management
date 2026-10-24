@@ -75,7 +75,7 @@ export function ClassesAdminPage() {
       title: 'Lớp',
       dataIndex: 'name',
       render: (_, record) => (
-        <div className="flex min-w-56 flex-col gap-1">
+        <div className="flex w-60 flex-col gap-1">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -91,10 +91,6 @@ export function ClassesAdminPage() {
           </div>
         </div>
       ),
-    },
-    {
-      title: 'Phòng / sân',
-      render: (_, record) => <span className="font-medium text-sc-ink">{record.facility.name}</span>,
     },
     {
       title: 'HLV',
@@ -117,13 +113,14 @@ export function ClassesAdminPage() {
       ),
     },
     {
-      title: 'Lịch',
+      title: 'Lịch · Phòng / sân',
       render: (_, record) => (
         <div className="flex flex-col gap-0.5 whitespace-nowrap">
           {weeklyLines(record.weeklySchedule).map((line) => (
             <span key={line}>{line}</span>
           ))}
           <span className="text-[14.5px] text-sc-muted">{classDateRange(record)}</span>
+          <span className="text-[14.5px] text-sc-muted">{record.facility.name}</span>
         </div>
       ),
     },
@@ -134,6 +131,7 @@ export function ClassesAdminPage() {
     {
       title: 'Thao tác',
       key: 'actions',
+      hidden: phase !== 'PENDING',
       align: 'right',
       render: (_, record) => (
         <RowActions
@@ -245,7 +243,11 @@ export function ClassesAdminPage() {
             columns={columns}
             dataSource={classes.data?.items}
             loading={classes.isFetching}
-            scroll={{ x: 1000 }}
+            onRow={(record) => ({
+              onClick: () => void navigate({ to: '/admin/classes/$classId', params: { classId: record.id } }),
+              className: 'cursor-pointer',
+            })}
+            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,
