@@ -29,12 +29,15 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
   const rowLink = useRowLink(link);
   const columns: TableColumnsType<Order> = [
     {
-      title: 'Mã đơn',
+      title: 'Mã đơn · Thời gian',
       dataIndex: 'orderNumber',
       render: (value: string, order) => (
         <div className="flex flex-col gap-0.5">
           <span className="font-mono text-[14.5px] font-semibold text-sc-ink" title={value}>
             <Highlight keyword={keyword}>{value}</Highlight>
+          </span>
+          <span className="hidden text-[14.5px] text-sc-muted tabular-nums md:inline">
+            {dayjs(order.paidAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')}
           </span>
           <span className="text-[14.5px] text-sc-muted md:hidden">
             {dayjs(order.paidAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} · {order.items.length} dịch vụ
@@ -44,21 +47,6 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
           </span>
         </div>
       ),
-    },
-    {
-      title: 'Thời gian',
-      dataIndex: 'paidAt',
-      responsive: ['md'],
-      width: 120,
-      render: (value: string) => {
-        const dt = dayjs(value).tz(VN_TIMEZONE);
-        return (
-          <div className="flex flex-col leading-tight">
-            <span className="text-sc-ink tabular-nums">{dt.format('HH:mm')}</span>
-            <span className="text-[14.5px] text-sc-muted tabular-nums">{dt.format('DD/MM/YYYY')}</span>
-          </div>
-        );
-      },
     },
     ...(showBuyer
       ? [
@@ -99,7 +87,7 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
         const counts = new Map<Order['items'][number]['type'], number>();
         for (const item of order.items) counts.set(item.type, (counts.get(item.type) ?? 0) + 1);
         return (
-          <div className="flex w-44 flex-wrap gap-1">
+          <div className="flex w-48 flex-wrap gap-1">
             {[...counts].map(([type, count]) => (
               <Tag key={type} className="!m-0">
                 {ORDER_ITEM_TYPE_LABEL[type]}
@@ -114,11 +102,14 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       align: 'right',
-      render: (value: number, order) => (
-        <div className="flex flex-col items-end whitespace-nowrap">
-          <span className="tabular-nums text-sc-ink">{formatVND(value)}</span>
-          <span className="text-[14.5px] text-sc-muted">{PAYMENT_METHOD_LABEL[order.paymentMethod]}</span>
-        </div>
+      render: (value: number) => <span className="tabular-nums text-sc-ink whitespace-nowrap">{formatVND(value)}</span>,
+    },
+    {
+      title: 'Thanh toán',
+      dataIndex: 'paymentMethod',
+      responsive: ['md'],
+      render: (method: Order['paymentMethod']) => (
+        <span className="whitespace-nowrap">{PAYMENT_METHOD_LABEL[method]}</span>
       ),
     },
     {
