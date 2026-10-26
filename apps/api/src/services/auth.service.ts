@@ -42,6 +42,7 @@ import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
 import { pickDefined } from '~/utils/object';
 import { hashPassword, verifyPassword } from '~/utils/password';
+import { todayInCenter } from '~/utils/time';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
 
 export interface SessionMeta {
@@ -456,7 +457,16 @@ class AuthService {
     await mailService.sendOtp(email, purpose, code);
     const notice = OTP_NOTICE[purpose];
     const account = notice && (await accountRepository.findByEmail(email));
-    if (notice && account) await notificationService.create([{ accountId: account.id, type: 'SYSTEM', ...notice }]);
+    if (notice && account) {
+      await notificationService.create([
+        {
+          accountId: account.id,
+          type: 'SYSTEM',
+          ...notice,
+          dedupKey: `otp:${purpose}:${account.id}:${todayInCenter()}`,
+        },
+      ]);
+    }
   };
 
   getGoogleAuthUrl = (state: string, callbackUrl: string) => {

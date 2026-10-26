@@ -236,7 +236,11 @@ class UserService {
       inputs.push({
         accountId: id,
         type: 'SYSTEM',
-        title: deactivating ? 'Tài khoản đã bị khóa' : 'Tài khoản đã được mở lại',
+        title: !deactivating
+          ? 'Tài khoản đã được mở lại'
+          : status === 'BANNED'
+            ? 'Tài khoản đã bị khóa'
+            : 'Tài khoản đã bị vô hiệu hóa',
         message: deactivating
           ? `Tài khoản Sports Center của bạn đã bị ${status === 'BANNED' ? 'khóa' : 'vô hiệu hóa'} và không đăng nhập được.${reason ? ` Lý do: ${reason}` : ''}`
           : 'Tài khoản Sports Center của bạn đã hoạt động trở lại, bạn có thể đăng nhập.',
