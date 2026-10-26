@@ -140,46 +140,52 @@ export function FacilitiesPage() {
         ),
     },
     {
-      title: 'Giá · Sức chứa / slot',
-      key: 'slot',
+      title: 'Sức chứa / slot',
+      dataIndex: 'capacityPerSlot',
+      align: 'center',
+      render: (value: number) => <span className="tabular-nums">{value}</span>,
+    },
+    {
+      title: 'Giá / slot',
+      dataIndex: 'pricePerSlot',
       align: 'right',
+      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
+    },
+    {
+      title: 'Nhận đặt',
+      key: 'isActive',
+      align: 'center',
       render: (_, facility) => (
-        <div className="flex flex-col items-end whitespace-nowrap">
-          <span className="tabular-nums">{formatVND(facility.pricePerSlot)}</span>
-          <span className="text-[14.5px] text-sc-muted">{facility.capacityPerSlot} người</span>
-        </div>
+        <Switch
+          checked={facility.isActive}
+          aria-label={`Nhận đặt ${facility.name}`}
+          loading={toggle.isPending && toggle.variables.id === facility.id}
+          onChange={(isActive) => toggle.mutate({ id: facility.id, isActive })}
+        />
       ),
     },
     {
-      title: 'Nhận đặt · Thao tác',
+      title: 'Thao tác',
       key: 'actions',
       align: 'right',
       render: (_, facility) => (
-        <div className="flex items-center justify-end gap-3">
-          <Switch
-            checked={facility.isActive}
-            aria-label={`Nhận đặt ${facility.name}`}
-            loading={toggle.isPending && toggle.variables.id === facility.id}
-            onChange={(isActive) => toggle.mutate({ id: facility.id, isActive })}
-          />
-          <RowActions
-            label={`Thao tác với ${facility.name}`}
-            actions={[
-              { key: 'edit', label: 'Sửa', onClick: () => openForm(facility) },
-              {
-                key: 'delete',
-                label: 'Xóa',
-                danger: true,
-                onClick: () =>
-                  confirm({
-                    title: `Xóa ${facility.name}?`,
-                    okText: 'Xóa',
-                    onOk: () => remove.mutateAsync(facility).catch(() => undefined),
-                  }),
-              },
-            ]}
-          />
-        </div>
+        <RowActions
+          label={`Thao tác với ${facility.name}`}
+          actions={[
+            { key: 'edit', label: 'Sửa', onClick: () => openForm(facility) },
+            {
+              key: 'delete',
+              label: 'Xóa',
+              danger: true,
+              onClick: () =>
+                confirm({
+                  title: `Xóa ${facility.name}?`,
+                  okText: 'Xóa',
+                  onOk: () => remove.mutateAsync(facility).catch(() => undefined),
+                }),
+            },
+          ]}
+        />
       ),
     },
   ];
