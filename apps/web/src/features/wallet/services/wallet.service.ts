@@ -45,6 +45,14 @@ export const walletService = {
     return data.result;
   },
 
+  /** PDF receipt of a paid invoice: the order's receipt, or a top-up receipt when no order was made. */
+  getReceiptBlob: async (id: string) => {
+    const { data } = await privateApi.get<Blob>(`/invoices/${encodeURIComponent(id)}/receipt`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
   /** Cash or card top-up recorded at the counter. */
   counterTopUp: async (memberId: string, body: CounterTopUpBody) => {
     const { data } = await privateApi.post<ApiResponse<WalletTransaction>>(
