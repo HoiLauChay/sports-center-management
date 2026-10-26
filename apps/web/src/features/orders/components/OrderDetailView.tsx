@@ -106,7 +106,7 @@ function toTotals(order: Order) {
 
 interface OrderDetailViewProps {
   orderId: string;
-  back: { to: '/orders' | '/reception/orders'; label: string };
+  back: { to: '/orders' | '/reception/orders' | '/admin/orders'; label: string };
 }
 
 export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {

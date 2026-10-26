@@ -1,9 +1,11 @@
 import { Button, Card, Drawer, Input, Segmented, Select, Tag, type TableColumnsType } from 'antd';
+import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useCurrentUser } from '~/features/auth';
 import { useConfirm } from '~/hooks/useConfirm';
 import { clickableRow } from '~/hooks/useRowLink';
 import { formatDateTime, formatRelative } from '~/lib/format';
@@ -18,6 +20,7 @@ import {
   type SupportRequest,
   type SupportStatus,
 } from '../types';
+import { handlingPage, memberPage } from '../utils';
 
 const NEXT_LABEL = {
   IN_PROGRESS: 'Tiếp nhận xử lý',
@@ -26,7 +29,10 @@ const NEXT_LABEL = {
 } as const;
 
 function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: () => void }) {
+  const { role } = useCurrentUser();
   const update = useUpdateSupportRequest();
+  const target = handlingPage(role, request);
+  const openTarget = () => window.open(target, '_blank', 'noopener');
   const confirm = useConfirm();
   const [note, setNote] = useState(request.resolutionNote ?? '');
 
@@ -42,6 +48,7 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
       update
         .mutateAsync({ id: request.id, body: { status: next, ...(reply && { resolutionNote: reply }) } })
         .catch(() => undefined);
+    if (next === 'IN_PROGRESS') openTarget();
     if (next === 'CLOSED') {
       confirm({
         title: 'Đóng yêu cầu này?',
@@ -64,7 +71,15 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
           </Tag>
           <Tag className="!m-0">{SUPPORT_CATEGORY_LABEL[request.category]}</Tag>
           <span>
-            <b className="text-sc-ink">{request.account.fullName}</b> · {formatDateTime(request.createdAt)}
+            <a
+              href={memberPage(role, request.account.id)}
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-sc-ink hover:underline"
+            >
+              {request.account.fullName}
+            </a>{' '}
+            · {formatDateTime(request.createdAt)}
           </span>
           {request.handledBy && <span>Xử lý bởi {request.handledBy.fullName}</span>}
         </div>
@@ -100,6 +115,11 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
                 {NEXT_LABEL[next]}
               </Button>
             )}
+            {request.status === 'IN_PROGRESS' && (
+              <Button icon={<ExternalLink size={16} />} onClick={openTarget}>
+                Mở trang xử lý
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -112,7 +132,7 @@ function RequestDrawer({ request, onClose }: { request: SupportRequest | null; o
   return <RequestPanel key={`${request.id}:${request.updatedAt}`} request={request} onClose={onClose} />;
 }
 
-export function ReceptionSupportPage() {
+export function StaffSupportPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [status, setStatus] = useState<SupportStatus | undefined>();
