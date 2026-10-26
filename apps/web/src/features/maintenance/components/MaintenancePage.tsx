@@ -11,7 +11,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
 import { VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { useDeleteMaintenance, useMaintenances } from '../hooks/useMaintenance';
+import { useCompleteMaintenance, useDeleteMaintenance, useMaintenances } from '../hooks/useMaintenance';
 import type { MaintenancePhase } from '../types';
 import { phaseOf } from '../utils';
 import { MaintenanceWizard } from './MaintenanceWizard';
@@ -41,6 +41,7 @@ export function MaintenancePage() {
   const [pageSize, setPageSize] = useState(10);
   const maintenances = useMaintenances({});
   const remove = useDeleteMaintenance();
+  const complete = useCompleteMaintenance();
 
   const filteredMaintenances = useMemo(() => {
     if (!maintenances.data) return [];
@@ -117,7 +118,23 @@ export function MaintenancePage() {
                       }),
                   },
                 ]
-              : []
+              : phaseOf(item) === 'ONGOING'
+                ? [
+                    {
+                      key: 'complete',
+                      label: 'Hoàn thành',
+                      primary: true,
+                      loading: complete.isPending && complete.variables === item.id,
+                      onClick: () =>
+                        confirm({
+                          title: `Hoàn thành bảo trì ${item.facility.name}?`,
+                          okText: 'Hoàn thành',
+                          danger: false,
+                          onOk: () => complete.mutateAsync(item.id).catch(() => undefined),
+                        }),
+                    },
+                  ]
+                : []
           }
         />
       ),
