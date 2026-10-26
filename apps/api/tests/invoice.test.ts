@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, spy
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
+import invoiceRepository from '~/repositories/invoice.repository';
+import { buildTopUpReceipt } from '~/services/receipt/receipt.view';
 import { paymentCode } from '~/utils/paymentCode';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
@@ -118,5 +120,59 @@ describe('wallet top-up invoices', () => {
     const page = await readResult<Paginated<Invoice>>(await request('GET', '/me/invoices', member));
     expect(page.total).toBe(1);
     expect(page.items[0]?.account?.id).toBe(member.id);
+  });
+
+  test('a paid top-up has a PDF receipt for its owner and staff only', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const other = await createAccount('MEMBER', 'other@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    const invoice = await readResult<Invoice>(await createTopUp(member, { amount: 200_000 }));
+    const receipt = (viewer: Viewer) => request('GET', `/invoices/${invoice.id}/receipt`, viewer);
+
+    const pending = await receipt(member);
+    expect(pending.status).toBe(409);
+    expect(await readCode(pending)).toBe('CONFLICT');
+
+    const paidAt = new Date('2026-10-26T05:50:00.000Z');
+    const bankTransaction = await prisma.bankTransaction.create({
+      data: {
+        sepayId: null,
+        bankName: 'MBBank',
+        accountNumber: '0000000000',
+        amount: 200_000,
+        content: invoice.paymentCode,
+        referenceCode: 'REF-RECEIPT',
+        transactionDate: paidAt,
+        status: 'MATCHED',
+        paymentCode: invoice.paymentCode,
+        rawPayload: {},
+      },
+    });
+    const row = await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: { status: 'PAID', paidAt, bankTransactionId: bankTransaction.id },
+    });
+    const view = buildTopUpReceipt((await invoiceRepository.findById(row.id))!, {
+      id: member.id,
+      fullName: 'Nguyễn Minh Anh',
+      email: 'member@example.com',
+      phone: null,
+      address: null,
+    });
+    expect(view).toMatchObject({
+      fileName: `bien-lai-${invoice.paymentCode}.pdf`,
+      memberCode: `sc:member:${member.id}`,
+      total: { label: 'Tổng thanh toán', amount: 200_000 },
+      rows: [{ title: `Nạp ví qua hóa đơn ${invoice.paymentCode}`, amount: 200_000 }],
+    });
+    expect(view.info).toContainEqual(['Số biên lai:', invoice.paymentCode]);
+
+    for (const viewer of [member, receptionist]) {
+      const response = await receipt(viewer);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('application/pdf');
+      expect(new TextDecoder().decode((await response.arrayBuffer()).slice(0, 5))).toBe('%PDF-');
+    }
+    expect((await receipt(other)).status).toBe(404);
   });
 });

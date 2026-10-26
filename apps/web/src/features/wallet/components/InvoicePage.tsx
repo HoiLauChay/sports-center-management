@@ -4,9 +4,12 @@ import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { INVOICE_STATUS_TAG, invoiceStatusOf } from '~/constants/payment';
+import { ReceiptPdfActions, ReceiptPdfPreview } from '~/features/orders/components/ReceiptPdf';
+import { useReceiptPdf } from '~/hooks/useReceiptPdf';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useInvoice, useRefreshAfterPaid } from '../hooks/useWallet';
+import { walletService } from '../services/wallet.service';
 import { InvoicePayPanel } from './InvoicePayPanel';
 
 const routeApi = getRouteApi('/_authenticated/invoices/$invoiceId');
@@ -15,6 +18,7 @@ export function InvoicePage() {
   const { invoiceId } = routeApi.useParams();
   const { message } = App.useApp();
   const invoice = useInvoice(invoiceId);
+  const pdf = useReceiptPdf(() => walletService.getReceiptBlob(invoiceId));
 
   useRefreshAfterPaid(invoice.data, (paid) =>
     message.success(`Đã nhận ${formatVND(paid.amount)}, ví của bạn đã được cộng.`),
@@ -32,6 +36,7 @@ export function InvoicePage() {
   }
 
   const data = invoice.data;
+  const paid = data.status === 'PAID';
   return (
     <>
       <PageHeader
@@ -44,22 +49,29 @@ export function InvoicePage() {
           </span>
         }
         back={{ to: '/wallet', label: 'Về ví' }}
+        extra={
+          paid && <ReceiptPdfActions pdf={pdf} fileName={`hoa-don-${data.paymentCode}.pdf`} detailLabel="Xem tóm tắt" />
+        }
       />
-      <Card>
-        <InvoicePayPanel
-          invoice={data}
-          paidActions={
-            <>
-              <Link to="/wallet">
-                <Button type="primary">Xem ví</Button>
-              </Link>
-              <Link to="/wallet/top-up">
-                <Button>Nạp thêm</Button>
-              </Link>
-            </>
-          }
-        />
-      </Card>
+      {paid && pdf.showPdf ? (
+        <ReceiptPdfPreview pdf={pdf} />
+      ) : (
+        <Card>
+          <InvoicePayPanel
+            invoice={data}
+            paidActions={
+              <>
+                <Link to="/wallet">
+                  <Button type="primary">Xem ví</Button>
+                </Link>
+                <Link to="/wallet/top-up">
+                  <Button>Nạp thêm</Button>
+                </Link>
+              </>
+            }
+          />
+        </Card>
+      )}
     </>
   );
 }

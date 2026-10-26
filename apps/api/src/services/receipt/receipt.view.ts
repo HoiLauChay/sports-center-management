@@ -1,5 +1,7 @@
 import type { ItemSnapshotBase } from '@sports-center/shared';
 
+import { RECEIPT_ISSUER } from '~/constants/center';
+import type { InvoiceRow } from '~/repositories/invoice.repository';
 import type { OrderRow } from '~/repositories/order.repository';
 import { formatCenterDate, formatCenterDateTime } from '~/utils/time';
 
@@ -139,5 +141,40 @@ export const buildRefundReceipt = (order: OrderRow, refund: OrderRow['walletTran
     detailTitle: 'Dịch vụ được hoàn',
     amountHeader: 'Số tiền hoàn',
     rows: item ? [rowOf(item, amount)] : [],
+  };
+};
+
+export interface TopUpBuyer {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+}
+
+/** Receipt of a paid wallet top-up invoice. Top-ups make no order, so it is built from the invoice itself. */
+export const buildTopUpReceipt = (invoice: InvoiceRow, buyer: TopUpBuyer): ReceiptView => {
+  const paidAt = invoice.paidAt ?? invoice.createdAt;
+  const amount = Number(invoice.amount);
+  return {
+    fileName: `bien-lai-${invoice.paymentCode}.pdf`,
+    title: `Biên lai nạp ví ngày ${formatCenterDate(paidAt)}`,
+    issuer: [RECEIPT_ISSUER.name, RECEIPT_ISSUER.address, `MST: ${RECEIPT_ISSUER.taxCode}`],
+    infoTitle: 'Thông tin biên lai',
+    info: [
+      ['Số biên lai:', invoice.paymentCode],
+      ['Ngày phát hành:', formatCenterDate(paidAt)],
+      ['Thanh toán:', `${PAYMENT_METHOD_LABEL.TRANSFER} · ${formatCenterDateTime(paidAt)}`],
+      ['Trạng thái:', 'Đã thanh toán'],
+    ],
+    buyer: [buyer.fullName, buyer.email, buyer.phone, buyer.address].filter((line): line is string => !!line),
+    memberCode: `sc:member:${buyer.id}`,
+    summary: [],
+    total: { label: 'Tổng thanh toán', amount },
+    detailTitle: 'Chi tiết giao dịch',
+    amountHeader: 'Thành tiền',
+    rows: [
+      { title: `Nạp ví qua hóa đơn ${invoice.paymentCode}`, start: formatCenterDateTime(paidAt), end: '—', amount },
+    ],
   };
 };

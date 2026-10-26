@@ -5,10 +5,13 @@ import type { Prisma, Role } from '~/generated/prisma/client';
 import { toInvoiceResponse } from '~/mappers/invoice.mapper';
 import accountRepository from '~/repositories/account.repository';
 import invoiceRepository from '~/repositories/invoice.repository';
+import orderRepository from '~/repositories/order.repository';
 import settingRepository from '~/repositories/setting.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import type { InvoiceSettler } from '~/services/bankTransaction.service';
 import notificationService from '~/services/notification.service';
+import { renderReceiptPdf } from '~/services/receipt/receipt.pdf';
+import { buildPaymentReceipt, buildTopUpReceipt } from '~/services/receipt/receipt.view';
 import walletService from '~/services/wallet.service';
 import { idempotencyKey } from '~/utils/idempotency';
 import { toPage } from '~/utils/pagination';
@@ -130,10 +133,29 @@ class InvoiceService {
     return toInvoiceResponse(invoice);
   };
 
-  get = async (viewer: Actor, id: string) => {
+  get = async (viewer: Actor, id: string) => toInvoiceResponse(await this.findVisible(viewer, id));
+
+  /** PDF receipt of a paid invoice: the order's receipt when it made one, otherwise a top-up receipt. */
+  receipt = async (viewer: Actor, id: string) => {
+    const invoice = await this.findVisible(viewer, id);
+    if (invoice.status !== 'PAID') {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.CONFLICT,
+        code: ERROR_CODE.CONFLICT,
+        message: 'Hóa đơn chưa được thanh toán nên chưa có biên lai',
+      });
+    }
+    const order = invoice.orderId ? await orderRepository.findById(invoice.orderId) : null;
+    const buyer = order ? null : await accountRepository.findById(invoice.accountId ?? '');
+    if (!order && !buyer) throw notFound();
+    const view = order ? buildPaymentReceipt(order) : buildTopUpReceipt(invoice, buyer!);
+    return { fileName: view.fileName, pdf: await renderReceiptPdf(view) };
+  };
+
+  private findVisible = async (viewer: Actor, id: string) => {
     const invoice = await invoiceRepository.findById(id);
     if (!invoice || (viewer.role === 'MEMBER' && invoice.accountId !== viewer.id)) throw notFound();
-    return toInvoiceResponse(invoice);
+    return invoice;
   };
 
   listMine = async (accountId: string, query: ListMyInvoicesQuery) => {

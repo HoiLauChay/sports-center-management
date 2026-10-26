@@ -12,6 +12,7 @@ myInvoiceRouter.get('/', validate({ query: listMyInvoicesQuerySchema }), invoice
 export const invoiceRouter = Router();
 invoiceRouter.use(auth, isRole('MEMBER', 'RECEPTIONIST', 'MANAGER'));
 invoiceRouter.get('/:id', validate({ params: invoiceIdParamsSchema }), invoiceController.getById);
+invoiceRouter.get('/:id/receipt', validate({ params: invoiceIdParamsSchema }), invoiceController.receipt);
 invoiceRouter.post(
   '/:id/cancel',
   isRole('RECEPTIONIST'),
