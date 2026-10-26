@@ -1,5 +1,6 @@
 import type { ClassSummary } from '@sports-center/shared';
-import { Alert, Button, Card, Table, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
@@ -118,7 +119,6 @@ export function CoachOpenClassesPage() {
             columns={columns}
             dataSource={classes.data}
             loading={classes.isPending}
-            scroll={{ x: 960 }}
             pagination={{ pageSize: 10, hideOnSinglePage: true }}
             locale={{
               emptyText: (

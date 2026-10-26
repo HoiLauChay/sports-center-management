@@ -34,6 +34,9 @@ const invalid = (errors: { path: string; message: string }[]) =>
     message: 'Dữ liệu không hợp lệ',
     errors,
   });
+const mustStartInFuture = (startAt: Date, now: Date) => {
+  if (startAt <= now) throw invalid([{ path: 'body.startAt', message: 'Thời điểm bắt đầu phải ở tương lai' }]);
+};
 const started = () =>
   new ErrorWithStatus({
     status: HTTP_STATUS.CONFLICT,
@@ -132,7 +135,7 @@ class MaintenanceService {
     const now = new Date();
     const startAt = new Date(window.startAt);
     const endAt = new Date(window.endAt);
-    if (startAt <= now) throw invalid([{ path: 'body.startAt', message: 'Thời điểm bắt đầu phải ở tương lai' }]);
+    mustStartInFuture(startAt, now);
     if (await maintenanceRepository.hasOverlap(window.facilityId, startAt, endAt, existing?.id, tx)) {
       throw new ErrorWithStatus({
         status: HTTP_STATUS.CONFLICT,
@@ -307,7 +310,37 @@ class MaintenanceService {
       );
     });
 
+  complete = async (managerId: string, id: string, ip?: string) =>
+    runTransaction(async (tx) => {
+      await withScheduleLock(tx);
+      const current = await maintenanceRepository.findById(id, tx);
+      if (!current) throw notFound('Không tìm thấy lịch bảo trì');
+      const now = new Date();
+      if (current.startAt > now || current.endAt <= now) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.CONFLICT,
+          code: ERROR_CODE.INVALID_STATE,
+          message: 'Chỉ hoàn thành được lịch bảo trì đang diễn ra',
+        });
+      }
+      const completed = await maintenanceRepository.update(id, { endAt: now }, tx);
+      await auditService.record(
+        {
+          accountId: managerId,
+          action: 'UPDATE',
+          entityType: 'FACILITY_MAINTENANCE',
+          entityId: id,
+          oldValues: current,
+          newValues: { ...completed, facilityId: current.facilityId },
+          ipAddress: ip,
+        },
+        tx,
+      );
+      return toMaintenanceResponse(completed);
+    });
+
   preview = async (window: MaintenanceWindow) => {
+    mustStartInFuture(new Date(window.startAt), new Date());
     const { affectedBookings, affectedSessions } = await this.affected(window);
     return {
       affectedBookings: affectedBookings.map(({ row, alternatives }) => toAffectedBookingResponse(row, alternatives)),

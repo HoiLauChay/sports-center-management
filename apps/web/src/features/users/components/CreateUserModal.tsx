@@ -7,8 +7,8 @@ import {
   type CreateUserInput,
 } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { App, Col, Form, Input, Modal, Row, Segmented } from 'antd';
-import { useForm, useWatch } from 'react-hook-form';
+import { App, Col, Form, Input, Modal, Radio, Row } from 'antd';
+import { useForm, useWatch, type DefaultValues } from 'react-hook-form';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { ROLE_LABEL } from '~/constants/roles';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
@@ -21,10 +21,9 @@ const ERROR_FIELDS: ErrorFieldMap = {
 
 const TEXTAREA_ROWS = { minRows: 2, maxRows: 5 };
 
-const DEFAULT_VALUES: CreateUserInput = {
+const DEFAULT_VALUES: DefaultValues<CreateUserInput> = {
   email: '',
   fullName: '',
-  role: 'COACH',
   phone: '',
   profile: { bio: '', experience: '', certifications: '', staffNotes: '' },
 };
@@ -104,11 +103,13 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
           name="role"
           label="Vai trò"
           render={(field) => (
-            <Segmented
+            <Radio.Group
               block
+              optionType="button"
+              buttonStyle="solid"
               disabled={mutation.isPending}
               value={field.value}
-              onChange={field.onChange}
+              onChange={(event) => field.onChange(event.target.value)}
               options={CREATABLE_ROLES.map((value) => ({ value, label: ROLE_LABEL[value] }))}
             />
           )}
@@ -136,7 +137,6 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
                   status={invalid ? 'error' : undefined}
                   type="tel"
                   autoComplete="off"
-                  placeholder="VD: 0912345678"
                 />
               )}
             />
@@ -193,7 +193,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
               )}
             />
           </>
-        ) : (
+        ) : role ? (
           <FormField
             control={control}
             name="profile.staffNotes"
@@ -207,7 +207,7 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
               />
             )}
           />
-        )}
+        ) : null}
         <button type="submit" hidden />
       </Form>
     </Modal>

@@ -25,7 +25,6 @@ export function ClassPlanTab({ classId, readOnly }: { classId: string; readOnly:
           plan={classPlan}
           saving={save.isPending}
           onSave={(body) => save.mutate(body)}
-          goalsPlaceholder="Cả lớp cần đạt gì khi kết thúc khóa"
         />
       )}
     </div>

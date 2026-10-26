@@ -32,7 +32,9 @@ function UserSummary({ user, actions }: { user: Account; actions?: ReactNode }) 
             {user.fullName}
           </h2>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[14.5px] text-sc-muted">
-            <RoleTag role={user.role} />
+            {user.roles.map((role) => (
+              <RoleTag key={role} role={role} />
+            ))}
             <StatusTag status={user.status} />
             {user.mustSetPassword && (
               <Tag color="warning" className="!m-0">

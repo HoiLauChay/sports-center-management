@@ -9,7 +9,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App, Col, Form, Input, InputNumber, Modal, Row, Switch } from 'antd';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
@@ -17,23 +17,13 @@ import { cacheMembershipPackage, membershipsQueryOptions } from '../hooks/useMem
 import { membershipsService } from '../services/memberships.service';
 
 const ERROR_FIELDS: ErrorFieldMap = { [ERROR_CODE.NAME_TAKEN]: 'name' };
-const membershipFormSchema = createMembershipBodySchema.extend({
-  price: createMembershipBodySchema.shape.price.default(0),
-});
-type MembershipFormInput = z.input<typeof membershipFormSchema>;
+type MembershipFormInput = z.input<typeof createMembershipBodySchema>;
 
-// Zero-valued fields stay empty behind a "0" placeholder, so typing replaces the zero instead of appending to it.
-const EMPTY: MembershipFormInput = {
-  name: '',
-  description: '',
-  durationDays: 30,
-  gymAccess: false,
-  isActive: true,
-};
+const EMPTY: DefaultValues<MembershipFormInput> = { name: '', description: '', gymAccess: false, isActive: true };
 const toFormValues = (membership: MembershipPackage): MembershipFormInput => ({
   ...membership,
   description: membership.description ?? '',
-  price: membership.price || undefined,
+  price: membership.price,
   bookingDiscountPct: membership.bookingDiscountPct || undefined,
   classDiscountPct: membership.classDiscountPct || undefined,
   freeBookingSlotsPerMonth: membership.freeBookingSlotsPerMonth || undefined,
@@ -63,7 +53,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const form = useForm<MembershipFormInput, unknown, CreateMembershipBody>({
-    resolver: zodResolver(membershipFormSchema),
+    resolver: zodResolver(createMembershipBodySchema),
     mode: 'onTouched',
     defaultValues: EMPTY,
   });
@@ -119,13 +109,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
           name="name"
           label={<Required>Tên gói</Required>}
           render={(field, invalid) => (
-            <Input
-              {...field}
-              maxLength={255}
-              autoComplete="off"
-              placeholder="VD: Gói năng động 30 ngày"
-              status={invalid ? 'error' : undefined}
-            />
+            <Input {...field} maxLength={255} autoComplete="off" status={invalid ? 'error' : undefined} />
           )}
         />
         <FormField
@@ -162,7 +146,6 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   formatter={moneyFormatter}
                   parser={moneyParser}
                   changeOnBlur={false}
-                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -211,7 +194,6 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={100}
                   precision={0}
-                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -232,7 +214,6 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={100}
                   precision={0}
-                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />
@@ -253,7 +234,6 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
                   min={0}
                   max={2147483647}
                   precision={0}
-                  placeholder="0"
                   status={invalid ? 'error' : undefined}
                   className="!w-full"
                 />

@@ -61,7 +61,7 @@ export function UsersPage() {
           label={`Thao tác với ${user.fullName}`}
           inlineLimit={0}
           actions={
-            user.id === viewer.id || user.role === 'MANAGER'
+            user.id === viewer.id || user.roles.includes('MANAGER')
               ? []
               : ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
                   key: status,

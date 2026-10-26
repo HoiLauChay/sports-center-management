@@ -72,7 +72,7 @@ export function ManagerSpecializationsPage() {
 
   const columns: TableColumnsType<Specialization> = [
     {
-      title: 'HLV · Bộ môn',
+      title: 'Huấn luyện viên',
       key: 'coach',
       render: (_, entry) => (
         <div className="flex flex-col items-start gap-1">

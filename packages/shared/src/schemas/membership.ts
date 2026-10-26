@@ -15,8 +15,8 @@ const pctSchema = (label: string) =>
 const membershipFields = {
   name: nameSchema,
   description: z.string().trim().max(5000, 'Mô tả tối đa 5000 ký tự').nullable().optional(),
-  price: z.int('Giá phải là số nguyên').min(0, 'Giá không được âm').max(MAX_MONEY, 'Giá quá lớn'),
-  durationDays: z.int32('Số ngày phải là số nguyên').min(1, 'Số ngày tối thiểu là 1'),
+  price: z.int('Giá không hợp lệ').min(0, 'Giá không được âm').max(MAX_MONEY, 'Giá quá lớn'),
+  durationDays: z.int32('Thời hạn không hợp lệ').min(1, 'Số ngày tối thiểu là 1'),
   gymAccess: z.boolean('Quyền vào gym không hợp lệ'),
   bookingDiscountPct: pctSchema('Giảm giá booking'),
   classDiscountPct: pctSchema('Giảm giá lớp học'),

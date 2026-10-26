@@ -1,4 +1,4 @@
-import { Alert, Avatar, Button, Card, Col, Divider, Row, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Avatar, Button, Card, Col, Divider, Row, Tag, type TableColumnsType } from 'antd';
 import {
   AlertCircle,
   Award,
@@ -13,6 +13,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { StatCard } from '~/components/ui/StatCard';
@@ -304,7 +305,6 @@ export function CoachSpecializationsPage() {
                 dataSource={mine}
                 loading={specializations.isPending}
                 pagination={false}
-                scroll={{ x: 620 }}
                 expandable={{ expandedRowRender: (entry) => <EvidenceView entry={entry} /> }}
                 locale={{ emptyText: 'Bạn chưa đăng ký bộ môn nào' }}
               />

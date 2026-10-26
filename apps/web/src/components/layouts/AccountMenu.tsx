@@ -1,10 +1,10 @@
-import type { Account } from '@sports-center/shared';
+import type { Account, Role } from '@sports-center/shared';
 import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Dropdown, type MenuProps } from 'antd';
-import { Ellipsis, LogOut, UserRound } from 'lucide-react';
+import { ArrowLeftRight, Ellipsis, LogOut, UserRound } from 'lucide-react';
 import { PATHS } from '~/constants/paths';
 import { ROLE_LABEL } from '~/constants/roles';
-import { useLogout } from '~/features/auth';
+import { useLogout, useSwitchRole } from '~/features/auth';
 import { initialsOf } from '~/lib/format';
 import { ROLE_COLOR_ON_DARK } from '~/styles/antd-theme';
 
@@ -17,10 +17,18 @@ interface AccountMenuProps {
 export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenuProps) {
   const navigate = useNavigate();
   const logout = useLogout();
+  const switchRole = useSwitchRole();
+  const otherRoles = user.roles.filter((role) => role !== user.role);
   const roleColor = ROLE_COLOR_ON_DARK[user.role];
 
   const items: MenuProps['items'] = [
     { key: 'profile', icon: <UserRound size={16} />, label: 'Hồ sơ cá nhân' },
+    ...otherRoles.map((role) => ({
+      key: `role:${role}`,
+      icon: <ArrowLeftRight size={16} />,
+      label: `Chuyển sang ${ROLE_LABEL[role]}`,
+      disabled: switchRole.isPending,
+    })),
     { type: 'divider' },
     { key: 'logout', icon: <LogOut size={16} />, label: 'Đăng xuất', danger: true },
   ];
@@ -29,6 +37,7 @@ export function AccountMenu({ user, collapsed = false, onNavigate }: AccountMenu
     onNavigate?.();
     if (key === 'profile') void navigate({ to: PATHS.profile });
     if (key === 'logout') void logout();
+    if (key.startsWith('role:')) switchRole.mutate(key.slice('role:'.length) as Role);
   };
 
   return (

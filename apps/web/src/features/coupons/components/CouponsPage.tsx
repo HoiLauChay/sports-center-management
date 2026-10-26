@@ -1,7 +1,8 @@
-import { Alert, Button, Card, Progress, Segmented, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Progress, Segmented, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -82,7 +83,9 @@ export function CouponsPage() {
         return (
           <div className="flex flex-col gap-1">
             <span className="font-mono text-[15px] font-semibold">{coupon.code}</span>
-            <span className="text-[14.5px] text-sc-muted line-clamp-1">{coupon.name}</span>
+            <span className="line-clamp-2 min-w-32 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+              {coupon.name}
+            </span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
             </Tag>
@@ -137,7 +140,7 @@ export function CouponsPage() {
       title: 'Lượt dùng',
       key: 'uses',
       render: (_, coupon) => (
-        <div className="w-36">
+        <div className="min-w-32">
           {coupon.maxUses === null ? (
             <span className="tabular-nums text-[15px]">{coupon.usedCount} lượt</span>
           ) : (
@@ -246,7 +249,6 @@ export function CouponsPage() {
             columns={columns}
             dataSource={filteredCoupons}
             loading={coupons.isFetching}
-            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,

@@ -1,9 +1,10 @@
 import type { Sport } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Avatar, Button, Card, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Avatar, Button, Card, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -90,10 +91,12 @@ export function SportsPage() {
           <Avatar shape="square" src={sport.iconUrl ?? undefined} className="shrink-0 !bg-sc-primary">
             {sport.name.charAt(0).toUpperCase()}
           </Avatar>
-          <div className="flex min-w-0 flex-col">
-            <span className="font-semibold">{sport.name}</span>
+          <div className="flex min-w-40 flex-col">
+            <span className="font-semibold [overflow-wrap:anywhere]">{sport.name}</span>
             {sport.description && (
-              <span className="max-w-md text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">{sport.description}</span>
+              <span className="line-clamp-2 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+                {sport.description}
+              </span>
             )}
           </div>
         </div>
@@ -105,13 +108,13 @@ export function SportsPage() {
       render: (_, sport) => {
         const names = facilitiesBySport.get(sport.id) ?? [];
         return names.length ? (
-          <Space wrap size={[4, 4]}>
+          <div className="flex flex-wrap gap-1">
             {names.map((name) => (
               <Tag key={name} className="!m-0">
                 {name}
               </Tag>
             ))}
-          </Space>
+          </div>
         ) : (
           <span className="text-sc-muted-2">Chưa gắn sân nào</span>
         );
@@ -183,7 +186,7 @@ export function SportsPage() {
         ) : (
           <Table<Sport>
             rowKey="id"
-            scroll={{ x: 'max-content' }}
+            size="middle"
             columns={columns}
             dataSource={filteredSports}
             loading={sports.isPending}

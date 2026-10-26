@@ -11,6 +11,7 @@ import type {
   ResetPasswordBody,
   SendOtpBody,
   SetPasswordBody,
+  SwitchRoleBody,
   VerifyOtpBody,
 } from '@sports-center/shared';
 import { privateApi, publicApi } from '~/lib/http';
@@ -62,6 +63,11 @@ export const authService = {
 
   me: async () => {
     const { data } = await privateApi.get<ApiResponse<Account>>('/auth/me');
+    return data.result;
+  },
+
+  switchRole: async (payload: SwitchRoleBody) => {
+    const { data } = await privateApi.post<ApiResponse<Account>>('/auth/me/role', payload);
     return data.result;
   },
 

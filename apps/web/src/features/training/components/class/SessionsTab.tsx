@@ -1,6 +1,7 @@
 import type { ClassDetail, ClassSession } from '@sports-center/shared';
-import { Table, Tag, type TableColumnsType } from 'antd';
+import { Tag, type TableColumnsType } from 'antd';
 import { useMemo } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState } from '~/components/feedback/States';
 import { useCurrentUser } from '~/features/auth';
 import { useCoachScheduleSpan } from '~/features/schedule';
@@ -97,7 +98,6 @@ export function SessionsTab({ gymClass }: { gymClass: ClassDetail }) {
       dataSource={gymClass.sessions}
       loading={schedule.isPending}
       pagination={false}
-      scroll={{ x: 'max-content' }}
       onRow={rowLink}
       locale={{ emptyText: <EmptyState title="Lớp chưa có buổi học" /> }}
     />

@@ -266,6 +266,16 @@ class AuthService {
     return toAccountResponse(account);
   };
 
+  switchRole = async (accountId: string, role: Role) => {
+    const account = await accountRepository.findById(accountId);
+    if (!account) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Tài khoản không tồn tại');
+    if (!account.roles.includes(role)) {
+      throw fail(HTTP_STATUS.FORBIDDEN, ERROR_CODE.FORBIDDEN, 'Tài khoản không có vai trò này');
+    }
+    if (account.role === role) return toAccountResponse(account);
+    return toAccountResponse(await accountRepository.updateActiveRole(accountId, role));
+  };
+
   updateMe = async (accountId: string, { profile, ...fields }: UpdateMeBody, ip?: string) => {
     const current = await accountRepository.findById(accountId);
     if (!current) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Tài khoản không tồn tại');

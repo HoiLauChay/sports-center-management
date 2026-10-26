@@ -9,34 +9,30 @@ import {
   Input,
   InputNumber,
   Modal,
+  Radio,
   Row,
-  Segmented,
   Space,
   Switch,
 } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, type DefaultValues } from 'react-hook-form';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
 import { ORDER_ITEM_TYPES, ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
 import { useFormApiError } from '~/hooks/useFormApiError';
-import { nowVN } from '~/lib/time';
 import { useCouponMutations } from '../hooks/useCoupons';
 import { couponSchema, type CouponFormInput, type CouponFormValues } from '../schemas/coupon.schema';
 import type { Coupon } from '../types';
 
-function emptyForm(): CouponFormInput {
+function emptyForm(): DefaultValues<CouponFormInput> {
   return {
     code: '',
     name: '',
-    discountType: 'PERCENT',
-    discountValue: 10,
     maxDiscount: null,
-    validFrom: nowVN().startOf('day').toISOString(),
-    validTo: nowVN().add(30, 'day').endOf('day').toISOString(),
+    validFrom: '',
+    validTo: '',
     maxUses: null,
-    maxUsesPerUser: 1,
     minOrderAmount: null,
     applicableTypes: [],
     isActive: true,
@@ -175,7 +171,6 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   {...field}
                   maxLength={50}
                   autoComplete="off"
-                  placeholder="WELCOME20"
                   className="font-mono uppercase"
                   status={invalid ? 'error' : undefined}
                   onChange={(event) => field.onChange(event.target.value.toUpperCase())}
@@ -202,10 +197,12 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               name="discountType"
               label="Loại giảm"
               render={(field) => (
-                <Segmented
+                <Radio.Group
                   block
+                  optionType="button"
+                  buttonStyle="solid"
                   value={field.value}
-                  onChange={(value) => field.onChange(value)}
+                  onChange={(event) => field.onChange(event.target.value)}
                   options={[
                     { value: 'PERCENT', label: 'Phần trăm' },
                     { value: 'FIXED', label: 'Số tiền' },
@@ -339,7 +336,6 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   onChange={(value) => field.onChange(value ?? null)}
                   onBlur={field.onBlur}
                   step={50_000}
-                  placeholder="0 ₫"
                   status={invalid ? 'error' : undefined}
                 />
               )}

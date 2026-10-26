@@ -1,6 +1,7 @@
-import { App, Button, Card, Space, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Space, Spin, Tag, type TableColumnsType } from 'antd';
 import { Download, FileText, LayoutGrid, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -234,13 +235,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Card>
             <SectionTitle>Dịch vụ</SectionTitle>
-            <Table<OrderItem>
-              rowKey="id"
-              columns={columnsOf(data)}
-              dataSource={data.items}
-              pagination={false}
-              scroll={{ x: 'max-content' }}
-            />
+            <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
           </Card>
           <div className="flex flex-col gap-4">
             <Card>

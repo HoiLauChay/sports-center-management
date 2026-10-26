@@ -1,10 +1,11 @@
 import type { Course } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Select, Table, type TableColumnsType } from 'antd';
+import { Button, Card, Select, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -64,8 +65,8 @@ export function CoursesPage() {
       title: 'Khóa học',
       key: 'name',
       render: (_, record) => (
-        <div className="min-w-[140px] max-w-sm">
-          <div className="font-semibold text-sc-ink">{record.name}</div>
+        <div className="min-w-40">
+          <div className="font-semibold text-sc-ink [overflow-wrap:anywhere]">{record.name}</div>
           {record.description && <div className="line-clamp-2 text-[14.5px] text-sc-muted">{record.description}</div>}
         </div>
       ),
@@ -176,7 +177,6 @@ export function CoursesPage() {
             columns={columns}
             dataSource={filteredCourses}
             loading={courses.isPending}
-            scroll={{ x: 860 }}
             pagination={{
               current: page,
               pageSize,

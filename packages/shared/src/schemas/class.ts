@@ -15,17 +15,17 @@ const weeklySlotSchema = z
     message: 'Giờ kết thúc phải sau giờ bắt đầu',
   });
 
-const studentsSchema = z.int('Sĩ số phải là số nguyên').min(1, 'Sĩ số tối thiểu là 1').max(1000, 'Sĩ số quá lớn');
+const studentsSchema = z.int('Sĩ số không hợp lệ').min(1, 'Sĩ số tối thiểu là 1').max(1000, 'Sĩ số quá lớn');
 
 export const createClassBodySchema = z
   .object({
-    courseId: z.uuid('Mã khóa học không hợp lệ'),
+    courseId: z.uuid('Khóa học không hợp lệ'),
     name: z
       .string('Tên lớp không được để trống')
       .trim()
       .min(1, 'Tên lớp không được để trống')
       .max(100, 'Tên lớp tối đa 100 ký tự'),
-    facilityId: z.uuid('Mã cơ sở không hợp lệ'),
+    facilityId: z.uuid('Sân / phòng không hợp lệ'),
     startDate: z.iso.date('Ngày bắt đầu không hợp lệ'),
     weeklySchedule: z
       .array(weeklySlotSchema, 'Lịch tuần không hợp lệ')

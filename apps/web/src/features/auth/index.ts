@@ -9,6 +9,7 @@ export {
   useLogout,
   useLogoutAll,
   useSetFirstPassword,
+  useSwitchRole,
 } from './hooks/useAuth';
 export { endSessionHere, sessionQueryOptions, useCurrentUser, useIsLoggedIn, useSession } from './session';
 export { syncSessionAcrossTabs } from './sessionSync';

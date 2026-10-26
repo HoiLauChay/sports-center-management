@@ -12,9 +12,9 @@ const nameSchema = z
 export const createCourseBodySchema = z.object({
   name: nameSchema,
   description: optionalText(5000, 'Mô tả'),
-  sportId: z.uuid('Mã bộ môn không hợp lệ'),
-  totalSessions: z.int32('Số buổi phải là số nguyên').min(1, 'Số buổi tối thiểu là 1'),
-  price: z.int('Giá phải là số nguyên').min(0, 'Giá không được âm').max(MAX_MONEY, 'Giá quá lớn'),
+  sportId: z.uuid('Bộ môn không hợp lệ'),
+  totalSessions: z.int32('Số buổi không hợp lệ').min(1, 'Số buổi tối thiểu là 1'),
+  price: z.int('Học phí không hợp lệ').min(0, 'Giá không được âm').max(MAX_MONEY, 'Giá quá lớn'),
   thumbnailUrl: optionalUrl('Ảnh khóa học'),
 });
 

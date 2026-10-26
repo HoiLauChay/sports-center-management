@@ -1,8 +1,9 @@
 import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES, listAuditLogsQuerySchema, type AuditLog } from '@sports-center/shared';
-import { Alert, Avatar, Button, Card, DatePicker, Form, Select, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Avatar, Button, Card, DatePicker, Form, Select, Spin, Tag, type TableColumnsType } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useEffect, useState } from 'react';
 import { DateTimeCell } from '~/components/data/DateTimeCell';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { clickableRow } from '~/hooks/useRowLink';
@@ -144,7 +145,9 @@ export function AuditLogsPage() {
     {
       title: 'Chi tiết',
       key: 'details',
-      render: (_, log) => <span className="block w-64 text-[14.5px] [overflow-wrap:anywhere]">{summarize(log)}</span>,
+      render: (_, log) => (
+        <span className="block min-w-48 text-[14.5px] [overflow-wrap:anywhere]">{summarize(log)}</span>
+      ),
     },
   ];
 
@@ -243,7 +246,6 @@ export function AuditLogsPage() {
               dataSource={logs.items}
               loading={logs.isPending}
               pagination={false}
-              scroll={{ x: 'max-content' }}
               onRow={(log) => clickableRow(() => setSelected(log))}
               locale={{
                 emptyText: logs.isPending ? (
