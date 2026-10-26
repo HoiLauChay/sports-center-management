@@ -1,4 +1,5 @@
 import scheduleRepository from '~/repositories/schedule.repository';
+import alertJobService from '~/services/alertJob.service';
 import notificationService, { type NotificationInput } from '~/services/notification.service';
 import {
   addDays,
@@ -55,7 +56,7 @@ class ReminderJobService {
       ),
     ];
     const created = inputs.length > 0 ? await notificationService.create(inputs) : [];
-    return { processed: created.length, remaining: 0 };
+    return { processed: created.length + (await alertJobService.run(now)), remaining: 0 };
   };
 }
 
