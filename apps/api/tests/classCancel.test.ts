@@ -77,7 +77,7 @@ describe('cancel class', () => {
     });
     expect(free).toEqual([]);
 
-    const notified = await prisma.notification.findMany({ where: { title: 'Lớp học đã bị hủy', referenceId: cls.id } });
+    const notified = await prisma.notification.findMany({ where: { type: 'CLASS', referenceId: cls.id } });
     expect(notified.map(({ accountId }) => accountId).sort()).toEqual([cls.coachId!, first!.id, second!.id].sort());
   });
 

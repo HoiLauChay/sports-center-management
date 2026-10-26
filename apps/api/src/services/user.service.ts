@@ -204,14 +204,14 @@ class UserService {
   updateStatus = async (viewer: Viewer, id: string, { status, reason }: UpdateUserStatusBody, ip?: string) => {
     if (id === viewer.id) throw forbidden('Không thể tự đổi trạng thái tài khoản của mình');
 
-    const { account, notifications } = await runTransaction(async (tx) => {
+    const { account, notifications, changed } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
       await lockRows(tx, { accounts: [id] });
 
       const current = await accountRepository.findById(id, undefined, tx);
       if (!current) throw notFound();
       if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi trạng thái tài khoản quản lý');
-      if (current.status === status) return { account: current, notifications: [] };
+      if (current.status === status) return { account: current, notifications: [], changed: false };
 
       const deactivating = status !== 'ACTIVE';
       const inputs =
@@ -233,24 +233,29 @@ class UserService {
         tx,
       );
       if (deactivating) await refreshTokenRepository.revokeAllByAccountId(id, tx);
-      inputs.push({
-        accountId: id,
-        type: 'SYSTEM',
-        title: !deactivating
+
+      return {
+        account: next,
+        notifications: inputs.length > 0 ? await notificationService.create(inputs, tx) : [],
+        changed: true,
+      };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    if (changed) {
+      const deactivated = status !== 'ACTIVE';
+      notificationService.sendEmailOnlyAfterCommit(
+        account,
+        !deactivated
           ? 'Tài khoản đã được mở lại'
           : status === 'BANNED'
             ? 'Tài khoản đã bị khóa'
             : 'Tài khoản đã bị vô hiệu hóa',
-        message: deactivating
+        deactivated
           ? `Tài khoản Sports Center của bạn đã bị ${status === 'BANNED' ? 'khóa' : 'vô hiệu hóa'} và không đăng nhập được.${reason ? ` Lý do: ${reason}` : ''}`
           : 'Tài khoản Sports Center của bạn đã hoạt động trở lại, bạn có thể đăng nhập.',
-        sendEmail: true,
-      });
-
-      return { account: next, notifications: await notificationService.create(inputs, tx) };
-    });
-
-    notificationService.sendEmailsAfterCommit(notifications);
+      );
+    }
     return toAccountResponse(account);
   };
 

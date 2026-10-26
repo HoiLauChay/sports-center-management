@@ -1,9 +1,10 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 import { prisma } from '~/configs/db';
 import alertJobService from '~/services/alertJob.service';
+import mailService from '~/services/mail.service';
 import { toCenterDateTime, todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
@@ -27,7 +28,7 @@ const titlesOf = async (accountId: string) =>
   );
 
 describe('notifications for events nobody was told about', () => {
-  test('a new support request reaches receptionists and managers, and a locked member is emailed', async () => {
+  test('a new support request reaches receptionists and managers, and a locked member only gets an email', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const manager = await createAccount('MANAGER', 'manager@example.com');
@@ -41,11 +42,13 @@ describe('notifications for events nobody was told about', () => {
     expect(await titlesOf(receptionist.id)).toEqual(['Yêu cầu hỗ trợ mới']);
     expect(await titlesOf(manager.id)).toEqual(['Yêu cầu hỗ trợ mới']);
 
+    const send = spyOn(mailService, 'send').mockResolvedValue();
     await api('/users')('PATCH', `/${member.id}/status`, manager, { status: 'BANNED', reason: 'Vi phạm nội quy' });
-    expect(await prisma.notification.findFirstOrThrow({ where: { accountId: member.id } })).toMatchObject({
-      title: 'Tài khoản đã bị khóa',
-      sendEmail: true,
-    });
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'member@example.com', subject: '[Sports Center] Tài khoản đã bị khóa' }),
+    );
+    expect(await prisma.notification.count({ where: { accountId: member.id } })).toBe(0);
+    send.mockRestore();
   });
 
   test('the hourly job reminds coaches about attendance and reviews and sends one morning digest', async () => {

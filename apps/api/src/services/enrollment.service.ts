@@ -71,21 +71,6 @@ class EnrollmentService {
         createdById: actor.role === 'MEMBER' ? undefined : actor.id,
       });
       notifications = refund.notifications;
-      if (enrollment.class.coachId) {
-        await notificationService.create(
-          [
-            {
-              accountId: enrollment.class.coachId,
-              type: 'CLASS',
-              title: 'Học viên hủy đăng ký lớp',
-              message: `${enrollment.account.fullName} đã hủy đăng ký lớp "${enrollment.class.name}".`,
-              referenceType: 'CLASS',
-              referenceId: enrollment.classId,
-            },
-          ],
-          tx,
-        );
-      }
       return {
         enrollment: toEnrollmentResponse((await enrollmentRepository.findById(id, tx))!),
         refund: refund.refunded,

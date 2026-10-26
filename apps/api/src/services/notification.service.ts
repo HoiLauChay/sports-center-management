@@ -57,6 +57,15 @@ class NotificationService {
     );
   };
 
+  /** An email with no in-app notice, for news the account cannot or need not read in the app. */
+  sendEmailOnlyAfterCommit = (to: { email: string; fullName: string }, title: string, message: string) => {
+    waitUntil(
+      mailService.send({ to: to.email, ...notificationTemplate(to.fullName, title, message) }).catch((err) => {
+        console.error('Failed to send notification email:', err);
+      }),
+    );
+  };
+
   resendPendingEmails = async () => {
     const now = Date.now();
     const where: Prisma.NotificationWhereInput = {
