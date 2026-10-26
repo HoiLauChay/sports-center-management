@@ -82,7 +82,9 @@ export function CouponsPage() {
         return (
           <div className="flex flex-col gap-1">
             <span className="font-mono text-[15px] font-semibold">{coupon.code}</span>
-            <span className="text-[14.5px] text-sc-muted line-clamp-1">{coupon.name}</span>
+            <span className="line-clamp-2 w-40 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+              {coupon.name}
+            </span>
             <Tag color={state.color} className="!m-0 w-fit">
               {state.label}
             </Tag>
