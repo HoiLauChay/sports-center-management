@@ -7,7 +7,7 @@ const MAX_INT = 2_147_483_647;
 
 const moneySchema = (label: string, min: number) =>
   z
-    .int(`${label} phải là số nguyên`)
+    .int(`${label} không hợp lệ`)
     .min(min, `${label} tối thiểu là ${min.toLocaleString('vi-VN')}`)
     .max(MAX_MONEY, `${label} quá lớn`);
 
@@ -32,7 +32,7 @@ const couponFields = {
     .max(MAX_INT, 'Tổng lượt dùng quá lớn')
     .nullable(),
   maxUsesPerUser: z
-    .int('Lượt dùng mỗi người phải là số nguyên')
+    .int('Lượt dùng mỗi người không hợp lệ')
     .min(1, 'Lượt dùng mỗi người tối thiểu là 1')
     .max(MAX_INT, 'Lượt dùng mỗi người quá lớn'),
   applicableTypes: z
