@@ -119,7 +119,7 @@ export function ClassesAdminPage() {
       ),
     },
     {
-      title: 'Lịch · Phòng / sân',
+      title: 'Lịch học',
       render: (_, record) => (
         <div className="flex flex-col gap-0.5 whitespace-nowrap">
           {weeklyLines(record.weeklySchedule).map((line) => (

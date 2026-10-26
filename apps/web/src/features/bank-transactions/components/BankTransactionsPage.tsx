@@ -94,7 +94,7 @@ function TransactionsTab() {
       ),
     },
     {
-      title: 'Thành viên / ghi chú',
+      title: 'Xử lý',
       key: 'handled',
       render: (_, transaction) => {
         const { invoice } = transaction;

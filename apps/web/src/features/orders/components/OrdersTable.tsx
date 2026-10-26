@@ -29,7 +29,7 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
   const rowLink = useRowLink(link);
   const columns: TableColumnsType<Order> = [
     {
-      title: 'Mã đơn · Thời gian',
+      title: 'Đơn hàng',
       dataIndex: 'orderNumber',
       render: (value: string, order) => (
         <div className="flex flex-col gap-0.5">
