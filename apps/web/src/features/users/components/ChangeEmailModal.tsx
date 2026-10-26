@@ -49,12 +49,7 @@ export function ChangeEmailModal({ user, onClose }: ChangeEmailModalProps) {
       onCancel={onClose}
     >
       <div className="flex flex-col gap-3">
-        <Alert
-          type="warning"
-          showIcon
-          title="Người dùng bị đăng xuất khỏi mọi thiết bị và không đăng nhập được bằng mật khẩu cũ."
-          description="Hệ thống gửi link kích hoạt tới email mới để họ đặt mật khẩu."
-        />
+        <Alert type="info" showIcon title="Hệ thống gửi link kích hoạt tới email mới để họ đặt mật khẩu." />
         <div className="text-[15px] text-sc-muted">
           Email hiện tại: <b className="break-all text-sc-ink">{user.email}</b>
         </div>

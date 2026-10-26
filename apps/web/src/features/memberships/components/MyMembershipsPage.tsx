@@ -190,7 +190,7 @@ export function MyMembershipsPage() {
                 <div className="mt-4 border-t border-sc-border-soft pt-4">
                   {current.cancelledAt ? (
                     <p className="mb-0 text-[15px] text-sc-muted">
-                      Gói đã hủy và sẽ không gia hạn. Bạn vẫn dùng quyền lợi đến {formatDate(current.endDate)}.
+                      Gói đã hủy và sẽ không gia hạn. Bạn vẫn còn quyền lợi đến {formatDate(current.endDate)}.
                     </p>
                   ) : (
                     <>
@@ -200,7 +200,7 @@ export function MyMembershipsPage() {
                       </p>
                       <Popconfirm
                         title="Hủy gói? Gói sẽ không gia hạn, không hoàn tiền."
-                        description={`Bạn vẫn dùng quyền lợi đến ${formatDate(current.endDate)}.`}
+                        description={`Bạn vẫn còn quyền lợi đến ${formatDate(current.endDate)}.`}
                         okText="Hủy gói"
                         cancelText="Không"
                         okButtonProps={{ danger: true }}
