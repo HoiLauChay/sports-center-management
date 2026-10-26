@@ -59,7 +59,6 @@ export function ProfileEditForm({ user, onDone }: ProfileEditFormProps) {
                 status={invalid ? 'error' : undefined}
                 type="tel"
                 autoComplete="tel"
-                placeholder="VD: 0912345678"
               />
             )}
           />

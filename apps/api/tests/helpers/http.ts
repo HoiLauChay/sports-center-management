@@ -32,6 +32,7 @@ export const createAccount = (role: Role, email: string, data: Partial<Prisma.Ac
       passwordHash: 'hash',
       fullName: role,
       role,
+      roles: [role],
       passwordChangedAt: new Date('2020-01-01'),
       [PROFILE_KEY[role]]: { create: {} },
       ...data,

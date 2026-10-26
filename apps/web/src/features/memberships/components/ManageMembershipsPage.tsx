@@ -1,9 +1,10 @@
 import type { MembershipPackage } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, App, Button, Card, Popconfirm, Segmented, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, App, Button, Card, Popconfirm, Segmented, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -91,7 +92,7 @@ export function ManageMembershipsPage() {
       title: 'Tên gói',
       key: 'name',
       render: (_, membership) => (
-        <div className="flex w-56 flex-col gap-0.5">
+        <div className="flex min-w-40 flex-col gap-0.5">
           <span className="font-semibold text-sc-ink">{membership.name}</span>
           {membership.description && (
             <span className="text-[13.5px] text-sc-muted line-clamp-2">{membership.description}</span>
@@ -100,17 +101,18 @@ export function ManageMembershipsPage() {
       ),
     },
     {
-      title: 'Giá · Thời hạn',
-      key: 'price',
-      width: 110,
+      title: 'Giá',
+      dataIndex: 'price',
       align: 'right',
-      render: (_, membership) => (
-        <div className="flex flex-col items-end whitespace-nowrap">
-          <span className="tabular-nums">{formatVND(membership.price)}</span>
-          <span className="text-[14.5px] text-sc-muted">{membership.durationDays} ngày</span>
-        </div>
-      ),
+      render: (price: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(price)}</span>,
       sorter: (a, b) => a.price - b.price,
+    },
+    {
+      title: 'Thời hạn',
+      dataIndex: 'durationDays',
+      align: 'right',
+      render: (days: number) => <span className="whitespace-nowrap tabular-nums">{days} ngày</span>,
+      sorter: (a, b) => a.durationDays - b.durationDays,
     },
     {
       title: 'Quyền lợi',
@@ -139,7 +141,7 @@ export function ManageMembershipsPage() {
           ),
         ].filter(Boolean);
         return tags.length > 0 ? (
-          <div className="flex w-52 flex-wrap gap-1">{tags}</div>
+          <div className="flex flex-wrap gap-1">{tags}</div>
         ) : (
           <span className="text-sc-muted-2">—</span>
         );
@@ -265,7 +267,6 @@ export function ManageMembershipsPage() {
         ) : (
           <Table<MembershipPackage>
             rowKey="id"
-            scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={rows}
             loading={packages.isFetching}

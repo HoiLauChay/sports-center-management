@@ -1,12 +1,12 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 
 import { prisma } from '~/configs/db';
 import authService from '~/services/auth.service';
 import mailService from '~/services/mail.service';
 import { resetDatabase } from './helpers/db';
-import type { buildFetcher } from './helpers/http';
-import { createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
+import { buildFetcher, createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
 
 let server: Server;
 let request: ReturnType<typeof buildFetcher>;
@@ -232,5 +232,43 @@ describe('update account status', () => {
       await prisma.notification.count({ where: { accountId: manager.id, referenceId: upcoming.id, type: 'CLASS' } }),
     ).toBe(1);
     expect(await prisma.notification.count({ where: { accountId: member.id } })).toBe(0);
+  });
+});
+
+describe('account roles', () => {
+  test('manager grants and removes non-manager roles and the account switches between the roles it holds', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const member = await createMember('member@example.com');
+    const coach = await createAccount('COACH', 'coach@example.com');
+    const upcoming = await createCoachClass(coach.id, 'Bơi sáng', 7);
+
+    const granted = await request('PUT', `/${member.id}/roles`, manager, { roles: ['MEMBER', 'COACH'] });
+    expect(await readResult<{ role: string; roles: string[] }>(granted)).toMatchObject({
+      role: 'MEMBER',
+      roles: ['MEMBER', 'COACH'],
+    });
+    expect(await prisma.coachProfile.count({ where: { accountId: member.id } })).toBe(1);
+
+    const { port } = server.address() as AddressInfo;
+    const switchRole = (viewer: Viewer, role: string) =>
+      buildFetcher(`http://localhost:${port}/api/v1/auth`)('POST', '/me/role', viewer, { role });
+    const switched = await switchRole(member, 'COACH');
+    expect((await readResult<{ role: string }>(switched)).role).toBe('COACH');
+    const denied = await switchRole(member, 'RECEPTIONIST');
+    expect([denied.status, await readCode(denied)]).toEqual([403, 'FORBIDDEN']);
+
+    const removed = await request('PUT', `/${member.id}/roles`, manager, { roles: ['RECEPTIONIST'] });
+    expect(await readResult<{ role: string; roles: string[] }>(removed)).toMatchObject({
+      role: 'RECEPTIONIST',
+      roles: ['RECEPTIONIST'],
+    });
+
+    await request('PUT', `/${coach.id}/roles`, manager, { roles: ['MEMBER'] });
+    expect((await prisma.class.findUniqueOrThrow({ where: { id: upcoming.id } })).coachId).toBeNull();
+
+    const untouchable = await request('PUT', `/${manager.id}/roles`, manager, { roles: ['MEMBER'] });
+    expect([untouchable.status, await readCode(untouchable)]).toEqual([403, 'FORBIDDEN']);
+    const escalate = await request('PUT', `/${member.id}/roles`, manager, { roles: ['MANAGER'] });
+    expect(escalate.status).toBe(422);
   });
 });

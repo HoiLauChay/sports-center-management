@@ -4,7 +4,7 @@ import { Alert, Button, DatePicker, Select } from 'antd';
 import dayjs from 'dayjs';
 import { RefreshCw, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ErrorState, PageLoading } from '~/components/feedback/States';
+import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
@@ -47,16 +47,13 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
       ),
     [sports.data, bookable],
   );
-  const sportId =
-    sportChoice && sportOptions.some((sport) => sport.id === sportChoice) ? sportChoice : sportOptions[0]?.id;
+  const sportId = sportOptions.some((sport) => sport.id === sportChoice) ? sportChoice : undefined;
   const sportFacilities = useMemo(
     () => bookable.filter((facility) => facility.sports.some((entry) => entry.id === sportId)),
     [bookable, sportId],
   );
 
-  const facilityId = sportFacilities.some((facility) => facility.id === facilityChoice)
-    ? facilityChoice
-    : sportFacilities[0]?.id;
+  const facilityId = sportFacilities.some((facility) => facility.id === facilityChoice) ? facilityChoice : undefined;
   const rows = sportFacilities.filter((facility) => facility.id === facilityId);
 
   const schedule = useFacilitySchedules(
@@ -104,7 +101,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
     );
   }
   if (!sportOptions.length) {
-    return <Alert type="info" showIcon title="Chưa có sân hoặc phòng nào nhận đặt. Vui lòng quay lại sau." />;
+    return <Alert type="info" showIcon title="Chưa có sân hoặc phòng nào nhận đặt." />;
   }
 
   const changeDay = (next: string) => {
@@ -142,6 +139,8 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           aria-label="Chọn sân / phòng"
           showSearch
           optionFilterProp="label"
+          placeholder="Chọn sân / phòng"
+          disabled={!sportId}
           className="w-full sm:!w-auto sm:!min-w-48"
           value={facilityId}
           options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
@@ -193,7 +192,9 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         <div className="min-w-0 rounded-xl border border-sc-border-soft bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">
-              {sportOptions.find((sport) => sport.id === sportId)?.name} · {formatDayLabel(date)}
+              {[sportOptions.find((sport) => sport.id === sportId)?.name, formatDayLabel(date)]
+                .filter(Boolean)
+                .join(' · ')}
             </h3>
             <span className="flex items-center gap-1 text-[14.5px] text-sc-muted" role="status">
               {schedule.updatedAt ? `Cập nhật ${dayjs(schedule.updatedAt).format('HH:mm')}` : 'Đang tải lịch'}
@@ -215,7 +216,9 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               title="Khung giờ đã chọn không còn khả dụng. Vui lòng chọn lại."
             />
           )}
-          {schedule.error ? (
+          {!facilityId ? (
+            <EmptyState title="Chọn bộ môn và sân / phòng để xem lịch" />
+          ) : schedule.error ? (
             <ErrorState message={toApiError(schedule.error).message} onRetry={schedule.refetch} />
           ) : (
             <SlotGrid

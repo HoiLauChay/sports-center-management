@@ -34,6 +34,11 @@ class UserController {
       .json(new ResponseClient({ message: 'Đã cập nhật trạng thái tài khoản', result: account }));
   };
 
+  updateRoles = async (req: Request, res: Response) => {
+    const result = await userService.updateRoles(req.user!, req.params.id as string, req.body, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã cập nhật vai trò', result }));
+  };
+
   changeEmail = async (req: Request, res: Response) => {
     const account = await userService.changeEmail(req.user!, req.params.id as string, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(

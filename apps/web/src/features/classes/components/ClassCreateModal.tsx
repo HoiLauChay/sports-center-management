@@ -5,7 +5,7 @@ import { Button, DatePicker, Form, Input, InputNumber, Modal, Select } from 'ant
 import dayjs from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
@@ -20,17 +20,9 @@ import { ScheduleClashList } from './ScheduleClashList';
 
 type ClassInput = z.input<typeof createClassBodySchema>;
 
-const emptySlot = { dayOfWeek: 1, startTime: '', endTime: '' };
+const emptySlot = { startTime: '', endTime: '' } as ClassInput['weeklySchedule'][number];
 
-const blankClass = (): ClassInput => ({
-  courseId: '',
-  name: '',
-  facilityId: '',
-  startDate: addDays(todayVN(), 7),
-  minStudents: 4,
-  maxStudents: 12,
-  weeklySchedule: [emptySlot],
-});
+const blankClass = (): DefaultValues<ClassInput> => ({ name: '', startDate: '', weeklySchedule: [emptySlot] });
 
 interface ClassCreateModalProps {
   open: boolean;
@@ -129,14 +121,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
           control={control}
           name="name"
           label="Tên lớp"
-          render={(field, invalid) => (
-            <Input
-              {...field}
-              maxLength={100}
-              status={invalid ? 'error' : undefined}
-              placeholder={course ? `${course.name} K…` : 'VD: Gym cơ bản K15'}
-            />
-          )}
+          render={(field, invalid) => <Input {...field} maxLength={100} status={invalid ? 'error' : undefined} />}
         />
         <FormField
           control={control}
@@ -214,7 +199,11 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
               name={`weeklySchedule.${index}.dayOfWeek`}
               className="w-36"
               render={(field) => (
-                <Select {...field} options={WEEK_ORDER.map((day) => ({ value: day, label: DAY_LABEL[day] }))} />
+                <Select
+                  {...field}
+                  placeholder="Chọn thứ"
+                  options={WEEK_ORDER.map((day) => ({ value: day, label: DAY_LABEL[day] }))}
+                />
               )}
             />
             <FormField

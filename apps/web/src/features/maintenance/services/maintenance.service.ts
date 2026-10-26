@@ -11,7 +11,7 @@ import { privateApi } from '~/lib/http';
 
 /**
  * Facility maintenance (`GET /maintenances`, `POST /maintenances/preview`, `POST /maintenances`,
- * `DELETE /maintenances/{id}`). A 409 `MAINTENANCE_BLOCKED` lists the bookings with nowhere to go in `bookings`.
+ * `POST /maintenances/{id}/complete`, `DELETE /maintenances/{id}`). A 409 `MAINTENANCE_BLOCKED` lists the bookings with nowhere to go in `bookings`.
  */
 export const maintenanceService = {
   list: async (query: ListMaintenancesQuery) => {
@@ -26,6 +26,13 @@ export const maintenanceService = {
 
   create: async (body: CreateMaintenanceBody) => {
     const { data } = await privateApi.post<ApiResponse<MaintenanceResult>>('/maintenances', body);
+    return data.result;
+  },
+
+  complete: async (id: string) => {
+    const { data } = await privateApi.post<ApiResponse<Maintenance>>(
+      `/maintenances/${encodeURIComponent(id)}/complete`,
+    );
     return data.result;
   },
 

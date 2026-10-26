@@ -17,24 +17,35 @@ import {
   Result,
   Select,
   Steps,
-  Table,
   Tag,
   Tooltip,
   type TableColumnsType,
 } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useSettings } from '~/features/settings';
 import { formatDate, VN_TIMEZONE } from '~/lib/format';
 import { describeApiError, errorPayload, toApiError } from '~/lib/http-errors';
-import { DATE_FORMAT, slotGrid, todayVN } from '~/lib/time';
+import { DATE_FORMAT, fromMinutes, slotGrid, todayVN, toMinutes } from '~/lib/time';
 import { useCreateMaintenance, useMaintenancePreview } from '../hooks/useMaintenance';
 import type { SessionResolution } from '../types';
 
-const MINUTE_FORMAT = 'YYYY-MM-DD HH:mm';
+const QUARTERS = Array.from({ length: 97 }, (_, index) => fromMinutes(index * 15));
+const START_OPTIONS = QUARTERS.slice(0, -1).map((time) => ({ value: time, label: time }));
+const END_OPTIONS = QUARTERS.slice(1).map((time) => ({ value: time, label: time }));
 
-const toIso = (value: Dayjs) => dayjs.tz(value.format(MINUTE_FORMAT), VN_TIMEZONE).toISOString();
+const toIso = (day: Dayjs, time: string) =>
+  dayjs.tz(day.format(DATE_FORMAT), VN_TIMEZONE).add(toMinutes(time), 'minute').toISOString();
+
+interface WindowForm {
+  facilityId: string;
+  dates: [Dayjs, Dayjs];
+  startTime: string;
+  endTime: string;
+  reason: string;
+}
 
 type Resolutions = Record<string, SessionResolution | undefined>;
 type Moves = Record<string, string | undefined>;
@@ -48,11 +59,6 @@ function resolutionError(resolution: SessionResolution | undefined): string | nu
 }
 
 /** Suggested resolution: move the session to the first free facility of the same sport. */
-function suggest(session: MaintenanceAffectedSession): SessionResolution | undefined {
-  const first = session.alternatives[0];
-  return first ? { sessionId: session.id, action: 'MOVE_FACILITY', facilityId: first.id } : undefined;
-}
-
 function ResolutionCell({
   session,
   value,
@@ -73,7 +79,7 @@ function ResolutionCell({
   const noAlternative = session.alternatives.length === 0;
 
   const choose = (action: SessionResolution['action']) => {
-    if (action === 'MOVE_FACILITY') onChange(suggest(session) ?? { sessionId: session.id, action, facilityId: '' });
+    if (action === 'MOVE_FACILITY') onChange({ sessionId: session.id, action, facilityId: '' });
     else {
       onChange({
         sessionId: session.id,
@@ -168,7 +174,7 @@ interface MaintenanceWizardProps {
  * facility to move to or any session has no complete resolution.
  */
 export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
-  const [form] = Form.useForm<{ facilityId: string; range: [Dayjs, Dayjs]; reason: string }>();
+  const [form] = Form.useForm<WindowForm>();
   const facilities = useQuery(facilitiesQueryOptions);
   const preview = useMaintenancePreview();
   const create = useCreateMaintenance();
@@ -199,21 +205,20 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
     }, 250);
   };
 
-  const submitWindow = (values: { facilityId: string; range: [Dayjs, Dayjs]; reason: string }) => {
+  const submitWindow = (values: WindowForm) => {
     const next: MaintenanceWindow = {
       facilityId: values.facilityId,
-      startAt: toIso(values.range[0]),
-      endAt: toIso(values.range[1]),
+      startAt: toIso(values.dates[0], values.startTime),
+      endAt: toIso(values.dates[1], values.endTime),
       reason: values.reason.trim(),
     };
     preview.mutate(next, {
       onSuccess: (affected) => {
+        create.reset();
         setRequest(next);
         setData(affected);
-        setResolutions(Object.fromEntries(affected.affectedSessions.map((session) => [session.id, suggest(session)])));
-        setMoves(
-          Object.fromEntries(affected.affectedBookings.map((booking) => [booking.id, booking.alternatives[0]?.id])),
-        );
+        setResolutions({});
+        setMoves({});
         setBlocked([]);
         setStep(1);
       },
@@ -393,24 +398,45 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                 .map((entry) => ({ value: entry.id, label: entry.name }))}
             />
           </Form.Item>
-          <Form.Item
-            name="range"
-            label="Khoảng thời gian bảo trì"
-            rules={[{ required: true, message: 'Chọn khoảng thời gian' }]}
-          >
+          <Form.Item name="dates" label="Ngày bảo trì" rules={[{ required: true, message: 'Chọn ngày bảo trì' }]}>
             <DatePicker.RangePicker
-              showTime={{ format: 'HH:mm', minuteStep: 15 }}
-              format="DD/MM/YYYY HH:mm"
+              format="DD/MM/YYYY"
               className="w-full"
-              disabledDate={(day) => day.format(DATE_FORMAT) < todayVN()}
+              placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+              disabledDate={(day) => day.format(DATE_FORMAT) <= todayVN()}
             />
           </Form.Item>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="startTime" label="Giờ bắt đầu" rules={[{ required: true, message: 'Chọn giờ bắt đầu' }]}>
+              <Select showSearch placeholder="Chọn giờ" options={START_OPTIONS} />
+            </Form.Item>
+            <Form.Item
+              name="endTime"
+              label="Giờ kết thúc"
+              dependencies={['dates', 'startTime']}
+              rules={[
+                { required: true, message: 'Chọn giờ kết thúc' },
+                ({ getFieldValue }) => ({
+                  validator: (_, endTime: string | undefined) => {
+                    const dates = getFieldValue('dates') as [Dayjs, Dayjs] | undefined;
+                    const startTime = getFieldValue('startTime') as string | undefined;
+                    if (!dates || !startTime || !endTime) return Promise.resolve();
+                    return toIso(dates[0], startTime) < toIso(dates[1], endTime)
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('Giờ kết thúc phải sau giờ bắt đầu'));
+                  },
+                }),
+              ]}
+            >
+              <Select showSearch placeholder="Chọn giờ" options={END_OPTIONS} />
+            </Form.Item>
+          </div>
           <Form.Item
             name="reason"
             label="Lý do"
             rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập lý do' }]}
           >
-            <Input maxLength={200} placeholder="VD: Thay mặt sân, sửa điều hòa" />
+            <Input maxLength={200} />
           </Form.Item>
         </Form>
       )}
@@ -457,7 +483,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                       </li>
                     ))}
                   </ul>
-                  <span>Hãy chọn khoảng thời gian khác hoặc liên hệ khách trước khi bảo trì.</span>
                 </>
               }
             />
@@ -476,7 +501,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                       </li>
                     ))}
                   </ul>
-                  <span>Hãy dời ngày giờ các buổi này.</span>
+                  <span>Các buổi này chỉ dời được ngày giờ.</span>
                 </>
               }
             />
@@ -489,7 +514,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               columns={bookingColumns}
               dataSource={bookings}
               pagination={{ pageSize: 5, hideOnSinglePage: true }}
-              scroll={{ x: 'max-content' }}
               locale={{ emptyText: 'Không có booking nào bị ảnh hưởng' }}
             />
             {bookings.length > 0 && (
@@ -506,7 +530,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               columns={sessionColumns}
               dataSource={sessions}
               pagination={{ pageSize: 5, hideOnSinglePage: true }}
-              scroll={{ x: 'max-content' }}
               locale={{ emptyText: 'Không có buổi học nào bị ảnh hưởng' }}
             />
           </Card>

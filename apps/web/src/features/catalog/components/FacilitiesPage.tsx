@@ -1,10 +1,11 @@
 import { FACILITY_TYPES, type Facility, type FacilityType } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Button, Card, Segmented, Select, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Segmented, Select, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -109,10 +110,10 @@ export function FacilitiesPage() {
       title: 'Tên',
       key: 'name',
       render: (_, facility) => (
-        <div className="flex min-w-0 flex-col">
-          <span className="font-semibold">{facility.name}</span>
+        <div className="flex min-w-40 flex-col">
+          <span className="font-semibold [overflow-wrap:anywhere]">{facility.name}</span>
           {facility.description && (
-            <span className="max-w-xs text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+            <span className="line-clamp-2 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
               {facility.description}
             </span>
           )}
@@ -129,11 +130,11 @@ export function FacilitiesPage() {
       key: 'sports',
       render: (_, facility) =>
         facility.sports.length ? (
-          <Space wrap size={[4, 4]}>
+          <div className="flex flex-wrap gap-1">
             {facility.sports.map((sport) => (
               <SportTag key={sport.id} name={sport.name} />
             ))}
-          </Space>
+          </div>
         ) : (
           <span className="text-sc-muted-2">Chưa gắn bộ môn</span>
         ),
@@ -153,9 +154,11 @@ export function FacilitiesPage() {
     {
       title: 'Nhận đặt',
       key: 'isActive',
+      align: 'center',
       render: (_, facility) => (
         <Switch
           checked={facility.isActive}
+          aria-label={`Nhận đặt ${facility.name}`}
           loading={toggle.isPending && toggle.variables.id === facility.id}
           onChange={(isActive) => toggle.mutate({ id: facility.id, isActive })}
         />
@@ -240,7 +243,7 @@ export function FacilitiesPage() {
         ) : (
           <Table<Facility>
             rowKey="id"
-            scroll={{ x: 'max-content' }}
+            size="middle"
             columns={columns}
             dataSource={filteredFacilities}
             loading={facilities.isPending}

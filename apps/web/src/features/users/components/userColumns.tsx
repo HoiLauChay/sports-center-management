@@ -33,7 +33,17 @@ export const userColumns = (q?: string) =>
       dataIndex: 'phone',
       render: (phone: string | null) => (phone ? <Highlight keyword={q}>{phone}</Highlight> : '—'),
     },
-    role: { title: 'Vai trò', dataIndex: 'role', render: (_, user) => <RoleTag role={user.role} /> },
+    role: {
+      title: 'Vai trò',
+      dataIndex: 'roles',
+      render: (_, user) => (
+        <div className="flex flex-wrap gap-1">
+          {user.roles.map((role) => (
+            <RoleTag key={role} role={role} />
+          ))}
+        </div>
+      ),
+    },
     status: {
       title: 'Trạng thái',
       dataIndex: 'status',

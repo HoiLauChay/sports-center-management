@@ -64,7 +64,7 @@ function NoteForm({ sessionId, editable, saved }: NoteFormProps) {
         label="Tiêu đề"
         rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập tiêu đề' }]}
       >
-        <Input maxLength={150} placeholder="VD: Kỹ thuật di chuyển và phát cầu" />
+        <Input maxLength={150} />
       </Form.Item>
       <Form.Item
         name="content"

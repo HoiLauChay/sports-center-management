@@ -59,7 +59,7 @@ class AttendanceService {
         }
         if (todayInCenter() > addDays(date, ATTENDANCE_RULES.COACH_EDIT_DAYS)) {
           throw invalidState(
-            `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học, hãy liên hệ quản lý để sửa điểm danh`,
+            `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học, chỉ quản lý sửa được điểm danh`,
           );
         }
       }

@@ -1,8 +1,9 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import { Alert, Button, Card, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Banknote, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
@@ -293,9 +294,7 @@ export function ClassAdminDetailPage() {
               <div className="flex flex-col gap-1">
                 <b>Chưa có HLV — lớp chỉ OPEN khi có đúng 1 HLV</b>
                 <span className="text-[13.5px] text-sc-ink-2">
-                  {item.coachRegistrations.length > 0
-                    ? 'Có HLV đăng ký, xem tab HLV để chọn.'
-                    : 'Chưa có HLV đăng ký, hãy phân công trực tiếp.'}
+                  {item.coachRegistrations.length > 0 ? 'Có HLV đăng ký, xem tab HLV để chọn.' : 'Chưa có HLV đăng ký.'}
                 </span>
               </div>
             </div>
@@ -338,7 +337,6 @@ export function ClassAdminDetailPage() {
                   columns={sessionColumns}
                   dataSource={item.sessions}
                   pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                  scroll={{ x: 'max-content' }}
                 />
               ),
             },
@@ -361,7 +359,6 @@ export function ClassAdminDetailPage() {
                   columns={registrationColumns}
                   dataSource={item.coachRegistrations}
                   pagination={false}
-                  scroll={{ x: 'max-content' }}
                   locale={{ emptyText: 'Chưa có HLV nào đăng ký dạy lớp này' }}
                 />
               ),

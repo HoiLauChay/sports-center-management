@@ -17,11 +17,11 @@ const sportIdsSchema = z
 
 export const createFacilityBodySchema = z.object({
   name: nameSchema,
-  type: z.enum(FACILITY_TYPES, 'Loại cơ sở không hợp lệ'),
+  type: z.enum(FACILITY_TYPES, 'Loại sân / phòng không hợp lệ'),
   description: optionalText(5000, 'Mô tả'),
-  capacityPerSlot: z.int32('Sức chứa phải là số nguyên').min(1, 'Sức chứa tối thiểu là 1'),
+  capacityPerSlot: z.int32('Sức chứa không hợp lệ').min(1, 'Sức chứa tối thiểu là 1'),
   pricePerSlot: z
-    .int('Giá mỗi slot phải là số nguyên')
+    .int('Giá mỗi slot không hợp lệ')
     .min(0, 'Giá mỗi slot không được âm')
     .max(MAX_MONEY, 'Giá mỗi slot quá lớn'),
   isActive: z.boolean('Trạng thái không hợp lệ').default(true),

@@ -30,7 +30,7 @@ export function PriceChangeModal({ change, confirming, onConfirm, onCancel }: Pr
         <>
           <p className="mt-0">
             Tổng tiền trước đó là <b>{formatVND(change.previousTotal)}</b>, hiện là <b>{formatVND(quote.total)}</b>. Hệ
-            thống không tự thu số tiền mới: hãy xác nhận lại nếu bạn đồng ý.
+            thống không tự thu số tiền mới.
           </p>
           <QuoteTotals quote={quote} />
         </>

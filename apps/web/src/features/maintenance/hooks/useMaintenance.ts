@@ -35,6 +35,19 @@ export function useCreateMaintenance() {
   });
 }
 
+export function useCompleteMaintenance() {
+  const { message } = App.useApp();
+  const refresh = useRefreshAfterMaintenance();
+  return useMutation({
+    mutationFn: (id: string) => maintenanceService.complete(id),
+    onSuccess: () => {
+      refresh();
+      message.success('Đã hoàn thành bảo trì.');
+    },
+    onError: (error) => message.error(describeApiError(error)),
+  });
+}
+
 export function useDeleteMaintenance() {
   const { message } = App.useApp();
   const refresh = useRefreshAfterMaintenance();

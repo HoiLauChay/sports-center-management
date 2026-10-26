@@ -115,4 +115,32 @@ describe('maintenance', () => {
       facilityId: court.id,
     });
   });
+
+  test('a maintenance cannot start in the past and only a running one can be completed early', async () => {
+    const { manager, facilities, window } = await setup([1]);
+    const past = await request('POST', '/preview', manager, {
+      ...window,
+      startAt: new Date(Date.now() - 60_000).toISOString(),
+    });
+    expect([past.status, await readCode(past)]).toEqual([422, 'VALIDATION_ERROR']);
+
+    const hour = 60 * 60 * 1000;
+    const seed = (fromNow: number, toNow: number) =>
+      prisma.facilityMaintenance.create({
+        data: {
+          facilityId: facilities[0]!.id,
+          reason: 'Sửa đèn',
+          startAt: new Date(Date.now() + fromNow),
+          endAt: new Date(Date.now() + toNow),
+          createdById: manager.id,
+        },
+      });
+    const running = await seed(-hour, hour);
+    const planned = await seed(2 * hour, 3 * hour);
+
+    const done = await readResult<Maintenance>(await request('POST', `/${running.id}/complete`, manager));
+    expect(Date.parse(done.endAt)).toBeLessThanOrEqual(Date.now());
+    const early = await request('POST', `/${planned.id}/complete`, manager);
+    expect([early.status, await readCode(early)]).toEqual([409, 'INVALID_STATE']);
+  });
 });

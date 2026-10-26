@@ -175,7 +175,7 @@ export function CounterOrderPage() {
   const { store, cart } = useCounterDraft();
   const add = useAddToCart(store);
   const startTransfer = useStartCounterTransfer();
-  const [method, setMethod] = useState<CounterMethod>('CASH');
+  const [method, setMethod] = useState<CounterMethod | null>(null);
   const [cash, setCash] = useState<{ total: number; value: number } | null>(null);
   const [tab, setTab] = useState<CounterServiceTab>('slot');
   const [paid, setPaid] = useState<{ order: Order; tendered: number | null } | null>(null);
@@ -222,7 +222,7 @@ export function CounterOrderPage() {
     store.reset();
     setPaid(null);
     setInvoiceId(null);
-    setMethod('CASH');
+    setMethod(null);
     setCash(null);
     setTab('slot');
     focusCustomerSearch();
@@ -234,12 +234,13 @@ export function CounterOrderPage() {
     Boolean(quote?.canCheckout) &&
     !quoteQuery.isFetching &&
     !busy &&
+    method !== null &&
     !short &&
     !(method === 'TRANSFER' && quote?.total === 0) &&
     !checkout.priceChange;
 
   const pay = (expectedTotal: number) => {
-    if (!buyer) return;
+    if (!buyer || !method) return;
     paidTendered.current = method === 'CASH' ? tendered : null;
     if (method === 'TRANSFER') {
       startTransfer.mutate(

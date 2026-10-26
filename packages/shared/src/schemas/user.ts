@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ACCOUNT_STATUSES, CREATABLE_ROLES, ROLES } from '../constants/enums';
+import { ACCOUNT_STATUSES, ASSIGNABLE_ROLES, CREATABLE_ROLES, ROLES } from '../constants/enums';
 import { optionalText, phoneSchema, updateMeBodySchema, updateProfileFieldsSchema } from './account';
 import { emailSchema, fullNameSchema } from './auth';
 import { pageQuerySchema } from './pagination';
@@ -42,6 +42,15 @@ export const updateUserStatusBodySchema = z.object({
 
 export const changeUserEmailBodySchema = z.object({ email: emailSchema });
 
+export const updateUserRolesBodySchema = z.object({
+  roles: z
+    .array(z.enum(ASSIGNABLE_ROLES, 'Vai trò không hợp lệ'), 'Vai trò không hợp lệ')
+    .min(1, 'Chọn ít nhất một vai trò')
+    .transform((roles) => [...new Set(roles)]),
+});
+
+export const switchRoleBodySchema = z.object({ role: z.enum(ROLES, 'Vai trò không hợp lệ') });
+
 export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type CreateUserBody = z.infer<typeof createUserBodySchema>;
 export type CreateUserInput = z.input<typeof createUserBodySchema>;
@@ -49,3 +58,5 @@ export type UpdateUserBody = z.infer<typeof updateUserBodySchema>;
 export type UpdateUserInput = z.input<typeof updateUserBodySchema>;
 export type UpdateUserStatusBody = z.infer<typeof updateUserStatusBodySchema>;
 export type ChangeUserEmailBody = z.infer<typeof changeUserEmailBodySchema>;
+export type UpdateUserRolesBody = z.infer<typeof updateUserRolesBodySchema>;
+export type SwitchRoleBody = z.infer<typeof switchRoleBodySchema>;

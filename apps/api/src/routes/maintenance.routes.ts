@@ -37,6 +37,12 @@ maintenanceRouter.patch(
   validate({ params: maintenanceIdParamsSchema, body: updateMaintenanceBodySchema }),
   maintenanceController.update,
 );
+maintenanceRouter.post(
+  '/:id/complete',
+  isRole('MANAGER'),
+  validate({ params: maintenanceIdParamsSchema }),
+  maintenanceController.complete,
+);
 maintenanceRouter.delete(
   '/:id',
   isRole('MANAGER'),

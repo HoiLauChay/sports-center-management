@@ -136,6 +136,11 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: account }));
   };
 
+  switchRole = async (req: Request, res: Response) => {
+    const account = await authService.switchRole(req.user!.id, req.body.role);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã chuyển vai trò', result: account }));
+  };
+
   updateMe = async (req: Request, res: Response) => {
     const account = await authService.updateMe(req.user!.id, req.body, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Cập nhật hồ sơ thành công', result: account }));

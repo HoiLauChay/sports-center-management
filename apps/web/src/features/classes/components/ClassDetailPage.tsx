@@ -1,7 +1,8 @@
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Alert, Button, Card, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Tag, type TableColumnsType } from 'antd';
 import { CircleCheck } from 'lucide-react';
 import { InfoGrid } from '~/components/data/InfoGrid';
+import { Table } from '~/components/data/Table';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
@@ -127,7 +128,6 @@ export function ClassDetailPage() {
         columns={sessionColumnsOf(enrollment ? nextSession?.id : undefined)}
         dataSource={item.sessions}
         pagination={false}
-        scroll={{ x: 'max-content' }}
       />
     </Card>
   );

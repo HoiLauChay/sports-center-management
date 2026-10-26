@@ -1,10 +1,11 @@
 import type { ClassSummary } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import { Button, Card, Segmented, Select, Table, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Segmented, Select, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -80,7 +81,7 @@ export function ClassesAdminPage() {
       title: 'Lớp',
       dataIndex: 'name',
       render: (_, record) => (
-        <div className="flex w-60 flex-col gap-1">
+        <div className="flex min-w-48 flex-col gap-1">
           <Link
             to="/admin/classes/$classId"
             params={{ classId: record.id }}
@@ -118,7 +119,7 @@ export function ClassesAdminPage() {
       ),
     },
     {
-      title: 'Lịch · Phòng / sân',
+      title: 'Lịch học',
       render: (_, record) => (
         <div className="flex flex-col gap-0.5 whitespace-nowrap">
           {weeklyLines(record.weeklySchedule).map((line) => (
@@ -249,7 +250,6 @@ export function ClassesAdminPage() {
             dataSource={classes.data?.items}
             loading={classes.isFetching}
             onRow={rowLink}
-            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,

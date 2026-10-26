@@ -1,5 +1,5 @@
 import type { AnnouncementKind, ClassAnnouncement, CreateAnnouncementBody } from '@sports-center/shared';
-import { Button, Form, Input, List, Segmented, Tag } from 'antd';
+import { Button, Form, Input, List, Radio, Tag } from 'antd';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { formatDateTime } from '~/lib/format';
@@ -51,11 +51,12 @@ export function AnnouncementsTab({ classId, canSend }: { classId: string; canSen
           <Form
             form={form}
             layout="vertical"
-            initialValues={{ kind: 'NOTICE' }}
             onFinish={(values) => send.mutate(values, { onSuccess: () => form.resetFields() })}
           >
-            <Form.Item name="kind" label="Loại">
-              <Segmented
+            <Form.Item name="kind" label="Loại" rules={[{ required: true, message: 'Vui lòng chọn loại' }]}>
+              <Radio.Group
+                optionType="button"
+                buttonStyle="solid"
                 options={(Object.keys(ANNOUNCEMENT_TAG) as AnnouncementKind[]).map((kind) => ({
                   value: kind,
                   label: ANNOUNCEMENT_TAG[kind].label,
@@ -67,7 +68,7 @@ export function AnnouncementsTab({ classId, canSend }: { classId: string; canSen
               label="Tiêu đề"
               rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập tiêu đề' }]}
             >
-              <Input maxLength={150} placeholder="VD: Nhắc mang giày thể thao buổi sau" />
+              <Input maxLength={150} />
             </Form.Item>
             <Form.Item
               name="body"

@@ -1,5 +1,6 @@
 import type { Paginated } from '@sports-center/shared';
-import { Table, type TableProps } from 'antd';
+import { type TableProps } from 'antd';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { toApiError } from '~/lib/http-errors';
 import { PAGE_SIZE_OPTIONS } from '~/lib/search';
@@ -33,7 +34,6 @@ export function DataTable<T extends object>({
   return (
     <Table<T>
       rowKey="id"
-      scroll={{ x: 'max-content' }}
       {...tableProps}
       dataSource={data?.items}
       loading={isLoading}

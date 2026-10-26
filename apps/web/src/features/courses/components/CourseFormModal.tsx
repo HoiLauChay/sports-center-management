@@ -3,7 +3,7 @@ import { createCourseBodySchema, type Course, type CreateCourseBody } from '@spo
 import { useQuery } from '@tanstack/react-query';
 import { Form, Input, InputNumber, Modal, Select } from 'antd';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
@@ -19,13 +19,7 @@ interface CourseFormModalProps {
   onClose: () => void;
 }
 
-const blankCourse = (sportId = ''): CourseInput => ({
-  name: '',
-  description: '',
-  sportId,
-  totalSessions: 8,
-  price: 1_200_000,
-});
+const BLANK: DefaultValues<CourseInput> = { name: '', description: '' };
 
 const courseValues = (course: Course): CourseInput => ({
   name: course.name,
@@ -40,7 +34,7 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
   const isEditing = Boolean(editing);
   const form = useForm<CourseInput, unknown, CreateCourseBody>({
     resolver: zodResolver(createCourseBodySchema),
-    defaultValues: blankCourse(),
+    defaultValues: BLANK,
   });
   const {
     control,
@@ -51,8 +45,8 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
   const handleApiError = useFormApiError(form);
 
   useEffect(() => {
-    reset(editing ? courseValues(editing) : blankCourse(sports.data?.[0]?.id));
-  }, [editing, open, reset, sports.data]);
+    reset(editing ? courseValues(editing) : BLANK);
+  }, [editing, open, reset]);
 
   const createMutation = useCreateCourse(onClose);
   const updateMutation = useUpdateCourse(onClose);
@@ -82,9 +76,7 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
           control={control}
           name="name"
           label="Tên khóa"
-          render={(field, invalid) => (
-            <Input {...field} placeholder="VD: Cầu lông cơ bản cho người mới" status={invalid ? 'error' : undefined} />
-          )}
+          render={(field, invalid) => <Input {...field} status={invalid ? 'error' : undefined} />}
         />
         <FormField
           control={control}
@@ -105,14 +97,7 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
           control={control}
           name="description"
           label="Mô tả"
-          render={(field) => (
-            <Input.TextArea
-              {...field}
-              value={field.value ?? ''}
-              rows={2}
-              placeholder="Nội dung đào tạo, kỹ năng đạt được sau khóa học..."
-            />
-          )}
+          render={(field) => <Input.TextArea {...field} value={field.value ?? ''} rows={2} />}
         />
         <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-[1fr_2fr]">
           <FormField
