@@ -27,6 +27,11 @@ class MaintenanceController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã cập nhật lịch bảo trì', result }));
   };
 
+  complete = async (req: Request, res: Response) => {
+    const result = await maintenanceService.complete(req.user!.id, req.params.id as string, getClientIp(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã hoàn thành bảo trì', result }));
+  };
+
   remove = async (req: Request, res: Response) => {
     await maintenanceService.remove(req.user!.id, req.params.id as string, getClientIp(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã xóa lịch bảo trì' }));
