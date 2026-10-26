@@ -42,7 +42,6 @@ import { isUniqueViolation } from '~/utils/dbError';
 import { signAccessToken } from '~/utils/jwt';
 import { pickDefined } from '~/utils/object';
 import { hashPassword, verifyPassword } from '~/utils/password';
-import { todayInCenter } from '~/utils/time';
 import { generateOpaqueToken, generateOtp, hashToken, safeEqual } from '~/utils/token';
 
 export interface SessionMeta {
@@ -57,14 +56,6 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const GOOGLE_TIMEOUT_MS = 10_000;
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
-
-const OTP_NOTICE: Partial<Record<CodePurpose, { title: string; message: string }>> = {
-  PASSWORD_RESET: {
-    title: 'Yêu cầu đặt lại mật khẩu',
-    message: 'Mã xác nhận đặt lại mật khẩu đã được gửi tới email của bạn.',
-  },
-  ACCOUNT_SETUP: { title: 'Mã đặt mật khẩu', message: 'Mã xác nhận đặt mật khẩu đã được gửi tới email của bạn.' },
-};
 
 const passwordChanged = (accountId: string) => ({
   accountId,
@@ -455,18 +446,6 @@ class AuthService {
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
     await mailService.sendOtp(email, purpose, code);
-    const notice = OTP_NOTICE[purpose];
-    const account = notice && (await accountRepository.findByEmail(email));
-    if (notice && account) {
-      await notificationService.create([
-        {
-          accountId: account.id,
-          type: 'SYSTEM',
-          ...notice,
-          dedupKey: `otp:${purpose}:${account.id}:${todayInCenter()}`,
-        },
-      ]);
-    }
   };
 
   getGoogleAuthUrl = (state: string, callbackUrl: string) => {
