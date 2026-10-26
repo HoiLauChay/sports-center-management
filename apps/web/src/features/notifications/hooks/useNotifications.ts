@@ -17,7 +17,7 @@ import { notificationTarget } from '../utils/notificationTarget';
 
 const PAGE_SIZE = 20;
 const PREVIEW_SIZE = 5;
-const POLL_INTERVAL = 20_000;
+const POLL_INTERVAL = 60_000;
 const ERROR_POLL_INTERVAL = 5 * 60_000;
 
 export const notificationKeys = {
@@ -31,7 +31,6 @@ export function useNotificationSummary() {
     queryKey: notificationKeys.summary,
     queryFn: () => notificationsService.list({ limit: PREVIEW_SIZE }),
     refetchInterval: (query) => (query.state.status === 'error' ? ERROR_POLL_INTERVAL : POLL_INTERVAL),
-    refetchOnWindowFocus: true,
   });
 }
 
