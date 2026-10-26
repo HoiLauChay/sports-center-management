@@ -9,6 +9,7 @@ import {
   resetPasswordBodySchema,
   sendOtpBodySchema,
   setPasswordBodySchema,
+  switchRoleBodySchema,
   updateMeBodySchema,
   verifyOtpBodySchema,
 } from '@sports-center/shared';
@@ -58,6 +59,7 @@ authRouter.post('/refresh', refreshLimit, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);
+authRouter.post('/me/role', auth, validate({ body: switchRoleBodySchema }), authController.switchRole);
 authRouter.patch('/me', auth, validate({ body: updateMeBodySchema }), authController.updateMe);
 authRouter.post('/change-password', auth, validate({ body: changePasswordBodySchema }), authController.changePassword);
 authRouter.post('/first-password', auth, validate({ body: firstPasswordBodySchema }), authController.setFirstPassword);

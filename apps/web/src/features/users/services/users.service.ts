@@ -7,6 +7,7 @@ import type {
   ListUsersQuery,
   Paginated,
   UpdateUserBody,
+  UpdateUserRolesBody,
   UpdateUserStatusBody,
 } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
@@ -34,6 +35,11 @@ export const usersService = {
 
   updateStatus: async (id: string, payload: UpdateUserStatusBody) => {
     const { data } = await privateApi.patch<ApiResponse<Account>>(`/users/${encodeURIComponent(id)}/status`, payload);
+    return data.result;
+  },
+
+  updateRoles: async (id: string, payload: UpdateUserRolesBody) => {
+    const { data } = await privateApi.put<ApiResponse<Account>>(`/users/${encodeURIComponent(id)}/roles`, payload);
     return data.result;
   },
 

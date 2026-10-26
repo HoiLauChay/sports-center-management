@@ -8,11 +8,12 @@ interface Window {
 const within = ({ from, to }: Window) => ({ gte: from, lt: to });
 
 class ReportRepository {
-  memberCounts = () => prisma.account.groupBy({ by: ['status'], where: { role: 'MEMBER' }, _count: { _all: true } });
+  memberCounts = () =>
+    prisma.account.groupBy({ by: ['status'], where: { roles: { has: 'MEMBER' } }, _count: { _all: true } });
 
   newMembers = (window: Window) =>
     prisma.account.findMany({
-      where: { role: 'MEMBER', createdAt: within(window) },
+      where: { roles: { has: 'MEMBER' }, createdAt: within(window) },
       select: { createdAt: true },
     });
 
@@ -131,7 +132,8 @@ class ReportRepository {
         .totalAmount ?? 0,
     );
 
-  countNewMembers = (window: Window) => prisma.account.count({ where: { role: 'MEMBER', createdAt: within(window) } });
+  countNewMembers = (window: Window) =>
+    prisma.account.count({ where: { roles: { has: 'MEMBER' }, createdAt: within(window) } });
 
   countBookingsOn = (date: string) =>
     prisma.facilityBooking.count({ where: { status: 'CONFIRMED', bookingDate: new Date(date) } });

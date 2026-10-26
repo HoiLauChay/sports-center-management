@@ -1,7 +1,7 @@
 import { ACCOUNT_STATUSES, type Account, type AccountStatus } from '@sports-center/shared';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { Button, Dropdown } from 'antd';
-import { ChevronDown, Mail, PencilLine } from 'lucide-react';
+import { ChevronDown, Mail, PencilLine, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
 import { useCurrentUser } from '~/features/auth';
@@ -10,6 +10,7 @@ import { STATUS_ACTION } from '../utils/statusActions';
 import { AdminUserEditForm } from './AdminUserEditForm';
 import { ChangeEmailModal } from './ChangeEmailModal';
 import { UserDetailLoader } from './UserDetailView';
+import { UserRolesModal } from './UserRolesModal';
 import { UserStatusModal } from './UserStatusModal';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/users/$userId');
@@ -19,13 +20,15 @@ interface UserActionsProps {
   editing: boolean;
   canChangeStatus: boolean;
   canChangeEmail: boolean;
+  canChangeRoles: boolean;
   onEdit: () => void;
 }
 
-function UserActions({ user, editing, canChangeStatus, canChangeEmail, onEdit }: UserActionsProps) {
+function UserActions({ user, editing, canChangeStatus, canChangeEmail, canChangeRoles, onEdit }: UserActionsProps) {
   const [target, setTarget] = useState<AccountStatus>('ACTIVE');
   const [confirming, setConfirming] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
+  const [changingRoles, setChangingRoles] = useState(false);
 
   const items = ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
     key: status,
@@ -57,6 +60,11 @@ function UserActions({ user, editing, canChangeStatus, canChangeEmail, onEdit }:
           </Button>
         </Dropdown>
       )}
+      {canChangeRoles && (
+        <Button icon={<UsersRound size={16} />} disabled={editing} onClick={() => setChangingRoles(true)}>
+          Phân vai trò
+        </Button>
+      )}
       {canChangeEmail && (
         <Button icon={<Mail size={16} />} disabled={editing} onClick={() => setChangingEmail(true)}>
           Đổi email
@@ -64,6 +72,7 @@ function UserActions({ user, editing, canChangeStatus, canChangeEmail, onEdit }:
       )}
       <UserStatusModal user={user} target={target} open={confirming} onClose={() => setConfirming(false)} />
       {changingEmail && <ChangeEmailModal user={user} onClose={() => setChangingEmail(false)} />}
+      {changingRoles && <UserRolesModal user={user} onClose={() => setChangingRoles(false)} />}
     </>
   );
 }
@@ -86,13 +95,14 @@ export function AdminUserDetailPage() {
       id={userId}
       backLabel="Danh sách người dùng"
       onBack={back}
-      aside={(user) => (user.role === 'MEMBER' ? <StaffMembershipBlock memberId={user.id} /> : null)}
+      aside={(user) => (user.roles.includes('MEMBER') ? <StaffMembershipBlock memberId={user.id} /> : null)}
       actions={(user) => (
         <UserActions
           key={user.id}
           user={user}
           editing={editing}
-          canChangeStatus={user.id !== viewer.id && user.role !== 'MANAGER'}
+          canChangeStatus={user.id !== viewer.id && !user.roles.includes('MANAGER')}
+          canChangeRoles={!user.roles.includes('MANAGER')}
           canChangeEmail={user.id !== viewer.id}
           onEdit={() => setEditingId(user.id)}
         />
