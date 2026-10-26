@@ -210,7 +210,11 @@ class ClassRepository {
         status: { in: ['OPEN', 'PENDING_APPROVAL'] },
         OR: [{ startDate: null }, { startDate: { gt: today } }],
       },
-      select: { ...classSelect, enrollments: { where: { status: 'ENROLLED' }, select: { accountId: true } } },
+      select: {
+        ...classSelect,
+        course: { select: { sportId: true, sport: { select: { name: true } } } },
+        enrollments: { where: { status: 'ENROLLED' }, select: { accountId: true } },
+      },
     });
   };
 

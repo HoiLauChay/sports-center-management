@@ -23,6 +23,7 @@ import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import authService from '~/services/auth.service';
 import notificationService, { type NotificationInput } from '~/services/notification.service';
+import { notifyOpenClasses } from '~/services/openClassNotice';
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
 import { toPage } from '~/utils/pagination';
@@ -232,8 +233,17 @@ class UserService {
         tx,
       );
       if (deactivating) await refreshTokenRepository.revokeAllByAccountId(id, tx);
+      inputs.push({
+        accountId: id,
+        type: 'SYSTEM',
+        title: deactivating ? 'Tài khoản đã bị khóa' : 'Tài khoản đã được mở lại',
+        message: deactivating
+          ? `Tài khoản Sports Center của bạn đã bị ${status === 'BANNED' ? 'khóa' : 'vô hiệu hóa'} và không đăng nhập được.${reason ? ` Lý do: ${reason}` : ''}`
+          : 'Tài khoản Sports Center của bạn đã hoạt động trở lại, bạn có thể đăng nhập.',
+        sendEmail: true,
+      });
 
-      return { account: next, notifications: inputs.length > 0 ? await notificationService.create(inputs, tx) : [] };
+      return { account: next, notifications: await notificationService.create(inputs, tx) };
     });
 
     notificationService.sendEmailsAfterCommit(notifications);
@@ -382,6 +392,7 @@ class UserService {
       );
     }
 
+    await notifyOpenClasses(tx, classes, coach.id);
     const managerIds = await accountRepository.findActiveManagerIds(tx);
     return classes.flatMap(({ id, name, enrollments }) => {
       const reference = { type: 'CLASS', referenceType: 'CLASS', referenceId: id } as const;

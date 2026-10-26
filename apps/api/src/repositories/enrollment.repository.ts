@@ -7,7 +7,7 @@ const enrollmentSelect = {
   id: true,
   classId: true,
   accountId: true,
-  class: { select: { id: true, name: true, startDate: true } },
+  class: { select: { id: true, name: true, startDate: true, coachId: true } },
   account: { select: { id: true, fullName: true } },
   status: true,
   orderItemId: true,
@@ -75,7 +75,7 @@ class EnrollmentRepository {
     (await tx.classEnrollment.count({ where: { classId, accountId, status: 'ENROLLED' } })) > 0;
 
   create = (data: Prisma.ClassEnrollmentUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
-    tx.classEnrollment.create({ data, select: { id: true } });
+    tx.classEnrollment.create({ data, select: enrollmentSelect });
 
   cancel = (id: string, tx: Prisma.TransactionClient) =>
     tx.classEnrollment.update({ where: { id }, data: { status: 'CANCELLED', cancelledAt: new Date() } });

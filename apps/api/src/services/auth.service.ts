@@ -56,6 +56,22 @@ const GOOGLE_TIMEOUT_MS = 10_000;
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
+const OTP_NOTICE: Partial<Record<CodePurpose, { title: string; message: string }>> = {
+  PASSWORD_RESET: {
+    title: 'Yêu cầu đặt lại mật khẩu',
+    message: 'Mã xác nhận đặt lại mật khẩu đã được gửi tới email của bạn.',
+  },
+  ACCOUNT_SETUP: { title: 'Mã đặt mật khẩu', message: 'Mã xác nhận đặt mật khẩu đã được gửi tới email của bạn.' },
+};
+
+const passwordChanged = (accountId: string) => ({
+  accountId,
+  type: 'SYSTEM' as const,
+  title: 'Mật khẩu đã được thay đổi',
+  message: 'Mật khẩu tài khoản vừa được thay đổi, các thiết bị đang đăng nhập đã bị đăng xuất.',
+  sendEmail: true,
+});
+
 const invalidActivation = () =>
   fail(
     HTTP_STATUS.BAD_REQUEST,
@@ -338,10 +354,12 @@ class AuthService {
     }
 
     const passwordHash = await hashPassword(password);
-    await prisma.$transaction(async (tx) => {
+    const notifications = await prisma.$transaction(async (tx) => {
       await accountRepository.updatePassword(accountId, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(accountId, tx);
+      return notificationService.create([passwordChanged(accountId)], tx);
     });
+    notificationService.sendEmailsAfterCommit(notifications);
   };
 
   resetPassword = async ({ email, otp, password }: ResetPasswordBody) => {
@@ -351,11 +369,13 @@ class AuthService {
     if (!account) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.EMAIL_NOT_FOUND, 'Email chưa được đăng ký');
 
     const passwordHash = await hashPassword(password);
-    await prisma.$transaction(async (tx) => {
+    const notifications = await prisma.$transaction(async (tx) => {
       await otpRepository.consume(record.id, tx);
       await accountRepository.setOwnPassword(account, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
+      return notificationService.create([passwordChanged(account.id)], tx);
     });
+    notificationService.sendEmailsAfterCommit(notifications);
   };
 
   private verifyOtp = async (email: string, purpose: CodePurpose, code: string) => {
@@ -430,6 +450,9 @@ class AuthService {
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
     await mailService.sendOtp(email, purpose, code);
+    const notice = OTP_NOTICE[purpose];
+    const account = notice && (await accountRepository.findByEmail(email));
+    if (notice && account) await notificationService.create([{ accountId: account.id, type: 'SYSTEM', ...notice }]);
   };
 
   getGoogleAuthUrl = (state: string, callbackUrl: string) => {
@@ -514,6 +537,18 @@ class AuthService {
       }
 
       const tokens = await this.issueTokens(account.id, account.role, meta);
+      notificationService.sendEmailsAfterCommit(
+        await notificationService.create([
+          {
+            accountId: account.id,
+            type: 'SYSTEM',
+            title: 'Đăng nhập bằng Google',
+            message: 'Tài khoản của bạn đã được liên kết và đăng nhập bằng Google.',
+            dedupKey: `google-login:${account.id}`,
+            sendEmail: true,
+          },
+        ]),
+      );
       return { account: toAccountResponse(account), ...tokens };
     }
 

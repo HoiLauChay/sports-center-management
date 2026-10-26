@@ -162,8 +162,11 @@ class AccountRepository {
   updateStatus = (id: string, status: AccountStatus, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({ where: { id }, data: { status }, include: accountProfileInclude });
 
-  findActiveManagerIds = async (tx: Prisma.TransactionClient = prisma) =>
-    (await tx.account.findMany({ where: { roles: { has: 'MANAGER' }, status: 'ACTIVE' }, select: { id: true } })).map(
+  findActiveManagerIds = (tx: Prisma.TransactionClient = prisma) => this.findActiveIdsWithRoles(['MANAGER'], tx);
+
+  /** Active accounts holding any of the roles, e.g. the staff told about a new support request. */
+  findActiveIdsWithRoles = async (roles: Role[], tx: Prisma.TransactionClient = prisma) =>
+    (await tx.account.findMany({ where: { roles: { hasSome: roles }, status: 'ACTIVE' }, select: { id: true } })).map(
       ({ id }) => id,
     );
 

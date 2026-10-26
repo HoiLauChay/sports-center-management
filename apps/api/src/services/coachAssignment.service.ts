@@ -18,6 +18,7 @@ import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService from '~/services/notification.service';
+import { notifyOpenClasses } from '~/services/openClassNotice';
 import scheduleService from '~/services/schedule.service';
 import { addDays, formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
 import { lockRows, runTransaction, withScheduleLock } from '~/utils/transaction';
@@ -94,6 +95,19 @@ class CoachAssignmentService {
         });
       }
       const created = await registrationRepository.create({ classId, coachId, source: 'COACH_REGISTERED' }, tx);
+      const coach = await accountRepository.findById(coachId, undefined, tx);
+      await notificationService.create(
+        (await accountRepository.findActiveManagerIds(tx)).map((managerId) => ({
+          accountId: managerId,
+          type: 'CLASS' as const,
+          title: 'Huấn luyện viên đăng ký dạy lớp',
+          message: `${coach?.fullName ?? 'Một huấn luyện viên'} đăng ký dạy lớp "${current.name}".`,
+          referenceType: 'CLASS',
+          referenceId: classId,
+          dedupKey: `coach-registered:${created.id}:${managerId}`,
+        })),
+        tx,
+      );
       await auditService.record(
         {
           accountId: coachId,
@@ -258,6 +272,7 @@ class CoachAssignmentService {
         },
         tx,
       );
+      await notifyOpenClasses(tx, [current], coachId);
       const enrollments = await enrollmentRepository.findActiveByClass(classId, tx);
       const managerIds = await accountRepository.findActiveManagerIds(tx);
       const notifications = await notificationService.create(

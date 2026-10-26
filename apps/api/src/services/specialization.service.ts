@@ -7,6 +7,7 @@ import {
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { toSpecializationResponse } from '~/mappers/specialization.mapper';
+import accountRepository from '~/repositories/account.repository';
 import specializationRepository from '~/repositories/specialization.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
@@ -100,6 +101,18 @@ class SpecializationService {
             newValues: created,
             ipAddress: ip,
           },
+          tx,
+        );
+        await notificationService.create(
+          (await accountRepository.findActiveManagerIds(tx)).map((managerId) => ({
+            accountId: managerId,
+            type: 'SYSTEM' as const,
+            title: 'Hồ sơ chuyên môn chờ duyệt',
+            message: `${created.coach.fullName} gửi hồ sơ chuyên môn ${created.sport.name}.`,
+            referenceType: 'COACH_SPECIALIZATION',
+            referenceId: created.id,
+            dedupKey: `specialization-new:${created.id}:${managerId}`,
+          })),
           tx,
         );
         return created;

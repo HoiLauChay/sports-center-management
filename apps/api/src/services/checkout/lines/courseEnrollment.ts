@@ -4,6 +4,7 @@ import classRepository, { type ClassDetailRow } from '~/repositories/class.repos
 import enrollmentRepository from '~/repositories/enrollment.repository';
 import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, LineHandler } from '~/services/checkout/types';
+import notificationService from '~/services/notification.service';
 import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { percentOf } from '~/utils/money';
 import { formatDate, fromDbTime, toCenterDateTime, todayInCenter } from '~/utils/time';
@@ -103,6 +104,21 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
       { classId: data.classId, accountId: ctx.buyer.accountId, orderItemId },
       tx,
     );
+    if (enrollment.class.coachId) {
+      await notificationService.create(
+        [
+          {
+            accountId: enrollment.class.coachId,
+            type: 'CLASS',
+            title: 'Học viên mới đăng ký lớp',
+            message: `${enrollment.account.fullName} đã đăng ký lớp "${enrollment.class.name}".`,
+            referenceType: 'CLASS',
+            referenceId: enrollment.classId,
+          },
+        ],
+        tx,
+      );
+    }
     return { refId: enrollment.id };
   },
 };
