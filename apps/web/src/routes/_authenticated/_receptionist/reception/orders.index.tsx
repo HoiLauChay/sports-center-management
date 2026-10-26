@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { ReceptionOrdersPage } from '~/features/orders';
+import { parseStaffOrdersSearch, ReceptionOrdersPage } from '~/features/orders';
 
 export const Route = createFileRoute('/_authenticated/_receptionist/reception/orders/')({
+  validateSearch: parseStaffOrdersSearch,
   component: ReceptionOrdersPage,
 });

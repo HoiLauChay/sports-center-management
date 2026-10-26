@@ -104,8 +104,10 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       title: 'Vận hành',
       items: [
         { path: '/admin/reports', label: 'Báo cáo', icon: ChartColumn },
+        { path: '/admin/orders', label: 'Hóa đơn', icon: Receipt },
         { path: '/admin/bank-transactions', label: 'Giao dịch ngân hàng', icon: Landmark },
         { path: '/admin/users', label: 'Người dùng', icon: Users },
+        { path: '/admin/support', label: 'Hỗ trợ', icon: LifeBuoy },
         { path: '/admin/specializations', label: 'Duyệt chuyên môn', icon: Award },
         { path: '/admin/audit-logs', label: 'Lịch sử thao tác', icon: History },
       ],

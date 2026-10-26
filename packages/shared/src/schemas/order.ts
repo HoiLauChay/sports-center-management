@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ORDER_STATUSES } from '../constants/enums';
+import { ORDER_SERVICES, ORDER_STATUSES } from '../constants/enums';
 import { phoneSchema } from './account';
 import { pageQuerySchema } from './pagination';
 
@@ -27,6 +27,7 @@ export const listOrdersQuerySchema = pageQuerySchema
     accountId: z.uuid('Mã thành viên không hợp lệ').optional(),
     guestPhone: phoneSchema.optional(),
     status: z.enum(ORDER_STATUSES, 'Trạng thái không hợp lệ').optional(),
+    service: z.enum(ORDER_SERVICES, 'Dịch vụ không hợp lệ').optional(),
     orderNumber: z.string().trim().min(1).max(50).optional(),
   })
   .refine(validRange, rangeIssue);

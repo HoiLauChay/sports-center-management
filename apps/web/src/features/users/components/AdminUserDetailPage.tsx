@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
 import { useCurrentUser } from '~/features/auth';
 import { StaffMembershipBlock } from '~/features/memberships';
+import { MemberHistoryBlock, MemberWalletBlock } from '~/features/reception';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { AdminUserEditForm } from './AdminUserEditForm';
 import { ChangeEmailModal } from './ChangeEmailModal';
@@ -95,7 +96,15 @@ export function AdminUserDetailPage() {
       id={userId}
       backLabel="Danh sách người dùng"
       onBack={back}
-      aside={(user) => (user.roles.includes('MEMBER') ? <StaffMembershipBlock memberId={user.id} /> : null)}
+      aside={(user) =>
+        user.roles.includes('MEMBER') ? (
+          <>
+            <MemberWalletBlock memberId={user.id} manager />
+            <StaffMembershipBlock memberId={user.id} />
+            <MemberHistoryBlock memberId={user.id} manager />
+          </>
+        ) : null
+      }
       actions={(user) => (
         <UserActions
           key={user.id}
