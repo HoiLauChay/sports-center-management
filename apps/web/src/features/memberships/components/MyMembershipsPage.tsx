@@ -190,8 +190,7 @@ export function MyMembershipsPage() {
                 <div className="mt-4 border-t border-sc-border-soft pt-4">
                   {current.cancelledAt ? (
                     <p className="mb-0 text-[15px] text-sc-muted">
-                      Gói đã hủy và sẽ không gia hạn. Bạn vẫn dùng quyền lợi đến {formatDate(current.endDate)}. Mua lại
-                      cùng gói trước ngày này để tiếp tục.
+                      Gói đã hủy và sẽ không gia hạn. Bạn vẫn dùng quyền lợi đến {formatDate(current.endDate)}.
                     </p>
                   ) : (
                     <>
@@ -221,7 +220,7 @@ export function MyMembershipsPage() {
               <Card>
                 <EmptyState
                   title="Bạn chưa có gói đang hiệu lực"
-                  description="Bạn vẫn có thể đặt sân và đăng ký lớp theo giá thông thường. Xem các gói để chọn quyền lợi phù hợp."
+                  description="Bạn vẫn đặt sân và đăng ký lớp được với giá thông thường."
                   action={
                     <Link to={PATHS.memberships}>
                       <Button type="primary">Xem danh sách gói</Button>

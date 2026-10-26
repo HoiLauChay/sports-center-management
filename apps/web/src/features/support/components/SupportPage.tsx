@@ -78,7 +78,6 @@ export function SupportPage() {
         <Card>
           <EmptyState
             title="Bạn chưa gửi yêu cầu nào"
-            description="Cần hỗ trợ về tài khoản, thanh toán, đặt sân hay lớp học? Hãy gửi yêu cầu cho lễ tân."
             action={
               <Button type="primary" onClick={() => setOpen(true)}>
                 Gửi yêu cầu đầu tiên

@@ -239,9 +239,7 @@ class CoachAssignmentService {
         .map(({ sessionDate }) => formatDate(sessionDate))
         .sort()[0];
       if (!firstDate || firstDate < addDays(todayInCenter(), COACH_WITHDRAW_NOTICE_DAYS)) {
-        throw invalidState(
-          `Chỉ tự rút được khi buổi đầu còn ít nhất ${COACH_WITHDRAW_NOTICE_DAYS} ngày, hãy liên hệ quản lý trung tâm`,
-        );
+        throw invalidState(`Chỉ tự rút được khi buổi đầu còn ít nhất ${COACH_WITHDRAW_NOTICE_DAYS} ngày`);
       }
       const row = await classRepository.update(
         classId,

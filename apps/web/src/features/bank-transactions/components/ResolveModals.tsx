@@ -66,7 +66,7 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
         <Form.Item
           label="Ghi chú đối soát"
           validateStatus={noteError ? 'error' : undefined}
-          help={noteError ?? 'Ghi rõ căn cứ xác minh người chuyển. Nội dung được lưu vào nhật ký thao tác.'}
+          help={noteError ?? 'Nội dung được lưu vào nhật ký thao tác.'}
         >
           <Input.TextArea
             value={note}

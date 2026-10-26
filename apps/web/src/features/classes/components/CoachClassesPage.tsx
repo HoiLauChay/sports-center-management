@@ -122,7 +122,7 @@ export function CoachClassesPage() {
           )}
           {group === 'UPCOMING' && !canWithdraw(record) && record.status !== 'CANCELLED' && (
             <span className="w-52 text-right text-[13px] whitespace-normal text-sc-muted">
-              Còn dưới {COACH_WITHDRAW_NOTICE_DAYS} ngày đến buổi đầu, liên hệ Manager nếu cần rút.
+              Còn dưới {COACH_WITHDRAW_NOTICE_DAYS} ngày đến buổi đầu nên không tự rút được.
             </span>
           )}
         </div>

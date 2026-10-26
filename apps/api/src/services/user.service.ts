@@ -295,7 +295,7 @@ class UserService {
       throw new ErrorWithStatus({
         status: HTTP_STATUS.CONFLICT,
         code: ERROR_CODE.HAS_DEPENDENCIES,
-        message: 'Huấn luyện viên đang dạy lớp chưa kết thúc, hãy phân công huấn luyện viên khác trước',
+        message: 'Không khóa được huấn luyện viên đang dạy lớp chưa kết thúc',
       });
     }
 
