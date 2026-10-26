@@ -1,6 +1,4 @@
-import { App, Button, Card, Space, Spin, Table, Tag, type TableColumnsType } from 'antd';
-import { Download, FileText, LayoutGrid, Printer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Card, Table, Tag, type TableColumnsType } from 'antd';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -10,10 +8,11 @@ import { QuoteTotals } from '~/features/checkout/components/QuoteTotals';
 import { checkoutService } from '~/features/checkout/services/checkout.service';
 import { ORDER_ITEM_TYPE_LABEL, type Order, type OrderItem } from '~/features/checkout/types';
 import { describeLine, refundedOf } from '~/features/checkout/utils';
+import { useReceiptPdf } from '~/hooks/useReceiptPdf';
 import { formatDateTime, formatVND } from '~/lib/format';
-import { describeApiError, toApiError } from '~/lib/http-errors';
+import { toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
-import { PdfReceiptCanvas } from './PdfReceiptCanvas';
+import { ReceiptPdfActions, ReceiptPdfPreview } from './ReceiptPdf';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
 const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
@@ -111,19 +110,7 @@ interface OrderDetailViewProps {
 
 export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const order = useOrder(orderId);
-  const { message } = App.useApp();
-  const [downloading, setDownloading] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const [viewMode, setViewMode] = useState<'details' | 'pdf'>('details');
-  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [pdfUrl]);
+  const pdf = useReceiptPdf(() => checkoutService.getReceiptBlob(orderId));
 
   if (order.isPending) return <PageLoading />;
   if (order.isError) {
@@ -140,53 +127,6 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const buyer = data.account?.fullName ?? data.guestName ?? '—';
   const refunded = refundedOf(data);
 
-  const loadPdf = async () => {
-    if (pdfBlob) return pdfBlob;
-    try {
-      setLoadingPdf(true);
-      const blob = await checkoutService.getReceiptBlob(data.id);
-      const url = URL.createObjectURL(blob);
-      setPdfBlob(blob);
-      setPdfUrl(url);
-      return blob;
-    } catch (error) {
-      message.error(describeApiError(error));
-      return null;
-    } finally {
-      setLoadingPdf(false);
-    }
-  };
-
-  const handleToggleView = async (mode?: 'details' | 'pdf') => {
-    const target = mode ?? (viewMode === 'pdf' ? 'details' : 'pdf');
-    setViewMode(target);
-    if (target === 'pdf') {
-      await loadPdf();
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    try {
-      setDownloading(true);
-      await checkoutService.downloadReceipt(data.id, data.orderNumber, pdfBlob);
-    } catch (error) {
-      message.error(describeApiError(error));
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const handlePrintPdf = async () => {
-    try {
-      setPrinting(true);
-      await checkoutService.printReceipt(data.id);
-    } catch (error) {
-      message.error(describeApiError(error));
-    } finally {
-      setPrinting(false);
-    }
-  };
-
   return (
     <>
       <PageHeader
@@ -199,37 +139,11 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
           </span>
         }
         back={back}
-        extra={
-          <Space.Compact>
-            <Button
-              icon={viewMode === 'pdf' ? <LayoutGrid size={16} /> : <FileText size={16} />}
-              onClick={() => void handleToggleView()}
-            >
-              {viewMode === 'pdf' ? 'Xem chi tiết' : 'Xem bản in'}
-            </Button>
-            <Button icon={<Download size={16} />} loading={downloading} onClick={() => void handleDownloadPdf()}>
-              Tải PDF
-            </Button>
-            <Button icon={<Printer size={16} />} loading={printing} onClick={() => void handlePrintPdf()}>
-              In hóa đơn
-            </Button>
-          </Space.Compact>
-        }
+        extra={<ReceiptPdfActions pdf={pdf} fileName={`hoa-don-${data.orderNumber}.pdf`} />}
       />
 
-      {viewMode === 'pdf' ? (
-        loadingPdf ? (
-          <Card className="flex h-[750px] items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <Spin size="large" />
-              <span className="text-[15px] text-sc-muted">Đang tải hóa đơn PDF...</span>
-            </div>
-          </Card>
-        ) : (
-          <div className="flex justify-center">
-            <PdfReceiptCanvas blob={pdfBlob} className="w-full max-w-4xl" />
-          </div>
-        )
+      {pdf.showPdf ? (
+        <ReceiptPdfPreview pdf={pdf} />
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Card>
