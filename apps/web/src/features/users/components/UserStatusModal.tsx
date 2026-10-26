@@ -11,7 +11,7 @@ const COACH_NOTE =
 const REASON_MAX = 500;
 
 interface UserStatusModalProps {
-  user: Pick<Account, 'id' | 'fullName' | 'email' | 'role'>;
+  user: Pick<Account, 'id' | 'fullName' | 'email' | 'roles'>;
   target: AccountStatus;
   open: boolean;
   onClose: () => void;
@@ -69,7 +69,9 @@ export function UserStatusModal({ user, target, open, onClose }: UserStatusModal
       <p className="mt-0 mb-4 text-[15px] text-sc-muted">
         <span className="font-semibold text-sc-ink">{user.fullName}</span> · {user.email}
       </p>
-      {deactivating && user.role === 'COACH' && <Alert type="warning" showIcon className="!mb-4" title={COACH_NOTE} />}
+      {deactivating && user.roles.includes('COACH') && (
+        <Alert type="warning" showIcon className="!mb-4" title={COACH_NOTE} />
+      )}
       {deactivating && (
         <p className="text-[15px] text-sc-muted">Tài khoản sẽ bị đăng xuất khỏi mọi phiên và không thể đăng nhập.</p>
       )}

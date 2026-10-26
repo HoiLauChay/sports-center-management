@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { firstPasswordBodySchema, type Account, type FirstPasswordBody } from '@sports-center/shared';
+import { firstPasswordBodySchema, type Account, type FirstPasswordBody, type Role } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch, type HistoryState } from '@tanstack/react-router';
 import { App } from 'antd';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { PATHS } from '~/constants/paths';
+import { ROLE_LABEL } from '~/constants/roles';
 import { useConfirm } from '~/hooks/useConfirm';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { safeRedirectPath } from '~/lib/access';
+import { describeApiError } from '~/lib/http-errors';
 import {
   changePasswordSchema,
   registerSchema,
@@ -77,6 +79,22 @@ export function useRegister() {
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
 
   return { form, onSubmit, isSubmitting: mutation.isPending };
+}
+
+export function useSwitchRole() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { message } = App.useApp();
+  return useMutation({
+    mutationFn: (role: Role) => authService.switchRole({ role }),
+    onSuccess: async (user) => {
+      queryClient.setQueryData(sessionQueryOptions.queryKey, user);
+      await navigate({ to: PATHS.dashboard });
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+      message.success(`Đã chuyển sang ${ROLE_LABEL[user.role]}`);
+    },
+    onError: (error) => message.error(describeApiError(error)),
+  });
 }
 
 export function useLogout() {
