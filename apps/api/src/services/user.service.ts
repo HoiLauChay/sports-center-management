@@ -22,7 +22,7 @@ import sessionRepository from '~/repositories/session.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import authService from '~/services/auth.service';
-import notificationService, { type NotificationInput } from '~/services/notification.service';
+import notificationService, { type EmailNotice, type NotificationInput } from '~/services/notification.service';
 import { notifyOpenClasses } from '~/services/openClassNotice';
 import { isUniqueViolation } from '~/utils/dbError';
 import { pickDefined } from '~/utils/object';
@@ -70,6 +70,20 @@ const notFound = () =>
 
 const forbidden = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
+
+const lockedNotice = (state: string, reason?: string | null): EmailNotice => ({
+  title: `Tài khoản đã bị ${state}`,
+  message: `Tài khoản Sports Center của bạn đã bị ${state} và không đăng nhập được.${reason ? ` Lý do: ${reason}` : ''}`,
+});
+
+const STATUS_NOTICE: Record<UpdateUserStatusBody['status'], (reason?: string | null) => EmailNotice> = {
+  ACTIVE: () => ({
+    title: 'Tài khoản đã được mở lại',
+    message: 'Tài khoản Sports Center của bạn đã hoạt động trở lại, bạn có thể đăng nhập.',
+  }),
+  INACTIVE: (reason) => lockedNotice('vô hiệu hóa', reason),
+  BANNED: (reason) => lockedNotice('khóa', reason),
+};
 
 const COACH_EDITABLE_FIELDS = ['bio', 'experience', 'certifications'] as const satisfies readonly Exclude<
   (typeof COACH_PROFILE_FIELDS)[number],
@@ -204,14 +218,14 @@ class UserService {
   updateStatus = async (viewer: Viewer, id: string, { status, reason }: UpdateUserStatusBody, ip?: string) => {
     if (id === viewer.id) throw forbidden('Không thể tự đổi trạng thái tài khoản của mình');
 
-    const { account, notifications, changed } = await runTransaction(async (tx) => {
+    const { account, notifications, notice } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
       await lockRows(tx, { accounts: [id] });
 
       const current = await accountRepository.findById(id, undefined, tx);
       if (!current) throw notFound();
       if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi trạng thái tài khoản quản lý');
-      if (current.status === status) return { account: current, notifications: [], changed: false };
+      if (current.status === status) return { account: current, notifications: [], notice: null };
 
       const deactivating = status !== 'ACTIVE';
       const inputs =
@@ -237,25 +251,12 @@ class UserService {
       return {
         account: next,
         notifications: inputs.length > 0 ? await notificationService.create(inputs, tx) : [],
-        changed: true,
+        notice: STATUS_NOTICE[status](reason),
       };
     });
 
     notificationService.sendEmailsAfterCommit(notifications);
-    if (changed) {
-      const deactivated = status !== 'ACTIVE';
-      notificationService.sendEmailOnlyAfterCommit(
-        account,
-        !deactivated
-          ? 'Tài khoản đã được mở lại'
-          : status === 'BANNED'
-            ? 'Tài khoản đã bị khóa'
-            : 'Tài khoản đã bị vô hiệu hóa',
-        deactivated
-          ? `Tài khoản Sports Center của bạn đã bị ${status === 'BANNED' ? 'khóa' : 'vô hiệu hóa'} và không đăng nhập được.${reason ? ` Lý do: ${reason}` : ''}`
-          : 'Tài khoản Sports Center của bạn đã hoạt động trở lại, bạn có thể đăng nhập.',
-      );
-    }
+    if (notice) notificationService.sendEmailOnlyAfterCommit(account, notice);
     return toAccountResponse(account);
   };
 

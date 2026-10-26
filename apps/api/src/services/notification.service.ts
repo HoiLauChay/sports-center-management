@@ -19,6 +19,8 @@ export type NotificationInput = Pick<
 
 export type CreatedNotification = { id: string; sendEmail: boolean };
 
+export type EmailNotice = { title: string; message: string };
+
 class NotificationService {
   list = async (accountId: string, query: ListNotificationsQuery) => {
     const [rows, unreadCount] = await Promise.all([
@@ -58,7 +60,7 @@ class NotificationService {
   };
 
   /** An email with no in-app notice, for news the account cannot or need not read in the app. */
-  sendEmailOnlyAfterCommit = (to: { email: string; fullName: string }, title: string, message: string) => {
+  sendEmailOnlyAfterCommit = (to: { email: string; fullName: string }, { title, message }: EmailNotice) => {
     waitUntil(
       mailService.send({ to: to.email, ...notificationTemplate(to.fullName, title, message) }).catch((err) => {
         console.error('Failed to send notification email:', err);

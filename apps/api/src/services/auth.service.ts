@@ -351,7 +351,7 @@ class AuthService {
       await accountRepository.updatePassword(accountId, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(accountId, tx);
     });
-    notificationService.sendEmailOnlyAfterCommit(account, PASSWORD_CHANGED.title, PASSWORD_CHANGED.message);
+    notificationService.sendEmailOnlyAfterCommit(account, PASSWORD_CHANGED);
   };
 
   resetPassword = async ({ email, otp, password }: ResetPasswordBody) => {
@@ -366,7 +366,7 @@ class AuthService {
       await accountRepository.setOwnPassword(account, passwordHash, tx);
       await refreshTokenRepository.revokeAllByAccountId(account.id, tx);
     });
-    notificationService.sendEmailOnlyAfterCommit(account, PASSWORD_CHANGED.title, PASSWORD_CHANGED.message);
+    notificationService.sendEmailOnlyAfterCommit(account, PASSWORD_CHANGED);
   };
 
   private verifyOtp = async (email: string, purpose: CodePurpose, code: string) => {
