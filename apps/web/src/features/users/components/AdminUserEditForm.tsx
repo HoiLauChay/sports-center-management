@@ -149,7 +149,6 @@ export function AdminUserEditForm({ user, onDone }: AdminUserEditFormProps) {
                 status={invalid ? 'error' : undefined}
                 type="tel"
                 autoComplete="off"
-                placeholder="VD: 0912345678"
               />
             )}
           />

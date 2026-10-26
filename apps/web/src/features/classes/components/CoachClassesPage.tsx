@@ -190,7 +190,6 @@ export function CoachClassesPage() {
               showCount
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="VD: Trùng lịch công tác"
             />
           </Form.Item>
         </Form>

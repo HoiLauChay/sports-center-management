@@ -90,15 +90,10 @@ export function RegisterModal({ open, taken, resend, onClose }: RegisterModalPro
           />
         </Form.Item>
         <Form.Item name="experienceYears" label="Số năm kinh nghiệm">
-          <InputNumber min={0} max={60} precision={0} className="!w-40" placeholder="VD: 3" />
+          <InputNumber min={0} max={60} precision={0} className="!w-40" />
         </Form.Item>
         <Form.Item name="experienceNote" label="Mô tả kinh nghiệm">
-          <Input.TextArea
-            rows={4}
-            maxLength={1000}
-            showCount
-            placeholder="Nơi đã dạy, thành tích, đối tượng học viên…"
-          />
+          <Input.TextArea rows={4} maxLength={1000} showCount />
         </Form.Item>
         <Form.Item label={`Chứng chỉ (${certificates.length}/${SPECIALIZATION_MAX_CERTIFICATES}, ảnh hoặc PDF)`}>
           <div className="flex flex-col items-start gap-2">

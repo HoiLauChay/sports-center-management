@@ -6,7 +6,6 @@ interface PlanFormProps {
   plan: TrainingPlan | null;
   saving: boolean;
   onSave: (body: SaveTrainingPlanBody) => void;
-  goalsPlaceholder: string;
 }
 
 export function PlanMeta({ plan }: { plan: TrainingPlan | null }) {
@@ -20,7 +19,7 @@ export function PlanMeta({ plan }: { plan: TrainingPlan | null }) {
 }
 
 /** Goals and content of a training plan (BR_4.8); re-mounted with a new key whenever the saved plan changes. */
-export function PlanForm({ plan, saving, onSave, goalsPlaceholder }: PlanFormProps) {
+export function PlanForm({ plan, saving, onSave }: PlanFormProps) {
   return (
     <Form<SaveTrainingPlanBody>
       layout="vertical"
@@ -32,14 +31,14 @@ export function PlanForm({ plan, saving, onSave, goalsPlaceholder }: PlanFormPro
         label="Mục tiêu"
         rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập mục tiêu' }]}
       >
-        <Input.TextArea rows={3} maxLength={1000} showCount placeholder={goalsPlaceholder} />
+        <Input.TextArea rows={3} maxLength={1000} showCount />
       </Form.Item>
       <Form.Item
         name="content"
         label="Nội dung và bài tập"
         rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập nội dung' }]}
       >
-        <Input.TextArea rows={8} maxLength={5000} showCount placeholder="Lộ trình theo tuần, bài tập cần luyện…" />
+        <Input.TextArea rows={8} maxLength={5000} showCount />
       </Form.Item>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PlanMeta plan={plan} />

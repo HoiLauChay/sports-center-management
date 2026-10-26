@@ -8,9 +8,9 @@ import {
   type Sport,
 } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { App, Col, Form, Input, InputNumber, Modal, Row, Segmented, Select, Switch } from 'antd';
+import { App, Col, Form, Input, InputNumber, Modal, Radio, Row, Select, Switch } from 'antd';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { FormField, FormRootError } from '~/components/form/FormField';
@@ -23,26 +23,16 @@ import { facilitiesService } from '../services/facilities.service';
 
 const ERROR_FIELDS: ErrorFieldMap = { [ERROR_CODE.NAME_TAKEN]: 'name' };
 
-const facilityFormSchema = createFacilityBodySchema.extend({
-  pricePerSlot: createFacilityBodySchema.shape.pricePerSlot.default(0),
-});
-type FacilityFormInput = z.input<typeof facilityFormSchema>;
+type FacilityFormInput = z.input<typeof createFacilityBodySchema>;
 
-const EMPTY: FacilityFormInput = {
-  name: '',
-  type: 'COURT',
-  description: '',
-  capacityPerSlot: 1,
-  isActive: true,
-  sportIds: [],
-};
+const EMPTY: DefaultValues<FacilityFormInput> = { name: '', description: '', isActive: true, sportIds: [] };
 
 const toFormValues = (facility: Facility): FacilityFormInput => ({
   name: facility.name,
   type: facility.type,
   description: facility.description ?? '',
   capacityPerSlot: facility.capacityPerSlot,
-  pricePerSlot: facility.pricePerSlot || undefined,
+  pricePerSlot: facility.pricePerSlot,
   isActive: facility.isActive,
   sportIds: facility.sports.map(({ id }) => id),
 });
@@ -59,7 +49,7 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
   const queryClient = useQueryClient();
 
   const form = useForm<FacilityFormInput, unknown, CreateFacilityBody>({
-    resolver: zodResolver(facilityFormSchema),
+    resolver: zodResolver(createFacilityBodySchema),
     mode: 'onTouched',
     defaultValues: EMPTY,
   });
@@ -117,10 +107,12 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
           name="type"
           label="Loại"
           render={(field) => (
-            <Segmented
+            <Radio.Group
               block
+              optionType="button"
+              buttonStyle="solid"
               value={field.value}
-              onChange={field.onChange}
+              onChange={(event) => field.onChange(event.target.value)}
               options={FACILITY_TYPES.map((value) => ({ value, label: FACILITY_TYPE_LABEL[value] }))}
             />
           )}
@@ -129,14 +121,7 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
           control={control}
           name="name"
           label="Tên"
-          render={(field, invalid) => (
-            <Input
-              {...field}
-              status={invalid ? 'error' : undefined}
-              placeholder="VD: Sân cầu lông 5"
-              autoComplete="off"
-            />
-          )}
+          render={(field, invalid) => <Input {...field} status={invalid ? 'error' : undefined} autoComplete="off" />}
         />
         <FormField
           control={control}
@@ -188,7 +173,6 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
                   onChange={(value) => field.onChange(value ?? undefined)}
                   onBlur={field.onBlur}
                   status={invalid ? 'error' : undefined}
-                  placeholder="0"
                 />
               )}
             />

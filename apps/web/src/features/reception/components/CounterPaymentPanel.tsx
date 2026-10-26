@@ -24,7 +24,8 @@ const shortVND = (value: number) =>
 
 interface CounterPaymentPanelProps {
   total: number;
-  method: CounterMethod;
+  /** Null until the cashier picks one: the button stays disabled. */
+  method: CounterMethod | null;
   onMethod: (method: CounterMethod) => void;
   /** Cash handed over by the customer; `null` means "exact amount". */
   tendered: number | null;
@@ -59,17 +60,19 @@ export function CounterPaymentPanel({
   const free = total === 0;
   const short = method === 'CASH' && tendered !== null && tendered < total;
   const change = method === 'CASH' && tendered !== null ? tendered - total : 0;
-  const disabled = !canPay || short || (method === 'TRANSFER' && free);
+  const disabled = !method || !canPay || short || (method === 'TRANSFER' && free);
 
-  const label = actionLabel
-    ? actionLabel(method)
-    : method === 'TRANSFER'
-      ? 'Tạo mã QR'
-      : method === 'CARD'
-        ? 'Xác nhận đã quẹt thẻ'
-        : free
-          ? 'Xác nhận đơn'
-          : 'Thu tiền';
+  const label = !method
+    ? 'Chọn phương thức thanh toán'
+    : actionLabel
+      ? actionLabel(method)
+      : method === 'TRANSFER'
+        ? 'Tạo mã QR'
+        : method === 'CARD'
+          ? 'Xác nhận đã quẹt thẻ'
+          : free
+            ? 'Xác nhận đơn'
+            : 'Thu tiền';
 
   return (
     <div className="flex flex-col gap-3">

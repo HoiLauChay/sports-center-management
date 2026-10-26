@@ -74,7 +74,6 @@ function StudentDetail({
             plan={plan}
             saving={savePlan.isPending}
             onSave={(body) => savePlan.mutate(body)}
-            goalsPlaceholder="Điều học viên cần đạt riêng trong khóa"
           />
         )}
       </section>

@@ -150,7 +150,7 @@ export function CounterTopUpPage() {
 
   const [picked, setPicked] = useState<Member | null>(null);
   const [amount, setAmount] = useState<number | null>(500_000);
-  const [method, setMethod] = useState<CounterMethod>('CASH');
+  const [method, setMethod] = useState<CounterMethod | null>(null);
   const [cash, setCash] = useState<{ amount: number; value: number } | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();
@@ -179,6 +179,7 @@ export function CounterTopUpPage() {
     setInvoiceId(null);
     setError(undefined);
     setCash(null);
+    setMethod(null);
     setNote('');
     void navigate({ search: { memberId: next?.accountId }, replace: true });
     if (!next) focusSearch();
@@ -228,7 +229,7 @@ export function CounterTopUpPage() {
   const busy = record.isPending || createInvoice.isPending;
 
   const submit = () => {
-    if (busy || !member) return;
+    if (busy || !member || !method) return;
     if (amount === null || !Number.isFinite(amount)) return setError('Vui lòng nhập số tiền');
     if (amount < minAmount) return setError(`Số tiền nạp tối thiểu là ${formatVND(minAmount)}`);
     setError(undefined);
@@ -256,7 +257,10 @@ export function CounterTopUpPage() {
           member={member}
           done={{ ...done, balanceAfter: done.balanceAfter ?? balance ?? null }}
           onNext={() => selectMember(null)}
-          onAgain={() => setDone(null)}
+          onAgain={() => {
+            setDone(null);
+            setMethod(null);
+          }}
         />
       </>
     );
