@@ -1,5 +1,5 @@
 import type { Attendance, AttendanceStatus, Evaluation } from '@sports-center/shared';
-import { Alert, Button, Input, Radio, Rate, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, App, Button, Input, Radio, Rate, Table, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { formatDateTime } from '~/lib/format';
@@ -8,7 +8,7 @@ import { useAttendance, useSaveSessionRoster, useSessionEvaluations } from '../h
 import { ATTENDANCE_ORDER, ATTENDANCE_TAG } from '../types';
 
 interface Draft {
-  status: AttendanceStatus;
+  status: AttendanceStatus | undefined;
   note: string;
   rating: number;
   comment: string;
@@ -26,6 +26,7 @@ const attended = (status: AttendanceStatus | null | undefined) => status === 'PR
 
 /** One row per student: attendance, note and the session result, saved together for the whole class. */
 export function SessionRosterTab({ sessionId, attendanceLock, started }: SessionRosterTabProps) {
+  const { message } = App.useApp();
   const attendance = useAttendance(sessionId);
   const evaluations = useSessionEvaluations(sessionId);
   const save = useSaveSessionRoster(sessionId);
@@ -38,7 +39,7 @@ export function SessionRosterTab({ sessionId, attendanceLock, started }: Session
   const valueOf = (record: Attendance): Draft => {
     const evaluation = evaluationOf(record.account.id);
     return {
-      status: record.status ?? 'PRESENT',
+      status: record.status ?? undefined,
       note: record.note ?? '',
       rating: evaluation?.rating ?? 0,
       comment: evaluation?.comment ?? '',
@@ -51,7 +52,7 @@ export function SessionRosterTab({ sessionId, attendanceLock, started }: Session
   const counts = useMemo(() => {
     const result: Record<AttendanceStatus, number> = { PRESENT: 0, LATE: 0, ABSENT: 0 };
     for (const record of rows) {
-      const status = canMark ? (edits[record.account.id]?.status ?? record.status ?? 'PRESENT') : record.status;
+      const status = canMark ? (edits[record.account.id]?.status ?? record.status) : record.status;
       if (status) result[status] += 1;
     }
     return result;
@@ -62,6 +63,11 @@ export function SessionRosterTab({ sessionId, attendanceLock, started }: Session
     setEdits((current) => ({ ...current, [accountId]: { ...current[accountId], ...patch } }));
 
   const submit = () => {
+    const unmarked = canMark ? rows.filter((record) => !valueOf(record).status).length : 0;
+    if (unmarked > 0) {
+      message.error(`Còn ${unmarked} học viên chưa điểm danh.`);
+      return;
+    }
     const results: { accountId: string; evaluation?: Evaluation; rating: number; comment: string }[] = [];
     for (const record of rows) {
       const value = valueOf(record);
@@ -76,7 +82,7 @@ export function SessionRosterTab({ sessionId, attendanceLock, started }: Session
         attendance: canMark
           ? rows.map((record) => {
               const value = valueOf(record);
-              return { accountId: record.account.id, status: value.status, note: value.note };
+              return { accountId: record.account.id, status: value.status!, note: value.note };
             })
           : null,
         results,

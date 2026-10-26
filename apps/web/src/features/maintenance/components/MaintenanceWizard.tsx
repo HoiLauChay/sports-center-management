@@ -48,11 +48,6 @@ function resolutionError(resolution: SessionResolution | undefined): string | nu
 }
 
 /** Suggested resolution: move the session to the first free facility of the same sport. */
-function suggest(session: MaintenanceAffectedSession): SessionResolution | undefined {
-  const first = session.alternatives[0];
-  return first ? { sessionId: session.id, action: 'MOVE_FACILITY', facilityId: first.id } : undefined;
-}
-
 function ResolutionCell({
   session,
   value,
@@ -73,7 +68,7 @@ function ResolutionCell({
   const noAlternative = session.alternatives.length === 0;
 
   const choose = (action: SessionResolution['action']) => {
-    if (action === 'MOVE_FACILITY') onChange(suggest(session) ?? { sessionId: session.id, action, facilityId: '' });
+    if (action === 'MOVE_FACILITY') onChange({ sessionId: session.id, action, facilityId: '' });
     else {
       onChange({
         sessionId: session.id,
@@ -210,10 +205,8 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       onSuccess: (affected) => {
         setRequest(next);
         setData(affected);
-        setResolutions(Object.fromEntries(affected.affectedSessions.map((session) => [session.id, suggest(session)])));
-        setMoves(
-          Object.fromEntries(affected.affectedBookings.map((booking) => [booking.id, booking.alternatives[0]?.id])),
-        );
+        setResolutions({});
+        setMoves({});
         setBlocked([]);
         setStep(1);
       },
@@ -410,7 +403,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
             label="Lý do"
             rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập lý do' }]}
           >
-            <Input maxLength={200} placeholder="VD: Thay mặt sân, sửa điều hòa" />
+            <Input maxLength={200} />
           </Form.Item>
         </Form>
       )}

@@ -20,16 +20,13 @@ export const couponSchema = z
       .transform((code) => code.toUpperCase()),
     name: z.string('Vui lòng nhập tên').trim().min(1, 'Vui lòng nhập tên').max(255, 'Tên tối đa 255 ký tự'),
     discountType: z.enum(['PERCENT', 'FIXED'], 'Vui lòng chọn loại giảm'),
-    discountValue: z
-      .int('Giá trị phải là số nguyên')
-      .min(1, 'Giá trị phải lớn hơn 0')
-      .max(MAX_MONEY, 'Giá trị quá lớn'),
+    discountValue: z.int('Mức giảm không hợp lệ').min(1, 'Giá trị phải lớn hơn 0').max(MAX_MONEY, 'Giá trị quá lớn'),
     maxDiscount: optionalInt('Mức giảm tối đa', 1),
     validFrom: z.string('Vui lòng chọn thời gian hiệu lực').min(1, 'Vui lòng chọn thời gian hiệu lực'),
     validTo: z.string('Vui lòng chọn thời gian hiệu lực').min(1, 'Vui lòng chọn thời gian hiệu lực'),
     maxUses: optionalInt('Tổng lượt dùng', 1, 2_147_483_647),
     maxUsesPerUser: z
-      .int('Lượt dùng mỗi người phải là số nguyên')
+      .int('Lượt dùng mỗi người không hợp lệ')
       .min(1, 'Lượt dùng mỗi người tối thiểu là 1')
       .max(2_147_483_647, 'Lượt dùng quá lớn'),
     minOrderAmount: optionalInt('Ngưỡng tối thiểu', 0),

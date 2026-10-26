@@ -64,8 +64,8 @@ export function CoursesPage() {
       title: 'Khóa học',
       key: 'name',
       render: (_, record) => (
-        <div className="min-w-[140px] max-w-sm">
-          <div className="font-semibold text-sc-ink">{record.name}</div>
+        <div className="w-64">
+          <div className="font-semibold text-sc-ink [overflow-wrap:anywhere]">{record.name}</div>
           {record.description && <div className="line-clamp-2 text-[14.5px] text-sc-muted">{record.description}</div>}
         </div>
       ),

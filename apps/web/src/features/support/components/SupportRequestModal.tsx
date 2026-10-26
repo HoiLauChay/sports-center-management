@@ -71,13 +71,7 @@ export function SupportRequestModal({ open, onClose }: SupportRequestModalProps)
           name="subject"
           label="Tiêu đề"
           render={(field, invalid) => (
-            <Input
-              {...field}
-              maxLength={255}
-              autoComplete="off"
-              placeholder="VD: Chưa thấy tiền nạp ví"
-              status={invalid ? 'error' : undefined}
-            />
+            <Input {...field} maxLength={255} autoComplete="off" status={invalid ? 'error' : undefined} />
           )}
         />
         <FormField

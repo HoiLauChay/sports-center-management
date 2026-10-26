@@ -106,24 +106,22 @@ function AttendanceSection({ classId }: { classId: string }) {
     {
       title: 'Điểm danh',
       key: 'status',
-      render: (_, row) =>
-        row.status ? (
-          <Tag color={ATTENDANCE_TAG[row.status].color} className="!m-0">
-            {ATTENDANCE_TAG[row.status].label}
-          </Tag>
-        ) : isPast(row.session.date, row.session.startTime) ? (
-          <Tag className="!m-0">Chưa điểm danh</Tag>
-        ) : (
-          <Tag color="processing" className="!m-0">
-            Sắp tới
-          </Tag>
-        ),
-    },
-    {
-      title: 'Ghi chú điểm danh',
-      key: 'note',
-      responsive: ['md'],
-      render: (_, row) => row.note ?? <span className="text-sc-muted-2">—</span>,
+      render: (_, row) => (
+        <div className="flex w-40 flex-col items-start gap-1">
+          {row.status ? (
+            <Tag color={ATTENDANCE_TAG[row.status].color} className="!m-0">
+              {ATTENDANCE_TAG[row.status].label}
+            </Tag>
+          ) : isPast(row.session.date, row.session.startTime) ? (
+            <Tag className="!m-0">Chưa điểm danh</Tag>
+          ) : (
+            <Tag color="processing" className="!m-0">
+              Sắp tới
+            </Tag>
+          )}
+          {row.note && <span className="hidden text-[14.5px] text-sc-muted md:inline">{row.note}</span>}
+        </div>
+      ),
     },
     {
       title: 'Ghi chú buổi học',

@@ -9,7 +9,7 @@ import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types
 import { useSettings } from '~/features/settings';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { DATE_FORMAT, DAY_LABEL, DAY_SHORT, WEEK_ORDER, addDays, formatDayLabel, slotGrid, todayVN } from '~/lib/time';
+import { DATE_FORMAT, DAY_LABEL, DAY_SHORT, WEEK_ORDER, formatDayLabel, slotGrid, todayVN } from '~/lib/time';
 import { usePackagePreview } from '../hooks/useBookings';
 import type { PackageConflict, PackagePreviewBooking, PackagePreviewRequest } from '../types';
 
@@ -34,9 +34,9 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
   const facilities = useQuery(facilitiesQueryOptions);
   const settings = useSettings();
   const [facilityId, setFacilityId] = useState<string>();
-  const [startDate, setStartDate] = useState(addDays(todayVN(), 1));
+  const [startDate, setStartDate] = useState<string | null>(null);
   const [slotIndex, setSlotIndex] = useState<number>();
-  const [weeks, setWeeks] = useState<number | null>(4);
+  const [weeks, setWeeks] = useState<number | null>(null);
   const [days, setDays] = useState<number[]>([]);
 
   const slots = useMemo(
@@ -44,11 +44,11 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
       settings.data ? slotGrid(settings.data.openTime, settings.data.closeTime, settings.data.slotDurationMinutes) : [],
     [settings.data],
   );
-  const slot = slots[slotIndex ?? Math.min(12, Math.floor(slots.length / 2))];
+  const slot = slotIndex === undefined ? undefined : slots[slotIndex];
   const bookable = (facilities.data ?? []).filter((facility) => facility.isActive);
 
   const request: PackagePreviewRequest | null =
-    facilityId && slot && days.length > 0 && weeks && weeks >= 1
+    facilityId && startDate && slot && days.length > 0 && weeks && weeks >= 1
       ? { facilityId, startDate, daysOfWeek: [...days].sort(), startTime: slot.startTime, endTime: slot.endTime, weeks }
       : null;
   const accountId = buyer && 'accountId' in buyer ? buyer.accountId : undefined;
@@ -106,7 +106,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
               allowClear={false}
               className="w-full"
               format="DD/MM/YYYY"
-              value={dayjs(startDate, DATE_FORMAT)}
+              value={startDate ? dayjs(startDate, DATE_FORMAT) : null}
               minDate={dayjs(todayVN(), DATE_FORMAT)}
               onChange={(value) => value && setStartDate(value.format(DATE_FORMAT))}
             />
@@ -115,22 +115,15 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             <div className="mb-1 font-semibold">Khung giờ</div>
             <Select
               className="w-full"
-              value={slotIndex ?? Math.min(12, Math.floor(slots.length / 2))}
+              value={slotIndex}
+              placeholder="Chọn khung giờ"
               onChange={setSlotIndex}
               options={slots.map((entry, index) => ({ value: index, label: `${entry.startTime}–${entry.endTime}` }))}
             />
           </div>
           <div>
             <div className="mb-1 font-semibold">Số tuần</div>
-            <InputNumber
-              className="!w-full"
-              min={1}
-              max={12}
-              precision={0}
-              value={weeks}
-              onChange={setWeeks}
-              placeholder="1–12"
-            />
+            <InputNumber className="!w-full" min={1} max={12} precision={0} value={weeks} onChange={setWeeks} />
           </div>
         </div>
         <div>

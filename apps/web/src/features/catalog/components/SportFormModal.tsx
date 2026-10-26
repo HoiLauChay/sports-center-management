@@ -86,9 +86,7 @@ export function SportFormModal({ open, sport, onClose }: SportFormModalProps) {
           control={control}
           name="name"
           label="Tên bộ môn"
-          render={(field, invalid) => (
-            <Input {...field} status={invalid ? 'error' : undefined} placeholder="VD: Cầu lông" autoComplete="off" />
-          )}
+          render={(field, invalid) => <Input {...field} status={invalid ? 'error' : undefined} autoComplete="off" />}
         />
         <FormField
           control={control}

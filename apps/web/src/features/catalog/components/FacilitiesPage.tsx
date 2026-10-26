@@ -1,6 +1,6 @@
 import { FACILITY_TYPES, type Facility, type FacilityType } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Button, Card, Segmented, Select, Space, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Segmented, Select, Switch, Table, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
@@ -109,10 +109,10 @@ export function FacilitiesPage() {
       title: 'Tên',
       key: 'name',
       render: (_, facility) => (
-        <div className="flex min-w-0 flex-col">
-          <span className="font-semibold">{facility.name}</span>
+        <div className="flex w-52 flex-col">
+          <span className="font-semibold [overflow-wrap:anywhere]">{facility.name}</span>
           {facility.description && (
-            <span className="max-w-xs text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
+            <span className="line-clamp-2 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
               {facility.description}
             </span>
           )}
@@ -129,60 +129,56 @@ export function FacilitiesPage() {
       key: 'sports',
       render: (_, facility) =>
         facility.sports.length ? (
-          <Space wrap size={[4, 4]}>
+          <div className="flex w-40 flex-wrap gap-1">
             {facility.sports.map((sport) => (
               <SportTag key={sport.id} name={sport.name} />
             ))}
-          </Space>
+          </div>
         ) : (
           <span className="text-sc-muted-2">Chưa gắn bộ môn</span>
         ),
     },
     {
-      title: 'Sức chứa / slot',
-      dataIndex: 'capacityPerSlot',
-      align: 'center',
-      render: (value: number) => <span className="tabular-nums">{value}</span>,
-    },
-    {
-      title: 'Giá / slot',
-      dataIndex: 'pricePerSlot',
+      title: 'Giá · Sức chứa / slot',
+      key: 'slot',
       align: 'right',
-      render: (value: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(value)}</span>,
-    },
-    {
-      title: 'Nhận đặt',
-      key: 'isActive',
       render: (_, facility) => (
-        <Switch
-          checked={facility.isActive}
-          loading={toggle.isPending && toggle.variables.id === facility.id}
-          onChange={(isActive) => toggle.mutate({ id: facility.id, isActive })}
-        />
+        <div className="flex flex-col items-end whitespace-nowrap">
+          <span className="tabular-nums">{formatVND(facility.pricePerSlot)}</span>
+          <span className="text-[14.5px] text-sc-muted">{facility.capacityPerSlot} người</span>
+        </div>
       ),
     },
     {
-      title: 'Thao tác',
+      title: 'Nhận đặt · Thao tác',
       key: 'actions',
       align: 'right',
       render: (_, facility) => (
-        <RowActions
-          label={`Thao tác với ${facility.name}`}
-          actions={[
-            { key: 'edit', label: 'Sửa', onClick: () => openForm(facility) },
-            {
-              key: 'delete',
-              label: 'Xóa',
-              danger: true,
-              onClick: () =>
-                confirm({
-                  title: `Xóa ${facility.name}?`,
-                  okText: 'Xóa',
-                  onOk: () => remove.mutateAsync(facility).catch(() => undefined),
-                }),
-            },
-          ]}
-        />
+        <div className="flex items-center justify-end gap-3">
+          <Switch
+            checked={facility.isActive}
+            aria-label={`Nhận đặt ${facility.name}`}
+            loading={toggle.isPending && toggle.variables.id === facility.id}
+            onChange={(isActive) => toggle.mutate({ id: facility.id, isActive })}
+          />
+          <RowActions
+            label={`Thao tác với ${facility.name}`}
+            actions={[
+              { key: 'edit', label: 'Sửa', onClick: () => openForm(facility) },
+              {
+                key: 'delete',
+                label: 'Xóa',
+                danger: true,
+                onClick: () =>
+                  confirm({
+                    title: `Xóa ${facility.name}?`,
+                    okText: 'Xóa',
+                    onOk: () => remove.mutateAsync(facility).catch(() => undefined),
+                  }),
+              },
+            ]}
+          />
+        </div>
       ),
     },
   ];
@@ -240,6 +236,7 @@ export function FacilitiesPage() {
         ) : (
           <Table<Facility>
             rowKey="id"
+            size="middle"
             scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={filteredFacilities}
