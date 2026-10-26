@@ -78,7 +78,7 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
         ),
     },
     {
-      title: 'Kế hoạch · Đánh giá',
+      title: 'Tiến độ',
       render: (_, entry) => (
         <div className="flex flex-wrap gap-1">
           <Tag color={entry.planUpdatedAt ? 'success' : undefined} className="!m-0">
