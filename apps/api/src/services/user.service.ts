@@ -7,6 +7,7 @@ import {
   type ErrorCode,
   type ListUsersQuery,
   type UpdateUserBody,
+  type UpdateUserRolesBody,
   type UpdateUserStatusBody,
 } from '@sports-center/shared';
 
@@ -32,6 +33,13 @@ interface Viewer {
   id: string;
   role: Role;
 }
+
+const ROLE_LABEL: Record<Role, string> = {
+  MANAGER: 'Quản lý',
+  COACH: 'Huấn luyện viên',
+  MEMBER: 'Thành viên',
+  RECEPTIONIST: 'Lễ tân',
+};
 
 const visibleRole = (viewer: Viewer): Role | undefined =>
   ['RECEPTIONIST', 'COACH'].includes(viewer.role) ? 'MEMBER' : undefined;
@@ -116,7 +124,10 @@ class UserService {
 
     try {
       const { account, activationUrl } = await runTransaction(async (tx) => {
-        const created = await accountRepository.create({ email, fullName, phone, role, ...profileData(body) }, tx);
+        const created = await accountRepository.create(
+          { email, fullName, phone, role, roles: [role], ...profileData(body) },
+          tx,
+        );
         const profile = role === 'COACH' ? created.coachProfile : created.receptionistProfile;
         const entries = [
           ['ACCOUNT', withPasswordState(created)],
@@ -198,12 +209,14 @@ class UserService {
 
       const current = await accountRepository.findById(id, undefined, tx);
       if (!current) throw notFound();
-      if (current.role === 'MANAGER') throw forbidden('Không thể đổi trạng thái tài khoản quản lý');
+      if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi trạng thái tài khoản quản lý');
       if (current.status === status) return { account: current, notifications: [] };
 
       const deactivating = status !== 'ACTIVE';
       const inputs =
-        deactivating && current.role === 'COACH' ? await this.releaseCoachClasses(viewer, current, tx, ip) : [];
+        deactivating && current.roles.includes('COACH')
+          ? await this.releaseCoachClasses(viewer, current, 'đã bị vô hiệu hóa', tx, ip)
+          : [];
 
       const next = await accountRepository.updateStatus(id, status, tx);
       await auditService.record(
@@ -221,6 +234,53 @@ class UserService {
       if (deactivating) await refreshTokenRepository.revokeAllByAccountId(id, tx);
 
       return { account: next, notifications: inputs.length > 0 ? await notificationService.create(inputs, tx) : [] };
+    });
+
+    notificationService.sendEmailsAfterCommit(notifications);
+    return toAccountResponse(account);
+  };
+
+  updateRoles = async (viewer: Viewer, id: string, { roles }: UpdateUserRolesBody, ip?: string) => {
+    const { account, notifications } = await runTransaction(async (tx) => {
+      await withScheduleLock(tx);
+      await lockRows(tx, { accounts: [id] });
+
+      const current = await accountRepository.findById(id, undefined, tx);
+      if (!current) throw notFound();
+      if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi vai trò tài khoản quản lý');
+      if (roles.length === current.roles.length && roles.every((role) => current.roles.includes(role))) {
+        return { account: current, notifications: [] };
+      }
+
+      const inputs =
+        current.roles.includes('COACH') && !roles.includes('COACH') && current.status === 'ACTIVE'
+          ? await this.releaseCoachClasses(viewer, current, 'không còn là huấn luyện viên', tx, ip)
+          : [];
+      const next = await accountRepository.updateRoles(
+        id,
+        roles,
+        (roles as Role[]).includes(current.role) ? current.role : roles[0]!,
+        tx,
+      );
+      await auditService.record(
+        {
+          accountId: viewer.id,
+          action: 'UPDATE',
+          entityType: 'ACCOUNT',
+          entityId: id,
+          oldValues: withPasswordState(current),
+          newValues: withPasswordState(next),
+          ipAddress: ip,
+        },
+        tx,
+      );
+      inputs.push({
+        accountId: id,
+        type: 'SYSTEM',
+        title: 'Vai trò tài khoản đã được cập nhật',
+        message: `Tài khoản của bạn hiện có vai trò: ${roles.map((role) => ROLE_LABEL[role]).join(', ')}.`,
+      });
+      return { account: next, notifications: await notificationService.create(inputs, tx) };
     });
 
     notificationService.sendEmailsAfterCommit(notifications);
@@ -288,6 +348,7 @@ class UserService {
   private releaseCoachClasses = async (
     viewer: Viewer,
     coach: AccountWithProfile,
+    reason: string,
     tx: Prisma.TransactionClient,
     ip?: string,
   ): Promise<NotificationInput[]> => {
@@ -329,7 +390,7 @@ class UserService {
           ...reference,
           accountId,
           title: 'Lớp học cần phân công huấn luyện viên',
-          message: `Huấn luyện viên ${coach.fullName} đã bị vô hiệu hóa. Lớp "${name}" đã chuyển về chờ duyệt và cần phân công huấn luyện viên mới.`,
+          message: `Huấn luyện viên ${coach.fullName} ${reason}. Lớp "${name}" đã chuyển về chờ duyệt và cần phân công huấn luyện viên mới.`,
         })),
         ...enrollments.map(({ accountId }) => ({
           ...reference,

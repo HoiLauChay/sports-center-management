@@ -125,6 +125,7 @@ async function seedManager() {
       fullName: MANAGER_FULL_NAME,
       passwordHash,
       role: 'MANAGER',
+      roles: ['MANAGER'],
       emailVerifiedAt: new Date(),
       managerProfile: { create: {} },
     },
@@ -182,7 +183,13 @@ async function seedAccounts(managerId: string, sportIds: Map<string, string>) {
     const { id } = await prisma.account.upsert({
       where: { email: account.email },
       update: {},
-      create: { ...account, passwordHash, emailVerifiedAt: new Date(), ...PROFILE_CREATE[account.role] },
+      create: {
+        ...account,
+        roles: [account.role],
+        passwordHash,
+        emailVerifiedAt: new Date(),
+        ...PROFILE_CREATE[account.role],
+      },
       select: { id: true },
     });
 

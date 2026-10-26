@@ -20,6 +20,7 @@ const accountSummarySelect = {
   phone: true,
   avatarUrl: true,
   role: true,
+  roles: true,
   status: true,
   createdAt: true,
 } satisfies Prisma.AccountSelect;
@@ -28,7 +29,7 @@ export type AccountSummaryRow = Prisma.AccountGetPayload<{ select: typeof accoun
 
 class AccountRepository {
   findById = (id: string, role?: Role, tx: Prisma.TransactionClient = prisma) =>
-    tx.account.findUnique({ where: { id, role }, include: accountProfileInclude });
+    tx.account.findUnique({ where: { id, ...(role && { roles: { has: role } }) }, include: accountProfileInclude });
 
   findPage = ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
     const trimmed = q?.trim();
@@ -69,7 +70,12 @@ class AccountRepository {
     }
 
     const where: Prisma.AccountWhereInput = {
-      AND: [{ role: visibleRole }, { role, status }, searchFilter ?? {}],
+      AND: [
+        visibleRole ? { roles: { has: visibleRole } } : {},
+        role ? { roles: { has: role } } : {},
+        { status },
+        searchFilter ?? {},
+      ],
     };
 
     return Promise.all([
@@ -137,11 +143,27 @@ class AccountRepository {
       include: accountProfileInclude,
     });
 
+  updateRoles = (id: string, roles: Role[], role: Role, tx: Prisma.TransactionClient = prisma) =>
+    tx.account.update({
+      where: { id },
+      data: {
+        roles,
+        role,
+        ...(roles.includes('MEMBER') && { memberProfile: { upsert: { create: {}, update: {} } } }),
+        ...(roles.includes('COACH') && { coachProfile: { upsert: { create: {}, update: {} } } }),
+        ...(roles.includes('RECEPTIONIST') && { receptionistProfile: { upsert: { create: {}, update: {} } } }),
+      },
+      include: accountProfileInclude,
+    });
+
+  updateActiveRole = (id: string, role: Role) =>
+    prisma.account.update({ where: { id }, data: { role }, include: accountProfileInclude });
+
   updateStatus = (id: string, status: AccountStatus, tx: Prisma.TransactionClient = prisma) =>
     tx.account.update({ where: { id }, data: { status }, include: accountProfileInclude });
 
   findActiveManagerIds = async (tx: Prisma.TransactionClient = prisma) =>
-    (await tx.account.findMany({ where: { role: 'MANAGER', status: 'ACTIVE' }, select: { id: true } })).map(
+    (await tx.account.findMany({ where: { roles: { has: 'MANAGER' }, status: 'ACTIVE' }, select: { id: true } })).map(
       ({ id }) => id,
     );
 

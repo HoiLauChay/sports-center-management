@@ -51,6 +51,7 @@ model Account {
   fullName          String        @map("full_name") @db.VarChar(255)
   avatarUrl         String?       @map("avatar_url")
   role              Role          @default(MEMBER)
+  roles             Role[]        @default([MEMBER])
   status            AccountStatus @default(ACTIVE)
   emailVerifiedAt   DateTime?     @map("email_verified_at") @db.Timestamptz()
   passwordChangedAt DateTime      @default(now()) @map("password_changed_at") @db.Timestamptz()

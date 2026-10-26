@@ -9,6 +9,7 @@ export const toAccountSummary = (account: AccountSummaryRow): AccountSummary => 
   phone: account.phone,
   avatarUrl: account.avatarUrl,
   role: account.role,
+  roles: account.roles,
   status: account.status,
   createdAt: account.createdAt.toISOString(),
 });
@@ -50,6 +51,7 @@ export const toAccountResponse = (account: AccountWithProfile): Account => ({
   address: account.address,
   avatarUrl: account.avatarUrl,
   role: account.role,
+  roles: account.roles,
   status: account.status,
   emailVerifiedAt: account.emailVerifiedAt?.toISOString() ?? null,
   mustSetPassword: account.passwordHash === null,

@@ -7,6 +7,7 @@ import {
   subscribeMemberBodySchema,
   terminateMembershipBodySchema,
   updateUserBodySchema,
+  updateUserRolesBodySchema,
   updateUserStatusBodySchema,
   userIdParamsSchema,
   walletQuerySchema,
@@ -77,6 +78,12 @@ userRouter.patch(
   isRole('MANAGER'),
   validate({ params: userIdParamsSchema, body: updateUserStatusBodySchema }),
   userController.updateStatus,
+);
+userRouter.put(
+  '/:id/roles',
+  isRole('MANAGER'),
+  validate({ params: userIdParamsSchema, body: updateUserRolesBodySchema }),
+  userController.updateRoles,
 );
 userRouter.patch(
   '/:id/email',

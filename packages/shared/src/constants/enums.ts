@@ -61,6 +61,9 @@ export type AnnouncementKind = (typeof ANNOUNCEMENT_KINDS)[number];
 export const CREATABLE_ROLES = ['COACH', 'RECEPTIONIST'] as const;
 export type CreatableRole = (typeof CREATABLE_ROLES)[number];
 
+export const ASSIGNABLE_ROLES = ['MEMBER', 'COACH', 'RECEPTIONIST'] as const;
+export type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
+
 export const SPECIALIZATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export type SpecializationStatus = (typeof SPECIALIZATION_STATUSES)[number];
 

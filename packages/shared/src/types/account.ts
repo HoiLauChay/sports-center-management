@@ -28,6 +28,7 @@ export interface Account {
   address: string | null;
   avatarUrl: string | null;
   role: Role;
+  roles: Role[];
   status: AccountStatus;
   emailVerifiedAt: string | null;
   mustSetPassword: boolean;
@@ -37,7 +38,7 @@ export interface Account {
 
 export type AccountSummary = Pick<
   Account,
-  'id' | 'email' | 'fullName' | 'phone' | 'avatarUrl' | 'role' | 'status' | 'createdAt'
+  'id' | 'email' | 'fullName' | 'phone' | 'avatarUrl' | 'role' | 'roles' | 'status' | 'createdAt'
 >;
 
 export type StudentAccount = Pick<
