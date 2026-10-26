@@ -25,6 +25,11 @@ class InvoiceController {
     const invoice = await invoiceService.get(req.user!, req.params.id as string);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: invoice }));
   };
+
+  receipt = async (req: Request, res: Response) => {
+    const { fileName, pdf } = await invoiceService.receipt(req.user!, req.params.id as string);
+    res.status(HTTP_STATUS.OK).type('application/pdf').attachment(fileName).send(Buffer.from(pdf));
+  };
 }
 
 export default new InvoiceController();

@@ -132,6 +132,10 @@ describe('counter invoice', () => {
     expect(
       (await prisma.bankTransaction.findMany({ orderBy: { createdAt: 'asc' } })).map(({ status }) => status),
     ).toEqual(['MATCHED', 'UNMATCHED']);
+
+    const receipt = await invoices('GET', `/${invoice.id}/receipt`, member);
+    expect(receipt.status).toBe(200);
+    expect(receipt.headers.get('content-disposition')).toContain(`bien-lai-${order.orderNumber}.pdf`);
   });
 
   test('money after expiry or for a service no longer sold goes to the member wallet or stays unmatched', async () => {
