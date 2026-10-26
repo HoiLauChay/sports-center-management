@@ -1,6 +1,7 @@
 import type { Attendance, AttendanceStatus, Evaluation } from '@sports-center/shared';
-import { Alert, App, Button, Input, Radio, Rate, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, App, Button, Input, Radio, Rate, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { formatDateTime } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -238,7 +239,6 @@ export function SessionRosterTab({ sessionId, attendanceLock, started }: Session
         dataSource={rows}
         loading={(attendance.isFetching && !attendance.data) || (evaluations.isFetching && !evaluations.data)}
         pagination={false}
-        scroll={{ x: 'max-content' }}
         locale={{ emptyText: <EmptyState title="Buổi học chưa có học viên" /> }}
       />
     </div>

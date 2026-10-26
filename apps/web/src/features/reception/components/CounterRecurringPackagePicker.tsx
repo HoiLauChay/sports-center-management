@@ -1,9 +1,10 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, InputNumber, Select, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, DatePicker, InputNumber, Select, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Info } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { Table } from '~/components/data/Table';
 import { usePackagePreview } from '~/features/bookings/hooks/useBookings';
 import type { PackageConflict, PackagePreviewBooking, PackagePreviewRequest } from '~/features/bookings/types';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';

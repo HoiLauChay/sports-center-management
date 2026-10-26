@@ -1,9 +1,10 @@
 import type { Sport } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Avatar, Button, Card, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Avatar, Button, Card, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -90,7 +91,7 @@ export function SportsPage() {
           <Avatar shape="square" src={sport.iconUrl ?? undefined} className="shrink-0 !bg-sc-primary">
             {sport.name.charAt(0).toUpperCase()}
           </Avatar>
-          <div className="flex w-52 flex-col">
+          <div className="flex min-w-40 flex-col">
             <span className="font-semibold [overflow-wrap:anywhere]">{sport.name}</span>
             {sport.description && (
               <span className="line-clamp-2 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
@@ -107,7 +108,7 @@ export function SportsPage() {
       render: (_, sport) => {
         const names = facilitiesBySport.get(sport.id) ?? [];
         return names.length ? (
-          <div className="flex w-60 flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             {names.map((name) => (
               <Tag key={name} className="!m-0">
                 {name}
@@ -186,7 +187,6 @@ export function SportsPage() {
           <Table<Sport>
             rowKey="id"
             size="middle"
-            scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={filteredSports}
             loading={sports.isPending}

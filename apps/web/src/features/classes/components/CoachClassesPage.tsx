@@ -2,8 +2,9 @@ import type { ClassSummary } from '@sports-center/shared';
 import { COACH_WITHDRAW_NOTICE_DAYS } from '@sports-center/shared';
 import { useQueries } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Form, Input, Modal, Progress, Segmented, Table, type TableColumnsType } from 'antd';
+import { Button, Card, Form, Input, Modal, Progress, Segmented, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
@@ -121,7 +122,7 @@ export function CoachClassesPage() {
             </Button>
           )}
           {group === 'UPCOMING' && !canWithdraw(record) && record.status !== 'CANCELLED' && (
-            <span className="w-52 text-right text-[13px] whitespace-normal text-sc-muted">
+            <span className="min-w-40 text-right text-[13px] whitespace-normal text-sc-muted">
               Còn dưới {COACH_WITHDRAW_NOTICE_DAYS} ngày đến buổi đầu, liên hệ Manager nếu cần rút.
             </span>
           )}
@@ -153,7 +154,6 @@ export function CoachClassesPage() {
               dataSource={shown}
               loading={classes.isPending}
               onRow={rowLink}
-              scroll={{ x: 'max-content' }}
               pagination={{ pageSize: 10, hideOnSinglePage: true }}
               locale={{
                 emptyText: (

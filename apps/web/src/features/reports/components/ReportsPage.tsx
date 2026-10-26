@@ -1,8 +1,9 @@
 import { PAYMENT_METHODS } from '@sports-center/shared';
-import { Card, Col, Row, Table, Tabs, type TableColumnsType } from 'antd';
+import { Card, Col, Row, Tabs, type TableColumnsType } from 'antd';
 import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BarChart, type ChartDatum, type ChartSeries } from '~/components/charts/BarChart';
+import { Table } from '~/components/data/Table';
 import { ErrorState } from '~/components/feedback/States';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -218,7 +219,6 @@ function RevenueTab({ range }: { range: ReportRange }) {
           dataSource={buckets}
           loading={report.isFetching && !report.data}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          scroll={{ x: 'max-content' }}
         />
       </Card>
     </div>
@@ -339,7 +339,6 @@ function WalletTab({ range }: { range: ReportRange }) {
           dataSource={buckets}
           loading={report.isFetching && !report.data}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          scroll={{ x: 'max-content' }}
         />
       </Card>
     </div>

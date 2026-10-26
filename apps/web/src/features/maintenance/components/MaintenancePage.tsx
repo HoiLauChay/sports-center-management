@@ -1,9 +1,10 @@
 import type { Maintenance } from '@sports-center/shared';
-import { Button, Card, Segmented, Table, type TableColumnsType } from 'antd';
+import { Button, Card, Segmented, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
@@ -11,7 +12,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { useConfirm } from '~/hooks/useConfirm';
 import { VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { useDeleteMaintenance, useMaintenances } from '../hooks/useMaintenance';
+import { useCompleteMaintenance, useDeleteMaintenance, useMaintenances } from '../hooks/useMaintenance';
 import type { MaintenancePhase } from '../types';
 import { phaseOf } from '../utils';
 import { MaintenanceWizard } from './MaintenanceWizard';
@@ -41,6 +42,7 @@ export function MaintenancePage() {
   const [pageSize, setPageSize] = useState(10);
   const maintenances = useMaintenances({});
   const remove = useDeleteMaintenance();
+  const complete = useCompleteMaintenance();
 
   const filteredMaintenances = useMemo(() => {
     if (!maintenances.data) return [];
@@ -86,7 +88,7 @@ export function MaintenancePage() {
     {
       title: 'Lý do',
       dataIndex: 'reason',
-      render: (reason: string) => <span className="block w-60 [overflow-wrap:anywhere]">{reason}</span>,
+      render: (reason: string) => <span className="block min-w-40 [overflow-wrap:anywhere]">{reason}</span>,
     },
     {
       title: 'Trạng thái',
@@ -117,7 +119,23 @@ export function MaintenancePage() {
                       }),
                   },
                 ]
-              : []
+              : phaseOf(item) === 'ONGOING'
+                ? [
+                    {
+                      key: 'complete',
+                      label: 'Hoàn thành',
+                      primary: true,
+                      loading: complete.isPending && complete.variables === item.id,
+                      onClick: () =>
+                        confirm({
+                          title: `Hoàn thành bảo trì ${item.facility.name}?`,
+                          okText: 'Hoàn thành',
+                          danger: false,
+                          onOk: () => complete.mutateAsync(item.id).catch(() => undefined),
+                        }),
+                    },
+                  ]
+                : []
           }
         />
       ),
@@ -166,7 +184,6 @@ export function MaintenancePage() {
             columns={columns}
             dataSource={filteredMaintenances}
             loading={maintenances.isFetching}
-            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,

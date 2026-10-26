@@ -1,7 +1,8 @@
 import type { ProgressMilestone, RosterEntry } from '@sports-center/shared';
 import { PROGRESS_MILESTONES } from '@sports-center/shared';
-import { Drawer, Rate, Spin, Table, Tag } from 'antd';
+import { Drawer, Rate, Spin, Tag } from 'antd';
 import { InfoGrid } from '~/components/data/InfoGrid';
+import { Table } from '~/components/data/Table';
 import { ErrorState } from '~/components/feedback/States';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { GENDER_LABEL } from '~/lib/account';
@@ -101,7 +102,6 @@ function StudentDetail({
           size="small"
           pagination={false}
           dataSource={attendance}
-          scroll={{ x: 'max-content' }}
           columns={[
             {
               title: 'Buổi',

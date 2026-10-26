@@ -1,6 +1,7 @@
 import type { Booking, FacilityPackage } from '@sports-center/shared';
-import { Alert, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Alert, Segmented, Tabs, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { formatDate, formatVND } from '~/lib/format';
@@ -118,7 +119,6 @@ function BookingsTab() {
         columns={columns}
         dataSource={bookings.data?.items}
         loading={bookings.isFetching}
-        scroll={{ x: 'max-content' }}
         locale={{ emptyText: bookings.isFetching ? ' ' : <EmptyState title="Chưa có lượt đặt nào" /> }}
         pagination={{
           current: page,
@@ -203,7 +203,6 @@ function PackagesTab() {
       columns={columns}
       dataSource={packages.data}
       loading={packages.isFetching}
-      scroll={{ x: 'max-content' }}
       pagination={false}
       locale={{ emptyText: packages.isFetching ? ' ' : <EmptyState title="Chưa có gói định kỳ nào" /> }}
     />
