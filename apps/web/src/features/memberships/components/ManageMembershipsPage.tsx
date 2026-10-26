@@ -101,17 +101,18 @@ export function ManageMembershipsPage() {
       ),
     },
     {
-      title: 'Giá · Thời hạn',
-      key: 'price',
-      width: 110,
+      title: 'Giá',
+      dataIndex: 'price',
       align: 'right',
-      render: (_, membership) => (
-        <div className="flex flex-col items-end whitespace-nowrap">
-          <span className="tabular-nums">{formatVND(membership.price)}</span>
-          <span className="text-[14.5px] text-sc-muted">{membership.durationDays} ngày</span>
-        </div>
-      ),
+      render: (price: number) => <span className="whitespace-nowrap tabular-nums">{formatVND(price)}</span>,
       sorter: (a, b) => a.price - b.price,
+    },
+    {
+      title: 'Thời hạn',
+      dataIndex: 'durationDays',
+      align: 'right',
+      render: (days: number) => <span className="whitespace-nowrap tabular-nums">{days} ngày</span>,
+      sorter: (a, b) => a.durationDays - b.durationDays,
     },
     {
       title: 'Quyền lợi',
