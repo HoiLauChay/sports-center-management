@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Account } from '@sports-center/shared';
+import type { Account, OptionalEmailType } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { useForm } from 'react-hook-form';
 import { sessionQueryOptions } from '~/features/auth';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { getCoachProfile, getMemberProfile } from '~/lib/account';
+import { describeApiError } from '~/lib/http-errors';
 import { profileSchema, type ProfileFormInput, type ProfileFormValues } from '../schemas/profile.schema';
 import { profileService } from '../services/profile.service';
 import { PROFILE_ERROR_FIELDS } from '../utils/profileErrorFields';
@@ -56,6 +57,18 @@ export function useSaveProfile() {
       queryClient.setQueryData(sessionQueryOptions.queryKey, updated);
       message.success('Đã cập nhật hồ sơ');
     },
+  });
+}
+
+export function useSaveNotificationSettings() {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (emailMutedTypes: OptionalEmailType[]) =>
+      profileService.updateNotificationSettings({ emailMutedTypes }),
+    onSuccess: (updated) => queryClient.setQueryData(sessionQueryOptions.queryKey, updated),
+    onError: (error) => message.error(describeApiError(error)),
   });
 }
 

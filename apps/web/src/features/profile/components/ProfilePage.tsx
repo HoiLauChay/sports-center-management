@@ -1,13 +1,14 @@
 import { Card, Col, Row, Tabs } from 'antd';
 import { useState } from 'react';
 import { useCurrentUser } from '~/features/auth';
+import { NotificationSettingsPanel } from './NotificationSettingsPanel';
 import { ProfileEditForm } from './ProfileEditForm';
 import { ProfileHero } from './ProfileHero';
 import { ProfileOverview } from './ProfileOverview';
 import { ProfileSidebar } from './ProfileSidebar';
 import { SecurityPanel } from './SecurityPanel';
 
-type TabKey = 'info' | 'security';
+type TabKey = 'info' | 'security' | 'notifications';
 
 export function ProfilePage() {
   const user = useCurrentUser();
@@ -41,6 +42,7 @@ export function ProfilePage() {
                   ),
                 },
                 { key: 'security', label: 'Bảo mật', children: <SecurityPanel /> },
+                { key: 'notifications', label: 'Thông báo', children: <NotificationSettingsPanel /> },
               ]}
             />
           </Card>
