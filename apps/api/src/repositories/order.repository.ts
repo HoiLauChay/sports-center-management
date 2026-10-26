@@ -1,9 +1,21 @@
-import type { ListMyOrdersQuery, ListOrdersQuery, OrderStatus } from '@sports-center/shared';
+import type {
+  ListMyOrdersQuery,
+  ListOrdersQuery,
+  OrderItemType,
+  OrderService,
+  OrderStatus,
+} from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 import { toCenterDateTime } from '~/utils/time';
+
+const SERVICE_ITEM_TYPES: Record<OrderService, OrderItemType[]> = {
+  MEMBERSHIP: ['MEMBERSHIP'],
+  BOOKING: ['FACILITY_BOOKING', 'FACILITY_PACKAGE'],
+  CLASS: ['COURSE_ENROLLMENT'],
+};
 
 const person = { select: { id: true, fullName: true } } as const;
 
@@ -100,10 +112,13 @@ class OrderRepository {
     const where: Prisma.OrderWhereInput = {
       accountId: filters.accountId,
       guestPhone: filters.guestPhone ?? undefined,
-      ...(filters.status && statusFilter[filters.status]),
       orderNumber: filters.orderNumber ? { contains: filters.orderNumber, mode: 'insensitive' } : undefined,
       createdAt: dayRange(from, to),
-      ...(qCondition ? { AND: [qCondition] } : {}),
+      AND: [
+        filters.status ? statusFilter[filters.status] : {},
+        filters.service ? { items: { some: { type: { in: SERVICE_ITEM_TYPES[filters.service] } } } } : {},
+        qCondition ?? {},
+      ],
     };
     return Promise.all([
       prisma.order.findMany({

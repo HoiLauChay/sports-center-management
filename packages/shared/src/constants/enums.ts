@@ -102,6 +102,9 @@ export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 export const ORDER_ITEM_TYPES = ['MEMBERSHIP', 'FACILITY_BOOKING', 'FACILITY_PACKAGE', 'COURSE_ENROLLMENT'] as const;
 export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
 
+export const ORDER_SERVICES = ['MEMBERSHIP', 'BOOKING', 'CLASS'] as const;
+export type OrderService = (typeof ORDER_SERVICES)[number];
+
 export const DISCOUNT_TYPES = ['PERCENT', 'FIXED'] as const;
 export type DiscountType = (typeof DISCOUNT_TYPES)[number];
 

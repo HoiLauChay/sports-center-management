@@ -149,3 +149,17 @@ describe('orders and receipts', () => {
     expect((await request('GET', `/${otherOrder.id}/refunds/${refund.id}/receipt`, other)).status).toBe(404);
   });
 });
+
+describe('staff order list', () => {
+  test('filters by member, service and status together', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const order = await buy(member, 'order-key-filter');
+
+    const list = async (query: string) =>
+      (await readResult<Paginated<Order>>(await request('GET', `/?accountId=${member.id}&${query}`, manager))).items;
+    expect((await list('service=BOOKING&status=PAID')).map(({ id }) => id)).toEqual([order.id]);
+    expect(await list('service=CLASS')).toEqual([]);
+    expect(await list('service=BOOKING&status=REFUNDED')).toEqual([]);
+  });
+});
