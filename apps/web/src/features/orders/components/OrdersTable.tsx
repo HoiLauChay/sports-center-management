@@ -87,7 +87,7 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
         const counts = new Map<Order['items'][number]['type'], number>();
         for (const item of order.items) counts.set(item.type, (counts.get(item.type) ?? 0) + 1);
         return (
-          <div className="flex w-48 flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             {[...counts].map(([type, count]) => (
               <Tag key={type} className="!m-0">
                 {ORDER_ITEM_TYPE_LABEL[type]}
@@ -133,7 +133,6 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
       emptyTitle="Chưa có đơn hàng"
       emptyDescription="Đơn hàng xuất hiện sau mỗi lần thanh toán thành công."
       onRow={rowLink}
-      scroll={{ x: 'max-content' }}
       {...table}
     />
   );

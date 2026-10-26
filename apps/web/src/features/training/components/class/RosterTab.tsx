@@ -1,7 +1,8 @@
 import type { ClassSession, RosterEntry } from '@sports-center/shared';
 import { PROGRESS_MILESTONES } from '@sports-center/shared';
-import { Rate, Table, Tag, type TableColumnsType } from 'antd';
+import { Rate, Tag, type TableColumnsType } from 'antd';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { clickableRow } from '~/hooks/useRowLink';
 import { toApiError } from '~/lib/http-errors';
@@ -36,7 +37,9 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
     {
       title: 'Mục tiêu',
       render: (_, entry) => (
-        <span className="line-clamp-2 w-32">{entry.fitnessGoals ?? <span className="text-sc-muted-2">—</span>}</span>
+        <span className="line-clamp-2 min-w-32">
+          {entry.fitnessGoals ?? <span className="text-sc-muted-2">—</span>}
+        </span>
       ),
     },
     {
@@ -77,7 +80,7 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
     {
       title: 'Kế hoạch · Đánh giá',
       render: (_, entry) => (
-        <div className="flex w-44 flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1">
           <Tag color={entry.planUpdatedAt ? 'success' : undefined} className="!m-0">
             {entry.planUpdatedAt ? 'Có kế hoạch' : 'Chưa có kế hoạch'}
           </Tag>
@@ -109,7 +112,6 @@ export function RosterTab({ classId, sessions, readOnly }: RosterTabProps) {
         dataSource={roster.data}
         loading={roster.isPending}
         pagination={false}
-        scroll={{ x: 'max-content' }}
         onRow={(entry) =>
           clickableRow(() => {
             setSelected(entry);

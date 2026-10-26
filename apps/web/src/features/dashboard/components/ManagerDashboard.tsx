@@ -1,6 +1,6 @@
 import type { RevenueBucket } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Badge, Card, Progress, Spin, Table, Tag, type TableColumnsType } from 'antd';
+import { Badge, Card, Progress, Spin, Tag, type TableColumnsType } from 'antd';
 import {
   ArrowRight,
   Banknote,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { BarChart, type ChartDatum } from '~/components/charts/BarChart';
+import { Table } from '~/components/data/Table';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
@@ -471,7 +472,6 @@ export function ManagerDashboard() {
           onRow={classLink}
           loading={classes.isPending}
           pagination={{ pageSize: 8, hideOnSinglePage: true }}
-          scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'Chưa có lớp nào đang mở' }}
         />
       </Card>

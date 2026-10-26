@@ -1,8 +1,9 @@
 import type { CheckIn, Evaluation, MyAttendance, MyEnrollment } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Button, Card, Modal, Rate, Skeleton, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Button, Card, Modal, Rate, Skeleton, Tabs, Tag, type TableColumnsType } from 'antd';
 import { ArrowRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -107,7 +108,7 @@ function AttendanceSection({ classId }: { classId: string }) {
       title: 'Điểm danh',
       key: 'status',
       render: (_, row) => (
-        <div className="flex w-40 flex-col items-start gap-1">
+        <div className="flex min-w-32 flex-col items-start gap-1">
           {row.status ? (
             <Tag color={ATTENDANCE_TAG[row.status].color} className="!m-0">
               {ATTENDANCE_TAG[row.status].label}
@@ -141,7 +142,7 @@ function AttendanceSection({ classId }: { classId: string }) {
       render: (_, row) => {
         const evaluation = evaluationOf.get(row.session.id);
         return evaluation ? (
-          <div className="flex w-56 flex-col gap-0.5">
+          <div className="flex min-w-40 flex-col gap-0.5">
             <Rate disabled value={evaluation.rating} />
             {evaluation.comment && <span className="text-[14.5px] text-sc-ink-2">{evaluation.comment}</span>}
           </div>
@@ -176,7 +177,6 @@ function AttendanceSection({ classId }: { classId: string }) {
         columns={columns}
         dataSource={rows}
         loading={attendance.isFetching}
-        scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 12, hideOnSinglePage: true }}
         locale={{ emptyText: attendance.isFetching ? ' ' : <EmptyState title="Lớp chưa có buổi học nào" /> }}
       />
@@ -209,7 +209,6 @@ function CheckInHistory() {
           columns={columns}
           dataSource={history.data}
           loading={history.isFetching}
-          scroll={{ x: 'max-content' }}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
           locale={{ emptyText: history.isFetching ? ' ' : <EmptyState title="Chưa có lượt check-in nào" /> }}
         />

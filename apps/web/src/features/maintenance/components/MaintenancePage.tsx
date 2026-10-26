@@ -1,9 +1,10 @@
 import type { Maintenance } from '@sports-center/shared';
-import { Button, Card, Segmented, Table, type TableColumnsType } from 'antd';
+import { Button, Card, Segmented, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
@@ -87,7 +88,7 @@ export function MaintenancePage() {
     {
       title: 'Lý do',
       dataIndex: 'reason',
-      render: (reason: string) => <span className="block w-60 [overflow-wrap:anywhere]">{reason}</span>,
+      render: (reason: string) => <span className="block min-w-40 [overflow-wrap:anywhere]">{reason}</span>,
     },
     {
       title: 'Trạng thái',
@@ -183,7 +184,6 @@ export function MaintenancePage() {
             columns={columns}
             dataSource={filteredMaintenances}
             loading={maintenances.isFetching}
-            scroll={{ x: 'max-content' }}
             pagination={{
               current: page,
               pageSize,

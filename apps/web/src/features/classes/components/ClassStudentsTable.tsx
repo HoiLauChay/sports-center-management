@@ -1,5 +1,6 @@
 import type { Enrollment } from '@sports-center/shared';
-import { Table, Tag, type TableColumnsType } from 'antd';
+import { Tag, type TableColumnsType } from 'antd';
+import { Table } from '~/components/data/Table';
 import { ErrorState } from '~/components/feedback/States';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -62,7 +63,6 @@ export function ClassStudentsTable({ classId, showPayment = false, className }: 
       dataSource={enrollments.data}
       loading={enrollments.isPending}
       pagination={{ pageSize: 10, hideOnSinglePage: true }}
-      scroll={{ x: 'max-content' }}
       className={className}
       locale={{ emptyText: 'Lớp chưa có học viên' }}
     />

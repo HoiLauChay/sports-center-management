@@ -127,7 +127,7 @@ export function ReceptionSupportPage() {
       title: 'Yêu cầu',
       key: 'subject',
       render: (_, request) => (
-        <div className="flex w-80 flex-col gap-0.5">
+        <div className="flex min-w-48 flex-col gap-0.5">
           <b className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{request.subject}</Highlight>
           </b>

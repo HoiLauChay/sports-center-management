@@ -4,12 +4,13 @@ import {
   type BankTransactionStatus,
   type ReconciliationDay,
 } from '@sports-center/shared';
-import { Alert, Card, DatePicker, Segmented, Table, Tabs, Tag, type TableColumnsType } from 'antd';
+import { Alert, Card, DatePicker, Segmented, Tabs, Tag, type TableColumnsType } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { DataTable } from '~/components/data/DataTable';
 import { DateTimeCell } from '~/components/data/DateTimeCell';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
@@ -59,7 +60,7 @@ function TransactionsTab() {
       title: 'Nội dung chuyển khoản',
       key: 'content',
       render: (_, transaction) => (
-        <div className="flex w-52 flex-col gap-0.5">
+        <div className="flex min-w-48 flex-col gap-0.5">
           <span className="[overflow-wrap:anywhere]">
             <Highlight keyword={q}>{transaction.content}</Highlight>
           </span>
@@ -100,7 +101,7 @@ function TransactionsTab() {
         const member = invoice?.account ?? transaction.resolvedAccount;
         if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
-          <div className="flex w-44 flex-col gap-0.5 text-[14.5px]">
+          <div className="flex min-w-36 flex-col gap-0.5 text-[14.5px]">
             {member ? (
               <span className="font-medium">{member.fullName}</span>
             ) : (
@@ -297,7 +298,6 @@ function ReconciliationTab() {
           dataSource={reconciliation.data?.days}
           loading={reconciliation.isFetching}
           pagination={false}
-          scroll={{ x: 'max-content' }}
           rowClassName={(day) => (day.matched ? '' : 'bg-[#fdf1ef]')}
           locale={{ emptyText: reconciliation.isFetching ? ' ' : <EmptyState title="Chưa có dữ liệu đối soát" /> }}
           summary={(days) => {

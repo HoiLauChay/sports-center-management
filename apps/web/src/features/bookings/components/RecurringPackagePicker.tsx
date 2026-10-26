@@ -1,8 +1,9 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, InputNumber, Select, Table, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, DatePicker, InputNumber, Select, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';

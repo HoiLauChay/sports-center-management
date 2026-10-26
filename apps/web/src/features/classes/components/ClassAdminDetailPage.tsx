@@ -1,8 +1,9 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import { Alert, Button, Card, Table, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Alert, Button, Card, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
 import { Banknote, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
+import { Table } from '~/components/data/Table';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
@@ -338,7 +339,6 @@ export function ClassAdminDetailPage() {
                   columns={sessionColumns}
                   dataSource={item.sessions}
                   pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                  scroll={{ x: 'max-content' }}
                 />
               ),
             },
@@ -361,7 +361,6 @@ export function ClassAdminDetailPage() {
                   columns={registrationColumns}
                   dataSource={item.coachRegistrations}
                   pagination={false}
-                  scroll={{ x: 'max-content' }}
                   locale={{ emptyText: 'Chưa có HLV nào đăng ký dạy lớp này' }}
                 />
               ),

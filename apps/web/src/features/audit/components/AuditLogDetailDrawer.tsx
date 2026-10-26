@@ -1,6 +1,7 @@
 import type { AuditLog } from '@sports-center/shared';
-import { Descriptions, Drawer, Empty, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { Descriptions, Drawer, Empty, Switch, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { formatDateTime } from '~/lib/format';
 import {
   AUDIT_ACTION_COLOR,
@@ -97,7 +98,6 @@ export function AuditLogDetailDrawer({ log, onClose }: { log: AuditLog | null; o
             columns={columns}
             dataSource={changes}
             pagination={false}
-            scroll={{ x: 580 }}
             locale={{ emptyText: <Empty description="Không có giá trị cũ / mới được ghi nhận" /> }}
           />
         </>

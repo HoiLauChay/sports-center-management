@@ -1,10 +1,11 @@
 import { FACILITY_TYPES, type Facility, type FacilityType } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { App, Button, Card, Segmented, Select, Switch, Table, Tag, type TableColumnsType } from 'antd';
+import { App, Button, Card, Segmented, Select, Switch, Tag, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
+import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -109,7 +110,7 @@ export function FacilitiesPage() {
       title: 'Tên',
       key: 'name',
       render: (_, facility) => (
-        <div className="flex w-52 flex-col">
+        <div className="flex min-w-40 flex-col">
           <span className="font-semibold [overflow-wrap:anywhere]">{facility.name}</span>
           {facility.description && (
             <span className="line-clamp-2 text-[14.5px] text-sc-muted [overflow-wrap:anywhere]">
@@ -129,7 +130,7 @@ export function FacilitiesPage() {
       key: 'sports',
       render: (_, facility) =>
         facility.sports.length ? (
-          <div className="flex w-40 flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             {facility.sports.map((sport) => (
               <SportTag key={sport.id} name={sport.name} />
             ))}
@@ -237,7 +238,6 @@ export function FacilitiesPage() {
           <Table<Facility>
             rowKey="id"
             size="middle"
-            scroll={{ x: 'max-content' }}
             columns={columns}
             dataSource={filteredFacilities}
             loading={facilities.isPending}

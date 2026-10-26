@@ -17,13 +17,13 @@ import {
   Result,
   Select,
   Steps,
-  Table,
   Tag,
   Tooltip,
   type TableColumnsType,
 } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
+import { Table } from '~/components/data/Table';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useSettings } from '~/features/settings';
 import { formatDate, VN_TIMEZONE } from '~/lib/format';
@@ -515,7 +515,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               columns={bookingColumns}
               dataSource={bookings}
               pagination={{ pageSize: 5, hideOnSinglePage: true }}
-              scroll={{ x: 'max-content' }}
               locale={{ emptyText: 'Không có booking nào bị ảnh hưởng' }}
             />
             {bookings.length > 0 && (
@@ -532,7 +531,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               columns={sessionColumns}
               dataSource={sessions}
               pagination={{ pageSize: 5, hideOnSinglePage: true }}
-              scroll={{ x: 'max-content' }}
               locale={{ emptyText: 'Không có buổi học nào bị ảnh hưởng' }}
             />
           </Card>
