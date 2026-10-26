@@ -250,8 +250,7 @@ export function CounterRecurringPackagePicker({ user, buyer, onAdd }: CounterRec
 
           <p className="m-0 flex items-start gap-1.5 text-[13.5px] leading-relaxed text-sc-muted">
             <Info size={14} className="mt-0.5 shrink-0" />
-            Gói chỉ đặt được khi mọi buổi đều còn trống. Nếu một buổi trùng lượt đặt khác, lớp học hoặc bảo trì, hãy đổi
-            giờ hoặc thứ.
+            Gói chỉ đặt được khi mọi buổi đều còn trống.
           </p>
         </div>
 

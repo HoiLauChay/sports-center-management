@@ -169,11 +169,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             })}
           </div>
         </div>
-        <Alert
-          type="info"
-          showIcon
-          title="Gói chỉ đặt được khi mọi buổi đều còn trống. Nếu một buổi trùng lượt đặt khác, lớp học hoặc bảo trì, hãy đổi giờ hoặc thứ."
-        />
+        <Alert type="info" showIcon title="Gói chỉ đặt được khi mọi buổi đều còn trống." />
       </div>
 
       <div className="rounded-xl border border-sc-border-soft bg-white p-4">

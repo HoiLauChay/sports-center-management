@@ -6,7 +6,7 @@ import { useUpdateUserStatus } from '../hooks/useUserMutations';
 import { STATUS_ACTION } from '../utils/statusActions';
 
 const COACH_NOTE =
-  'Các lớp chưa bắt đầu của huấn luyện viên này sẽ chuyển về chờ duyệt, không có huấn luyện viên. Nếu đang dạy lớp chưa kết thúc, hãy phân công huấn luyện viên khác trước.';
+  'Các lớp chưa bắt đầu của huấn luyện viên này sẽ chuyển về chờ duyệt, không có huấn luyện viên. Không khóa được khi huấn luyện viên đang dạy lớp chưa kết thúc.';
 
 const REASON_MAX = 500;
 

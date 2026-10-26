@@ -483,7 +483,6 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                       </li>
                     ))}
                   </ul>
-                  <span>Hãy chọn khoảng thời gian khác hoặc liên hệ khách trước khi bảo trì.</span>
                 </>
               }
             />
@@ -502,7 +501,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                       </li>
                     ))}
                   </ul>
-                  <span>Hãy dời ngày giờ các buổi này.</span>
+                  <span>Các buổi này chỉ dời được ngày giờ.</span>
                 </>
               }
             />

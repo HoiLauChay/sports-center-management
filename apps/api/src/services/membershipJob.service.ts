@@ -136,7 +136,7 @@ class MembershipJobService {
           type: 'MEMBERSHIP' as const,
           title: 'Gói thành viên sắp hết hạn',
           message: renews
-            ? `Gói ${membership.package.name} sẽ tự gia hạn ngày ${endDay} bằng ví (${Number(membership.package.price).toLocaleString('vi-VN')}đ). Hãy đảm bảo đủ số dư.`
+            ? `Gói ${membership.package.name} sẽ tự gia hạn ngày ${endDay} bằng ví (${Number(membership.package.price).toLocaleString('vi-VN')}đ). Ví không đủ số dư thì gói không được gia hạn.`
             : `Gói ${membership.package.name} sẽ hết hạn ngày ${endDay}.`,
           referenceType: 'MEMBERSHIP',
           referenceId: membership.id,

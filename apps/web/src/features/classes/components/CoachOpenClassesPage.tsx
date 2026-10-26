@@ -107,7 +107,7 @@ export function CoachOpenClassesPage() {
           type="warning"
           showIcon
           className="!mb-4"
-          title="Bạn chưa có chuyên môn được duyệt, hãy đăng ký chuyên môn trước khi nhận lớp."
+          title="Bạn chưa có chuyên môn được duyệt nên chưa đăng ký dạy được."
         />
       )}
       <Card>

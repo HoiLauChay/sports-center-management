@@ -157,7 +157,7 @@ export function MembershipPlansPage() {
             </div>
           ) : (
             <Card>
-              <EmptyState title="Chưa có gói đang bán" description="Vui lòng quay lại sau hoặc liên hệ quầy lễ tân." />
+              <EmptyState title="Chưa có gói đang bán" />
             </Card>
           )}
           <ul className="mt-4 mb-0 flex list-disc flex-col gap-1 pl-5 text-[14.5px] text-sc-muted">

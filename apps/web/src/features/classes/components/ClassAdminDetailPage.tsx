@@ -294,9 +294,7 @@ export function ClassAdminDetailPage() {
               <div className="flex flex-col gap-1">
                 <b>Chưa có HLV — lớp chỉ OPEN khi có đúng 1 HLV</b>
                 <span className="text-[13.5px] text-sc-ink-2">
-                  {item.coachRegistrations.length > 0
-                    ? 'Có HLV đăng ký, xem tab HLV để chọn.'
-                    : 'Chưa có HLV đăng ký, hãy phân công trực tiếp.'}
+                  {item.coachRegistrations.length > 0 ? 'Có HLV đăng ký, xem tab HLV để chọn.' : 'Chưa có HLV đăng ký.'}
                 </span>
               </div>
             </div>

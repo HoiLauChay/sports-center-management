@@ -83,7 +83,7 @@ export function ClassesPage() {
         </Card>
       ) : classes.data.items.length === 0 ? (
         <Card>
-          <EmptyState title="Chưa có lớp nào đang nhận đăng ký" description="Vui lòng quay lại sau hoặc đổi bộ lọc." />
+          <EmptyState title="Chưa có lớp nào đang nhận đăng ký" />
         </Card>
       ) : (
         <>

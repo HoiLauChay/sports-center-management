@@ -101,7 +101,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
     );
   }
   if (!sportOptions.length) {
-    return <Alert type="info" showIcon title="Chưa có sân hoặc phòng nào nhận đặt. Vui lòng quay lại sau." />;
+    return <Alert type="info" showIcon title="Chưa có sân hoặc phòng nào nhận đặt." />;
   }
 
   const changeDay = (next: string) => {

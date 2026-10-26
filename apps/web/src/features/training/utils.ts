@@ -27,7 +27,7 @@ export function attendanceLockReason({ date, startTime }: Timed): string | null 
     return `Điểm danh mở lúc ${opensAt}, ${ATTENDANCE_RULES.OPENS_MINUTES_BEFORE} phút trước giờ học.`;
   }
   if (todayVN() > addDays(date, ATTENDANCE_RULES.COACH_EDIT_DAYS)) {
-    return `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học. Liên hệ quản lý nếu cần sửa điểm danh.`;
+    return `Đã quá ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sau buổi học, chỉ quản lý sửa được điểm danh.`;
   }
   return null;
 }

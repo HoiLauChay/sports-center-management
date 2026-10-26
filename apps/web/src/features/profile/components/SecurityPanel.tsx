@@ -18,14 +18,14 @@ function SettingsSection({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
 }) {
   return (
     <div className="grid gap-x-10 gap-y-4 @2xl:grid-cols-[220px_minmax(0,1fr)]">
       <div>
         <SectionTitle>{title}</SectionTitle>
-        <p className="m-0 text-[15px] leading-[1.55] text-sc-muted">{description}</p>
+        {description && <p className="m-0 text-[15px] leading-[1.55] text-sc-muted">{description}</p>}
       </div>
       <div>{children}</div>
     </div>
@@ -163,10 +163,7 @@ export function SecurityPanel() {
 
       <Divider className="!my-7" />
 
-      <SettingsSection
-        title="Phiên đăng nhập"
-        description="Nếu nghi ngờ tài khoản bị lộ, hãy đăng xuất khỏi mọi thiết bị rồi đổi mật khẩu."
-      >
+      <SettingsSection title="Phiên đăng nhập">
         <div className="flex flex-wrap items-center gap-4 rounded-[10px] border border-red-200 bg-red-50 px-5 py-4">
           <div className="min-w-0 flex-[1_1_220px]">
             <div className="text-[15px] font-semibold">Đăng xuất khỏi mọi thiết bị</div>
