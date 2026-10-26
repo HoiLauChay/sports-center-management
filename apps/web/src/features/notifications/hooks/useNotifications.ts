@@ -10,13 +10,14 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { App } from 'antd';
 import { useMemo } from 'react';
+import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
 import { notificationsService } from '../services/notifications.service';
 import { notificationTarget } from '../utils/notificationTarget';
 
 const PAGE_SIZE = 20;
 const PREVIEW_SIZE = 5;
-const POLL_INTERVAL = 60_000;
+const POLL_INTERVAL = 20_000;
 const ERROR_POLL_INTERVAL = 5 * 60_000;
 
 export const notificationKeys = {
@@ -30,6 +31,7 @@ export function useNotificationSummary() {
     queryKey: notificationKeys.summary,
     queryFn: () => notificationsService.list({ limit: PREVIEW_SIZE }),
     refetchInterval: (query) => (query.state.status === 'error' ? ERROR_POLL_INTERVAL : POLL_INTERVAL),
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -88,6 +90,7 @@ export function useMarkAllRead() {
 }
 
 export function useOpenNotification() {
+  const { role } = useCurrentUser();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -106,7 +109,7 @@ export function useOpenNotification() {
 
   return (notification: AppNotification) => {
     if (!notification.readAt) markRead.mutate(notification.id);
-    const target = notificationTarget(notification);
+    const target = notificationTarget(notification, role);
     if (target) void navigate(target);
   };
 }
