@@ -52,6 +52,7 @@ model Account {
   avatarUrl         String?       @map("avatar_url")
   role              Role          @default(MEMBER)
   roles             Role[]        @default([MEMBER])
+  emailMutedTypes   NotificationType[] @default([]) @map("email_muted_types")
   status            AccountStatus @default(ACTIVE)
   emailVerifiedAt   DateTime?     @map("email_verified_at") @db.Timestamptz()
   passwordChangedAt DateTime      @default(now()) @map("password_changed_at") @db.Timestamptz()

@@ -55,6 +55,7 @@ export const toAccountResponse = (account: AccountWithProfile): Account => ({
   status: account.status,
   emailVerifiedAt: account.emailVerifiedAt?.toISOString() ?? null,
   mustSetPassword: account.passwordHash === null,
+  emailMutedTypes: account.emailMutedTypes,
   createdAt: account.createdAt.toISOString(),
   profile: toProfile(account),
 });

@@ -11,6 +11,7 @@ import {
   type LoginBody,
   type LoginStartBody,
   type LoginStartResult,
+  type NotificationSettingsBody,
   type RegisterBody,
   type ResetPasswordBody,
   type SendOtpBody,
@@ -281,6 +282,9 @@ class AuthService {
     if (!account) throw fail(HTTP_STATUS.NOT_FOUND, ERROR_CODE.NOT_FOUND, 'Tài khoản không tồn tại');
     return toAccountResponse(account);
   };
+
+  updateNotificationSettings = async (accountId: string, { emailMutedTypes }: NotificationSettingsBody) =>
+    toAccountResponse(await accountRepository.updateEmailMutedTypes(accountId, emailMutedTypes));
 
   switchRole = async (accountId: string, role: Role) => {
     const account = await accountRepository.findById(accountId);

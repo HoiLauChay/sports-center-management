@@ -1,7 +1,7 @@
 import { normalizePhone, type ListUsersQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { AccountStatus, Prisma, Role } from '~/generated/prisma/client';
+import type { AccountStatus, NotificationType, Prisma, Role } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
 
 export const accountProfileInclude = {
@@ -155,6 +155,9 @@ class AccountRepository {
       },
       include: accountProfileInclude,
     });
+
+  updateEmailMutedTypes = (id: string, emailMutedTypes: NotificationType[]) =>
+    prisma.account.update({ where: { id }, data: { emailMutedTypes }, include: accountProfileInclude });
 
   updateActiveRole = (id: string, role: Role) =>
     prisma.account.update({ where: { id }, data: { role }, include: accountProfileInclude });

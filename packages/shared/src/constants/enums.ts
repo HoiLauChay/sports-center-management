@@ -84,6 +84,10 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+/** Notification types whose email an account can turn off; payment and account notices are always emailed. */
+export const OPTIONAL_EMAIL_TYPES = ['MEMBERSHIP', 'BOOKING', 'CLASS', 'TRAINING', 'SUPPORT'] as const;
+export type OptionalEmailType = (typeof OPTIONAL_EMAIL_TYPES)[number];
+
 export const FACILITY_TYPES = ['GYM', 'COURT', 'ROOM', 'FIELD'] as const;
 export type FacilityType = (typeof FACILITY_TYPES)[number];
 

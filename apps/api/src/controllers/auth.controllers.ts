@@ -136,6 +136,11 @@ class AuthController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result: account }));
   };
 
+  updateNotificationSettings = async (req: Request, res: Response) => {
+    const account = await authService.updateNotificationSettings(req.user!.id, req.body);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã lưu cài đặt thông báo', result: account }));
+  };
+
   switchRole = async (req: Request, res: Response) => {
     const account = await authService.switchRole(req.user!.id, req.body.role);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã chuyển vai trò', result: account }));

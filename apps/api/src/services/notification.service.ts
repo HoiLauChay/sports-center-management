@@ -70,7 +70,10 @@ class NotificationService {
   };
 
   private sendPendingEmails = async (where: Prisma.NotificationWhereInput, limit: number) => {
-    const pending = await notificationRepository.findPendingEmails(where, limit);
+    const found = await notificationRepository.findPendingEmails(where, limit);
+    const muted = found.filter(({ type, account }) => account.emailMutedTypes.includes(type));
+    if (muted.length > 0) await notificationRepository.skipEmails(muted.map(({ id }) => id));
+    const pending = found.filter((notification) => !muted.includes(notification));
     let sent = 0;
 
     for (let i = 0; i < pending.length; i += NOTIFICATION.EMAIL_BATCH_SIZE) {

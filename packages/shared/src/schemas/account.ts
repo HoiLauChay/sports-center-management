@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { GENDERS } from '../constants/enums';
+import { GENDERS, OPTIONAL_EMAIL_TYPES } from '../constants/enums';
 import { fullNameSchema } from './auth';
 
 export const optionalText = (max: number, label: string) =>
@@ -69,3 +69,11 @@ export const updateMeBodySchema = z.object({
 });
 
 export type UpdateMeBody = z.infer<typeof updateMeBodySchema>;
+
+export const notificationSettingsBodySchema = z.object({
+  emailMutedTypes: z
+    .array(z.enum(OPTIONAL_EMAIL_TYPES, 'Loại thông báo không hợp lệ'), 'Loại thông báo không hợp lệ')
+    .transform((types) => [...new Set(types)]),
+});
+
+export type NotificationSettingsBody = z.infer<typeof notificationSettingsBodySchema>;

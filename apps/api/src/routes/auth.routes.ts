@@ -5,6 +5,7 @@ import {
   firstPasswordBodySchema,
   loginBodySchema,
   loginStartBodySchema,
+  notificationSettingsBodySchema,
   registerBodySchema,
   resetPasswordBodySchema,
   sendOtpBodySchema,
@@ -59,6 +60,12 @@ authRouter.post('/refresh', refreshLimit, authController.refresh);
 authRouter.post('/logout', authController.logout);
 authRouter.post('/logout-all', auth, authController.logoutAll);
 authRouter.get('/me', auth, authController.getMe);
+authRouter.patch(
+  '/me/notification-settings',
+  auth,
+  validate({ body: notificationSettingsBodySchema }),
+  authController.updateNotificationSettings,
+);
 authRouter.post('/me/role', auth, validate({ body: switchRoleBodySchema }), authController.switchRole);
 authRouter.patch('/me', auth, validate({ body: updateMeBodySchema }), authController.updateMe);
 authRouter.post('/change-password', auth, validate({ body: changePasswordBodySchema }), authController.changePassword);
