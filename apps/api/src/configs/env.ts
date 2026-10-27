@@ -26,6 +26,8 @@ const schema = z
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CALLBACK_URL: z.url().optional(),
+    GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().min(1).default('gemini-3.5-flash-lite'),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;
