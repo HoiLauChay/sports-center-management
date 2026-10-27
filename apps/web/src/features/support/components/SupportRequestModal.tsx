@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { SupportDraft } from '@sports-center/shared';
 import { App, Form, Input, Modal, Select } from 'antd';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,9 +12,11 @@ import { SUPPORT_CATEGORIES, SUPPORT_CATEGORY_LABEL } from '../types';
 interface SupportRequestModalProps {
   open: boolean;
   onClose: () => void;
+  /** Filled in from the AI assistant's draft; the member still reviews and sends it. */
+  draft?: SupportDraft | null;
 }
 
-export function SupportRequestModal({ open, onClose }: SupportRequestModalProps) {
+export function SupportRequestModal({ open, onClose, draft }: SupportRequestModalProps) {
   const { message } = App.useApp();
   const create = useCreateSupportRequest();
   const form = useForm<CreateSupportInput, unknown, CreateSupportValues>({
@@ -24,8 +27,8 @@ export function SupportRequestModal({ open, onClose }: SupportRequestModalProps)
   const handleApiError = useFormApiError(form);
 
   useEffect(() => {
-    if (open) form.reset({ category: undefined, subject: '', description: '' });
-  }, [open, form]);
+    if (open) form.reset(draft ?? { category: undefined, subject: '', description: '' });
+  }, [open, form, draft]);
 
   const submit = form.handleSubmit((values) => {
     if (create.isPending) return;
