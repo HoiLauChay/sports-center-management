@@ -20,7 +20,7 @@ export function AssistantPage() {
   const chat = useAssistantChat();
   const [support, setSupport] = useState<{ open: boolean; draft: SupportDraft | null }>({ open: false, draft: null });
   const role = user.role as AssistantRole;
-  const config = ASSISTANT_CONFIG[role]!;
+  const config = ASSISTANT_CONFIG[role];
   const firstName = user.fullName.trim().split(/\s+/).at(-1) ?? user.fullName;
 
   return (

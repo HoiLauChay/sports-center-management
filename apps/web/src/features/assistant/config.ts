@@ -2,15 +2,20 @@ import type { AssistantRole } from '@sports-center/shared';
 import {
   BookOpenCheck,
   Building2,
+  CalendarCheck,
   CalendarDays,
   ClipboardCheck,
   Clock,
   Dumbbell,
   LayoutGrid,
+  LifeBuoy,
   MapPin,
+  ScanLine,
   Ticket,
   TrendingDown,
+  UserSearch,
   Users,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import type { NavPath } from '~/config/navigation';
@@ -53,8 +58,7 @@ const TONE = {
 };
 
 /** What the assistant page says and suggests for each role it serves. */
-/** Roles without an entry have no assistant page yet. */
-export const ASSISTANT_CONFIG: Partial<Record<AssistantRole, AssistantConfig>> = {
+export const ASSISTANT_CONFIG: Record<AssistantRole, AssistantConfig> = {
   MEMBER: {
     breadcrumb: { label: 'Hỗ trợ', to: '/support' },
     description:
@@ -97,6 +101,34 @@ export const ASSISTANT_CONFIG: Partial<Record<AssistantRole, AssistantConfig>> =
       { label: 'Hôm nay', question: 'Hôm nay tôi dạy những buổi nào?', icon: CalendarDays },
       { label: 'Việc còn thiếu', question: 'Tôi còn thiếu việc gì không?', icon: ClipboardCheck },
       { label: 'Học viên', question: 'Tóm tắt tình hình học viên các lớp của tôi', icon: Users },
+    ],
+    support: false,
+  },
+  RECEPTIONIST: {
+    breadcrumb: { label: 'Quầy lễ tân', to: '/reception/checkin' },
+    description:
+      'Tra hội viên, lịch sân, buổi học và việc đang chờ ở quầy — trợ lý chỉ đọc, mọi thao tác vẫn làm trên trang quầy.',
+    headline: 'Quầy hôm nay thế nào?',
+    intro: 'Tôi tra được hội viên, lịch sân, buổi học và check-in — hỏi thẳng, không cần mở từng trang.',
+    placeholder: 'Hỏi về hội viên, lịch sân, buổi học...',
+    caution: 'Trợ lý có thể nhầm — kiểm tra lại trên trang quầy trước khi thu tiền hay check-in.',
+    suggestions: [
+      {
+        label: 'Hội viên',
+        question: 'Hội viên Đặng Khánh Linh còn bao nhiêu tiền trong ví?',
+        icon: UserSearch,
+        tone: TONE.sky,
+      },
+      { label: 'Lịch sân', question: 'Tối nay 19h sân cầu lông nào còn trống?', icon: CalendarCheck, tone: TONE.lime },
+      { label: 'Buổi học', question: 'Hôm nay có những buổi học nào?', icon: LayoutGrid, tone: TONE.green },
+      { label: 'Check-in', question: 'Hôm nay đã có bao nhiêu lượt check-in?', icon: ScanLine, tone: TONE.orange },
+      { label: 'Hỗ trợ', question: 'Có bao nhiêu yêu cầu hỗ trợ đang chờ?', icon: LifeBuoy, tone: TONE.violet },
+      { label: 'Gói & giá', question: 'Các gói thành viên giá bao nhiêu?', icon: Wallet, tone: TONE.paper },
+    ],
+    chips: [
+      { label: 'Buổi học hôm nay', question: 'Hôm nay có những buổi học nào?', icon: LayoutGrid },
+      { label: 'Lịch sân', question: 'Hôm nay có những lượt đặt sân nào?', icon: CalendarCheck },
+      { label: 'Hỗ trợ', question: 'Có yêu cầu hỗ trợ nào đang chờ không?', icon: LifeBuoy },
     ],
     support: false,
   },

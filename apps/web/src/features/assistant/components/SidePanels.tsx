@@ -1,12 +1,20 @@
-import type { AssistantOverview, CoachAssistantOverview, MemberAssistantOverview } from '@sports-center/shared';
+import type {
+  AssistantOverview,
+  CoachAssistantOverview,
+  MemberAssistantOverview,
+  ReceptionAssistantOverview,
+} from '@sports-center/shared';
 import { Skeleton, Tooltip } from 'antd';
 import {
   BookOpenCheck,
+  CalendarCheck,
   CalendarDays,
   ClipboardCheck,
   Dumbbell,
   LayoutGrid,
+  LifeBuoy,
   MessageCircle,
+  ScanLine,
   ShieldCheck,
   Ticket,
 } from 'lucide-react';
@@ -202,9 +210,44 @@ function CoachContent({ overview }: { overview: CoachAssistantOverview }) {
   );
 }
 
-const READ_ONLY: Partial<Record<AssistantOverview['role'], string>> = {
+function ReceptionContent({ overview }: { overview: ReceptionAssistantOverview }) {
+  return (
+    <>
+      <Grid>
+        <Tile
+          icon={<ScanLine size={14} />}
+          tone={TONE.lime}
+          label="Check-in hôm nay"
+          value={`${overview.checkinsToday} lượt`}
+        />
+        <Tile
+          icon={<CalendarCheck size={14} />}
+          tone={TONE.sky}
+          label="Đặt sân hôm nay"
+          value={`${overview.bookingsToday} lượt`}
+        />
+        <Tile
+          icon={<LayoutGrid size={14} />}
+          tone={TONE.green}
+          label="Buổi học hôm nay"
+          value={`${overview.sessionsToday.length} buổi`}
+        />
+        <Tile
+          icon={<LifeBuoy size={14} />}
+          tone={TONE.orange}
+          label="Hỗ trợ đang chờ"
+          value={`${overview.openSupport} yêu cầu`}
+        />
+      </Grid>
+      <Detail title="Buổi học hôm nay" lines={sessionLines(overview.sessionsToday)} />
+    </>
+  );
+}
+
+const READ_ONLY: Record<AssistantOverview['role'], string> = {
   MEMBER: 'Trợ lý chỉ đọc dữ liệu của bạn. Thanh toán hay đặt chỗ luôn cần bạn bấm xác nhận.',
   COACH: 'Trợ lý chỉ đọc dữ liệu các lớp bạn phụ trách. Điểm danh, chấm điểm, đánh giá vẫn do bạn thực hiện.',
+  RECEPTIONIST: 'Trợ lý chỉ đọc dữ liệu. Check-in, bán hàng, nạp ví vẫn làm trên trang quầy.',
 };
 
 /** What the assistant can read for this role, so the user knows what it answers from. */
@@ -233,9 +276,11 @@ export function OverviewCard({ overview, loading }: { overview?: AssistantOvervi
           </div>
         ) : overview.role === 'COACH' ? (
           <CoachContent overview={overview} />
-        ) : overview.role === 'MEMBER' ? (
+        ) : overview.role === 'RECEPTIONIST' ? (
+          <ReceptionContent overview={overview} />
+        ) : (
           <MemberContent overview={overview} />
-        ) : null}
+        )}
       </div>
     </section>
   );

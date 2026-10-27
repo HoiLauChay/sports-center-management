@@ -105,6 +105,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/reception/support', label: 'Hỗ trợ', icon: LifeBuoy },
       ],
     },
+    { items: [{ path: '/reception/assistant', label: 'Trợ lý AI', icon: Sparkles }] },
   ],
   MANAGER: [
     {
