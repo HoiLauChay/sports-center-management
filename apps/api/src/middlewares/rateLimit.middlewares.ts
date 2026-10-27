@@ -59,3 +59,4 @@ export const refreshLimit = rateLimit(createLimiter('auth:refresh', 120, '15 m')
 export const googleAuthLimit = rateLimit(createLimiter('auth:google', 30, '15 m'));
 export const uploadLimit = rateLimit(createLimiter('uploads:token', 30, '1 h'), byAccount);
 export const aiSuggestionLimit = rateLimit(createLimiter('ai:plan-suggestion', 20, '1 h'), byAccount);
+export const assistantLimit = rateLimit(createLimiter('ai:assistant', 30, '1 h'), byAccount);
