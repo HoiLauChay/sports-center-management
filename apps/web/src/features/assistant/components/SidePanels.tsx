@@ -1,6 +1,15 @@
-import type { AssistantOverview, MemberAssistantOverview } from '@sports-center/shared';
+import type { AssistantOverview, CoachAssistantOverview, MemberAssistantOverview } from '@sports-center/shared';
 import { Skeleton, Tooltip } from 'antd';
-import { CalendarDays, Dumbbell, LayoutGrid, MessageCircle, ShieldCheck, Ticket } from 'lucide-react';
+import {
+  BookOpenCheck,
+  CalendarDays,
+  ClipboardCheck,
+  Dumbbell,
+  LayoutGrid,
+  MessageCircle,
+  ShieldCheck,
+  Ticket,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { formatDate } from '~/lib/format';
 import type { Conversation } from '../store/conversations';
@@ -70,6 +79,19 @@ function nextSessionTag(date: string, startTime: string) {
   return null;
 }
 
+type SessionLine = CoachAssistantOverview['todaySessions'][number];
+
+const sessionLines = (sessions: SessionLine[]) =>
+  sessions.map((session) => ({
+    key: session.id,
+    title: `${session.startTime}–${session.endTime} · ${session.className} · ${session.facility}`,
+    main: (
+      <>
+        <span className="font-semibold text-sc-ink tabular-nums">{session.startTime}</span> {session.className}
+      </>
+    ),
+  }));
+
 function MemberContent({ overview }: { overview: MemberAssistantOverview }) {
   const { membership, nextSession: next } = overview;
   const tag = next && nextSessionTag(next.date, next.startTime);
@@ -129,8 +151,60 @@ function MemberContent({ overview }: { overview: MemberAssistantOverview }) {
   );
 }
 
+function CoachContent({ overview }: { overview: CoachAssistantOverview }) {
+  return (
+    <>
+      <Grid>
+        <Tile
+          icon={<CalendarDays size={14} />}
+          tone={TONE.sky}
+          label="Dạy hôm nay"
+          value={`${overview.todaySessions.length} buổi`}
+        />
+        <Tile
+          icon={<LayoutGrid size={14} />}
+          tone={TONE.green}
+          label="Lớp phụ trách"
+          value={`${overview.classes.length} lớp`}
+        />
+        <Tile
+          icon={<ClipboardCheck size={14} />}
+          tone={TONE.lime}
+          label="Buổi thiếu điểm danh/ghi chú"
+          value={`${overview.pendingSessions} buổi`}
+          hint="Buổi đã dạy trong 14 ngày qua chưa điểm danh đủ hoặc chưa có ghi chú"
+        />
+        <Tile
+          icon={<BookOpenCheck size={14} />}
+          tone={TONE.orange}
+          label="Học viên thiếu đánh giá"
+          value={`${overview.missingReviews} HV`}
+          hint="Học viên đã đến mốc giữa/cuối khóa mà chưa có đánh giá"
+        />
+      </Grid>
+      <Detail title="Buổi dạy hôm nay" lines={sessionLines(overview.todaySessions)} />
+      <Detail
+        title="Lớp"
+        lines={overview.classes.map(({ id, name, enrolled, maxStudents }) => ({
+          key: id,
+          title: name,
+          main: (
+            <>
+              {name}{' '}
+              <span className="text-sc-muted tabular-nums">
+                · {enrolled}/{maxStudents}
+              </span>
+            </>
+          ),
+        }))}
+      />
+    </>
+  );
+}
+
 const READ_ONLY: Partial<Record<AssistantOverview['role'], string>> = {
   MEMBER: 'Trợ lý chỉ đọc dữ liệu của bạn. Thanh toán hay đặt chỗ luôn cần bạn bấm xác nhận.',
+  COACH: 'Trợ lý chỉ đọc dữ liệu các lớp bạn phụ trách. Điểm danh, chấm điểm, đánh giá vẫn do bạn thực hiện.',
 };
 
 /** What the assistant can read for this role, so the user knows what it answers from. */
@@ -157,6 +231,8 @@ export function OverviewCard({ overview, loading }: { overview?: AssistantOvervi
           <div className="p-5">
             <Skeleton active paragraph={{ rows: 4 }} title={false} />
           </div>
+        ) : overview.role === 'COACH' ? (
+          <CoachContent overview={overview} />
         ) : overview.role === 'MEMBER' ? (
           <MemberContent overview={overview} />
         ) : null}

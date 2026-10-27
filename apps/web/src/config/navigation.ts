@@ -90,6 +90,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },
       ],
     },
+    { items: [{ path: '/coach/assistant', label: 'Trợ lý AI', icon: Sparkles }] },
   ],
   RECEPTIONIST: [
     {

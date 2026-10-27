@@ -3,10 +3,14 @@ import {
   BookOpenCheck,
   Building2,
   CalendarDays,
+  ClipboardCheck,
   Clock,
   Dumbbell,
   LayoutGrid,
+  MapPin,
   Ticket,
+  TrendingDown,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 import type { NavPath } from '~/config/navigation';
@@ -73,5 +77,27 @@ export const ASSISTANT_CONFIG: Partial<Record<AssistantRole, AssistantConfig>> =
       { label: 'Bài tập', question: 'Bài tập về nhà của tôi là gì?', icon: BookOpenCheck },
     ],
     support: true,
+  },
+  COACH: {
+    breadcrumb: { label: 'Giảng dạy', to: '/coach/classes' },
+    description: 'Hỏi về lịch dạy, học viên, tiến độ và việc còn thiếu — trợ lý chỉ đọc dữ liệu các lớp bạn phụ trách.',
+    headline: 'Hôm nay dạy gì?',
+    intro: 'Tôi biết lịch dạy, học viên và tiến độ các lớp của bạn — hỏi thẳng, không cần mở từng lớp.',
+    placeholder: 'Hỏi về lịch dạy, học viên hoặc việc còn thiếu...',
+    caution: 'Trợ lý có thể nhầm — kiểm tra lại trên trang lớp trước khi điểm danh hay đánh giá.',
+    suggestions: [
+      { label: 'Lịch dạy', question: 'Tuần này tôi dạy những buổi nào?', icon: CalendarDays, tone: TONE.sky },
+      { label: 'Việc còn thiếu', question: 'Tôi còn thiếu việc gì không?', icon: ClipboardCheck, tone: TONE.lime },
+      { label: 'Chuyên cần', question: 'Học viên nào vắng nhiều nhất?', icon: Users, tone: TONE.green },
+      { label: 'Tiến độ', question: 'Học viên nào có điểm thấp nhất gần đây?', icon: TrendingDown, tone: TONE.orange },
+      { label: 'Đánh giá', question: 'Ai còn thiếu đánh giá giữa khóa?', icon: BookOpenCheck, tone: TONE.violet },
+      { label: 'Phòng tập', question: 'Phòng Gym tối thứ 7 còn trống không?', icon: MapPin, tone: TONE.paper },
+    ],
+    chips: [
+      { label: 'Hôm nay', question: 'Hôm nay tôi dạy những buổi nào?', icon: CalendarDays },
+      { label: 'Việc còn thiếu', question: 'Tôi còn thiếu việc gì không?', icon: ClipboardCheck },
+      { label: 'Học viên', question: 'Tóm tắt tình hình học viên các lớp của tôi', icon: Users },
+    ],
+    support: false,
   },
 };
