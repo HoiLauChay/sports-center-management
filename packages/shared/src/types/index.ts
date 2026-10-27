@@ -1,5 +1,6 @@
 export * from './account';
 export * from './api';
+export * from './assistant';
 export * from './attendance';
 export * from './audit';
 export * from './booking';
