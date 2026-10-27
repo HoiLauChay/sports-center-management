@@ -26,6 +26,20 @@ class ClassTrainingController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã lưu kế hoạch học viên', result }));
   };
 
+  suggestClassPlan = async (req: Request, res: Response) => {
+    const result = await classTrainingService.suggestPlan(req.user!, req.params.id as string, null);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã tạo gợi ý kế hoạch', result }));
+  };
+
+  suggestMemberPlan = async (req: Request, res: Response) => {
+    const result = await classTrainingService.suggestPlan(
+      req.user!,
+      req.params.id as string,
+      req.params.accountId as string,
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã tạo gợi ý kế hoạch', result }));
+  };
+
   saveReview = async (req: Request, res: Response) => {
     const result = await classTrainingService.saveReview(
       req.user!,

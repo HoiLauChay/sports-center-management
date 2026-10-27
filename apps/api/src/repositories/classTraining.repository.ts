@@ -84,6 +84,16 @@ class ClassTrainingRepository {
   findClass = (id: string, tx: Prisma.TransactionClient = prisma) =>
     tx.class.findFirst({ where: { id, deletedAt: null }, select: classSelect });
 
+  findPlanContext = (id: string) =>
+    prisma.class.findFirst({
+      where: { id, deletedAt: null },
+      select: {
+        name: true,
+        weeklySchedule: true,
+        course: { select: { name: true, description: true, totalSessions: true, sport: { select: { name: true } } } },
+      },
+    });
+
   findStudents = (classId: string, accountId?: string) =>
     prisma.classEnrollment.findMany({
       where: { classId, status: 'ENROLLED', accountId },
@@ -97,10 +107,10 @@ class ClassTrainingRepository {
       select: { sessionId: true, accountId: true, status: true },
     });
 
-  findResults = (classId: string) =>
+  findResults = (classId: string, accountId?: string) =>
     prisma.memberEvaluation.findMany({
-      where: { deletedAt: null, session: { classId } },
-      select: { accountId: true, rating: true, session: { select: { sessionNumber: true } } },
+      where: { deletedAt: null, session: { classId }, accountId },
+      select: { accountId: true, rating: true, comment: true, session: { select: { sessionNumber: true } } },
     });
 
   findPlans = (classId: string, accountId?: string | null) =>
