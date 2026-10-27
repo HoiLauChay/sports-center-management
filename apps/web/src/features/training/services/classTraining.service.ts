@@ -10,6 +10,7 @@ import type {
   SaveTrainingPlanBody,
   StudentProgress,
   TrainingPlan,
+  TrainingPlanSuggestion,
 } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
 
@@ -40,6 +41,16 @@ export const classTrainingService = {
 
   saveMemberPlan: async (classId: string, accountId: string, body: SaveTrainingPlanBody) => {
     const { data } = await privateApi.put<ApiResponse<TrainingPlan>>(`${student(classId, accountId)}/plan`, body);
+    return data.result;
+  },
+
+  /** An AI draft for the class plan, or for one student's plan when accountId is given; nothing is saved. */
+  suggestPlan: async (classId: string, accountId: string | null) => {
+    const url = `${accountId ? student(classId, accountId) : cls(classId)}/plan/suggestion`;
+    // The AI takes far longer than the default 15s to write a plan.
+    const { data } = await privateApi.post<ApiResponse<TrainingPlanSuggestion>>(url, undefined, {
+      timeout: 120_000,
+    });
     return data.result;
   },
 

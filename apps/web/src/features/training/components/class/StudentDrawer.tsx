@@ -71,6 +71,8 @@ function StudentDetail({
           <PlanView plan={plan} />
         ) : (
           <PlanForm
+            classId={classId}
+            accountId={accountId}
             key={plan?.updatedAt ?? 'new'}
             plan={plan}
             saving={savePlan.isPending}
