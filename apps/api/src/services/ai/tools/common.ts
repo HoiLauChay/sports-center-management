@@ -98,11 +98,12 @@ export const COMMON_TOOLS: Tool[] = [
     {
       name: 'list_memberships',
       description:
-        'Các gói thành viên đang bán: giá, thời hạn, quyền lợi (gym, giảm giá đặt sân/lớp, slot miễn phí mỗi tháng).',
+        'Các gói thành viên đang bán: mã gói, giá, thời hạn, quyền lợi (gym, giảm giá đặt sân/lớp, slot miễn phí và lượt hỏi trợ lý AI mỗi tháng).',
     },
     noArgs,
     async () => ({
       packages: (await membershipService.list(false)).map((pkg) => ({
+        packageId: pkg.id,
         name: pkg.name,
         description: pkg.description,
         priceVnd: pkg.price,
@@ -111,6 +112,7 @@ export const COMMON_TOOLS: Tool[] = [
         bookingDiscountPct: pkg.bookingDiscountPct,
         classDiscountPct: pkg.classDiscountPct,
         freeBookingSlotsPerMonth: pkg.freeBookingSlotsPerMonth,
+        aiQuestionsPerMonth: pkg.aiQuestionsPerMonth,
       })),
     }),
   ),
@@ -118,7 +120,7 @@ export const COMMON_TOOLS: Tool[] = [
     {
       name: 'list_open_classes',
       description:
-        'Các lớp đang mở đăng ký: tên lớp, khóa, bộ môn, lịch tuần, ngày bắt đầu, học phí, số chỗ còn. Lọc theo bộ môn nếu có.',
+        'Các lớp đang mở đăng ký: mã lớp, tên lớp, khóa, bộ môn, lịch tuần, ngày bắt đầu, học phí, số chỗ còn. Lọc theo bộ môn nếu có.',
       parameters: {
         type: 'OBJECT',
         properties: { sport: { type: 'STRING', description: 'Tên bộ môn, ví dụ "Yoga"' } },
@@ -135,6 +137,7 @@ export const COMMON_TOOLS: Tool[] = [
       );
       return {
         classes: page.items.map((cls) => ({
+          classId: cls.id,
           name: cls.name,
           course: cls.course.name,
           sport: cls.course.sport.name,
