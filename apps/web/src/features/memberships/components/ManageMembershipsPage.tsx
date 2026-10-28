@@ -139,6 +139,9 @@ export function ManageMembershipsPage() {
               {membership.freeBookingSlotsPerMonth} slot free/tháng
             </Tag>
           ),
+          <Tag key="ai" className="!m-0">
+            {membership.aiQuestionsPerMonth} lượt AI/tháng
+          </Tag>,
         ].filter(Boolean);
         return tags.length > 0 ? (
           <div className="flex flex-wrap gap-1">{tags}</div>

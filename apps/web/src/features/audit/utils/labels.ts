@@ -62,6 +62,7 @@ const FIELD_LABEL: Record<string, string> = {
   classDiscountPct: 'Giảm giá lớp học (%)',
   gymAccess: 'Quyền vào phòng gym',
   freeBookingSlotsPerMonth: 'Lượt đặt sân miễn phí / tháng',
+  aiQuestionsPerMonth: 'Lượt hỏi trợ lý AI / tháng',
   autoRenew: 'Tự động gia hạn',
   cancelledAt: 'Thời điểm hủy',
   startDate: 'Ngày bắt đầu',
