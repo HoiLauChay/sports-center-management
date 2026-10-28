@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import assistantRouter from '~/routes/assistant.routes';
 import { myAttendanceRouter } from '~/routes/attendance.routes';
 import auditRouter from '~/routes/audit.routes';
 import authRouter from '~/routes/auth.routes';
@@ -41,6 +42,7 @@ rootRouter.get('/health', (_req, res) => {
 });
 
 export const apiRoutes: [string, Router][] = [
+  ['/assistant', assistantRouter],
   ['/audit-logs', auditRouter],
   ['/auth', authRouter],
   ['/bank-transactions', bankTransactionRouter],

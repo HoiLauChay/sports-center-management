@@ -21,6 +21,7 @@ import classTrainingController from '~/controllers/classTraining.controllers';
 import enrollmentController from '~/controllers/enrollment.controllers';
 import trainingController from '~/controllers/training.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
+import { aiSuggestionLimit } from '~/middlewares/rateLimit.middlewares';
 import { validate } from '~/utils/validation';
 
 export const coachClassRouter = Router();
@@ -121,6 +122,13 @@ classRouter.put(
   validate({ params: classIdParamsSchema, body: saveTrainingPlanBodySchema }),
   classTrainingController.saveClassPlan,
 );
+classRouter.post(
+  '/:id/plan/suggestion',
+  isRole('COACH'),
+  validate({ params: classIdParamsSchema }),
+  aiSuggestionLimit,
+  classTrainingController.suggestClassPlan,
+);
 classRouter.put(
   '/:id/students/:accountId/reviews/:milestone',
   isRole('COACH'),
@@ -132,6 +140,13 @@ classRouter.put(
   isRole('COACH'),
   validate({ params: classStudentParamsSchema, body: saveTrainingPlanBodySchema }),
   classTrainingController.saveMemberPlan,
+);
+classRouter.post(
+  '/:id/students/:accountId/plan/suggestion',
+  isRole('COACH'),
+  validate({ params: classStudentParamsSchema }),
+  aiSuggestionLimit,
+  classTrainingController.suggestMemberPlan,
 );
 classRouter.get(
   '/:id/students/:accountId',

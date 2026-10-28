@@ -1,4 +1,5 @@
 export * from './account';
+export * from './assistant';
 export * from './attendance';
 export * from './audit';
 export * from './auth';

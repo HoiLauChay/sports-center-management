@@ -42,6 +42,12 @@ export interface TrainingPlan {
   updatedAt: string;
 }
 
+/** An AI-written draft of a plan; the coach edits it before saving (never saved by itself). */
+export interface TrainingPlanSuggestion {
+  goals: string;
+  content: string;
+}
+
 export interface ProgressReview {
   account: Person;
   milestone: ProgressMilestone;

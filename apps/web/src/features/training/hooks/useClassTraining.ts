@@ -67,6 +67,15 @@ export function useSaveMemberPlan(classId: string, accountId: string) {
   );
 }
 
+/** Asks the AI for a draft plan; only the form changes, so nothing is refetched. */
+export function useSuggestPlan(classId: string, accountId: string | null) {
+  const { message } = App.useApp();
+  return useMutation({
+    mutationFn: () => classTrainingService.suggestPlan(classId, accountId),
+    onError: (error) => message.error(describeApiError(error)),
+  });
+}
+
 export function useSaveReview(classId: string, accountId: string) {
   return useClassAction(
     classId,

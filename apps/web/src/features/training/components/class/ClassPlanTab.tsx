@@ -21,6 +21,8 @@ export function ClassPlanTab({ classId, readOnly }: { classId: string; readOnly:
         <PlanView plan={classPlan} />
       ) : (
         <PlanForm
+          classId={classId}
+          accountId={null}
           key={classPlan?.updatedAt ?? 'new'}
           plan={classPlan}
           saving={save.isPending}

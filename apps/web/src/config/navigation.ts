@@ -22,6 +22,7 @@ import {
   School,
   Settings,
   ShoppingCart,
+  Sparkles,
   Store,
   Ticket,
   Trophy,
@@ -72,7 +73,12 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/orders', label: 'Đơn hàng', icon: Receipt },
       ],
     },
-    { items: [{ path: '/support', label: 'Hỗ trợ', icon: LifeBuoy }] },
+    {
+      items: [
+        { path: '/assistant', label: 'Trợ lý AI', icon: Sparkles },
+        { path: '/support', label: 'Hỗ trợ', icon: LifeBuoy },
+      ],
+    },
   ],
   COACH: [
     {
@@ -84,6 +90,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/coach/specializations', label: 'Chuyên môn', icon: Award },
       ],
     },
+    { items: [{ path: '/coach/assistant', label: 'Trợ lý AI', icon: Sparkles }] },
   ],
   RECEPTIONIST: [
     {
@@ -98,6 +105,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/reception/support', label: 'Hỗ trợ', icon: LifeBuoy },
       ],
     },
+    { items: [{ path: '/reception/assistant', label: 'Trợ lý AI', icon: Sparkles }] },
   ],
   MANAGER: [
     {
