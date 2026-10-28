@@ -38,6 +38,7 @@ const MEMBERSHIPS = [
     price: 300000,
     durationDays: 30,
     gymAccess: true,
+    aiQuestionsPerMonth: 30,
   },
   {
     name: 'Gói Tiêu chuẩn 3 tháng',
@@ -48,6 +49,7 @@ const MEMBERSHIPS = [
     bookingDiscountPct: 10,
     classDiscountPct: 5,
     freeBookingSlotsPerMonth: 2,
+    aiQuestionsPerMonth: 100,
   },
   {
     name: 'Gói Cao cấp 12 tháng',
@@ -58,6 +60,7 @@ const MEMBERSHIPS = [
     bookingDiscountPct: 20,
     classDiscountPct: 15,
     freeBookingSlotsPerMonth: 4,
+    aiQuestionsPerMonth: 500,
   },
 ] satisfies (Omit<Prisma.MembershipCreateInput, 'price'> & { price: number })[];
 

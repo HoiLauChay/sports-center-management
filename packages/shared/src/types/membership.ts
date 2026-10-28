@@ -11,12 +11,13 @@ export interface MembershipPackage {
   bookingDiscountPct: number;
   classDiscountPct: number;
   freeBookingSlotsPerMonth: number;
+  aiQuestionsPerMonth: number;
   isActive: boolean;
 }
 
 export type MembershipBenefits = Pick<
   MembershipPackage,
-  'gymAccess' | 'bookingDiscountPct' | 'classDiscountPct' | 'freeBookingSlotsPerMonth'
+  'gymAccess' | 'bookingDiscountPct' | 'classDiscountPct' | 'freeBookingSlotsPerMonth' | 'aiQuestionsPerMonth'
 >;
 
 export interface MembershipPeriod {

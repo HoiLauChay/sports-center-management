@@ -47,6 +47,7 @@ const priceLine = (
     bookingDiscountPct: membership.bookingDiscountPct,
     classDiscountPct: membership.classDiscountPct,
     freeBookingSlotsPerMonth: membership.freeBookingSlotsPerMonth,
+    aiQuestionsPerMonth: membership.aiQuestionsPerMonth,
   };
   const price = Number(membership.price);
   return {

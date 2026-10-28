@@ -83,6 +83,7 @@ describe('resource reports', () => {
             bookingDiscountPct: 0,
             classDiscountPct: 0,
             freeBookingSlotsPerMonth: 0,
+            aiQuestionsPerMonth: 0,
           },
         });
         await prisma.memberMembership.update({

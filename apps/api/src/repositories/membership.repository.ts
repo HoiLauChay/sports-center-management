@@ -11,6 +11,7 @@ const membershipSelect = {
   bookingDiscountPct: true,
   classDiscountPct: true,
   freeBookingSlotsPerMonth: true,
+  aiQuestionsPerMonth: true,
   isActive: true,
 } satisfies Prisma.MembershipSelect;
 

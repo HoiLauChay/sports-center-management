@@ -6,6 +6,7 @@ interface Benefits {
   bookingDiscountPct?: number;
   classDiscountPct?: number;
   freeBookingSlotsPerMonth?: number;
+  aiQuestionsPerMonth?: number;
 }
 
 let seq = 0;
@@ -16,6 +17,7 @@ export const giveActiveMembership = async (accountId: string, benefits: Benefits
     bookingDiscountPct: 0,
     classDiscountPct: 0,
     freeBookingSlotsPerMonth: 0,
+    aiQuestionsPerMonth: 100,
     ...benefits,
   };
   const lastDay = endDate ?? addDays(todayInCenter(), 30);

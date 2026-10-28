@@ -12,5 +12,6 @@ export const toMembershipResponse = (row: MembershipRow): MembershipPackage => (
   bookingDiscountPct: row.bookingDiscountPct,
   classDiscountPct: row.classDiscountPct,
   freeBookingSlotsPerMonth: row.freeBookingSlotsPerMonth,
+  aiQuestionsPerMonth: row.aiQuestionsPerMonth,
   isActive: row.isActive,
 });
