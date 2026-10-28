@@ -1,11 +1,11 @@
-import type { AssistantQuota, AssistantRole } from '@sports-center/shared';
+import type { AssistantQuota, AssistantRole, SupportDraft } from '@sports-center/shared';
 import { ASSISTANT_MAX_TEXT } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button, Dropdown } from 'antd';
 import { ArrowUp, ArrowUpRight, Crown, Ellipsis, LifeBuoy, Sparkles, SquarePen, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { AssistantConfig } from '../config';
-import type { ChatMessage, Conversation } from '../store/conversations';
+import type { Conversation } from '../store/conversations';
 import { MessageBubble, TypingBubble } from './MessageBubble';
 
 function Welcome({
@@ -83,7 +83,8 @@ interface ChatPanelProps {
   quota: AssistantQuota | null | undefined;
   onSend: (text: string) => void;
   onRetry: () => void;
-  onSupport: (message?: ChatMessage) => void;
+  onOpenDraft: (draft: SupportDraft) => void;
+  onActionDone: (messageId: string, index: number) => void;
 }
 
 export function ChatPanel({
@@ -95,7 +96,8 @@ export function ChatPanel({
   quota,
   onSend,
   onRetry,
-  onSupport,
+  onOpenDraft,
+  onActionDone,
 }: ChatPanelProps) {
   const [text, setText] = useState('');
   const bottom = useRef<HTMLDivElement>(null);
@@ -126,7 +128,14 @@ export function ChatPanel({
         ) : (
           <div className="flex flex-col gap-4 py-5">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} role={role} onRetry={onRetry} onOpenDraft={onSupport} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                role={role}
+                onRetry={onRetry}
+                onOpenDraft={onOpenDraft}
+                onActionDone={onActionDone}
+              />
             ))}
             {pending && <TypingBubble />}
           </div>

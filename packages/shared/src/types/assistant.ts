@@ -1,4 +1,5 @@
-import type { SupportCategory } from '../constants/enums';
+import type { AttendanceStatus, SupportCategory } from '../constants/enums';
+import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Ref } from './api';
 
 /** A support request the assistant wrote from the chat; the member reviews and sends it themselves. */
@@ -7,6 +8,25 @@ export interface SupportDraft {
   subject: string;
   description: string;
 }
+
+/**
+ * Something the assistant prepared but never did. The person confirms it in the chat, and the page then calls the
+ * same API it would without the assistant, so every usual check (price, availability, permissions) still runs.
+ */
+export type AssistantAction =
+  | { type: 'SUPPORT_REQUEST'; draft: SupportDraft }
+  /** A service for the member's cart; paying still goes through the cart. */
+  /** `subtotal` is the list price; `total` is what the member pays after their membership benefits. */
+  | { type: 'CART_ITEM'; item: CheckoutItemInput; title: string; subtotal: number; total: number }
+  /** A coach's attendance for one session, everyone on the roster included. */
+  | {
+      type: 'ATTENDANCE';
+      sessionId: string;
+      title: string;
+      records: { accountId: string; name: string; status: AttendanceStatus }[];
+    };
+
+export type AssistantActionType = AssistantAction['type'];
 
 /** A member's questions this month; staff have no quota. */
 export interface AssistantQuota {
@@ -18,7 +38,7 @@ export interface AssistantQuota {
 
 export interface AssistantReply {
   reply: string;
-  supportDraft: SupportDraft | null;
+  actions: AssistantAction[];
   quota: AssistantQuota | null;
 }
 

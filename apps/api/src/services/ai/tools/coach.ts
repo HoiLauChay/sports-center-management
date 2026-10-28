@@ -1,6 +1,7 @@
-import type { ProgressMilestone } from '@sports-center/shared';
+import type { AttendanceStatus, ProgressMilestone } from '@sports-center/shared';
 import { z } from 'zod';
 
+import assistantRepository from '~/repositories/assistant.repository';
 import classTrainingRepository from '~/repositories/classTraining.repository';
 import {
   badRange,
@@ -10,10 +11,12 @@ import {
   dateRangeParams,
   MAX_SCHEDULE_DAYS,
   noArgs,
+  prepared,
   tool,
   weekdayOf,
   type Tool,
 } from '~/services/ai/tools/toolkit';
+import attendanceService from '~/services/attendance.service';
 import classService from '~/services/class.service';
 import classTrainingService from '~/services/classTraining.service';
 import personalScheduleService from '~/services/personalSchedule.service';
@@ -216,6 +219,55 @@ export const COACH_TOOLS: Tool[] = [
     async ({ accountId }) => {
       const { sessions, reviews } = await coachPendingWork(accountId);
       return { pendingSessions: sessions, missingReviews: reviews };
+    },
+  ),
+  tool(
+    {
+      name: 'propose_attendance',
+      description:
+        'Chuẩn bị điểm danh cho một buổi học của HLV: học viên được nêu là vắng hoặc đi muộn, những người còn lại có mặt. Cần mã buổi từ coach_schedule và mã học viên từ class_roster. KHÔNG lưu: HLV tự kiểm tra danh sách và bấm "Lưu điểm danh".',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          sessionId: { type: 'STRING', description: 'Mã buổi học (sessionId từ coach_schedule)' },
+          absentStudentIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Mã học viên vắng' },
+          lateStudentIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Mã học viên đi muộn' },
+        },
+        required: ['sessionId'],
+      },
+    },
+    z.object({
+      sessionId: z.uuid('Mã buổi học không hợp lệ'),
+      absentStudentIds: z.array(z.uuid('Mã học viên không hợp lệ')).default([]),
+      lateStudentIds: z.array(z.uuid('Mã học viên không hợp lệ')).default([]),
+    }),
+    async ({ accountId }, { sessionId, absentStudentIds, lateStudentIds }) => {
+      // Same checks as the attendance page: only a session this coach teaches.
+      const roster = await attendanceService.list(coachOf(accountId), sessionId);
+      const onRoster = new Set(roster.map(({ account }) => account.id));
+      const unknown = [...absentStudentIds, ...lateStudentIds].filter((id) => !onRoster.has(id));
+      if (unknown.length) return { error: 'Có học viên không thuộc buổi học này, hãy tra lại class_roster' };
+      if (!roster.length) return { error: 'Buổi học chưa có học viên nào' };
+
+      const statusOf = (id: string): AttendanceStatus =>
+        absentStudentIds.includes(id) ? 'ABSENT' : lateStudentIds.includes(id) ? 'LATE' : 'PRESENT';
+      const records = roster.map(({ account }) => ({
+        accountId: account.id,
+        name: account.fullName,
+        status: statusOf(account.id),
+      }));
+      const session = (await assistantRepository.findSessionLabel(sessionId))!;
+      const date = formatDate(session.sessionDate);
+      const title = `${session.class.name} · Buổi ${session.sessionNumber} · ${weekdayOf(date)} ${date.slice(8, 10)}/${date.slice(5, 7)}`;
+      return {
+        ...prepared(
+          { type: 'ATTENDANCE', sessionId, title, records },
+          'Chưa lưu: HLV tự kiểm tra danh sách và bấm "Lưu điểm danh" ngay dưới câu trả lời.',
+        ),
+        present: records.filter(({ status }) => status === 'PRESENT').length,
+        absent: absentStudentIds.length,
+        late: lateStudentIds.length,
+      };
     },
   ),
 ];

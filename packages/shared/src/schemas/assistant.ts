@@ -4,6 +4,8 @@ export const ASSISTANT_MAX_MESSAGES = 20;
 export const ASSISTANT_MAX_TEXT = 1000;
 /** Questions a month for a member without an active membership; a membership sets its own number. */
 export const ASSISTANT_FREE_QUESTIONS = 10;
+/** Actions the assistant may prepare in one answer. */
+export const ASSISTANT_MAX_ACTIONS = 3;
 
 export const ASSISTANT_ROLES = ['MEMBER', 'COACH', 'RECEPTIONIST'] as const;
 export type AssistantRole = (typeof ASSISTANT_ROLES)[number];

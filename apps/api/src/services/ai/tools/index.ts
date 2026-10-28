@@ -16,5 +16,4 @@ const ROLE_TOOLS: Record<AssistantRole, Tool[]> = {
 export const toolsFor = (role: AssistantRole): Tool[] => [...COMMON_TOOLS, ...ROLE_TOOLS[role]];
 
 export { coachPendingWork } from '~/services/ai/tools/coach';
-export { supportDraftOf } from '~/services/ai/tools/member';
-export { weekdayOf, type ToolContext } from '~/services/ai/tools/toolkit';
+export { actionOf, weekdayOf, type ToolContext } from '~/services/ai/tools/toolkit';

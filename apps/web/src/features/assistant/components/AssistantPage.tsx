@@ -6,7 +6,6 @@ import { useCurrentUser } from '~/features/auth';
 import { SupportRequestModal } from '~/features/support';
 import { ASSISTANT_CONFIG } from '../config';
 import { useAssistantChat, useAssistantOverview, useAssistantQuota } from '../hooks/useAssistant';
-import type { ChatMessage } from '../store/conversations';
 import { ChatActions, ChatPanel } from './ChatPanel';
 import { OverviewCard, RecentCard } from './SidePanels';
 
@@ -63,7 +62,8 @@ export function AssistantPage() {
           quota={quota.data}
           onSend={chat.send}
           onRetry={chat.retry}
-          onSupport={(message?: ChatMessage) => setSupport({ open: true, draft: message?.supportDraft ?? null })}
+          onOpenDraft={(draft) => setSupport({ open: true, draft })}
+          onActionDone={(messageId, index) => chat.active && chat.markDone(chat.active.id, messageId, index)}
         />
         <aside className="flex flex-col gap-5 lg:grid lg:h-[max(560px,calc(100dvh-160px))] lg:grid-rows-2">
           <RecentCard conversations={chat.conversations} activeId={chat.active?.id ?? null} onOpen={chat.open} />

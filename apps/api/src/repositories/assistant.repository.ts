@@ -28,6 +28,13 @@ class AssistantRepository {
       data: { count: { decrement: 1 } },
     });
 
+  /** What the attendance card names a session by; the caller has already checked the coach teaches it. */
+  findSessionLabel = (sessionId: string) =>
+    prisma.classSession.findUnique({
+      where: { id: sessionId },
+      select: { sessionNumber: true, sessionDate: true, startTime: true, class: { select: { name: true } } },
+    });
+
   /** Classes the member is enrolled in right now, optionally just one. */
   findEnrolledClasses = (accountId: string, classId?: string) =>
     prisma.classEnrollment.findMany({

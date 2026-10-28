@@ -1,4 +1,5 @@
 import type {
+  AssistantAction,
   AssistantOverview,
   AssistantQuota,
   AssistantReply,
@@ -58,7 +59,7 @@ describe('AI assistant chat', () => {
     const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Ví còn bao nhiêu?')));
     expect(reply).toEqual({
       reply: 'Ví của bạn còn 120.000đ.',
-      supportDraft: null,
+      actions: [],
       quota: { used: 1, limit: 10, resetsOn: expect.any(String) },
     });
 
@@ -104,8 +105,22 @@ describe('AI assistant chat', () => {
       .mockResolvedValueOnce(turn([], 'Mình đã soạn sẵn yêu cầu.'));
 
     const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Nạp tiền chưa cộng')));
-    expect(reply.supportDraft).toEqual(draft);
+    expect(reply.actions).toEqual([{ type: 'SUPPORT_REQUEST', draft }]);
     expect(await prisma.supportRequest.count()).toBe(0);
+  });
+
+  test('at most three actions are prepared in one answer; Gemini is told about the rest', async () => {
+    const f = await setupAttendance();
+    const draft = { category: 'OTHER', subject: 'Hỏi', description: 'Nội dung' } as const;
+    chat
+      .mockResolvedValueOnce(turn(Array.from({ length: 4 }, () => ({ name: 'draft_support_request', args: draft }))))
+      .mockResolvedValueOnce(turn([], 'Đã soạn.'));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Soạn 4 yêu cầu')));
+    expect(reply.actions).toHaveLength(3);
+    expect(toolResponses(1).at(-1)!.response).toEqual({
+      result: { error: 'Mỗi câu trả lời chỉ chuẩn bị tối đa 3 thao tác' },
+    });
   });
 
   test('only plain user/model text is accepted from the browser, and only from members', async () => {
@@ -272,5 +287,65 @@ describe('AI assistant quota', () => {
     expect(reply.quota).toBeNull();
     expect(await readResult<AssistantQuota | null>(await request('GET', '/quota', f.receptionist))).toBeNull();
     expect(await prisma.assistantUsage.count()).toBe(0);
+  });
+});
+
+/** Asks once with Gemini scripted to call one tool, and returns the actions in the answer. */
+const actionsFrom = async (viewer: Parameters<typeof request>[2], name: string, args: Record<string, unknown>) => {
+  chat.mockResolvedValueOnce(turn([{ name, args }])).mockResolvedValueOnce(turn([], 'Xong.'));
+  const reply = await readResult<AssistantReply>(await request('POST', '/chat', viewer, ask('Làm giúp tôi')));
+  return reply.actions;
+};
+
+describe('AI assistant actions', () => {
+  test('a member gets a priced cart item to confirm, and nothing is bought', async () => {
+    const f = await setupAttendance();
+    await prisma.systemSetting.create({ data: {} });
+    const pkg = await prisma.membership.create({ data: { name: 'Gói Bạc', price: 300_000, durationDays: 30 } });
+    const orders = await prisma.order.count();
+
+    const [action] = await actionsFrom(f.member, 'propose_cart_item', { type: 'MEMBERSHIP', packageId: pkg.id });
+    expect(action).toEqual({
+      type: 'CART_ITEM',
+      item: { type: 'MEMBERSHIP', packageId: pkg.id },
+      title: expect.stringContaining('Gói Bạc'),
+      subtotal: 300_000,
+      total: 300_000,
+    });
+    expect(await prisma.order.count()).toBe(orders);
+
+    await prisma.membership.update({ where: { id: pkg.id }, data: { isActive: false } });
+    const { result } = await runTool(f.member, 'propose_cart_item', { type: 'MEMBERSHIP', packageId: pkg.id });
+    expect(result.error).toBe('Gói đã ngừng bán');
+  });
+
+  test('a coach gets the whole roster to confirm for their own session, and nothing is saved', async () => {
+    const f = await setupAttendance();
+
+    const [action] = await actionsFrom(f.coach, 'propose_attendance', {
+      sessionId: f.session.id,
+      absentStudentIds: [f.member.id],
+    });
+    const { records } = action as Extract<AssistantAction, { type: 'ATTENDANCE' }>;
+    expect(action).toMatchObject({
+      type: 'ATTENDANCE',
+      sessionId: f.session.id,
+      title: expect.stringContaining(f.cls.name),
+    });
+    expect(records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ accountId: f.member.id, status: 'ABSENT' }),
+        expect.objectContaining({ accountId: f.second.id, status: 'PRESENT' }),
+      ]),
+    );
+    expect(await prisma.classAttendance.count()).toBe(0);
+
+    const stranger = await runTool(f.coach, 'propose_attendance', {
+      sessionId: f.session.id,
+      lateStudentIds: [f.outsider.id],
+    });
+    expect(stranger.result.error).toBeString();
+    const other = await runTool(f.otherCoach, 'propose_attendance', { sessionId: f.session.id });
+    expect(other.result.error).toBeString();
   });
 });

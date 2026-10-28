@@ -1,9 +1,10 @@
-import { isAssistantLink, type AssistantRole } from '@sports-center/shared';
+import { isAssistantLink, type AssistantRole, type SupportDraft } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
 import { Button } from 'antd';
-import { FileText, RotateCcw, Sparkles } from 'lucide-react';
+import { RotateCcw, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { ChatMessage } from '../store/conversations';
+import { ActionCards } from './ActionCards';
 
 const LINK = /\[([^\]\n]{1,60})\]\((\/[a-z0-9/-]*)\)/g;
 
@@ -33,10 +34,11 @@ interface MessageBubbleProps {
   message: ChatMessage;
   role: AssistantRole;
   onRetry: () => void;
-  onOpenDraft: (message: ChatMessage) => void;
+  onOpenDraft: (draft: SupportDraft) => void;
+  onActionDone: (messageId: string, index: number) => void;
 }
 
-export function MessageBubble({ message, role, onRetry, onOpenDraft }: MessageBubbleProps) {
+export function MessageBubble({ message, role, onRetry, onOpenDraft, onActionDone }: MessageBubbleProps) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -66,20 +68,13 @@ export function MessageBubble({ message, role, onRetry, onOpenDraft }: MessageBu
             Thử lại
           </Button>
         )}
-        {message.supportDraft && (
-          <button
-            type="button"
-            onClick={() => onOpenDraft(message)}
-            className="flex cursor-pointer items-center gap-3 self-start rounded-xl border border-sc-primary-border bg-sc-primary-soft px-3.5 py-2.5 text-left"
-          >
-            <FileText size={18} className="shrink-0 text-sc-primary" />
-            <span className="min-w-0">
-              <span className="block text-[14px] font-semibold text-sc-primary">Xem và gửi yêu cầu</span>
-              <span className="block text-[13.5px] text-sc-ink-2 [overflow-wrap:anywhere]">
-                {message.supportDraft.subject}
-              </span>
-            </span>
-          </button>
+        {message.actions && message.actions.length > 0 && (
+          <ActionCards
+            actions={message.actions}
+            doneActions={message.doneActions ?? []}
+            onOpenDraft={onOpenDraft}
+            onDone={(index) => onActionDone(message.id, index)}
+          />
         )}
       </div>
     </div>

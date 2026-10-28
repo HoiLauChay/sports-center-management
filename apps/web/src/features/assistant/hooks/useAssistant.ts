@@ -64,9 +64,9 @@ export function useAssistantChat() {
           .slice(-ASSISTANT_MAX_MESSAGES)
           .map(({ role, text }) => ({ role, text })),
       }),
-    onSuccess: ({ reply, supportDraft, quota }, { conversationId }) => {
+    onSuccess: ({ reply, actions, quota }, { conversationId }) => {
       queryClient.setQueryData(quotaKey(user.id), quota);
-      append(conversationId, { id: newId(), role: 'model', text: reply, supportDraft });
+      append(conversationId, { id: newId(), role: 'model', text: reply, actions });
     },
     onError: (error, { conversationId }) => {
       if (toApiError(error).code === ERROR_CODE.AI_QUOTA_EXCEEDED) {
@@ -75,6 +75,23 @@ export function useAssistantChat() {
       append(conversationId, { id: newId(), role: 'model', text: describeApiError(error), failed: true });
     },
   });
+
+  /** Remembers that the person confirmed one of the cards under an answer. */
+  const markDone = (conversationId: string, messageId: string, index: number) =>
+    setConversations((list) =>
+      list.map((conversation) =>
+        conversation.id !== conversationId
+          ? conversation
+          : {
+              ...conversation,
+              messages: conversation.messages.map((message) =>
+                message.id === messageId
+                  ? { ...message, doneActions: [...(message.doneActions ?? []), index] }
+                  : message,
+              ),
+            },
+      ),
+    );
 
   const send = (text: string) => {
     const question = text.trim();
@@ -108,5 +125,6 @@ export function useAssistantChat() {
     open: setActiveId,
     startNew: () => setActiveId(null),
     remove,
+    markDone,
   };
 }

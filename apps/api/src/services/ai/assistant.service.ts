@@ -1,7 +1,9 @@
 import {
   ASSISTANT_FREE_QUESTIONS,
   ASSISTANT_LINKS,
+  ASSISTANT_MAX_ACTIONS,
   ERROR_CODE,
+  type AssistantAction,
   type AssistantMessage,
   type AssistantOverview,
   type AssistantQuota,
@@ -10,7 +12,6 @@ import {
   type CoachAssistantOverview,
   type MemberAssistantOverview,
   type ReceptionAssistantOverview,
-  type SupportDraft,
 } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
@@ -18,7 +19,7 @@ import assistantRepository from '~/repositories/assistant.repository';
 import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import geminiClient, { type GeminiContent, type GeminiPart } from '~/services/ai/gemini.client';
-import { coachPendingWork, supportDraftOf, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
+import { actionOf, coachPendingWork, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
 import bookingService from '~/services/booking.service';
 import checkinService from '~/services/checkin.service';
 import classService from '~/services/class.service';
@@ -55,7 +56,7 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
     who: 'một hội viên đã đăng nhập',
     scope: 'trung tâm, lịch tập, việc tập luyện và tài khoản của người hỏi',
     rules: [
-      'Bạn không thực hiện thao tác (đặt sân, mua gói, nạp tiền, hủy lớp, gửi yêu cầu). Hướng dẫn người hỏi tự làm ở trang tương ứng.',
+      'Bạn không tự thực hiện thao tác (đặt sân, mua gói, nạp tiền, hủy lớp, gửi yêu cầu). Khi người hỏi muốn đặt một slot sân, đăng ký một lớp hoặc mua một gói, tra cứu cho chắc rồi gọi propose_cart_item; nói họ kiểm tra thẻ ngay dưới câu trả lời, bấm "Thêm vào giỏ" rồi thanh toán ở giỏ hàng. Việc khác (nạp tiền, hủy) thì hướng dẫn họ tự làm ở trang tương ứng.',
       'Khi người hỏi gặp sự cố bạn không giải quyết được, gọi draft_support_request để soạn sẵn yêu cầu hỗ trợ, rồi nói họ bấm "Xem và gửi yêu cầu" ngay dưới câu trả lời để kiểm tra và gửi.',
       'Bạn chỉ xem được dữ liệu của chính người đang hỏi. Nếu họ hỏi về tài khoản, ví, lịch hay kết quả của người khác, nói rõ là bạn không xem được thông tin của người khác; không thay bằng dữ liệu của họ.',
     ],
@@ -65,7 +66,7 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
     scope:
       'trung tâm, lịch dạy, các lớp và học viên của chính HLV này, việc HLV còn thiếu (điểm danh, ghi chú, đánh giá)',
     rules: [
-      'Bạn không thực hiện thao tác (điểm danh, chấm điểm, viết ghi chú, lưu kế hoạch, đánh giá). Hướng dẫn HLV làm ở trang lớp hoặc buổi học; soạn kế hoạch thì dùng nút "Gợi ý bằng AI" trong trang lớp.',
+      'Bạn không tự thực hiện thao tác (điểm danh, chấm điểm, viết ghi chú, lưu kế hoạch, đánh giá). Khi HLV đọc ra ai vắng/đi muộn của một buổi, tra coach_schedule và class_roster rồi gọi propose_attendance; nói HLV kiểm tra danh sách ngay dưới câu trả lời và bấm "Lưu điểm danh". Việc khác thì hướng dẫn HLV làm ở trang lớp hoặc buổi học; soạn kế hoạch thì dùng nút "Gợi ý bằng AI" trong trang lớp.',
       'Bạn chỉ xem được lớp do chính HLV này phụ trách. Nếu hỏi về lớp hay học viên của HLV khác, nói rõ là bạn không xem được.',
       'Thông tin học viên (sức khỏe, mục tiêu, điểm) chỉ dùng để hỗ trợ việc dạy; nhắc tới ghi chú sức khỏe thì khuyên điều chỉnh cường độ, không chẩn đoán.',
     ],
@@ -246,7 +247,7 @@ const answer = async (
   const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
   const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
   const system = systemPrompt(actor.role);
-  let supportDraft: SupportDraft | null = null;
+  const actions: AssistantAction[] = [];
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const turn = await geminiClient.chat({ system, contents: [...contents], tools });
@@ -254,20 +255,24 @@ const answer = async (
     if (!turn.calls.length) {
       return {
         reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
-        supportDraft,
+        actions,
       };
     }
     const parts: GeminiPart[] = [];
     for (const call of turn.calls) {
-      const result = await toolResult(call.name, call.args, context);
-      supportDraft = supportDraftOf(call.name, result) ?? supportDraft;
+      let result = await toolResult(call.name, call.args, context);
+      const action = actionOf(result);
+      if (action) {
+        if (actions.length < ASSISTANT_MAX_ACTIONS) actions.push(action);
+        else result = { error: `Mỗi câu trả lời chỉ chuẩn bị tối đa ${ASSISTANT_MAX_ACTIONS} thao tác` };
+      }
       parts.push({ functionResponse: { name: call.name, response: { result } } });
     }
     contents.push({ role: 'user', parts });
   }
   return {
     reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
-    supportDraft,
+    actions,
   };
 };
 

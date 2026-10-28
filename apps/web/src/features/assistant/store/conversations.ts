@@ -1,10 +1,13 @@
-import type { SupportDraft } from '@sports-center/shared';
+import type { AssistantAction } from '@sports-center/shared';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
-  supportDraft?: SupportDraft | null;
+  /** What the assistant prepared for the person to confirm, shown as cards under the answer. */
+  actions?: AssistantAction[];
+  /** Indexes of `actions` already confirmed, so a reopened chat does not offer them again. */
+  doneActions?: number[];
   /** A failed answer: shown with a retry button and never sent back to the assistant. */
   failed?: boolean;
 }
