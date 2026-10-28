@@ -8,9 +8,18 @@ export interface SupportDraft {
   description: string;
 }
 
+/** A member's questions this month; staff have no quota. */
+export interface AssistantQuota {
+  used: number;
+  limit: number;
+  /** The first day of next month (YYYY-MM-DD), when `used` starts again from 0. */
+  resetsOn: string;
+}
+
 export interface AssistantReply {
   reply: string;
   supportDraft: SupportDraft | null;
+  quota: AssistantQuota | null;
 }
 
 /** What the assistant can see about the member, shown beside the chat. */

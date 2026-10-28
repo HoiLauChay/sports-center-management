@@ -1,7 +1,10 @@
 import {
+  ASSISTANT_FREE_QUESTIONS,
   ASSISTANT_LINKS,
+  ERROR_CODE,
   type AssistantMessage,
   type AssistantOverview,
+  type AssistantQuota,
   type AssistantReply,
   type AssistantRole,
   type CoachAssistantOverview,
@@ -10,7 +13,9 @@ import {
   type SupportDraft,
 } from '@sports-center/shared';
 
+import { HTTP_STATUS } from '~/constants/httpStatus';
 import assistantRepository from '~/repositories/assistant.repository';
+import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import geminiClient, { type GeminiContent, type GeminiPart } from '~/services/ai/gemini.client';
 import { coachPendingWork, supportDraftOf, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
@@ -27,6 +32,22 @@ import { addDays, formatDate, minutesInCenter, parseTime, todayInCenter } from '
 /** Rounds of tool calls allowed per question; stops a confused model from looping and burning the quota. */
 const MAX_ROUNDS = 5;
 const DAY_MS = 86_400_000;
+
+/** Quotas count per calendar month in center time, e.g. "2026-10". */
+const monthOf = (date: string) => date.slice(0, 7);
+const firstOfNextMonth = (date: string) => {
+  const [year, month] = date.split('-').map(Number);
+  return new Date(Date.UTC(year!, month!, 1)).toISOString().slice(0, 10);
+};
+
+/** Questions a month: the current membership period's number, or the free allowance without one. */
+const monthlyLimit = async (accountId: string, today: string) => {
+  const periods = await memberMembershipRepository.findActivePeriods(accountId);
+  const current = periods.find(
+    ({ periodStart, periodEnd }) => formatDate(periodStart) <= today && today < formatDate(periodEnd),
+  );
+  return current?.aiQuestionsPerMonth ?? ASSISTANT_FREE_QUESTIONS;
+};
 
 /** Who the assistant serves and what it may talk about, per role. */
 const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: string[] }> = {
@@ -212,40 +233,81 @@ const receptionOverview = async (): Promise<ReceptionAssistantOverview> => {
   };
 };
 
+/**
+ * Answers the latest message. Gemini decides which tools it needs; this loop checks them against the caller's
+ * role, runs them with the caller's own account and sends the results back, until Gemini answers or
+ * MAX_ROUNDS is reached.
+ */
+const answer = async (
+  actor: { id: string; role: AssistantRole },
+  messages: AssistantMessage[],
+): Promise<Omit<AssistantReply, 'quota'>> => {
+  const context: ToolContext = { accountId: actor.id, role: actor.role };
+  const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
+  const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
+  const system = systemPrompt(actor.role);
+  let supportDraft: SupportDraft | null = null;
+
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const turn = await geminiClient.chat({ system, contents: [...contents], tools });
+    contents.push(turn.content);
+    if (!turn.calls.length) {
+      return {
+        reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
+        supportDraft,
+      };
+    }
+    const parts: GeminiPart[] = [];
+    for (const call of turn.calls) {
+      const result = await toolResult(call.name, call.args, context);
+      supportDraft = supportDraftOf(call.name, result) ?? supportDraft;
+      parts.push({ functionResponse: { name: call.name, response: { result } } });
+    }
+    contents.push({ role: 'user', parts });
+  }
+  return {
+    reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
+    supportDraft,
+  };
+};
+
 class AssistantService {
+  /** A member's questions this month; null for staff, who have no quota. */
+  quota = async (actor: { id: string; role: AssistantRole }): Promise<AssistantQuota | null> => {
+    if (actor.role !== 'MEMBER') return null;
+    const today = todayInCenter();
+    const [limit, usage] = await Promise.all([
+      monthlyLimit(actor.id, today),
+      assistantRepository.findUsage(actor.id, monthOf(today)),
+    ]);
+    return { used: usage?.count ?? 0, limit, resetsOn: firstOfNextMonth(today) };
+  };
+
   /**
-   * Answers the latest message. Gemini decides which tools it needs; this loop checks them against the caller's
-   * role, runs them with the caller's own account and sends the results back, until Gemini answers or
-   * MAX_ROUNDS is reached.
+   * Members spend one question of their monthly quota per answer; it is given back when no answer came. Staff ask
+   * without a quota (the hourly rate limit still applies to everyone).
    */
   chat = async (actor: { id: string; role: AssistantRole }, messages: AssistantMessage[]): Promise<AssistantReply> => {
-    const context: ToolContext = { accountId: actor.id, role: actor.role };
-    const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
-    const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
-    const system = systemPrompt(actor.role);
-    let supportDraft: SupportDraft | null = null;
+    if (actor.role !== 'MEMBER') return { ...(await answer(actor, messages)), quota: null };
 
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      const turn = await geminiClient.chat({ system, contents: [...contents], tools });
-      contents.push(turn.content);
-      if (!turn.calls.length) {
-        return {
-          reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
-          supportDraft,
-        };
-      }
-      const parts: GeminiPart[] = [];
-      for (const call of turn.calls) {
-        const result = await toolResult(call.name, call.args, context);
-        supportDraft = supportDraftOf(call.name, result) ?? supportDraft;
-        parts.push({ functionResponse: { name: call.name, response: { result } } });
-      }
-      contents.push({ role: 'user', parts });
+    const today = todayInCenter();
+    const period = monthOf(today);
+    const limit = await monthlyLimit(actor.id, today);
+    const used = limit > 0 ? await assistantRepository.consumeQuestion(actor.id, period, limit) : null;
+    if (used === null) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        code: ERROR_CODE.AI_QUOTA_EXCEEDED,
+        message: `Bạn đã dùng hết ${limit} lượt hỏi trợ lý tháng này. Nâng cấp gói thành viên để có thêm lượt.`,
+        meta: { limit, resetsOn: firstOfNextMonth(today) },
+      });
     }
-    return {
-      reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
-      supportDraft,
-    };
+    try {
+      return { ...(await answer(actor, messages)), quota: { used, limit, resetsOn: firstOfNextMonth(today) } };
+    } catch (err) {
+      await assistantRepository.refundQuestion(actor.id, period);
+      throw err;
+    }
   };
 
   /** What the assistant draws on for this role, summed up for the panel beside the chat. */

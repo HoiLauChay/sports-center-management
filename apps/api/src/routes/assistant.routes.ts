@@ -10,5 +10,6 @@ const assistantRouter = Router();
 assistantRouter.use(auth, isRole(...ASSISTANT_ROLES));
 assistantRouter.post('/chat', validate({ body: assistantChatBodySchema }), assistantLimit, assistantController.chat);
 assistantRouter.get('/overview', assistantController.overview);
+assistantRouter.get('/quota', assistantController.quota);
 
 export default assistantRouter;

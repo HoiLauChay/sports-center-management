@@ -14,6 +14,11 @@ class AssistantController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
+  quota = async (req: Request, res: Response) => {
+    const result = await assistantService.quota(actorOf(req));
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
   overview = async (req: Request, res: Response) => {
     const result = await assistantService.overview(actorOf(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));

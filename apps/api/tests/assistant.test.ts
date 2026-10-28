@@ -1,5 +1,6 @@
 import type {
   AssistantOverview,
+  AssistantQuota,
   AssistantReply,
   CoachAssistantOverview,
   ReceptionAssistantOverview,
@@ -9,9 +10,11 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import geminiClient, { type ChatInput, type ChatTurn, type GeminiPart } from '~/services/ai/gemini.client';
+import { todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
 import { readResult, startServer } from './helpers/http';
+import { giveActiveMembership } from './helpers/membership';
 
 let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
@@ -53,7 +56,11 @@ describe('AI assistant chat', () => {
       .mockResolvedValueOnce(turn([], 'Ví của bạn còn 120.000đ.'));
 
     const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Ví còn bao nhiêu?')));
-    expect(reply).toEqual({ reply: 'Ví của bạn còn 120.000đ.', supportDraft: null });
+    expect(reply).toEqual({
+      reply: 'Ví của bạn còn 120.000đ.',
+      supportDraft: null,
+      quota: { used: 1, limit: 10, resetsOn: expect.any(String) },
+    });
 
     const [response] = toolResponses(1);
     expect(response).toMatchObject({ name: 'my_wallet', response: { result: { balanceVnd: 120_000 } } });
@@ -215,5 +222,55 @@ describe('AI assistant for staff', () => {
 
     const overview = await readResult<ReceptionAssistantOverview>(await request('GET', '/overview', f.receptionist));
     expect(overview).toMatchObject({ role: 'RECEPTIONIST', openSupport: 0 });
+  });
+});
+
+describe('AI assistant quota', () => {
+  const period = () => todayInCenter().slice(0, 7);
+
+  test('a member without a membership gets 10 questions a month, then is told to upgrade', async () => {
+    const f = await setupAttendance();
+    await prisma.assistantUsage.create({ data: { accountId: f.member.id, period: period(), count: 9 } });
+    chat.mockResolvedValue(turn([], 'Chào bạn.'));
+
+    const last = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Xin chào')));
+    expect(last.quota).toMatchObject({ used: 10, limit: 10 });
+
+    const over = await request('POST', '/chat', f.member, ask('Xin chào'));
+    expect(over.status).toBe(429);
+    expect(await over.json()).toMatchObject({ code: 'AI_QUOTA_EXCEEDED' });
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
+  test('the current membership period sets the limit, and last month does not count', async () => {
+    const f = await setupAttendance();
+    await giveActiveMembership(f.member.id, { aiQuestionsPerMonth: 50 });
+    await prisma.assistantUsage.create({ data: { accountId: f.member.id, period: '2000-01', count: 50 } });
+
+    const quota = await readResult<AssistantQuota>(await request('GET', '/quota', f.member));
+    expect(quota).toMatchObject({ used: 0, limit: 50 });
+    expect(quota.resetsOn > todayInCenter()).toBe(true);
+    expect(quota.resetsOn.endsWith('-01')).toBe(true);
+  });
+
+  test('a question with no answer is given back', async () => {
+    const f = await setupAttendance();
+    chat.mockRejectedValueOnce(new Error('Gemini down'));
+
+    expect((await request('POST', '/chat', f.member, ask('Xin chào'))).status).toBe(500);
+    const usage = await prisma.assistantUsage.findUnique({
+      where: { accountId_period: { accountId: f.member.id, period: period() } },
+    });
+    expect(usage?.count ?? 0).toBe(0);
+  });
+
+  test('staff have no quota', async () => {
+    const f = await setupAttendance();
+    chat.mockResolvedValue(turn([], 'Chào HLV.'));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.coach, ask('Xin chào')));
+    expect(reply.quota).toBeNull();
+    expect(await readResult<AssistantQuota | null>(await request('GET', '/quota', f.receptionist))).toBeNull();
+    expect(await prisma.assistantUsage.count()).toBe(0);
   });
 });
