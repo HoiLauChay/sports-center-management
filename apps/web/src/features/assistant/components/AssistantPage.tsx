@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useCurrentUser } from '~/features/auth';
 import { SupportRequestModal } from '~/features/support';
 import { ASSISTANT_CONFIG } from '../config';
-import { useAssistantChat, useAssistantOverview } from '../hooks/useAssistant';
+import { useAssistantChat, useAssistantOverview, useAssistantQuota } from '../hooks/useAssistant';
 import type { ChatMessage } from '../store/conversations';
 import { ChatActions, ChatPanel } from './ChatPanel';
 import { OverviewCard, RecentCard } from './SidePanels';
@@ -17,6 +17,7 @@ import { OverviewCard, RecentCard } from './SidePanels';
 export function AssistantPage() {
   const user = useCurrentUser();
   const overview = useAssistantOverview();
+  const quota = useAssistantQuota();
   const chat = useAssistantChat();
   const [support, setSupport] = useState<{ open: boolean; draft: SupportDraft | null }>({ open: false, draft: null });
   const role = user.role as AssistantRole;
@@ -59,6 +60,7 @@ export function AssistantPage() {
           config={config}
           conversation={chat.active}
           pending={chat.pending}
+          quota={quota.data}
           onSend={chat.send}
           onRetry={chat.retry}
           onSupport={(message?: ChatMessage) => setSupport({ open: true, draft: message?.supportDraft ?? null })}
