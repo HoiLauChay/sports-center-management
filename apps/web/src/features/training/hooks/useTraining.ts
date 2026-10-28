@@ -63,6 +63,16 @@ function useSessionAction<V, R>(
   });
 }
 
+/** Saves a whole attendance list for a session, e.g. one the assistant prepared. */
+export function useSaveAttendance(sessionId: string) {
+  return useSessionAction(
+    sessionId,
+    (body: SaveAttendanceBody) => trainingService.saveAttendance(sessionId, body),
+    'Đã lưu điểm danh.',
+    ['attendance'],
+  );
+}
+
 export interface RosterSave {
   attendance: SaveAttendanceBody['records'] | null;
   results: { accountId: string; evaluation?: Evaluation; rating: number; comment: string }[];
