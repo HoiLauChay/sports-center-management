@@ -40,6 +40,10 @@ function benefitRows(plan: MembershipPackage): BenefitRow[] {
         : 'Không có slot miễn phí',
       highlight: false,
     },
+    {
+      label: `${plan.aiQuestionsPerMonth} lượt hỏi trợ lý AI mỗi tháng`,
+      highlight: false,
+    },
   ];
 }
 

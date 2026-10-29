@@ -1,19 +1,25 @@
 import {
+  ASSISTANT_FREE_QUESTIONS,
   ASSISTANT_LINKS,
+  ASSISTANT_MAX_ACTIONS,
+  ERROR_CODE,
+  type AssistantAction,
   type AssistantMessage,
   type AssistantOverview,
+  type AssistantQuota,
   type AssistantReply,
   type AssistantRole,
   type CoachAssistantOverview,
   type MemberAssistantOverview,
   type ReceptionAssistantOverview,
-  type SupportDraft,
 } from '@sports-center/shared';
 
+import { HTTP_STATUS } from '~/constants/httpStatus';
 import assistantRepository from '~/repositories/assistant.repository';
+import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import geminiClient, { type GeminiContent, type GeminiPart } from '~/services/ai/gemini.client';
-import { coachPendingWork, supportDraftOf, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
+import { actionOf, coachPendingWork, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
 import bookingService from '~/services/booking.service';
 import checkinService from '~/services/checkin.service';
 import classService from '~/services/class.service';
@@ -28,13 +34,29 @@ import { addDays, formatDate, minutesInCenter, parseTime, todayInCenter } from '
 const MAX_ROUNDS = 5;
 const DAY_MS = 86_400_000;
 
+/** Quotas count per calendar month in center time, e.g. "2026-10". */
+const monthOf = (date: string) => date.slice(0, 7);
+const firstOfNextMonth = (date: string) => {
+  const [year, month] = date.split('-').map(Number);
+  return new Date(Date.UTC(year!, month!, 1)).toISOString().slice(0, 10);
+};
+
+/** Questions a month: the current membership period's number, or the free allowance without one. */
+const monthlyLimit = async (accountId: string, today: string) => {
+  const periods = await memberMembershipRepository.findActivePeriods(accountId);
+  const current = periods.find(
+    ({ periodStart, periodEnd }) => formatDate(periodStart) <= today && today < formatDate(periodEnd),
+  );
+  return current?.aiQuestionsPerMonth ?? ASSISTANT_FREE_QUESTIONS;
+};
+
 /** Who the assistant serves and what it may talk about, per role. */
 const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: string[] }> = {
   MEMBER: {
     who: 'một hội viên đã đăng nhập',
     scope: 'trung tâm, lịch tập, việc tập luyện và tài khoản của người hỏi',
     rules: [
-      'Bạn không thực hiện thao tác (đặt sân, mua gói, nạp tiền, hủy lớp, gửi yêu cầu). Hướng dẫn người hỏi tự làm ở trang tương ứng.',
+      'Bạn không tự thực hiện thao tác (đặt sân, mua gói, nạp tiền, hủy lớp, gửi yêu cầu). Khi người hỏi muốn đặt một slot sân, đăng ký một lớp hoặc mua một gói, tra cứu cho chắc rồi gọi propose_cart_item; nói họ kiểm tra thẻ ngay dưới câu trả lời, bấm "Thêm vào giỏ" rồi thanh toán ở giỏ hàng. Việc khác (nạp tiền, hủy) thì hướng dẫn họ tự làm ở trang tương ứng.',
       'Khi người hỏi gặp sự cố bạn không giải quyết được, gọi draft_support_request để soạn sẵn yêu cầu hỗ trợ, rồi nói họ bấm "Xem và gửi yêu cầu" ngay dưới câu trả lời để kiểm tra và gửi.',
       'Bạn chỉ xem được dữ liệu của chính người đang hỏi. Nếu họ hỏi về tài khoản, ví, lịch hay kết quả của người khác, nói rõ là bạn không xem được thông tin của người khác; không thay bằng dữ liệu của họ.',
     ],
@@ -44,7 +66,7 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
     scope:
       'trung tâm, lịch dạy, các lớp và học viên của chính HLV này, việc HLV còn thiếu (điểm danh, ghi chú, đánh giá)',
     rules: [
-      'Bạn không thực hiện thao tác (điểm danh, chấm điểm, viết ghi chú, lưu kế hoạch, đánh giá). Hướng dẫn HLV làm ở trang lớp hoặc buổi học; soạn kế hoạch thì dùng nút "Gợi ý bằng AI" trong trang lớp.',
+      'Bạn không tự thực hiện thao tác (điểm danh, chấm điểm, viết ghi chú, lưu kế hoạch, đánh giá). Khi HLV đọc ra ai vắng/đi muộn của một buổi, tra coach_schedule và class_roster rồi gọi propose_attendance; nói HLV kiểm tra danh sách ngay dưới câu trả lời và bấm "Lưu điểm danh". Việc khác thì hướng dẫn HLV làm ở trang lớp hoặc buổi học; soạn kế hoạch thì dùng nút "Gợi ý bằng AI" trong trang lớp.',
       'Bạn chỉ xem được lớp do chính HLV này phụ trách. Nếu hỏi về lớp hay học viên của HLV khác, nói rõ là bạn không xem được.',
       'Thông tin học viên (sức khỏe, mục tiêu, điểm) chỉ dùng để hỗ trợ việc dạy; nhắc tới ghi chú sức khỏe thì khuyên điều chỉnh cường độ, không chẩn đoán.',
     ],
@@ -212,40 +234,85 @@ const receptionOverview = async (): Promise<ReceptionAssistantOverview> => {
   };
 };
 
+/**
+ * Answers the latest message. Gemini decides which tools it needs; this loop checks them against the caller's
+ * role, runs them with the caller's own account and sends the results back, until Gemini answers or
+ * MAX_ROUNDS is reached.
+ */
+const answer = async (
+  actor: { id: string; role: AssistantRole },
+  messages: AssistantMessage[],
+): Promise<Omit<AssistantReply, 'quota'>> => {
+  const context: ToolContext = { accountId: actor.id, role: actor.role };
+  const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
+  const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
+  const system = systemPrompt(actor.role);
+  const actions: AssistantAction[] = [];
+
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const turn = await geminiClient.chat({ system, contents: [...contents], tools });
+    contents.push(turn.content);
+    if (!turn.calls.length) {
+      return {
+        reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
+        actions,
+      };
+    }
+    const parts: GeminiPart[] = [];
+    for (const call of turn.calls) {
+      let result = await toolResult(call.name, call.args, context);
+      const action = actionOf(result);
+      if (action) {
+        if (actions.length < ASSISTANT_MAX_ACTIONS) actions.push(action);
+        else result = { error: `Mỗi câu trả lời chỉ chuẩn bị tối đa ${ASSISTANT_MAX_ACTIONS} thao tác` };
+      }
+      parts.push({ functionResponse: { name: call.name, response: { result } } });
+    }
+    contents.push({ role: 'user', parts });
+  }
+  return {
+    reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
+    actions,
+  };
+};
+
 class AssistantService {
+  /** A member's questions this month; null for staff, who have no quota. */
+  quota = async (actor: { id: string; role: AssistantRole }): Promise<AssistantQuota | null> => {
+    if (actor.role !== 'MEMBER') return null;
+    const today = todayInCenter();
+    const [limit, usage] = await Promise.all([
+      monthlyLimit(actor.id, today),
+      assistantRepository.findUsage(actor.id, monthOf(today)),
+    ]);
+    return { used: usage?.count ?? 0, limit, resetsOn: firstOfNextMonth(today) };
+  };
+
   /**
-   * Answers the latest message. Gemini decides which tools it needs; this loop checks them against the caller's
-   * role, runs them with the caller's own account and sends the results back, until Gemini answers or
-   * MAX_ROUNDS is reached.
+   * Members spend one question of their monthly quota per answer; it is given back when no answer came. Staff ask
+   * without a quota (the hourly rate limit still applies to everyone).
    */
   chat = async (actor: { id: string; role: AssistantRole }, messages: AssistantMessage[]): Promise<AssistantReply> => {
-    const context: ToolContext = { accountId: actor.id, role: actor.role };
-    const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
-    const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
-    const system = systemPrompt(actor.role);
-    let supportDraft: SupportDraft | null = null;
+    if (actor.role !== 'MEMBER') return { ...(await answer(actor, messages)), quota: null };
 
-    for (let round = 0; round < MAX_ROUNDS; round++) {
-      const turn = await geminiClient.chat({ system, contents: [...contents], tools });
-      contents.push(turn.content);
-      if (!turn.calls.length) {
-        return {
-          reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
-          supportDraft,
-        };
-      }
-      const parts: GeminiPart[] = [];
-      for (const call of turn.calls) {
-        const result = await toolResult(call.name, call.args, context);
-        supportDraft = supportDraftOf(call.name, result) ?? supportDraft;
-        parts.push({ functionResponse: { name: call.name, response: { result } } });
-      }
-      contents.push({ role: 'user', parts });
+    const today = todayInCenter();
+    const period = monthOf(today);
+    const limit = await monthlyLimit(actor.id, today);
+    const used = limit > 0 ? await assistantRepository.consumeQuestion(actor.id, period, limit) : null;
+    if (used === null) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.TOO_MANY_REQUESTS,
+        code: ERROR_CODE.AI_QUOTA_EXCEEDED,
+        message: `Bạn đã dùng hết ${limit} lượt hỏi trợ lý tháng này. Nâng cấp gói thành viên để có thêm lượt.`,
+        meta: { limit, resetsOn: firstOfNextMonth(today) },
+      });
     }
-    return {
-      reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
-      supportDraft,
-    };
+    try {
+      return { ...(await answer(actor, messages)), quota: { used, limit, resetsOn: firstOfNextMonth(today) } };
+    } catch (err) {
+      await assistantRepository.refundQuestion(actor.id, period);
+      throw err;
+    }
   };
 
   /** What the assistant draws on for this role, summed up for the panel beside the chat. */

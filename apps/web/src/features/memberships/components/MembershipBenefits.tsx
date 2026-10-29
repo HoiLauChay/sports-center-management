@@ -23,6 +23,12 @@ export function MembershipBenefits({ benefits }: { benefits: Benefits }) {
         ? `${benefits.freeBookingSlotsPerMonth} slot sân miễn phí mỗi tháng`
         : 'Không có slot sân miễn phí',
     },
+    {
+      enabled: benefits.aiQuestionsPerMonth > 0,
+      label: benefits.aiQuestionsPerMonth
+        ? `${benefits.aiQuestionsPerMonth} lượt hỏi trợ lý AI mỗi tháng`
+        : 'Không có lượt hỏi trợ lý AI',
+    },
   ];
 
   return (

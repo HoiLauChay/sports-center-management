@@ -1,4 +1,4 @@
-import { createSupportBodySchema, SUPPORT_CATEGORIES, type SupportDraft } from '@sports-center/shared';
+import { checkoutItemInputSchema, createSupportBodySchema, SUPPORT_CATEGORIES } from '@sports-center/shared';
 import { z } from 'zod';
 
 import assistantRepository from '~/repositories/assistant.repository';
@@ -9,11 +9,13 @@ import {
   dateRangeParams,
   MAX_SCHEDULE_DAYS,
   noArgs,
+  prepared,
   tool,
   weekdayOf,
   type Tool,
 } from '~/services/ai/tools/toolkit';
 import bookingService from '~/services/booking.service';
+import checkoutService from '~/services/checkout/checkout.service';
 import classTrainingService from '~/services/classTraining.service';
 import enrollmentService from '~/services/enrollment.service';
 import memberMembershipService from '~/services/memberMembership.service';
@@ -233,12 +235,47 @@ export const MEMBER_TOOLS: Tool[] = [
       },
     },
     createSupportBodySchema,
-    async (_context, draft) => ({ drafted: true, draft }),
+    async (_context, draft) =>
+      prepared({ type: 'SUPPORT_REQUEST', draft }, 'Chưa gửi: người hỏi tự xem lại và bấm gửi.'),
+  ),
+  tool(
+    {
+      name: 'propose_cart_item',
+      description:
+        'Chuẩn bị một dịch vụ để người hỏi thêm vào giỏ hàng: đặt một slot sân (FACILITY_BOOKING), đăng ký một lớp (COURSE_ENROLLMENT) hoặc mua một gói thành viên (MEMBERSHIP). Dùng khi người hỏi muốn đặt/đăng ký/mua. Kiểm tra trước còn chỗ và tính giá theo quyền lợi của họ. KHÔNG thêm vào giỏ, KHÔNG thanh toán: người hỏi tự bấm "Thêm vào giỏ" rồi thanh toán ở giỏ hàng.',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          type: { type: 'STRING', enum: ['FACILITY_BOOKING', 'COURSE_ENROLLMENT', 'MEMBERSHIP'] },
+          facilityId: { type: 'STRING', description: 'FACILITY_BOOKING: mã sân từ list_facilities' },
+          date: { type: 'STRING', format: 'date', description: 'FACILITY_BOOKING: ngày, YYYY-MM-DD' },
+          startTime: { type: 'STRING', description: 'FACILITY_BOOKING: giờ bắt đầu slot, HH:mm' },
+          endTime: { type: 'STRING', description: 'FACILITY_BOOKING: giờ kết thúc slot, HH:mm' },
+          classId: { type: 'STRING', description: 'COURSE_ENROLLMENT: mã lớp từ list_open_classes' },
+          packageId: { type: 'STRING', description: 'MEMBERSHIP: mã gói từ list_memberships' },
+        },
+        required: ['type'],
+      },
+    },
+    checkoutItemInputSchema.refine(({ type }) => type !== 'FACILITY_PACKAGE', 'Không hỗ trợ gói sân định kỳ'),
+    async ({ accountId }, item) => {
+      const quote = await checkoutService.quote({ id: accountId, role: 'MEMBER' }, { items: [item] });
+      const line = quote.items[0]!;
+      if (!line.valid) return { error: line.error?.message ?? 'Dịch vụ này hiện không đặt được' };
+      const name = typeof line.snapshot?.title === 'string' ? line.snapshot.title : 'Dịch vụ';
+      const title =
+        item.type === 'FACILITY_BOOKING'
+          ? `${name} · ${weekdayOf(item.date)} ${item.date.slice(8, 10)}/${item.date.slice(5, 7)} · ${item.startTime}–${item.endTime}`
+          : name;
+      return {
+        ...prepared(
+          { type: 'CART_ITEM', item, title, subtotal: line.subtotal, total: line.total },
+          'Chưa thêm vào giỏ: người hỏi tự bấm "Thêm vào giỏ" ngay dưới câu trả lời rồi thanh toán ở giỏ hàng. Báo người hỏi giá phải trả là totalVnd (đã trừ quyền lợi gói, có thể 0đ nhờ slot miễn phí), không phải listPriceVnd.',
+        ),
+        title,
+        listPriceVnd: line.subtotal,
+        totalVnd: line.total,
+      };
+    },
   ),
 ];
-
-/** The draft the assistant prepared in this answer, if it called draft_support_request. */
-export const supportDraftOf = (name: string, result: unknown): SupportDraft | null =>
-  name === 'draft_support_request' && result && typeof result === 'object' && 'draft' in result
-    ? (result.draft as SupportDraft)
-    : null;

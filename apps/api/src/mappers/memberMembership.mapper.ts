@@ -8,6 +8,7 @@ const benefitsOf = (period: MembershipBenefits): MembershipBenefits => ({
   bookingDiscountPct: period.bookingDiscountPct,
   classDiscountPct: period.classDiscountPct,
   freeBookingSlotsPerMonth: period.freeBookingSlotsPerMonth,
+  aiQuestionsPerMonth: period.aiQuestionsPerMonth,
 });
 
 export const isMembershipCurrent = (

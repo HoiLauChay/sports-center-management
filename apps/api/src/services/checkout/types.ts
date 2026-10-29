@@ -16,6 +16,7 @@ export interface BenefitPeriod {
   bookingDiscountPct: number;
   classDiscountPct: number;
   freeBookingSlotsPerMonth: number;
+  aiQuestionsPerMonth: number;
 }
 
 export interface ActiveBenefits {

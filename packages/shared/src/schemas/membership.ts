@@ -21,6 +21,10 @@ const membershipFields = {
   bookingDiscountPct: pctSchema('Giảm giá booking'),
   classDiscountPct: pctSchema('Giảm giá lớp học'),
   freeBookingSlotsPerMonth: z.int32('Slot miễn phí phải là số nguyên').min(0, 'Slot miễn phí tối thiểu 0'),
+  aiQuestionsPerMonth: z
+    .int32('Lượt hỏi AI phải là số nguyên')
+    .min(0, 'Lượt hỏi AI tối thiểu 0')
+    .max(10_000, 'Lượt hỏi AI tối đa 10.000'),
   isActive: z.boolean('Trạng thái không hợp lệ'),
 };
 
@@ -30,6 +34,7 @@ export const createMembershipBodySchema = z.object({
   bookingDiscountPct: membershipFields.bookingDiscountPct.default(0),
   classDiscountPct: membershipFields.classDiscountPct.default(0),
   freeBookingSlotsPerMonth: membershipFields.freeBookingSlotsPerMonth.default(0),
+  aiQuestionsPerMonth: membershipFields.aiQuestionsPerMonth.default(100),
   isActive: membershipFields.isActive.default(true),
 });
 

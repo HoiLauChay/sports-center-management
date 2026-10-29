@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { AssistantRole } from '@sports-center/shared';
+import type { AssistantAction, AssistantRole } from '@sports-center/shared';
 
 import type { FunctionDeclaration } from '~/services/ai/gemini.client';
 import sportService from '~/services/sport.service';
@@ -57,6 +57,18 @@ export const findSportId = async (name?: string) => {
   const sports = await sportService.list(false);
   return sports.find((sport) => sport.name.toLowerCase().includes(wanted))?.id ?? null;
 };
+
+/**
+ * What a tool returns when it prepared something for the person to confirm. Gemini reads `note`; the chat gets
+ * `action` as a card. Nothing is saved: confirming calls the usual API from the page.
+ */
+export const prepared = (action: AssistantAction, note: string) => ({ prepared: true, note, action });
+
+/** The action a tool prepared, if it returned one through `prepared`. */
+export const actionOf = (result: unknown): AssistantAction | null =>
+  result && typeof result === 'object' && 'prepared' in result && 'action' in result
+    ? (result.action as AssistantAction)
+    : null;
 
 export const tool = <S extends z.ZodType>(
   declaration: FunctionDeclaration,

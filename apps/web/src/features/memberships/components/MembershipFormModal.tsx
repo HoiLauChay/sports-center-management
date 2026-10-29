@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  ASSISTANT_FREE_QUESTIONS,
   createMembershipBodySchema,
   ERROR_CODE,
   MAX_MONEY,
@@ -19,7 +20,13 @@ import { membershipsService } from '../services/memberships.service';
 const ERROR_FIELDS: ErrorFieldMap = { [ERROR_CODE.NAME_TAKEN]: 'name' };
 type MembershipFormInput = z.input<typeof createMembershipBodySchema>;
 
-const EMPTY: DefaultValues<MembershipFormInput> = { name: '', description: '', gymAccess: false, isActive: true };
+const EMPTY: DefaultValues<MembershipFormInput> = {
+  name: '',
+  description: '',
+  gymAccess: false,
+  aiQuestionsPerMonth: 100,
+  isActive: true,
+};
 const toFormValues = (membership: MembershipPackage): MembershipFormInput => ({
   ...membership,
   description: membership.description ?? '',
@@ -180,7 +187,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               render={(field) => <Switch checked={field.value} onChange={field.onChange} />}
             />
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <FormField
               control={control}
               name="bookingDiscountPct"
@@ -200,7 +207,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               )}
             />
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <FormField
               control={control}
               name="classDiscountPct"
@@ -220,7 +227,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               )}
             />
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12}>
             <FormField
               control={control}
               name="freeBookingSlotsPerMonth"
@@ -240,12 +247,33 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               )}
             />
           </Col>
+          <Col xs={24} sm={12}>
+            <FormField
+              control={control}
+              name="aiQuestionsPerMonth"
+              label="Lượt hỏi trợ lý AI / tháng"
+              render={(field, invalid) => (
+                <InputNumber
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={(value) => field.onChange(value ?? undefined)}
+                  onBlur={field.onBlur}
+                  min={0}
+                  max={10_000}
+                  precision={0}
+                  status={invalid ? 'error' : undefined}
+                  className="!w-full"
+                />
+              )}
+            />
+          </Col>
         </Row>
         <p className="m-0 text-[13.5px] text-sc-muted-2">
           {membership
             ? 'Kỳ đã thanh toán giữ nguyên quyền lợi lúc mua; thay đổi áp dụng cho kỳ mua hoặc gia hạn tiếp theo. '
             : ''}
-          Thứ tự tính giá: giá gốc → quyền lợi gói → coupon. Vào gym miễn phí vẫn cần đặt slot.
+          Thứ tự tính giá: giá gốc → quyền lợi gói → coupon. Vào gym miễn phí vẫn cần đặt slot. Hội viên chưa có gói
+          được {ASSISTANT_FREE_QUESTIONS} lượt hỏi trợ lý AI mỗi tháng.
         </p>
         <button type="submit" hidden />
       </Form>

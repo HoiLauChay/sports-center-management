@@ -1,10 +1,11 @@
-import type { AssistantRole } from '@sports-center/shared';
+import type { AssistantQuota, AssistantRole, SupportDraft } from '@sports-center/shared';
 import { ASSISTANT_MAX_TEXT } from '@sports-center/shared';
+import { Link } from '@tanstack/react-router';
 import { Button, Dropdown } from 'antd';
-import { ArrowUp, ArrowUpRight, Ellipsis, LifeBuoy, Sparkles, SquarePen, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Crown, Ellipsis, LifeBuoy, Sparkles, SquarePen, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { AssistantConfig } from '../config';
-import type { ChatMessage, Conversation } from '../store/conversations';
+import type { Conversation } from '../store/conversations';
 import { MessageBubble, TypingBubble } from './MessageBubble';
 
 function Welcome({
@@ -53,15 +54,37 @@ function Welcome({
   );
 }
 
+const ddmm = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+
+/** Shown instead of the input once a member has used every question of the month. */
+function QuotaUsedUp({ quota }: { quota: AssistantQuota }) {
+  return (
+    <div className="flex flex-col items-start gap-3 rounded-xl border border-sc-accent-soft bg-sc-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="text-[14px] text-sc-ink-2">
+        <b className="text-sc-ink">Bạn đã dùng hết {quota.limit} lượt hỏi tháng này.</b> Lượt mới có từ{' '}
+        {ddmm(quota.resetsOn)}, hoặc nâng cấp gói để hỏi thêm ngay.
+      </div>
+      <Link to="/memberships">
+        <Button type="primary" icon={<Crown size={15} />} className="!bg-sc-ink">
+          Nâng cấp gói
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
 interface ChatPanelProps {
   firstName: string;
   role: AssistantRole;
   config: AssistantConfig;
   conversation: Conversation | null;
   pending: boolean;
+  /** The member's questions this month; null for staff, undefined while loading. */
+  quota: AssistantQuota | null | undefined;
   onSend: (text: string) => void;
   onRetry: () => void;
-  onSupport: (message?: ChatMessage) => void;
+  onOpenDraft: (draft: SupportDraft) => void;
+  onActionDone: (messageId: string, index: number) => void;
 }
 
 export function ChatPanel({
@@ -70,20 +93,23 @@ export function ChatPanel({
   config,
   conversation,
   pending,
+  quota,
   onSend,
   onRetry,
-  onSupport,
+  onOpenDraft,
+  onActionDone,
 }: ChatPanelProps) {
   const [text, setText] = useState('');
   const bottom = useRef<HTMLDivElement>(null);
   const messages = conversation?.messages ?? [];
+  const usedUp = Boolean(quota && quota.used >= quota.limit);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length, pending]);
 
   const submit = (value = text) => {
-    if (!value.trim() || pending) return;
+    if (!value.trim() || pending || usedUp) return;
     onSend(value);
     setText('');
   };
@@ -102,7 +128,14 @@ export function ChatPanel({
         ) : (
           <div className="flex flex-col gap-4 py-5">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} role={role} onRetry={onRetry} onOpenDraft={onSupport} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                role={role}
+                onRetry={onRetry}
+                onOpenDraft={onOpenDraft}
+                onActionDone={onActionDone}
+              />
             ))}
             {pending && <TypingBubble />}
           </div>
@@ -111,49 +144,61 @@ export function ChatPanel({
       </div>
 
       <footer className="border-t border-sc-border-soft px-4 pt-3 pb-2 md:px-5">
-        <div className="rounded-xl border-[1.5px] border-sc-ink px-3.5 pt-2.5 pb-2">
-          <textarea
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={onKeyDown}
-            maxLength={ASSISTANT_MAX_TEXT}
-            rows={2}
-            placeholder={config.placeholder}
-            aria-label="Câu hỏi cho trợ lý"
-            className="block w-full resize-none border-0 bg-transparent text-[15px] text-sc-ink outline-none placeholder:text-sc-muted-2"
-          />
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <div className="flex min-w-0 gap-1.5 overflow-x-auto [scrollbar-width:none]">
-              {config.chips.map(({ label, question, icon: Icon }) => (
+        {usedUp && quota ? (
+          <QuotaUsedUp quota={quota} />
+        ) : (
+          <div className="rounded-xl border-[1.5px] border-sc-ink px-3.5 pt-2.5 pb-2">
+            <textarea
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              onKeyDown={onKeyDown}
+              maxLength={ASSISTANT_MAX_TEXT}
+              rows={2}
+              placeholder={config.placeholder}
+              aria-label="Câu hỏi cho trợ lý"
+              className="block w-full resize-none border-0 bg-transparent text-[15px] text-sc-ink outline-none placeholder:text-sc-muted-2"
+            />
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 gap-1.5 overflow-x-auto [scrollbar-width:none]">
+                {config.chips.map(({ label, question, icon: Icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => submit(question)}
+                    className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-sc-paper px-2 py-1 text-[13px] text-sc-ink-2 hover:bg-sc-paper-2 disabled:cursor-not-allowed"
+                  >
+                    <Icon size={13} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="hidden text-[12.5px] text-sc-muted-2 tabular-nums sm:inline">
+                  {text.length} / {ASSISTANT_MAX_TEXT}
+                </span>
                 <button
-                  key={label}
                   type="button"
-                  disabled={pending}
-                  onClick={() => submit(question)}
-                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-sc-paper px-2 py-1 text-[13px] text-sc-ink-2 hover:bg-sc-paper-2 disabled:cursor-not-allowed"
+                  aria-label="Gửi"
+                  disabled={!text.trim() || pending}
+                  onClick={() => submit()}
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-lg border-0 bg-sc-ink text-sc-lime disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <Icon size={13} />
-                  {label}
+                  <ArrowUp size={18} />
                 </button>
-              ))}
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <span className="hidden text-[12.5px] text-sc-muted-2 tabular-nums sm:inline">
-                {text.length} / {ASSISTANT_MAX_TEXT}
-              </span>
-              <button
-                type="button"
-                aria-label="Gửi"
-                disabled={!text.trim() || pending}
-                onClick={() => submit()}
-                className="flex size-9 cursor-pointer items-center justify-center rounded-lg border-0 bg-sc-ink text-sc-lime disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <ArrowUp size={18} />
-              </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <p className="mt-2 mb-0 text-center text-[12.5px] text-sc-muted-2">
+          {quota && !usedUp && (
+            <>
+              <span className={quota.limit - quota.used <= 3 ? 'font-semibold text-sc-accent' : undefined}>
+                Còn {quota.limit - quota.used}/{quota.limit} lượt hỏi tháng này
+              </span>{' '}
+              ·{' '}
+            </>
+          )}
           Enter để gửi · Shift + Enter xuống dòng · {config.caution}
         </p>
       </footer>

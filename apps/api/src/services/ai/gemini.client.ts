@@ -12,6 +12,7 @@ const RETRY_DELAY_MS = 1500;
 /** The subset of Gemini's schema format (an OpenAPI 3 schema) this app uses. */
 export type GeminiSchema =
   | { type: 'STRING'; description?: string; enum?: string[]; format?: 'date' }
+  | { type: 'ARRAY'; items: GeminiSchema; description?: string }
   | { type: 'OBJECT'; properties: Record<string, GeminiSchema>; required: string[]; propertyOrdering?: string[] };
 
 export interface GenerateJsonInput {

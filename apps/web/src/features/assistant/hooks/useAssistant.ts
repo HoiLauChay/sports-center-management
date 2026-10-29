@@ -1,8 +1,8 @@
-import { ASSISTANT_MAX_MESSAGES } from '@sports-center/shared';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { ASSISTANT_MAX_MESSAGES, ERROR_CODE } from '@sports-center/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCurrentUser } from '~/features/auth';
-import { describeApiError } from '~/lib/http-errors';
+import { describeApiError, toApiError } from '~/lib/http-errors';
 import { assistantService } from '../services/assistant.service';
 import {
   loadConversations,
@@ -20,9 +20,18 @@ export function useAssistantOverview() {
   return useQuery({ queryKey: ['assistant', 'overview', user.id], queryFn: assistantService.overview });
 }
 
+const quotaKey = (userId: string) => ['assistant', 'quota', userId] as const;
+
+/** The member's questions left this month; null for staff, who have no quota. */
+export function useAssistantQuota() {
+  const user = useCurrentUser();
+  return useQuery({ queryKey: quotaKey(user.id), queryFn: assistantService.quota });
+}
+
 /** The open conversation and the remembered ones; sends the latest messages and appends the answer. */
 export function useAssistantChat() {
   const user = useCurrentUser();
+  const queryClient = useQueryClient();
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations(user.id));
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = useMemo(() => conversations.find(({ id }) => id === activeId) ?? null, [conversations, activeId]);
@@ -55,11 +64,34 @@ export function useAssistantChat() {
           .slice(-ASSISTANT_MAX_MESSAGES)
           .map(({ role, text }) => ({ role, text })),
       }),
-    onSuccess: ({ reply, supportDraft }, { conversationId }) =>
-      append(conversationId, { id: newId(), role: 'model', text: reply, supportDraft }),
-    onError: (error, { conversationId }) =>
-      append(conversationId, { id: newId(), role: 'model', text: describeApiError(error), failed: true }),
+    onSuccess: ({ reply, actions, quota }, { conversationId }) => {
+      queryClient.setQueryData(quotaKey(user.id), quota);
+      append(conversationId, { id: newId(), role: 'model', text: reply, actions });
+    },
+    onError: (error, { conversationId }) => {
+      if (toApiError(error).code === ERROR_CODE.AI_QUOTA_EXCEEDED) {
+        void queryClient.invalidateQueries({ queryKey: quotaKey(user.id) });
+      }
+      append(conversationId, { id: newId(), role: 'model', text: describeApiError(error), failed: true });
+    },
   });
+
+  /** Remembers that the person confirmed one of the cards under an answer. */
+  const markDone = (conversationId: string, messageId: string, index: number) =>
+    setConversations((list) =>
+      list.map((conversation) =>
+        conversation.id !== conversationId
+          ? conversation
+          : {
+              ...conversation,
+              messages: conversation.messages.map((message) =>
+                message.id === messageId
+                  ? { ...message, doneActions: [...(message.doneActions ?? []), index] }
+                  : message,
+              ),
+            },
+      ),
+    );
 
   const send = (text: string) => {
     const question = text.trim();
@@ -93,5 +125,6 @@ export function useAssistantChat() {
     open: setActiveId,
     startNew: () => setActiveId(null),
     remove,
+    markDone,
   };
 }

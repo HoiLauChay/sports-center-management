@@ -123,6 +123,7 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'bookingDiscountPct',
     'classDiscountPct',
     'freeBookingSlotsPerMonth',
+    'aiQuestionsPerMonth',
     'isActive',
     'deletedAt',
   ),

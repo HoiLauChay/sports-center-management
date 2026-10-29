@@ -94,6 +94,7 @@ model Account {
   updatedAttendances         ClassAttendance[]        @relation("AttendanceUpdater")
   evaluations                MemberEvaluation[]       @relation("EvaluationMember")
   givenEvaluations           MemberEvaluation[]       @relation("EvaluationCoach")
+  assistantUsages            AssistantUsage[]
   substituteSessions         ClassSession[]           @relation("SessionCoach")
   trainingPlans              TrainingPlan[]           @relation("TrainingPlanMember")
   updatedTrainingPlans       TrainingPlan[]           @relation("TrainingPlanUpdater")
@@ -658,6 +659,7 @@ model Membership {
   bookingDiscountPct       Int       @default(0) @map("booking_discount_pct")
   classDiscountPct         Int       @default(0) @map("class_discount_pct")
   freeBookingSlotsPerMonth Int       @default(0) @map("free_booking_slots_per_month")
+  aiQuestionsPerMonth      Int       @default(100) @map("ai_questions_per_month")
   isActive                 Boolean   @default(true) @map("is_active")
   deletedAt                DateTime? @map("deleted_at") @db.Timestamptz()
   createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz()
@@ -702,6 +704,7 @@ model MembershipOrder {
   bookingDiscountPct       Int              @map("booking_discount_pct")
   classDiscountPct         Int              @map("class_discount_pct")
   freeBookingSlotsPerMonth Int              @map("free_booking_slots_per_month")
+  aiQuestionsPerMonth      Int              @map("ai_questions_per_month")
   createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz()
 
   @@unique([membershipId, periodStart], map: "uq_membership_order_period")
@@ -1057,4 +1060,17 @@ model ClassAnnouncement {
 
   @@index([classId, createdAt], map: "idx_ca_class_date")
   @@map("class_announcements")
+}
+
+/// AI assistant questions a member asked in one month (center time), counted against their quota.
+model AssistantUsage {
+  accountId String   @map("account_id") @db.Uuid
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  /// YYYY-MM
+  period    String   @db.Char(7)
+  count     Int      @default(0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@id([accountId, period])
+  @@map("assistant_usages")
 }
