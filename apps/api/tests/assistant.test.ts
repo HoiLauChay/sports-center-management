@@ -11,11 +11,12 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import geminiClient, { type ChatInput, type ChatTurn, type GeminiPart } from '~/services/ai/gemini.client';
-import { todayInCenter } from '~/utils/time';
+import { addDays, todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
-import { readResult, startServer } from './helpers/http';
+import { createAccount, readResult, startServer } from './helpers/http';
 import { giveActiveMembership } from './helpers/membership';
+import { seedBooking, seedFacility } from './helpers/schedule';
 
 let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
@@ -347,5 +348,39 @@ describe('AI assistant actions', () => {
     expect(stranger.result.error).toBeString();
     const other = await runTool(f.otherCoach, 'propose_attendance', { sessionId: f.session.id });
     expect(other.result.error).toBeString();
+  });
+});
+
+describe('AI assistant membership advice', () => {
+  test('compares each plan against the member’s own last two months, for the member and at the counter', async () => {
+    const f = await setupAttendance();
+    await prisma.systemSetting.create({ data: {} });
+    const member = await createAccount('MEMBER', 'advice@example.com');
+    const court = await seedFacility(4);
+    // Six one-hour slots at 100.000đ in the last 60 days: 300.000đ a month at list price.
+    for (const day of [5, 12, 19, 26, 33, 40]) {
+      const booking = await seedBooking(court.id, '18:00', '19:00', {
+        date: addDays(todayInCenter(), -day),
+        accountId: member.id,
+      });
+      await prisma.facilityBooking.update({ where: { id: booking.id }, data: { unitPrice: 100_000 } });
+    }
+    await prisma.membership.create({
+      data: { name: 'Gói Giảm nửa', price: 60_000, durationDays: 30, bookingDiscountPct: 50 },
+    });
+    await prisma.membership.create({ data: { name: 'Gói Gym', price: 1_000_000, durationDays: 30, gymAccess: true } });
+
+    const { offered, result } = await runTool(member, 'compare_memberships');
+    expect(offered).toContain('propose_cart_item');
+    expect(result.usagePerMonth).toMatchObject({ bookedSlots: 3, spendingVnd: 300_000 });
+    const options = result.options as { name: string; totalPerMonthVnd: number; savingPerMonthVnd: number }[];
+    expect(options.map(({ name }) => name)).toEqual(['Gói Giảm nửa', 'Gói Gym']);
+    expect(options[0]).toMatchObject({ totalPerMonthVnd: 210_000, savingPerMonthVnd: 90_000 });
+    expect(options[1]!.savingPerMonthVnd).toBe(-1_000_000);
+
+    const counter = await runTool(f.receptionist, 'compare_memberships', { memberId: member.id });
+    expect(counter.result).toMatchObject({ member: member.fullName, usagePerMonth: { spendingVnd: 300_000 } });
+    const staff = await runTool(f.receptionist, 'compare_memberships', { memberId: f.coach.id });
+    expect(staff.result.error).toBeString();
   });
 });

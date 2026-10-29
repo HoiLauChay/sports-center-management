@@ -2,6 +2,7 @@ import { checkoutItemInputSchema, createSupportBodySchema, SUPPORT_CATEGORIES } 
 import { z } from 'zod';
 
 import assistantRepository from '~/repositories/assistant.repository';
+import { compareMemberships } from '~/services/ai/tools/consulting';
 import {
   badRange,
   dateRange,
@@ -237,6 +238,15 @@ export const MEMBER_TOOLS: Tool[] = [
     createSupportBodySchema,
     async (_context, draft) =>
       prepared({ type: 'SUPPORT_REQUEST', draft }, 'Chưa gửi: người hỏi tự xem lại và bấm gửi.'),
+  ),
+  tool(
+    {
+      name: 'compare_memberships',
+      description:
+        'Tư vấn gói thành viên: chi tiêu đặt sân/lớp của người hỏi trong 60 ngày qua (quy ra mỗi tháng) so với từng gói đang bán, đã tính sẵn tổng mỗi tháng và số tiền tiết kiệm. Dùng khi họ hỏi nên mua gói nào, gói nào lợi, có nên mua gói không.',
+    },
+    noArgs,
+    async ({ accountId }) => compareMemberships(accountId),
   ),
   tool(
     {

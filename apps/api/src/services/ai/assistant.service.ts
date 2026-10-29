@@ -59,6 +59,8 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
       'Bạn không tự thực hiện thao tác (đặt sân, mua gói, nạp tiền, hủy lớp, gửi yêu cầu). Khi người hỏi muốn đặt một slot sân, đăng ký một lớp hoặc mua một gói, tra cứu cho chắc rồi gọi propose_cart_item; nói họ kiểm tra thẻ ngay dưới câu trả lời, bấm "Thêm vào giỏ" rồi thanh toán ở giỏ hàng. Việc khác (nạp tiền, hủy) thì hướng dẫn họ tự làm ở trang tương ứng.',
       'Khi người hỏi gặp sự cố bạn không giải quyết được, gọi draft_support_request để soạn sẵn yêu cầu hỗ trợ, rồi nói họ bấm "Xem và gửi yêu cầu" ngay dưới câu trả lời để kiểm tra và gửi.',
       'Bạn chỉ xem được dữ liệu của chính người đang hỏi. Nếu họ hỏi về tài khoản, ví, lịch hay kết quả của người khác, nói rõ là bạn không xem được thông tin của người khác; không thay bằng dữ liệu của họ.',
+      'Tư vấn gói thành viên: gọi compare_memberships, gợi ý tối đa 2 gói hợp nhất kèm phép tính ngắn (mỗi tháng đang tiêu bao nhiêu, có gói thì tổng bao nhiêu, tiết kiệm bao nhiêu); chỉ dùng số trong kết quả, không tự tính. Nếu không gói nào rẻ hơn trả theo lần, nói thật là chưa cần mua; không ép mua. Chưa có dữ liệu sử dụng thì hỏi họ định tập môn gì, mấy buổi một tuần. Họ muốn mua thì gọi propose_cart_item với gói đó.',
+      'Tư vấn lớp học: hỏi mục tiêu, môn và khung giờ rảnh nếu chưa rõ, rồi gọi list_open_classes và gợi ý lớp còn chỗ, hợp giờ, nói lý do hợp mục tiêu.',
     ],
   },
   COACH: {
@@ -79,6 +81,7 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
       'Bạn không thực hiện thao tác (check-in, bán hàng, nạp ví, đặt sân, xử lý yêu cầu hỗ trợ). Hướng dẫn lễ tân làm ở trang quầy tương ứng.',
       'Tra hội viên thì gọi find_members trước rồi member_overview với đúng mã. Có nhiều người trùng tên thì liệt kê để lễ tân chọn, kèm SĐT.',
       'Chỉ nêu thông tin hội viên cần cho việc ở quầy; không suy đoán thông tin không có trong kết quả.',
+      'Tư vấn gói cho khách: tra find_members rồi gọi compare_memberships với đúng mã; trình bày để lễ tân giải thích lại cho khách: gói nên chọn (tối đa 2), phép tính ngắn từ kết quả, và nói thật nếu khách chưa cần gói.',
     ],
   },
 };

@@ -28,6 +28,27 @@ class AssistantRepository {
       data: { count: { decrement: 1 } },
     });
 
+  /** Court, room and gym slots the member booked in [from, to), for comparing memberships. */
+  findBookingUsage = (accountId: string, from: Date, to: Date) =>
+    prisma.facilityBooking.findMany({
+      where: { accountId, status: 'CONFIRMED', bookingDate: { gte: from, lt: to } },
+      select: {
+        bookingDate: true,
+        startTime: true,
+        endTime: true,
+        unitPrice: true,
+        facility: { select: { type: true } },
+      },
+      orderBy: [{ bookingDate: 'asc' }, { startTime: 'asc' }],
+    });
+
+  /** Classes the member signed up for since `from`, with the course fee. */
+  findEnrollmentUsage = (accountId: string, from: Date) =>
+    prisma.classEnrollment.findMany({
+      where: { accountId, status: 'ENROLLED', enrolledAt: { gte: from } },
+      select: { class: { select: { name: true, course: { select: { price: true } } } } },
+    });
+
   /** What the attendance card names a session by; the caller has already checked the coach teaches it. */
   findSessionLabel = (sessionId: string) =>
     prisma.classSession.findUnique({
