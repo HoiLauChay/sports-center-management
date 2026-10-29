@@ -20,6 +20,7 @@
     "db:seed:demo": "bun src/seeds/seed.ts --demo",
     "db:seed:today": "bun src/seeds/seed-today.ts",
     "db:seed:students": "bun src/seeds/seed-students.ts",
+    "db:seed:coach-ai": "bun src/seeds/seed-coach-ai.ts",
     "clean": "rm -rf dist .turbo src/generated"
   },
   "lint-staged": {
