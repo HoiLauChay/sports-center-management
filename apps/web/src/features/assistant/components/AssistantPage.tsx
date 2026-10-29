@@ -67,7 +67,7 @@ export function AssistantPage() {
         />
         <aside className="flex flex-col gap-5 lg:grid lg:h-[max(560px,calc(100dvh-160px))] lg:grid-rows-2">
           <RecentCard conversations={chat.conversations} activeId={chat.active?.id ?? null} onOpen={chat.open} />
-          <OverviewCard overview={overview.data} loading={overview.isPending} />
+          <OverviewCard overview={overview.data} quota={quota.data} loading={overview.isPending} />
         </aside>
       </div>
 
