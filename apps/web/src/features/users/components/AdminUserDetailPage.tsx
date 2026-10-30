@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
 import { useCurrentUser } from '~/features/auth';
 import { StaffMembershipBlock } from '~/features/memberships';
-import { MemberHistoryBlock, MemberWalletBlock } from '~/features/reception';
+import { MemberBookingsBlock, MemberHistoryBlock, MemberSupportBlock, MemberWalletBlock } from '~/features/reception';
 import { STATUS_ACTION } from '../utils/statusActions';
 import { AdminUserEditForm } from './AdminUserEditForm';
 import { ChangeEmailModal } from './ChangeEmailModal';
@@ -101,7 +101,9 @@ export function AdminUserDetailPage() {
           <>
             <MemberWalletBlock memberId={user.id} manager />
             <StaffMembershipBlock memberId={user.id} />
+            <MemberBookingsBlock memberId={user.id} manager />
             <MemberHistoryBlock memberId={user.id} manager />
+            <MemberSupportBlock memberId={user.id} manager />
           </>
         ) : null
       }
