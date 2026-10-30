@@ -14,6 +14,7 @@ import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
 import { ReceiptPdfActions, ReceiptPdfPreview } from './ReceiptPdf';
+import { RefundReceiptsCard } from './RefundReceiptsCard';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
 const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
@@ -147,10 +148,13 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
         <ReceiptPdfPreview pdf={pdf} />
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <Card>
-            <SectionTitle>Dịch vụ</SectionTitle>
-            <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
-          </Card>
+          <div className="flex flex-col gap-4">
+            <Card>
+              <SectionTitle>Dịch vụ</SectionTitle>
+              <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
+            </Card>
+            <RefundReceiptsCard order={data} />
+          </div>
           <div className="flex flex-col gap-4">
             <Card>
               <SectionTitle>Thanh toán</SectionTitle>
