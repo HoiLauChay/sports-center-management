@@ -183,6 +183,10 @@ html .ant-tag.ant-tag-green {
   font-size: 13px;
 }
 
+.ant-radio-button-wrapper {
+  white-space: nowrap;
+}
+
 .ant-card .ant-card-head-wrapper {
   flex-wrap: wrap;
   column-gap: 12px;

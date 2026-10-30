@@ -191,7 +191,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={10}>
             <FormField
               control={control}
               name="discountType"
@@ -201,6 +201,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   block
                   optionType="button"
                   buttonStyle="solid"
+                  className="whitespace-nowrap [&_.ant-radio-button-wrapper]:!px-3"
                   value={field.value}
                   onChange={(event) => field.onChange(event.target.value)}
                   options={[
@@ -211,7 +212,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               )}
             />
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={discountType === 'PERCENT' ? 6 : 14}>
             <FormField
               control={control}
               name="discountValue"
@@ -243,8 +244,8 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               }
             />
           </Col>
-          <Col xs={24} sm={8}>
-            {discountType === 'PERCENT' && (
+          {discountType === 'PERCENT' && (
+            <Col xs={24} sm={8}>
               <FormField
                 control={control}
                 name="maxDiscount"
@@ -262,8 +263,8 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
                   />
                 )}
               />
-            )}
-          </Col>
+            </Col>
+          )}
         </Row>
 
         <Form.Item
