@@ -2,7 +2,7 @@ import type { ListBankTransactionsQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { BankTransactionStatus, Prisma } from '~/generated/prisma/client';
-import { pageArgs } from '~/utils/pagination';
+import { findSegmentedPage, type Segment } from '~/utils/pagination';
 import { toCenterDateTime } from '~/utils/time';
 
 const person = { select: { id: true, fullName: true } } as const;
@@ -32,6 +32,12 @@ const dayRange = (from?: string, to?: string): Prisma.DateTimeFilter | undefined
   from || to
     ? { ...(from && { gte: toCenterDateTime(from, 0) }), ...(to && { lt: toCenterDateTime(to, 24 * 60) }) }
     : undefined;
+
+const reconcileSegments: Segment<Prisma.BankTransactionWhereInput, Prisma.BankTransactionOrderByWithRelationInput[]>[] =
+  [
+    { where: { status: 'UNMATCHED' }, orderBy: [{ transactionDate: 'asc' }, { id: 'asc' }] },
+    { where: { status: { not: 'UNMATCHED' } }, orderBy: [{ transactionDate: 'desc' }, { id: 'desc' }] },
+  ];
 
 class BankTransactionRepository {
   insertIfNew = async (data: Prisma.BankTransactionCreateManyInput, tx: Prisma.TransactionClient) =>
@@ -68,15 +74,13 @@ class BankTransactionRepository {
         ],
       }),
     };
-    return Promise.all([
-      prisma.bankTransaction.findMany({
-        where,
-        select: bankTransactionSelect,
-        orderBy: [{ transactionDate: 'desc' }, { id: 'desc' }],
-        ...pageArgs({ page, limit }),
-      }),
-      prisma.bankTransaction.count({ where }),
-    ]);
+    return findSegmentedPage(
+      reconcileSegments,
+      { page, limit },
+      (segment) => prisma.bankTransaction.count({ where: { AND: [where, segment] } }),
+      ({ where: segment, ...args }) =>
+        prisma.bankTransaction.findMany({ where: { AND: [where, segment] }, select: bankTransactionSelect, ...args }),
+    );
   };
 
   findForReconciliation = (accountNumber: string, from: string, to: string) =>
