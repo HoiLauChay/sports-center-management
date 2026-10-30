@@ -153,7 +153,7 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               <SectionTitle>Dịch vụ</SectionTitle>
               <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
             </Card>
-            <RefundReceiptsCard order={data} />
+            <RefundReceiptsCard order={data} base={back.to} />
           </div>
           <div className="flex flex-col gap-4">
             <Card>
