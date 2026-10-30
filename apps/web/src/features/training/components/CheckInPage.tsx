@@ -1,6 +1,7 @@
 import { ERROR_CODE, type Booking, type CheckIn, type Person } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { App, Button, Segmented, Skeleton, Tag } from 'antd';
+import { App, Button, DatePicker, Segmented, Skeleton, Tag } from 'antd';
+import dayjs from 'dayjs';
 import { CalendarClock, CheckCircle2, LogIn, ScanLine, TriangleAlert, UserSearch, Wallet, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '~/components/feedback/States';
@@ -11,10 +12,10 @@ import { CounterCustomerSearch, CustomerAvatar } from '~/features/reception/comp
 import '~/features/reception/counter.css';
 import { useCounterHotkeys } from '~/features/reception/hooks/useCounterHotkeys';
 import { CUSTOMER_SEARCH_ID } from '~/features/reception/utils';
-import { formatDateTime } from '~/lib/format';
+import { formatDate, formatDateTime } from '~/lib/format';
 import { describeApiError, toApiError } from '~/lib/http-errors';
-import { nowVN, todayVN } from '~/lib/time';
-import { useCheckIn, useCheckInsToday } from '../hooks/useTraining';
+import { DATE_FORMAT, nowVN, todayVN } from '~/lib/time';
+import { useCheckIn, useCheckIns, useCheckInsToday } from '../hooks/useTraining';
 
 type Member = Extract<DraftBuyer, { kind: 'MEMBER' }>;
 
@@ -260,9 +261,12 @@ export function CheckInPage() {
   const [refusal, setRefusal] = useState<string | null>(null);
   const [flash, setFlash] = useState<CheckIn | null>(null);
   const [filter, setFilter] = useState<'waiting' | 'in'>('waiting');
+  const [logDate, setLogDate] = useState(todayVN());
+  const isViewingToday = logDate === todayVN();
 
   const checkIn = useCheckIn();
   const today = useCheckInsToday();
+  const logQuery = useCheckIns(logDate);
   const bookings = useBookingsOn(todayVN());
 
   const latestCheckIn = useMemo(() => {
@@ -301,8 +305,8 @@ export function CheckInPage() {
   const arrived = arrivals.filter((entry) => entry.checkIn);
   const shown = filter === 'waiting' ? waiting : arrived;
   const log = useMemo(
-    () => [...(today.data ?? [])].sort((a, b) => b.checkedInAt.localeCompare(a.checkedInAt)),
-    [today.data],
+    () => [...(logQuery.data ?? [])].sort((a, b) => b.checkedInAt.localeCompare(a.checkedInAt)),
+    [logQuery.data],
   );
 
   const memberSlots = member ? (arrivals.find((entry) => entry.account.id === member.accountId)?.slots ?? []) : [];
@@ -321,6 +325,7 @@ export function CheckInPage() {
       onSuccess: (created) => {
         setFlash(created);
         setMember(null);
+        setLogDate(todayVN());
         focusSearch();
       },
       onError: (error) => {
@@ -452,21 +457,42 @@ export function CheckInPage() {
         </div>
 
         <aside className="rounded-2xl border border-sc-border bg-white shadow-xs xl:sticky xl:top-20">
-          <header className="flex items-center justify-between gap-2 border-b border-sc-border-soft px-4 py-3">
-            <h2 className="m-0 flex items-center gap-2 font-display text-[17px] font-bold tracking-[0.04em] text-sc-ink uppercase">
-              <ScanLine size={18} />
-              Nhật ký hôm nay
-            </h2>
-            <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-ink-2">
-              {log.length} lượt
-            </span>
+          <header className="flex flex-col gap-2.5 border-b border-sc-border-soft px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="m-0 flex items-center gap-2 font-display text-[17px] font-bold tracking-[0.04em] text-sc-ink uppercase">
+                <ScanLine size={18} />
+                {isViewingToday ? 'Nhật ký hôm nay' : 'Nhật ký vào cửa'}
+              </h2>
+              <span className="rounded-full bg-sc-paper px-2.5 py-0.5 text-[13.5px] font-semibold text-sc-ink-2">
+                {log.length} lượt
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <DatePicker
+                aria-label="Ngày xem nhật ký check-in"
+                size="small"
+                allowClear={false}
+                format="DD/MM/YYYY"
+                value={dayjs(logDate, DATE_FORMAT)}
+                disabledDate={(day) => day.format(DATE_FORMAT) > todayVN()}
+                onChange={(day) => {
+                  if (day) setLogDate(day.format(DATE_FORMAT));
+                }}
+                className="flex-1"
+              />
+              {!isViewingToday && (
+                <Button size="small" onClick={() => setLogDate(todayVN())}>
+                  Hôm nay
+                </Button>
+              )}
+            </div>
           </header>
-          {today.isPending ? (
+          {logQuery.isPending ? (
             <div className="p-4">
               <Skeleton active paragraph={{ rows: 5 }} />
             </div>
           ) : log.length ? (
-            <ol className="m-0 flex max-h-[calc(100vh-14rem)] list-none flex-col overflow-y-auto p-0">
+            <ol className="m-0 flex max-h-[calc(100vh-16rem)] list-none flex-col overflow-y-auto p-0">
               {log.map((entry) => (
                 <li
                   key={entry.id}
@@ -474,11 +500,17 @@ export function CheckInPage() {
                     entry.id === flash?.id ? 'bg-sc-success/10' : ''
                   }`}
                 >
-                  <b className="w-11 shrink-0 font-display text-[16px] tabular-nums text-sc-ink">
+                  <b className="w-11 shrink-0 font-display text-[16px] text-sc-ink tabular-nums">
                     {timeOf(entry.checkedInAt)}
                   </b>
                   <span className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-[15px] font-semibold text-sc-ink">{entry.account.fullName}</span>
+                    <Link
+                      to="/reception/members/$memberId"
+                      params={{ memberId: entry.account.id }}
+                      className="truncate text-[15px] font-semibold text-sc-ink hover:text-sc-primary"
+                    >
+                      {entry.account.fullName}
+                    </Link>
                     <span className="truncate text-[13.5px] text-sc-muted">bởi {entry.checkedBy.fullName}</span>
                   </span>
                 </li>
@@ -486,7 +518,14 @@ export function CheckInPage() {
             </ol>
           ) : (
             <div className="px-4 py-10">
-              <EmptyState title="Chưa có lượt check-in nào" description="Lượt check-in hôm nay sẽ hiện ở đây." />
+              <EmptyState
+                title="Chưa có lượt check-in nào"
+                description={
+                  isViewingToday
+                    ? 'Lượt check-in hôm nay sẽ hiện ở đây.'
+                    : `Không có lượt vào cửa nào trong ngày ${formatDate(logDate)}.`
+                }
+              />
             </div>
           )}
         </aside>

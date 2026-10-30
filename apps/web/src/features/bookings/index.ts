@@ -1,3 +1,4 @@
+export { BookingDetailDrawer } from './components/BookingDetailDrawer';
 export { BookingsPage } from './components/BookingsPage';
 export { ReceptionBookingsPage } from './components/ReceptionBookingsPage';
 export { RecurringPackagePicker } from './components/RecurringPackagePicker';

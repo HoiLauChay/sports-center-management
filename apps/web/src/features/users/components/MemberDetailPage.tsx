@@ -1,7 +1,7 @@
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { PATHS } from '~/constants/paths';
 import { StaffMembershipBlock } from '~/features/memberships';
-import { MemberHistoryBlock, MemberWalletBlock } from '~/features/reception';
+import { MemberBookingsBlock, MemberHistoryBlock, MemberSupportBlock, MemberWalletBlock } from '~/features/reception';
 import { UserDetailLoader } from './UserDetailView';
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/members/$memberId');
@@ -21,11 +21,17 @@ export function MemberDetailPage() {
       id={memberId}
       backLabel="Tra cứu hội viên"
       onBack={back}
+      belowProfile={() => (
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <MemberBookingsBlock memberId={memberId} />
+          <MemberHistoryBlock memberId={memberId} />
+        </div>
+      )}
       aside={() => (
         <>
           <MemberWalletBlock memberId={memberId} />
           <StaffMembershipBlock memberId={memberId} counterLink />
-          <MemberHistoryBlock memberId={memberId} />
+          <MemberSupportBlock memberId={memberId} />
         </>
       )}
     />
