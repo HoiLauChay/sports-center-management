@@ -1,6 +1,6 @@
 import { PAYMENT_METHODS } from '@sports-center/shared';
 import { Card, Col, Row, Tabs, type TableColumnsType } from 'antd';
-import { Banknote, CalendarCheck, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
+import { Banknote, CalendarCheck, CalendarClock, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BarChart, type ChartDatum, type ChartSeries } from '~/components/charts/BarChart';
 import { Table } from '~/components/data/Table';
@@ -13,17 +13,14 @@ import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, ORDER_ITEM_TYPES } from '~/features/checkout/types';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
-import { parseDate } from '~/lib/time';
+import { todayVN } from '~/lib/time';
 import { useOverviewReport, useRevenueReport, useWalletReport } from '../hooks/useReports';
-import type { Granularity, ReportRange, RevenueBucket, WalletBucket } from '../types';
-import { defaultRange, periodLabel, REVENUE_SERIES } from '../utils';
-import { ReportToolbar } from './ReportToolbar';
-
-function periodText(period: string, granularity: Granularity) {
-  if (granularity === 'month') return `Tháng ${parseDate(`${period}-01`).format('MM/YYYY')}`;
-  if (granularity === 'week') return `Tuần từ ${formatDate(period)}`;
-  return formatDate(period);
-}
+import { REPORT_TAB_LABEL, type ReportRange, type ReportType, type RevenueBucket, type WalletBucket } from '../types';
+import { defaultRange, periodLabel, periodText, REVENUE_SERIES } from '../utils';
+import { CoursesReportTab } from './CoursesReportTab';
+import { FacilitiesReportTab } from './FacilitiesReportTab';
+import { MembersReportTab } from './MembersReportTab';
+import { ReportExportActions, ReportToolbar } from './ReportToolbar';
 
 const WALLET_SERIES: ChartSeries[] = [
   { key: 'topUpBank', label: 'Nạp chuyển khoản', color: '#16a34a' },
@@ -345,37 +342,86 @@ function WalletTab({ range }: { range: ReportRange }) {
   );
 }
 
-/** `/admin/reports`: overview cards, revenue and wallet cash-flow charts with a date range and day/week/month unit. */
+/** `/admin/reports`: overview, revenue, wallet, members, facilities and courses reports with Excel/PDF export. */
 export function ReportsPage() {
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState<ReportType>('overview');
   const [range, setRange] = useState<ReportRange>(defaultRange);
+  const today = todayVN();
 
   return (
     <>
-      <PageHeader title="Báo cáo" />
+      <PageHeader
+        title="Báo cáo"
+        description="Theo dõi vận hành, doanh thu, dòng tiền ví, hội viên, công suất sân và chất lượng lớp học."
+      />
       <Card>
         <Tabs
           activeKey={tab}
-          onChange={setTab}
+          onChange={(next) => setTab(next as ReportType)}
           items={[
-            { key: 'overview', label: 'Tổng quan', children: <OverviewTab /> },
             {
-              key: 'revenue',
-              label: 'Doanh thu',
+              key: 'overview',
+              label: REPORT_TAB_LABEL.overview,
               children: (
                 <>
-                  <ReportToolbar range={range} onChange={setRange} />
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sc-border-soft bg-sc-paper/45 px-3.5 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-[14px] font-medium text-sc-muted">
+                      <CalendarClock size={15} className="text-sc-primary" />
+                      Số liệu vận hành trong ngày hôm nay ({formatDate(today)}) · Tự động cập nhật mỗi 60 giây
+                    </span>
+                    <ReportExportActions report="overview" range={range} />
+                  </div>
+                  <OverviewTab />
+                </>
+              ),
+            },
+            {
+              key: 'revenue',
+              label: REPORT_TAB_LABEL.revenue,
+              children: (
+                <>
+                  <ReportToolbar range={range} onChange={setRange} report="revenue" />
                   <RevenueTab range={range} />
                 </>
               ),
             },
             {
               key: 'wallet',
-              label: 'Dòng tiền ví',
+              label: REPORT_TAB_LABEL.wallet,
               children: (
                 <>
-                  <ReportToolbar range={range} onChange={setRange} />
+                  <ReportToolbar range={range} onChange={setRange} report="wallet" />
                   <WalletTab range={range} />
+                </>
+              ),
+            },
+            {
+              key: 'members',
+              label: REPORT_TAB_LABEL.members,
+              children: (
+                <>
+                  <ReportToolbar range={range} onChange={setRange} report="members" />
+                  <MembersReportTab range={range} />
+                </>
+              ),
+            },
+            {
+              key: 'facilities',
+              label: REPORT_TAB_LABEL.facilities,
+              children: (
+                <>
+                  <ReportToolbar range={range} onChange={setRange} report="facilities" showGranularity={false} />
+                  <FacilitiesReportTab range={range} />
+                </>
+              ),
+            },
+            {
+              key: 'courses',
+              label: REPORT_TAB_LABEL.courses,
+              children: (
+                <>
+                  <ReportToolbar range={range} onChange={setRange} report="courses" showGranularity={false} />
+                  <CoursesReportTab range={range} />
                 </>
               ),
             },
