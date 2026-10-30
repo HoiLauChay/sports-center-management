@@ -1,7 +1,6 @@
 import type { AssistantRole } from '@sports-center/shared';
 import {
   BookOpenCheck,
-  Building2,
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
@@ -10,12 +9,12 @@ import {
   LayoutGrid,
   LifeBuoy,
   MapPin,
+  PiggyBank,
   ScanLine,
   Ticket,
   TrendingDown,
   UserSearch,
   Users,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 import type { NavPath } from '~/config/navigation';
@@ -72,12 +71,13 @@ export const ASSISTANT_CONFIG: Record<AssistantRole, AssistantConfig> = {
       { label: 'Gói thành viên', question: 'Gói của tôi còn bao lâu?', icon: Ticket, tone: TONE.lime },
       { label: 'Lớp học', question: 'Có lớp Yoga nào còn chỗ không?', icon: LayoutGrid, tone: TONE.green },
       { label: 'Bài tập', question: 'Bài tập về nhà của tôi là gì?', icon: Dumbbell, tone: TONE.orange },
-      { label: 'Trung tâm', question: 'Trung tâm có những gói nào?', icon: Building2, tone: TONE.violet },
+      { label: 'Tư vấn gói', question: 'Tôi nên mua gói nào cho tiết kiệm?', icon: PiggyBank, tone: TONE.violet },
       { label: 'Giờ mở cửa', question: 'Trung tâm mở cửa mấy giờ?', icon: Clock, tone: TONE.paper },
     ],
     chips: [
       { label: 'Lịch tập', question: 'Lịch tập tuần này của tôi?', icon: CalendarDays },
       { label: 'Gói của tôi', question: 'Gói thành viên của tôi còn bao lâu?', icon: Ticket },
+      { label: 'Tư vấn gói', question: 'Tôi nên mua gói nào cho tiết kiệm?', icon: PiggyBank },
       { label: 'Bài tập', question: 'Bài tập về nhà của tôi là gì?', icon: BookOpenCheck },
     ],
     support: true,
@@ -123,7 +123,12 @@ export const ASSISTANT_CONFIG: Record<AssistantRole, AssistantConfig> = {
       { label: 'Buổi học', question: 'Hôm nay có những buổi học nào?', icon: LayoutGrid, tone: TONE.green },
       { label: 'Check-in', question: 'Hôm nay đã có bao nhiêu lượt check-in?', icon: ScanLine, tone: TONE.orange },
       { label: 'Hỗ trợ', question: 'Có bao nhiêu yêu cầu hỗ trợ đang chờ?', icon: LifeBuoy, tone: TONE.violet },
-      { label: 'Gói & giá', question: 'Các gói thành viên giá bao nhiêu?', icon: Wallet, tone: TONE.paper },
+      {
+        label: 'Tư vấn gói',
+        question: 'Hội viên Đặng Khánh Linh nên mua gói nào cho tiết kiệm?',
+        icon: PiggyBank,
+        tone: TONE.paper,
+      },
     ],
     chips: [
       { label: 'Buổi học hôm nay', question: 'Hôm nay có những buổi học nào?', icon: LayoutGrid },

@@ -1,9 +1,11 @@
 import type {
   AssistantOverview,
+  AssistantQuota,
   CoachAssistantOverview,
   MemberAssistantOverview,
   ReceptionAssistantOverview,
 } from '@sports-center/shared';
+import { Link } from '@tanstack/react-router';
 import { Skeleton, Tooltip } from 'antd';
 import {
   BookOpenCheck,
@@ -14,6 +16,7 @@ import {
   LayoutGrid,
   LifeBuoy,
   MessageCircle,
+  MessagesSquare,
   ScanLine,
   ShieldCheck,
   Ticket,
@@ -244,6 +247,53 @@ function ReceptionContent({ overview }: { overview: ReceptionAssistantOverview }
   );
 }
 
+/** A member's questions this month, with when they come back and a way to get more. */
+function QuotaMeter({ quota }: { quota: AssistantQuota }) {
+  const left = Math.max(0, quota.limit - quota.used);
+  const ratio = quota.limit ? left / quota.limit : 0;
+  const low = left <= 3;
+  return (
+    <div className="mx-3 mt-3 rounded-xl bg-sc-paper px-3.5 py-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
+          <MessagesSquare size={14} className="text-sc-primary" />
+          Lượt hỏi tháng này
+        </span>
+        <span className="text-[12.5px] text-sc-muted-2">Làm mới {ddmm(quota.resetsOn)}</span>
+      </div>
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        <span
+          className={`font-display text-[26px] leading-none font-extrabold tabular-nums ${low ? 'text-sc-accent' : 'text-sc-ink'}`}
+        >
+          {left}
+        </span>
+        <span className="text-[13.5px] text-sc-muted">/ {quota.limit} lượt còn lại</span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Lượt hỏi còn lại"
+        aria-valuemin={0}
+        aria-valuemax={quota.limit}
+        aria-valuenow={left}
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-sc-border-soft"
+      >
+        <div
+          className={`h-full rounded-full ${low ? 'bg-sc-accent' : 'bg-sc-primary'}`}
+          style={{ width: `${Math.round(ratio * 100)}%` }}
+        />
+      </div>
+      {low && (
+        <Link
+          to="/memberships"
+          className="mt-2 inline-block text-[13px] font-semibold !text-sc-primary underline underline-offset-2"
+        >
+          Nâng cấp gói để có thêm lượt
+        </Link>
+      )}
+    </div>
+  );
+}
+
 const READ_ONLY: Record<AssistantOverview['role'], string> = {
   MEMBER: 'Trợ lý chỉ đọc dữ liệu của bạn. Thanh toán hay đặt chỗ luôn cần bạn bấm xác nhận.',
   COACH: 'Trợ lý chỉ đọc dữ liệu các lớp bạn phụ trách. Điểm danh, chấm điểm, đánh giá vẫn do bạn thực hiện.',
@@ -251,7 +301,16 @@ const READ_ONLY: Record<AssistantOverview['role'], string> = {
 };
 
 /** What the assistant can read for this role, so the user knows what it answers from. */
-export function OverviewCard({ overview, loading }: { overview?: AssistantOverview; loading: boolean }) {
+export function OverviewCard({
+  overview,
+  quota,
+  loading,
+}: {
+  overview?: AssistantOverview;
+  /** Only members have one. */
+  quota?: AssistantQuota | null;
+  loading: boolean;
+}) {
   const readOnly = overview && READ_ONLY[overview.role];
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-sc-border-soft bg-sc-surface">
@@ -270,6 +329,7 @@ export function OverviewCard({ overview, loading }: { overview?: AssistantOvervi
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {quota && <QuotaMeter quota={quota} />}
         {loading || !overview ? (
           <div className="p-5">
             <Skeleton active paragraph={{ rows: 4 }} title={false} />

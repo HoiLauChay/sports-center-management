@@ -1,6 +1,7 @@
 import { SUPPORT_STATUSES } from '@sports-center/shared';
 import { z } from 'zod';
 
+import { compareMemberships } from '~/services/ai/tools/consulting';
 import { classIdArg, isoDate, tool, weekdayOf, type Tool, type ToolParameters } from '~/services/ai/tools/toolkit';
 import bookingService from '~/services/booking.service';
 import checkinService from '~/services/checkin.service';
@@ -105,6 +106,24 @@ export const RECEPTION_TOOLS: Tool[] = [
         })),
         today,
       };
+    },
+  ),
+  tool(
+    {
+      name: 'compare_memberships',
+      description:
+        'Tư vấn gói thành viên cho một hội viên tại quầy: chi tiêu đặt sân/lớp của họ trong 60 ngày qua (quy ra mỗi tháng) so với từng gói đang bán, đã tính sẵn tổng mỗi tháng và số tiền tiết kiệm. Cần mã hội viên từ find_members.',
+      parameters: {
+        type: 'OBJECT',
+        properties: { memberId: { type: 'STRING', description: 'Mã hội viên (memberId từ find_members)' } },
+        required: ['memberId'],
+      },
+    },
+    z.object({ memberId: z.uuid('Mã hội viên không hợp lệ') }),
+    async ({ accountId }, { memberId }) => {
+      // Same visibility as the members page: only member accounts, 404 for anyone else.
+      const member = await userService.getById(receptionistOf(accountId), memberId);
+      return { member: member.fullName, ...(await compareMemberships(memberId)) };
     },
   ),
   tool(
