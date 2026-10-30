@@ -74,8 +74,8 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
       render: (_, item) => {
         const value = refundedOf(order, item.id);
         return value ? (
-          <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0 font-medium">
-            −{formatVND(value)}
+          <Tag color="success" className="!m-0 font-medium tabular-nums">
+            +{formatVND(value)}
           </Tag>
         ) : (
           <span className="text-sc-muted-2">—</span>
@@ -185,9 +185,9 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               </div>
               <QuoteTotals quote={toTotals(data)} />
               {refunded > 0 && (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-[14.5px] text-red-700">
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-emerald-200/80 bg-emerald-50/70 px-3 py-2 text-[14.5px] text-emerald-700">
                   <span className="font-medium">Đã hoàn về ví</span>
-                  <span className="font-bold tabular-nums">−{formatVND(refunded)}</span>
+                  <span className="font-bold tabular-nums">+{formatVND(refunded)}</span>
                 </div>
               )}
             </Card>

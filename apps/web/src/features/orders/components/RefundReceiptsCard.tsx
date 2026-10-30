@@ -125,8 +125,8 @@ export function RefundReceiptsCard({ order }: RefundReceiptsCardProps) {
       align: 'right',
       width: 145,
       render: (_, refund) => (
-        <Tag color="error" className="!m-0 text-[14px] font-semibold tabular-nums">
-          −{formatVND(refund.amount)}
+        <Tag color="success" className="!m-0 text-[14px] font-semibold tabular-nums">
+          +{formatVND(refund.amount)}
         </Tag>
       ),
     },
@@ -174,7 +174,7 @@ export function RefundReceiptsCard({ order }: RefundReceiptsCardProps) {
           <SectionTitle>Lịch sử hoàn tiền & biên lai</SectionTitle>
           <span className="mb-4 text-[14px] font-medium text-sc-muted">
             {sortedRefunds.length} giao dịch · Tổng hoàn{' '}
-            <b className="text-red-600 tabular-nums">−{formatVND(totalRefunded)}</b>
+            <b className="text-sc-success tabular-nums">+{formatVND(totalRefunded)}</b>
           </span>
         </div>
         <Table<OrderRefund> rowKey="id" columns={columns} dataSource={sortedRefunds} pagination={false} />
@@ -195,8 +195,8 @@ export function RefundReceiptsCard({ order }: RefundReceiptsCardProps) {
             <div className="flex flex-wrap items-center gap-2 pr-6">
               <span>Biên lai hoàn tiền</span>
               <Tag className="!m-0 font-mono">{activeRefund.transactionCode}</Tag>
-              <Tag color="error" className="!m-0 font-semibold tabular-nums">
-                −{formatVND(activeRefund.amount)}
+              <Tag color="success" className="!m-0 font-semibold tabular-nums">
+                +{formatVND(activeRefund.amount)}
               </Tag>
             </div>
           ) : (
