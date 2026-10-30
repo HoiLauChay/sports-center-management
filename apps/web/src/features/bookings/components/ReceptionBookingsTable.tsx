@@ -119,15 +119,21 @@ export function ReceptionBookingsTable({ facilities }: ReceptionBookingsTablePro
         ),
     },
     {
-      title: 'Thực thu',
+      title: 'Đã trả',
       key: 'paid',
       align: 'right',
       render: (_, booking) => {
-        const paid = booking.paidAmount ?? booking.unitPrice;
+        if (booking.paidAmount === null) {
+          return (
+            <span className="whitespace-nowrap text-sc-muted">
+              {booking.benefit === 'FREE_SLOT' ? 'Miễn phí' : 'Theo gói'}
+            </span>
+          );
+        }
         return (
           <div className="flex flex-col items-end gap-0.5 whitespace-nowrap tabular-nums">
-            <span className="font-semibold text-sc-ink">{formatVND(paid)}</span>
-            {paid < booking.unitPrice && (
+            <span className="font-semibold text-sc-ink">{formatVND(booking.paidAmount)}</span>
+            {booking.paidAmount < booking.unitPrice && (
               <span className="text-[13px] text-sc-muted line-through">{formatVND(booking.unitPrice)}</span>
             )}
           </div>

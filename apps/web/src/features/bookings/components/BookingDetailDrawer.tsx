@@ -34,8 +34,9 @@ export function BookingDetailDrawer({ bookingId, onClose }: BookingDetailDrawerP
   const booking = detail.data;
   const isManager = role === 'MANAGER';
 
-  const paid = booking ? (booking.paidAmount ?? booking.unitPrice) : 0;
-  const saved = booking ? Math.max(0, booking.unitPrice - paid) : 0;
+  const isPackagePaid = booking ? booking.paidAmount === null : false;
+  const paid = booking ? (booking.paidAmount ?? 0) : 0;
+  const saved = booking && booking.paidAmount !== null ? Math.max(0, booking.unitPrice - booking.paidAmount) : 0;
 
   return (
     <Drawer open={Boolean(bookingId)} onClose={onClose} size={520} title="Chi tiết lượt đặt sân" destroyOnHidden>
@@ -165,10 +166,16 @@ export function BookingDetailDrawer({ bookingId, onClose }: BookingDetailDrawerP
                 </div>
               )}
               <div className="mt-1 flex items-baseline justify-between gap-2 border-t border-sc-border-soft pt-2.5">
-                <span className="font-semibold text-sc-ink">Thực thu</span>
-                <span className="font-display text-[22px] font-extrabold text-sc-ink tabular-nums">
-                  {formatVND(paid)}
-                </span>
+                <span className="font-semibold text-sc-ink">Đã trả</span>
+                {isPackagePaid ? (
+                  <span className="text-[15.5px] font-bold text-sc-ink">
+                    {booking.benefit === 'FREE_SLOT' ? '0 ₫ (Slot miễn phí)' : 'Thu theo gói định kỳ'}
+                  </span>
+                ) : (
+                  <span className="font-display text-[22px] font-extrabold text-sc-ink tabular-nums">
+                    {formatVND(paid)}
+                  </span>
+                )}
               </div>
             </div>
           </div>

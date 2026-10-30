@@ -166,7 +166,13 @@ export function MemberBookingsBlock({ memberId, manager = false }: MemberBlockPr
                     </span>
                   </button>
                   <span className="flex shrink-0 flex-col items-end gap-0.5">
-                    <b className="tabular-nums">{formatVND(booking.paidAmount ?? booking.unitPrice)}</b>
+                    {booking.paidAmount === null ? (
+                      <span className="text-[13.5px] font-medium text-sc-muted">
+                        {booking.benefit === 'FREE_SLOT' ? 'Miễn phí' : 'Theo gói'}
+                      </span>
+                    ) : (
+                      <b className="tabular-nums">{formatVND(booking.paidAmount)}</b>
+                    )}
                     <MappedTag value={booking.status} map={BOOKING_STATUS_TAG} />
                   </span>
                 </li>
