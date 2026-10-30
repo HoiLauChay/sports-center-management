@@ -1,6 +1,20 @@
 import { ATTENDANCE_RULES, type Attendance, type AttendanceStatus, type Evaluation } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Alert, App, Button, Card, Drawer, Input, Radio, Rate, Spin, Tabs, Tag, type TableColumnsType } from 'antd';
+import {
+  Alert,
+  App,
+  Button,
+  Card,
+  Drawer,
+  Input,
+  Radio,
+  Rate,
+  Spin,
+  Tabs,
+  Tag,
+  Tooltip,
+  type TableColumnsType,
+} from 'antd';
 import {
   BookOpenCheck,
   CalendarDays,
@@ -232,7 +246,19 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
         ),
     },
     {
-      title: 'Đánh giá của HLV (chỉ đọc)',
+      title: (
+        <span className="inline-flex items-center gap-1.5">
+          <span>Đánh giá của HLV</span>
+          <Tooltip title="Chỉ đọc">
+            <span
+              aria-label="Chỉ đọc"
+              className="inline-flex cursor-help items-center text-sc-muted transition-colors hover:text-sc-ink"
+            >
+              <ShieldCheck size={14} />
+            </span>
+          </Tooltip>
+        </span>
+      ),
       key: 'evaluation',
       render: (_, record) => {
         const evaluation = evaluationMap.get(record.account.id);
