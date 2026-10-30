@@ -25,10 +25,6 @@ function occupancyTone(pct: number): { bar: string; tagColor: string; label: str
   return { bar: '#94a3b8', tagColor: 'default', label: 'Trống' };
 }
 
-function shortFacilityLabel(name: string): string {
-  return name.length > 16 ? `${name.slice(0, 15)}…` : name;
-}
-
 interface FacilitiesReportTabProps {
   range: Pick<ReportRange, 'from' | 'to'>;
 }
@@ -62,10 +58,13 @@ export function FacilitiesReportTab({ range }: FacilitiesReportTabProps) {
 
   const chart: ChartDatum[] = useMemo(
     () =>
-      rows.map((item) => ({
-        label: shortFacilityLabel(item.name),
-        values: { occupancyPct: item.occupancyPct },
-      })),
+      [...rows]
+        .sort((a, b) => b.occupancyPct - a.occupancyPct || b.revenue - a.revenue)
+        .map((item) => ({
+          label: item.name,
+          tooltipLabel: item.name,
+          values: { occupancyPct: item.occupancyPct },
+        })),
     [rows],
   );
 
@@ -184,10 +183,20 @@ export function FacilitiesReportTab({ range }: FacilitiesReportTabProps) {
             loading={report.isPending}
             icon={MapPin}
             label="Khai thác cao nhất"
-            value={topOccupancy ? topOccupancy.name : '—'}
+            value={
+              topOccupancy ? (
+                <span className="block truncate text-[clamp(20px,1.65vw,26px)] leading-tight" title={topOccupancy.name}>
+                  {topOccupancy.name}
+                </span>
+              ) : (
+                '—'
+              )
+            }
             hint={
               topOccupancy
-                ? `${formatPercent(topOccupancy.occupancyPct)} · ${formatCount(topOccupancy.bookings)} lượt đặt`
+                ? topOccupancy.bookings > 0
+                  ? `${formatPercent(topOccupancy.occupancyPct)} · ${formatCount(topOccupancy.bookings)} lượt đặt`
+                  : `${formatPercent(topOccupancy.occupancyPct)} công suất (lịch lớp & sân)`
                 : 'Chưa phát sinh lượt sử dụng'
             }
           />

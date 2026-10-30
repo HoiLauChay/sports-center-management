@@ -1,10 +1,22 @@
 import { PAYMENT_METHODS } from '@sports-center/shared';
 import { Card, Col, Row, Tabs, type TableColumnsType } from 'antd';
-import { Banknote, CalendarCheck, CalendarClock, GraduationCap, IdCard, Landmark, UserPlus } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Banknote,
+  CalendarCheck,
+  CalendarClock,
+  GraduationCap,
+  IdCard,
+  Landmark,
+  RotateCcw,
+  TrendingUp,
+  UserPlus,
+  Wallet,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BarChart, type ChartDatum, type ChartSeries } from '~/components/charts/BarChart';
 import { Table } from '~/components/data/Table';
-import { ErrorState } from '~/components/feedback/States';
+import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
@@ -158,16 +170,30 @@ function RevenueTab({ range }: { range: ReportRange }) {
     <div className={report.isFetching ? 'opacity-70 [transition:opacity_0.15s]' : undefined}>
       <Row gutter={[16, 16]} className="!mb-4">
         <Col xs={24} md={8}>
-          <StatCard loading={report.isPending} label="Doanh thu" value={<MoneyFigure amount={totals.revenue} />} />
-        </Col>
-        <Col xs={24} md={8}>
-          <StatCard loading={report.isPending} label="Hoàn tiền" value={<MoneyFigure amount={totals.refunds} />} />
+          <StatCard
+            loading={report.isPending}
+            icon={Banknote}
+            label="Doanh thu"
+            value={<MoneyFigure amount={totals.revenue} />}
+            hint="Tổng giá trị đơn hàng đã thu trong kỳ"
+          />
         </Col>
         <Col xs={24} md={8}>
           <StatCard
             loading={report.isPending}
+            icon={RotateCcw}
+            label="Hoàn tiền"
+            value={<MoneyFigure amount={totals.refunds} />}
+            hint="Tổng giá trị đã hoàn trả hội viên"
+          />
+        </Col>
+        <Col xs={24} md={8}>
+          <StatCard
+            loading={report.isPending}
+            icon={TrendingUp}
             label="Thực thu"
             value={<MoneyFigure amount={totals.revenue - totals.refunds} />}
+            hint="Doanh thu ròng sau khi trừ hoàn tiền"
           />
         </Col>
       </Row>
@@ -175,12 +201,16 @@ function RevenueTab({ range }: { range: ReportRange }) {
         <Col xs={24} xl={16}>
           <Card loading={report.isPending}>
             <SectionTitle>Doanh thu theo loại dịch vụ</SectionTitle>
-            <BarChart
-              data={chart}
-              series={REVENUE_SERIES}
-              mode="stacked"
-              ariaLabel="Biểu đồ doanh thu theo thời gian"
-            />
+            {buckets.length === 0 ? (
+              <EmptyState title="Chưa có dữ liệu doanh thu trong kỳ đã chọn" />
+            ) : (
+              <BarChart
+                data={chart}
+                series={REVENUE_SERIES}
+                mode="stacked"
+                ariaLabel="Biểu đồ doanh thu theo thời gian"
+              />
+            )}
           </Card>
         </Col>
         <Col xs={24} xl={8}>
@@ -216,6 +246,7 @@ function RevenueTab({ range }: { range: ReportRange }) {
           dataSource={buckets}
           loading={report.isFetching && !report.data}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
+          locale={{ emptyText: <EmptyState title="Chưa có dữ liệu doanh thu theo kỳ" /> }}
         />
       </Card>
     </div>
@@ -303,29 +334,48 @@ function WalletTab({ range }: { range: ReportRange }) {
         <Col xs={24} md={8}>
           <StatCard
             loading={report.isPending}
+            icon={Wallet}
             label="Tổng số dư ví"
             value={<MoneyFigure amount={report.data?.totalBalance ?? 0} />}
+            hint="Tổng số dư khả dụng của toàn bộ ví hội viên"
           />
         </Col>
         <Col xs={24} md={8}>
           <StatCard
             loading={report.isPending}
+            icon={ArrowLeftRight}
             label="Biến động ròng trong kỳ"
             value={`${net > 0 ? '+' : ''}${formatVND(net)}`}
+            hint="Chênh lệch giữa tiền nạp/hoàn và chi tiêu"
           />
         </Col>
         <Col xs={24} md={8}>
           <StatCard
             loading={report.isPending}
+            icon={Landmark}
             tone={report.data && report.data.unmatched.count > 0 ? 'warning' : 'default'}
             label="Tiền vào chưa khớp"
             value={<MoneyFigure amount={report.data?.unmatched.amount ?? 0} />}
+            hint={
+              report.data && report.data.unmatched.count > 0
+                ? `${report.data.unmatched.count} giao dịch ngân hàng cần đối soát`
+                : 'Tất cả giao dịch chuyển khoản đã khớp'
+            }
           />
         </Col>
       </Row>
       <Card loading={report.isPending}>
         <SectionTitle>Dòng tiền ví theo thời gian</SectionTitle>
-        <BarChart data={chart} series={WALLET_SERIES} mode="grouped" ariaLabel="Biểu đồ dòng tiền ví theo thời gian" />
+        {buckets.length === 0 ? (
+          <EmptyState title="Chưa có biến động dòng tiền ví trong kỳ đã chọn" />
+        ) : (
+          <BarChart
+            data={chart}
+            series={WALLET_SERIES}
+            mode="grouped"
+            ariaLabel="Biểu đồ dòng tiền ví theo thời gian"
+          />
+        )}
       </Card>
       <Card className="!mt-4">
         <SectionTitle>Chi tiết theo kỳ</SectionTitle>
@@ -336,6 +386,7 @@ function WalletTab({ range }: { range: ReportRange }) {
           dataSource={buckets}
           loading={report.isFetching && !report.data}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
+          locale={{ emptyText: <EmptyState title="Chưa có dữ liệu dòng tiền ví theo kỳ" /> }}
         />
       </Card>
     </div>

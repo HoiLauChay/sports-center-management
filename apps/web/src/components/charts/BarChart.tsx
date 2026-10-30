@@ -9,6 +9,7 @@ export interface ChartSeries {
 
 export interface ChartDatum {
   label: string;
+  tooltipLabel?: string;
   values: Record<string, number>;
 }
 
@@ -158,7 +159,12 @@ export function BarChart({
                   fontSize={12}
                   fill="var(--sc-muted)"
                 >
-                  {datum.label}
+                  {(() => {
+                    const maxChars = Math.max(5, Math.floor((slot * labelEvery - 6) / 6.2));
+                    return datum.label.length > maxChars + 1
+                      ? `${datum.label.slice(0, Math.max(4, maxChars - 1)).trimEnd()}…`
+                      : datum.label;
+                  })()}
                 </text>
               )}
             </g>
@@ -173,7 +179,7 @@ export function BarChart({
             left: Math.min(width - 190, Math.max(0, PAD.left + slot * hover + slot / 2 - 90)),
           }}
         >
-          <div className="mb-1 font-semibold">{data[hover].label}</div>
+          <div className="mb-1 font-semibold">{data[hover].tooltipLabel ?? data[hover].label}</div>
           {series.map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4">
               <span className="inline-flex items-center gap-1.5">

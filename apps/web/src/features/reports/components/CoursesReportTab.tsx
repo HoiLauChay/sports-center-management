@@ -20,10 +20,6 @@ const COURSE_SERIES: ChartSeries[] = [
   { key: 'attendanceRate', label: 'Tỷ lệ chuyên cần (%)', color: '#06b6d4' },
 ];
 
-function shortClassLabel(name: string): string {
-  return name.length > 16 ? `${name.slice(0, 15)}…` : name;
-}
-
 function rateBarColor(pct: number): string {
   if (pct >= 75) return '#16a34a';
   if (pct >= 45) return '#0f4d34';
@@ -66,13 +62,17 @@ export function CoursesReportTab({ range }: CoursesReportTabProps) {
 
   const chart: ChartDatum[] = useMemo(
     () =>
-      classes.slice(0, 12).map((cls) => ({
-        label: shortClassLabel(cls.name),
-        values: {
-          fillRate: cls.fillRate,
-          attendanceRate: cls.attendanceRate,
-        },
-      })),
+      [...classes]
+        .sort((a, b) => b.fillRate - a.fillRate || b.attendanceRate - a.attendanceRate)
+        .slice(0, 12)
+        .map((cls) => ({
+          label: cls.name,
+          tooltipLabel: cls.name,
+          values: {
+            fillRate: cls.fillRate,
+            attendanceRate: cls.attendanceRate,
+          },
+        })),
     [classes],
   );
 
@@ -196,7 +196,18 @@ export function CoursesReportTab({ range }: CoursesReportTabProps) {
             loading={report.isPending}
             icon={Award}
             label="HLV đông học viên nhất"
-            value={topCoach ? topCoach.coach.fullName : '—'}
+            value={
+              topCoach ? (
+                <span
+                  className="block truncate text-[clamp(20px,1.65vw,26px)] leading-tight"
+                  title={topCoach.coach.fullName}
+                >
+                  {topCoach.coach.fullName}
+                </span>
+              ) : (
+                '—'
+              )
+            }
             hint={topCoach ? `${formatCount(topCoach.students)} học viên theo học` : 'Chưa có dữ liệu giảng dạy'}
           />
         </Col>
