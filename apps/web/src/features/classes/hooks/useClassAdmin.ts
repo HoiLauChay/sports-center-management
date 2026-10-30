@@ -2,12 +2,14 @@ import {
   PAGINATION,
   type AssignCoachBody,
   type ReviewClassBody,
+  type SaveAttendanceBody,
   type UpdateClassBody,
   type UpdateSessionBody,
 } from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { specializationsService } from '~/features/specializations/services/specializations.service';
+import { trainingService } from '~/features/training/services/training.service';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
@@ -119,5 +121,22 @@ export function useUpdateSession() {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['schedule'] });
     },
+  });
+}
+
+/** `PUT /sessions/{id}/attendance`: manager override save (bypasses the 3-day coach window and logs `CLASS_ATTENDANCE`). */
+export function useSaveManagerAttendance(classId: string, sessionId: string) {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SaveAttendanceBody) => trainingService.saveAttendance(sessionId, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['training', 'session', sessionId, 'attendance'] });
+      void queryClient.invalidateQueries({ queryKey: ['training', 'class', classId] });
+      void queryClient.invalidateQueries({ queryKey: adminKey(classId) });
+      void queryClient.invalidateQueries({ queryKey: ['audit'] });
+      message.success('Đã lưu điểm danh buổi học.');
+    },
+    onError: (error) => message.error(describeApiError(error)),
   });
 }
