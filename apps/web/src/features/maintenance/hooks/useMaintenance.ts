@@ -1,4 +1,9 @@
-import type { CreateMaintenanceBody, ListMaintenancesQuery, MaintenanceWindow } from '@sports-center/shared';
+import type {
+  CreateMaintenanceBody,
+  ListMaintenancesQuery,
+  MaintenanceWindow,
+  UpdateMaintenanceBody,
+} from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { describeApiError } from '~/lib/http-errors';
@@ -31,6 +36,14 @@ export function useCreateMaintenance() {
   const refresh = useRefreshAfterMaintenance();
   return useMutation({
     mutationFn: (body: CreateMaintenanceBody) => maintenanceService.create(body),
+    onSuccess: refresh,
+  });
+}
+
+export function useUpdateMaintenance() {
+  const refresh = useRefreshAfterMaintenance();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateMaintenanceBody }) => maintenanceService.update(id, body),
     onSuccess: refresh,
   });
 }
