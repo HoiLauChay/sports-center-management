@@ -1,4 +1,5 @@
 import type {
+  Maintenance,
   MaintenanceAffectedBooking,
   MaintenanceAffectedSession,
   MaintenancePreview,
@@ -22,14 +23,14 @@ import {
   type TableColumnsType,
 } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Table } from '~/components/data/Table';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useSettings } from '~/features/settings';
 import { formatDate, VN_TIMEZONE } from '~/lib/format';
 import { describeApiError, errorPayload, toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, fromMinutes, slotGrid, todayVN, toMinutes } from '~/lib/time';
-import { useCreateMaintenance, useMaintenancePreview } from '../hooks/useMaintenance';
+import { useCreateMaintenance, useMaintenancePreview, useUpdateMaintenance } from '../hooks/useMaintenance';
 import type { SessionResolution } from '../types';
 
 const QUARTERS = Array.from({ length: 97 }, (_, index) => fromMinutes(index * 15));
@@ -165,19 +166,21 @@ function ResolutionCell({
 
 interface MaintenanceWizardProps {
   open: boolean;
+  editing?: Maintenance | null;
   onClose: () => void;
 }
 
 /**
- * Creating a maintenance (BR_2.19, UC_2.4/2.5): 1) facility, time window and reason; 2) preview of the bookings to
- * move and the sessions that need a decision; 3) the result. Confirming stays disabled while any booking has no
- * facility to move to or any session has no complete resolution.
+ * Creating or editing a planned maintenance (BR_2.19, UC_2.4/2.5): 1) facility, time window and reason;
+ * 2) preview of the bookings to move and the sessions that need a decision; 3) the result.
+ * Confirming stays disabled while any booking has no facility to move to or any session has no complete resolution.
  */
-export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
+export function MaintenanceWizard({ open, editing = null, onClose }: MaintenanceWizardProps) {
   const [form] = Form.useForm<WindowForm>();
   const facilities = useQuery(facilitiesQueryOptions);
   const preview = useMaintenancePreview();
   const create = useCreateMaintenance();
+  const update = useUpdateMaintenance();
   const [step, setStep] = useState(0);
   const [request, setRequest] = useState<MaintenanceWindow | null>(null);
   const [data, setData] = useState<MaintenancePreview | null>(null);
@@ -186,7 +189,25 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const [blocked, setBlocked] = useState<MaintenanceAffectedBooking[]>([]);
   const [result, setResult] = useState<MaintenanceResult | null>(null);
 
-  const facilityName = (id: string) => facilities.data?.find((entry) => entry.id === id)?.name ?? '';
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      const start = dayjs(editing.startAt).tz(VN_TIMEZONE);
+      const end = dayjs(editing.endAt).tz(VN_TIMEZONE);
+      form.setFieldsValue({
+        facilityId: editing.facility.id,
+        dates: [start.startOf('day'), end.startOf('day')],
+        startTime: start.format('HH:mm'),
+        endTime: end.format('HH:mm'),
+        reason: editing.reason,
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [open, editing, form]);
+
+  const facilityName = (id: string) =>
+    facilities.data?.find((entry) => entry.id === id)?.name ?? editing?.facility.name ?? '';
 
   const close = () => {
     onClose();
@@ -202,12 +223,13 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       form.resetFields();
       preview.reset();
       create.reset();
+      update.reset();
     }, 250);
   };
 
   const submitWindow = (values: WindowForm) => {
     const next: MaintenanceWindow = {
-      facilityId: values.facilityId,
+      facilityId: editing ? editing.facility.id : values.facilityId,
       startAt: toIso(values.dates[0], values.startTime),
       endAt: toIso(values.dates[1], values.endTime),
       reason: values.reason.trim(),
@@ -215,6 +237,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
     preview.mutate(next, {
       onSuccess: (affected) => {
         create.reset();
+        update.reset();
         setRequest(next);
         setData(affected);
         setResolutions({});
@@ -233,23 +256,47 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   const unresolved = sessions.filter((session) => resolutionError(resolutions[session.id]) !== null);
   const ready = unresolved.length === 0 && unmoved.length === 0;
   const blockedCount = blocked.length;
+  const saving = create.isPending || update.isPending;
+  const saveError = editing ? update.error : create.error;
+  const isSaveError = editing ? update.isError : create.isError;
 
   const confirm = () => {
     if (!request || !ready) return;
     setBlocked([]);
+    const bookingMoves = bookings.map((booking) => ({ bookingId: booking.id, facilityId: moves[booking.id]! }));
+    const sessionResolutions = sessions.map((session) => resolutions[session.id]!);
+    const callbacks = {
+      onSuccess: (saved: MaintenanceResult) => {
+        setResult(saved);
+        setStep(2);
+      },
+      onError: (error: unknown) => setBlocked(errorPayload<MaintenanceAffectedBooking[]>(error, 'bookings') ?? []),
+    };
+
+    if (editing) {
+      update.mutate(
+        {
+          id: editing.id,
+          body: {
+            startAt: request.startAt,
+            endAt: request.endAt,
+            reason: request.reason,
+            bookingMoves,
+            sessionResolutions,
+          },
+        },
+        callbacks,
+      );
+      return;
+    }
+
     create.mutate(
       {
         ...request,
-        bookingMoves: bookings.map((booking) => ({ bookingId: booking.id, facilityId: moves[booking.id]! })),
-        sessionResolutions: sessions.map((session) => resolutions[session.id]!),
+        bookingMoves,
+        sessionResolutions,
       },
-      {
-        onSuccess: (created) => {
-          setResult(created);
-          setStep(2);
-        },
-        onError: (error) => setBlocked(errorPayload<MaintenanceAffectedBooking[]>(error, 'bookings') ?? []),
-      },
+      callbacks,
     );
   };
 
@@ -355,8 +402,8 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
                     : `Còn ${unresolved.length} buổi học chưa có cách xử lý`
               }
             >
-              <Button type="primary" disabled={!ready} loading={create.isPending} onClick={confirm}>
-                Xác nhận bảo trì
+              <Button type="primary" disabled={!ready} loading={saving} onClick={confirm}>
+                {editing ? 'Lưu thay đổi' : 'Xác nhận bảo trì'}
               </Button>
             </Tooltip>,
           ]
@@ -369,7 +416,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
   return (
     <Modal
       open={open}
-      title="Đặt lịch bảo trì"
+      title={editing ? `Chỉnh sửa lịch bảo trì · ${editing.facility.name}` : 'Đặt lịch bảo trì'}
       width={940}
       centered
       mask={{ closable: false }}
@@ -385,6 +432,14 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
 
       {step === 0 && (
         <Form form={form} layout="vertical" onFinish={submitWindow} requiredMark="optional">
+          {editing && (
+            <Alert
+              type="info"
+              showIcon
+              className="!mb-4"
+              title={`Lịch hiện tại: ${dayjs(editing.startAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')} → ${dayjs(editing.endAt).tz(VN_TIMEZONE).format('HH:mm DD/MM/YYYY')}`}
+            />
+          )}
           {preview.isError && (
             <Alert type="error" showIcon className="!mb-4" title={toApiError(preview.error).message} />
           )}
@@ -392,9 +447,10 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
             <Select
               showSearch={{ optionFilterProp: 'label' }}
               loading={facilities.isPending}
+              disabled={Boolean(editing)}
               placeholder="Chọn sân / phòng"
               options={(facilities.data ?? [])
-                .filter((entry) => entry.isActive)
+                .filter((entry) => entry.isActive || entry.id === editing?.facility.id)
                 .map((entry) => ({ value: entry.id, label: entry.name }))}
             />
           </Form.Item>
@@ -403,11 +459,27 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               format="DD/MM/YYYY"
               className="w-full"
               placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
-              disabledDate={(day) => day.format(DATE_FORMAT) <= todayVN()}
+              disabledDate={(day) => day.format(DATE_FORMAT) < todayVN()}
             />
           </Form.Item>
           <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="startTime" label="Giờ bắt đầu" rules={[{ required: true, message: 'Chọn giờ bắt đầu' }]}>
+            <Form.Item
+              name="startTime"
+              label="Giờ bắt đầu"
+              dependencies={['dates']}
+              rules={[
+                { required: true, message: 'Chọn giờ bắt đầu' },
+                ({ getFieldValue }) => ({
+                  validator: (_, startTime: string | undefined) => {
+                    const dates = getFieldValue('dates') as [Dayjs, Dayjs] | undefined;
+                    if (!dates || !startTime) return Promise.resolve();
+                    return Date.parse(toIso(dates[0], startTime)) > Date.now()
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('Thời điểm bắt đầu phải ở tương lai'));
+                  },
+                }),
+              ]}
+            >
               <Select showSearch placeholder="Chọn giờ" options={START_OPTIONS} />
             </Form.Item>
             <Form.Item
@@ -436,7 +508,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
             label="Lý do"
             rules={[{ required: true, whitespace: true, message: 'Vui lòng nhập lý do' }]}
           >
-            <Input maxLength={200} />
+            <Input maxLength={500} />
           </Form.Item>
         </Form>
       )}
@@ -465,9 +537,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
               }
             />
           )}
-          {create.isError && blockedCount === 0 && (
-            <Alert type="error" showIcon title={describeApiError(create.error)} />
-          )}
+          {isSaveError && blockedCount === 0 && <Alert type="error" showIcon title={describeApiError(saveError)} />}
           {stranded.length > 0 && (
             <Alert
               type="error"
@@ -539,7 +609,7 @@ export function MaintenanceWizard({ open, onClose }: MaintenanceWizardProps) {
       {step === 2 && result && (
         <Result
           status="success"
-          title="Đã ghi nhận lịch bảo trì"
+          title={editing ? 'Đã cập nhật lịch bảo trì' : 'Đã ghi nhận lịch bảo trì'}
           subTitle={`${result.maintenance.facility.name}: chuyển ${result.movedBookings} booking sang sân khác, xử lý ${result.sessionsUpdated} buổi học.`}
         />
       )}

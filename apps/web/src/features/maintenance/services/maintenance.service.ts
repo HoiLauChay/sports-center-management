@@ -6,12 +6,14 @@ import type {
   MaintenancePreview,
   MaintenanceResult,
   MaintenanceWindow,
+  UpdateMaintenanceBody,
 } from '@sports-center/shared';
 import { privateApi } from '~/lib/http';
 
 /**
  * Facility maintenance (`GET /maintenances`, `POST /maintenances/preview`, `POST /maintenances`,
- * `POST /maintenances/{id}/complete`, `DELETE /maintenances/{id}`). A 409 `MAINTENANCE_BLOCKED` lists the bookings with nowhere to go in `bookings`.
+ * `PATCH /maintenances/{id}`, `POST /maintenances/{id}/complete`, `DELETE /maintenances/{id}`).
+ * A 409 `MAINTENANCE_BLOCKED` lists the bookings with nowhere to go in `bookings`.
  */
 export const maintenanceService = {
   list: async (query: ListMaintenancesQuery) => {
@@ -26,6 +28,14 @@ export const maintenanceService = {
 
   create: async (body: CreateMaintenanceBody) => {
     const { data } = await privateApi.post<ApiResponse<MaintenanceResult>>('/maintenances', body);
+    return data.result;
+  },
+
+  update: async (id: string, body: UpdateMaintenanceBody) => {
+    const { data } = await privateApi.patch<ApiResponse<MaintenanceResult>>(
+      `/maintenances/${encodeURIComponent(id)}`,
+      body,
+    );
     return data.result;
   },
 
