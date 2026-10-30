@@ -514,7 +514,7 @@ export function ManagerSessionDrawer({
       open={session !== null}
       onClose={onClose}
       destroyOnHidden
-      width={940}
+      size={940}
       title={
         session ? (
           <div className="flex flex-wrap items-center gap-2">

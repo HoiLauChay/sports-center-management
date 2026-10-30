@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { SectionTitle } from '~/components/ui/SectionTitle';
-import { PlanMeta, PlanView } from '~/features/training/components/class/PlanForm';
+import { PlanView } from '~/features/training/components/class/PlanForm';
 import { useClassPlans, useRoster } from '~/features/training/hooks/useClassTraining';
 import { formatDateTime, initialsOf } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -136,10 +136,7 @@ export function ManagerClassPlansTab({ classId }: ManagerClassPlansTabProps) {
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <Card size="small">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <SectionTitle>Kế hoạch tập luyện chung</SectionTitle>
-            {classPlan && <PlanMeta plan={classPlan} />}
-          </div>
+          <SectionTitle>Kế hoạch tập luyện chung</SectionTitle>
           {classPlan ? (
             <div className="rounded-xl border border-sc-border-soft bg-sc-paper/45 p-3.5">
               <PlanView plan={classPlan} />
