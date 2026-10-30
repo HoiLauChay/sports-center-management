@@ -8,6 +8,7 @@ import type {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { describeApiError } from '~/lib/http-errors';
+import { todayVN } from '~/lib/time';
 import { trainingService } from '../services/training.service';
 
 const sessionKey = (sessionId: string, part: string) => ['training', 'session', sessionId, part] as const;
@@ -153,12 +154,18 @@ export function useMyCheckIns(range: ListMyCheckInsQuery) {
   });
 }
 
-export function useCheckInsToday() {
+export function useCheckIns(date?: string) {
+  const isToday = !date || date === todayVN();
   return useQuery({
-    queryKey: ['training', 'checkins', 'today'],
-    queryFn: () => trainingService.checkInsToday(),
-    refetchInterval: 15_000,
+    queryKey: ['training', 'checkins', isToday ? 'today' : date],
+    queryFn: () => trainingService.checkIns(isToday ? undefined : date),
+    placeholderData: keepPreviousData,
+    refetchInterval: isToday ? 15_000 : false,
   });
+}
+
+export function useCheckInsToday() {
+  return useCheckIns();
 }
 
 export function useCheckIn() {
