@@ -53,9 +53,7 @@ export function PendingOrderInvoicesBanner() {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-amber-900">
           <QrCode size={18} className="shrink-0 text-amber-700" />
-          <span className="text-[15.5px] font-bold">
-            Phiếu thanh toán chuyển khoản đang chờ ({activeInvoices.length})
-          </span>
+          <span className="text-[15.5px] font-bold">Biên lai thanh toán đang chờ ({activeInvoices.length})</span>
         </div>
         <span className="text-[13.5px] text-amber-800/90">
           Đơn hàng sẽ tự động ghi nhận ngay sau khi chuyển khoản đúng nội dung
