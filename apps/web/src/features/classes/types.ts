@@ -7,6 +7,7 @@ export type {
   ClassSummary,
   CoachRegistration,
   CoachRegistrationStatus,
+  ReviewClassBody,
   WeeklySlot,
 } from '@sports-center/shared';
 

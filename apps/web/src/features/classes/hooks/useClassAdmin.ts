@@ -1,7 +1,15 @@
-import { PAGINATION, type AssignCoachBody, type UpdateClassBody, type UpdateSessionBody } from '@sports-center/shared';
+import {
+  PAGINATION,
+  type AssignCoachBody,
+  type ReviewClassBody,
+  type SaveAttendanceBody,
+  type UpdateClassBody,
+  type UpdateSessionBody,
+} from '@sports-center/shared';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
 import { specializationsService } from '~/features/specializations/services/specializations.service';
+import { trainingService } from '~/features/training/services/training.service';
 import { formatVND } from '~/lib/format';
 import { describeApiError } from '~/lib/http-errors';
 import { classAdminService } from '../services/classAdmin.service';
@@ -57,11 +65,14 @@ export function useUpdateClass(classId: string) {
 }
 
 export function useApproveClass(classId: string) {
-  return useClassAction(() => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
+  return useClassAction((body?: ReviewClassBody) => classAdminService.approve(classId, body), 'Đã duyệt mở lớp.');
 }
 
 export function useRejectClass(classId: string) {
-  return useClassAction(() => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+  return useClassAction(
+    (body?: ReviewClassBody) => classAdminService.reject(classId, body),
+    'Đã từ chối, lớp về trạng thái nháp.',
+  );
 }
 
 export function useAssignCoach(classId: string) {
@@ -75,13 +86,30 @@ export function useCancelClass(classId: string) {
   );
 }
 
+export interface ReviewClassFromListVariables {
+  classId: string;
+  note?: string;
+}
+
 /** Approve / reject straight from the class list, where the class is known per row. */
 export function useApproveClassFromList() {
-  return useClassAction((classId: string) => classAdminService.approve(classId), 'Đã duyệt mở lớp.');
+  return useClassAction(
+    (input: string | ReviewClassFromListVariables) =>
+      typeof input === 'string'
+        ? classAdminService.approve(input)
+        : classAdminService.approve(input.classId, { note: input.note }),
+    'Đã duyệt mở lớp.',
+  );
 }
 
 export function useRejectClassFromList() {
-  return useClassAction((classId: string) => classAdminService.reject(classId), 'Đã từ chối, lớp về trạng thái nháp.');
+  return useClassAction(
+    (input: string | ReviewClassFromListVariables) =>
+      typeof input === 'string'
+        ? classAdminService.reject(input)
+        : classAdminService.reject(input.classId, { note: input.note }),
+    'Đã từ chối, lớp về trạng thái nháp.',
+  );
 }
 
 /** `PATCH /sessions/{id}`: moves one session to another time or facility; a clash is left to the caller. */
@@ -93,5 +121,22 @@ export function useUpdateSession() {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       void queryClient.invalidateQueries({ queryKey: ['schedule'] });
     },
+  });
+}
+
+/** `PUT /sessions/{id}/attendance`: manager override save (bypasses the 3-day coach window and logs `CLASS_ATTENDANCE`). */
+export function useSaveManagerAttendance(classId: string, sessionId: string) {
+  const { message } = App.useApp();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SaveAttendanceBody) => trainingService.saveAttendance(sessionId, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['training', 'session', sessionId, 'attendance'] });
+      void queryClient.invalidateQueries({ queryKey: ['training', 'class', classId] });
+      void queryClient.invalidateQueries({ queryKey: adminKey(classId) });
+      void queryClient.invalidateQueries({ queryKey: ['audit'] });
+      message.success('Đã lưu điểm danh buổi học.');
+    },
+    onError: (error) => message.error(describeApiError(error)),
   });
 }

@@ -1,30 +1,36 @@
+import { ATTENDANCE_RULES } from '@sports-center/shared';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import { Alert, Button, Card, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
-import { Banknote, CalendarDays, Check, Pencil, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
-import { useState } from 'react';
+import { Alert, Button, Card, Segmented, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
+import { Banknote, CalendarDays, Check, Pencil, ShieldAlert, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { Table } from '~/components/data/Table';
-import { ErrorState, PageLoading } from '~/components/feedback/States';
+import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { MappedTag } from '~/components/ui/MappedTag';
 import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
+import { AnnouncementsTab } from '~/features/training/components/class/AnnouncementsTab';
 import { RosterTab } from '~/features/training/components/class/RosterTab';
+import { useRoster } from '~/features/training/hooks/useClassTraining';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDate, formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, WEEK_ORDER } from '~/lib/time';
 import { useApproveClass, useAssignCoach, useClassAdmin, useRejectClass } from '../hooks/useClassAdmin';
 import type { ClassAdminDetail, ClassSession, CoachRegistration } from '../types';
-import { classAdminActions, classStatusTag, REGISTRATION_TAG } from '../utils';
-import { AssignCoachModal, CancelClassModal, EditClassModal } from './ClassAdminModals';
+import { classAdminActions, classStatusTag, isCoachAttendanceExpired, REGISTRATION_TAG } from '../utils';
+import { AssignCoachModal, CancelClassModal, EditClassModal, ReviewClassModal } from './ClassAdminModals';
 import { ClassStudentsTable } from './ClassStudentsTable';
+import { ManagerClassPlansTab } from './ManagerClassPlansTab';
+import { ManagerSessionDrawer } from './ManagerSessionDrawer';
 import { SessionEditModal } from './SessionEditModal';
 
 const routeApi = getRouteApi('/_authenticated/_manager/admin/classes/$classId');
 
-type ModalState = null | 'edit' | 'cancel' | 'assign';
+type ModalState = null | 'edit' | 'cancel' | 'assign' | 'approve' | 'reject';
+type SessionFilter = 'ALL' | 'PAST' | 'COACH_EXPIRED' | 'UPCOMING';
 
 const SOURCE_LABEL: Record<CoachRegistration['source'], string> = {
   COACH_REGISTERED: 'HLV đăng ký',
@@ -58,13 +64,23 @@ export function ClassAdminDetailPage() {
   const { classId } = routeApi.useParams();
   const router = useRouter();
   const detail = useClassAdmin(classId);
+  const roster = useRoster(classId);
   const confirm = useConfirm();
   const approve = useApproveClass(classId);
   const reject = useRejectClass(classId);
   const assign = useAssignCoach(classId);
   const [modal, setModal] = useState<ModalState>(null);
   const [tab, setTab] = useState<string>();
+  const [sessionFilter, setSessionFilter] = useState<SessionFilter>('ALL');
   const [editing, setEditing] = useState<ClassSession | null>(null);
+  const [inspecting, setInspecting] = useState<ClassSession | null>(null);
+
+  const attendanceSummary = useMemo(() => {
+    const entries = roster.data ?? [];
+    const studentsWithUnmarked = entries.filter((entry) => entry.attendance.unmarked > 0).length;
+    const totalUnmarked = entries.reduce((sum, entry) => sum + entry.attendance.unmarked, 0);
+    return { studentsWithUnmarked, totalUnmarked };
+  }, [roster.data]);
 
   if (detail.isPending) return <PageLoading />;
   if (detail.isError) {
@@ -82,25 +98,16 @@ export function ClassAdminDetailPage() {
   const status = classStatusTag(item);
   const liveSessions = item.sessions.filter((session) => session.status === 'SCHEDULED');
   const taught = liveSessions.filter((session) => isPast(session.date, session.startTime)).length;
+  const upcomingCount = liveSessions.length - taught;
+  const coachExpiredCount = liveSessions.filter((session) => isCoachAttendanceExpired(session)).length;
+  const filteredSessions = item.sessions.filter((session) => {
+    if (sessionFilter === 'PAST') return session.status === 'SCHEDULED' && isPast(session.date, session.startTime);
+    if (sessionFilter === 'COACH_EXPIRED') return isCoachAttendanceExpired(session);
+    if (sessionFilter === 'UPCOMING') return session.status === 'SCHEDULED' && !isPast(session.date, session.startTime);
+    return true;
+  });
   const closeModal = () => setModal(null);
   const needsCoach = item.status === 'PENDING_APPROVAL' && !item.coach;
-
-  const askReject = () =>
-    confirm({
-      title: 'Từ chối mở lớp?',
-      content: 'Lớp trở về trạng thái nháp, HLV hiện tại bị gỡ và nhận thông báo.',
-      okText: 'Từ chối',
-      onOk: () => reject.mutateAsync().catch(() => undefined),
-    });
-
-  const askApprove = () =>
-    confirm({
-      title: `Duyệt mở lớp ${item.name}?`,
-      content: 'Lớp chuyển sang đang mở và bắt đầu nhận đăng ký.',
-      okText: 'Duyệt mở lớp',
-      danger: false,
-      onOk: () => approve.mutateAsync().catch(() => undefined),
-    });
 
   const askPick = (registration: CoachRegistration) =>
     confirm({
@@ -190,28 +197,59 @@ export function ClassAdminDetailPage() {
       render: (_, session) =>
         session.status === 'CANCELLED' ? (
           <Tooltip title={session.cancelReason}>
-            <Tag color="error">Đã hủy</Tag>
+            <Tag color="error" className="!m-0">
+              Đã hủy
+            </Tag>
           </Tooltip>
         ) : isPast(session.date, session.startTime) ? (
-          <Tag>Đã diễn ra</Tag>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Tag className="!m-0">Đã diễn ra</Tag>
+            {isCoachAttendanceExpired(session) && (
+              <Tooltip
+                title={`Đã quá thời hạn ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày sửa điểm danh của HLV — Quản lý vẫn có quyền hiệu chỉnh`}
+              >
+                <Tag color="gold" className="!m-0">
+                  Quá hạn HLV · QL sửa được
+                </Tag>
+              </Tooltip>
+            )}
+          </div>
         ) : (
-          <Tag color="processing">Sắp tới</Tag>
+          <Tag color="processing" className="!m-0">
+            Sắp tới
+          </Tag>
         ),
     },
     {
       title: 'Thao tác',
       key: 'actions',
       align: 'right',
-      render: (_, session) => (
-        <RowActions
-          label={`Thao tác với buổi ${session.sessionNumber}`}
-          actions={
-            item.status !== 'CANCELLED' && session.status === 'SCHEDULED' && !isPast(session.date, session.startTime)
-              ? [{ key: 'edit', label: 'Sửa', onClick: () => setEditing(session) }]
-              : []
-          }
-        />
-      ),
+      render: (_, session) => {
+        const started = isPast(session.date, session.startTime);
+        const canReschedule = item.status !== 'CANCELLED' && session.status === 'SCHEDULED' && !started;
+        return (
+          <RowActions
+            label={`Thao tác với buổi ${session.sessionNumber}`}
+            actions={[
+              {
+                key: 'inspect',
+                label: started && session.status === 'SCHEDULED' ? 'Điểm danh' : 'Chi tiết',
+                primary: started && session.status === 'SCHEDULED',
+                onClick: () => setInspecting(session),
+              },
+              ...(canReschedule
+                ? [
+                    {
+                      key: 'edit',
+                      label: 'Đổi lịch',
+                      onClick: () => setEditing(session),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        );
+      },
     },
   ];
 
@@ -227,12 +265,17 @@ export function ClassAdminDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Tag color={status.color}>{status.label}</Tag>
             {can.approve && (
-              <Button type="primary" loading={approve.isPending} icon={<Check size={16} />} onClick={askApprove}>
+              <Button
+                type="primary"
+                loading={approve.isPending}
+                icon={<Check size={16} />}
+                onClick={() => setModal('approve')}
+              >
                 Duyệt mở lớp
               </Button>
             )}
             {can.reject && (
-              <Button loading={reject.isPending} icon={<X size={16} />} onClick={askReject}>
+              <Button loading={reject.isPending} icon={<X size={16} />} onClick={() => setModal('reject')}>
                 Từ chối
               </Button>
             )}
@@ -264,7 +307,19 @@ export function ClassAdminDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />
         <StatCard icon={CalendarDays} label="Buổi đã dạy" value={`${taught}/${item.course.totalSessions}`} />
-        <StatCard icon={UserCheck} label="HLV" value={item.coach?.fullName ?? '—'} />
+        <StatCard
+          icon={UserCheck}
+          label="HLV"
+          value={
+            item.coach ? (
+              <span className="block truncate text-[clamp(20px,1.65vw,26px)] leading-tight" title={item.coach.fullName}>
+                {item.coach.fullName}
+              </span>
+            ) : (
+              '—'
+            )
+          }
+        />
         <StatCard icon={Banknote} label="Học phí" value={<MoneyFigure amount={item.course.price} />} />
       </div>
 
@@ -330,14 +385,59 @@ export function ClassAdminDetailPage() {
           items={[
             {
               key: 'sessions',
-              label: `Buổi học (${item.sessions.length})`,
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  Buổi học ({item.sessions.length})
+                  {attendanceSummary.totalUnmarked > 0 && (
+                    <Tag color="warning" className="!m-0 !text-[11.5px]">
+                      Thiếu {attendanceSummary.totalUnmarked} ĐD
+                    </Tag>
+                  )}
+                </span>
+              ),
               children: (
-                <Table<ClassSession>
-                  rowKey="id"
-                  columns={sessionColumns}
-                  dataSource={item.sessions}
-                  pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                />
+                <div className="flex flex-col gap-3.5">
+                  {item.status !== 'CANCELLED' && attendanceSummary.totalUnmarked > 0 && (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      icon={<ShieldAlert size={16} />}
+                      title={`Còn ${attendanceSummary.totalUnmarked} lượt điểm danh chưa ghi nhận trên ${attendanceSummary.studentsWithUnmarked} học viên ở các buổi đã diễn ra.`}
+                      description={`Bấm 'Điểm danh' ở buổi học tương ứng để kiểm tra hoặc bổ sung (kể cả buổi đã quá thời hạn ${ATTENDANCE_RULES.COACH_EDIT_DAYS} ngày của huấn luyện viên).`}
+                      action={
+                        sessionFilter !== 'PAST' ? (
+                          <Button size="small" onClick={() => setSessionFilter('PAST')}>
+                            Lọc buổi đã diễn ra
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Segmented<SessionFilter>
+                      value={sessionFilter}
+                      onChange={setSessionFilter}
+                      options={[
+                        { value: 'ALL', label: `Tất cả (${item.sessions.length})` },
+                        { value: 'PAST', label: `Đã diễn ra (${taught})` },
+                        { value: 'COACH_EXPIRED', label: `Quá hạn sửa HLV (${coachExpiredCount})` },
+                        { value: 'UPCOMING', label: `Sắp tới (${upcomingCount})` },
+                      ]}
+                    />
+                    <span className="text-[13px] text-sc-muted">
+                      Bấm <b>Điểm danh</b> để xem kết quả buổi, ghi chú giảng dạy hoặc hiệu chỉnh điểm danh.
+                    </span>
+                  </div>
+
+                  <Table<ClassSession>
+                    rowKey="id"
+                    columns={sessionColumns}
+                    dataSource={filteredSessions}
+                    pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                    locale={{ emptyText: <EmptyState title="Không có buổi học nào thuộc nhóm lọc này" /> }}
+                  />
+                </div>
               ),
             },
             {
@@ -349,6 +449,16 @@ export function ClassAdminDetailPage() {
               key: 'progress',
               label: 'Tiến độ học viên',
               children: <RosterTab classId={item.id} sessions={item.sessions} readOnly />,
+            },
+            {
+              key: 'plans',
+              label: 'Kế hoạch tập luyện',
+              children: <ManagerClassPlansTab classId={item.id} />,
+            },
+            {
+              key: 'announcements',
+              label: 'Thông báo lớp',
+              children: <AnnouncementsTab classId={item.id} canSend={item.status !== 'CANCELLED'} />,
             },
             {
               key: 'coaches',
@@ -370,7 +480,25 @@ export function ClassAdminDetailPage() {
       <EditClassModal open={modal === 'edit'} item={item} onClose={closeModal} />
       <CancelClassModal open={modal === 'cancel'} item={item} onClose={closeModal} />
       <AssignCoachModal open={modal === 'assign'} item={item} onClose={closeModal} />
+      <ReviewClassModal
+        open={modal === 'approve' || modal === 'reject'}
+        mode={modal === 'reject' ? 'reject' : 'approve'}
+        item={item}
+        loading={approve.isPending || reject.isPending}
+        onClose={closeModal}
+        onConfirm={(note) => {
+          const run = modal === 'reject' ? reject : approve;
+          run.mutate({ note }, { onSuccess: closeModal });
+        }}
+      />
       <SessionEditModal item={item} session={editing} onClose={() => setEditing(null)} />
+      <ManagerSessionDrawer
+        classId={item.id}
+        className={item.name}
+        classCancelled={item.status === 'CANCELLED'}
+        session={inspecting}
+        onClose={() => setInspecting(null)}
+      />
     </>
   );
 }
