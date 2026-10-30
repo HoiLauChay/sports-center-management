@@ -21,12 +21,16 @@ export function MemberDetailPage() {
       id={memberId}
       backLabel="Tra cứu hội viên"
       onBack={back}
+      belowProfile={() => (
+        <div className="grid items-start gap-4 md:grid-cols-2">
+          <MemberBookingsBlock memberId={memberId} />
+          <MemberHistoryBlock memberId={memberId} />
+        </div>
+      )}
       aside={() => (
         <>
           <MemberWalletBlock memberId={memberId} />
           <StaffMembershipBlock memberId={memberId} counterLink />
-          <MemberBookingsBlock memberId={memberId} />
-          <MemberHistoryBlock memberId={memberId} />
           <MemberSupportBlock memberId={memberId} />
         </>
       )}

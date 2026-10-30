@@ -102,16 +102,21 @@ export function MemberHistoryBlock({ memberId, manager = false }: MemberBlockPro
         </span>
         <ul className="m-0 flex min-w-0 flex-1 list-none flex-col gap-2 p-0 text-[15px]">
           {(orders.data?.items ?? []).map((order) => (
-            <li key={order.id} className="flex items-center justify-between gap-2">
+            <li
+              key={order.id}
+              className="flex items-center justify-between gap-2 border-b border-sc-border-soft pb-2 last:border-b-0 last:pb-0"
+            >
               <Link
                 to={manager ? '/admin/orders/$orderId' : '/reception/orders/$orderId'}
                 params={{ orderId: order.id }}
-                className="min-w-0"
+                className="min-w-0 flex-1"
               >
-                <span className="block font-mono text-[14.5px] font-semibold">{order.orderNumber}</span>
+                <span className="block truncate font-mono text-[14.5px] font-semibold" title={order.orderNumber}>
+                  {order.orderNumber}
+                </span>
                 <span className="text-[13.5px] text-sc-muted">{formatDateTime(order.paidAt)}</span>
               </Link>
-              <span className="flex flex-col items-end gap-0.5">
+              <span className="flex shrink-0 flex-col items-end gap-0.5">
                 <b className="tabular-nums">{formatVND(order.totalAmount)}</b>
                 <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
               </span>

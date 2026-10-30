@@ -96,13 +96,19 @@ export function AdminUserDetailPage() {
       id={userId}
       backLabel="Danh sách người dùng"
       onBack={back}
+      belowProfile={(user) =>
+        user.roles.includes('MEMBER') ? (
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            <MemberBookingsBlock memberId={user.id} manager />
+            <MemberHistoryBlock memberId={user.id} manager />
+          </div>
+        ) : null
+      }
       aside={(user) =>
         user.roles.includes('MEMBER') ? (
           <>
             <MemberWalletBlock memberId={user.id} manager />
             <StaffMembershipBlock memberId={user.id} />
-            <MemberBookingsBlock memberId={user.id} manager />
-            <MemberHistoryBlock memberId={user.id} manager />
             <MemberSupportBlock memberId={user.id} manager />
           </>
         ) : null
