@@ -60,6 +60,19 @@ interface ManagerAttendancePanelProps {
 
 const attachmentFileName = (url: string) => decodeURIComponent(url.split('/').at(-1) ?? url);
 
+function ReadOnlyShield() {
+  return (
+    <Tooltip title="Chỉ đọc">
+      <span
+        aria-label="Chỉ đọc"
+        className="inline-flex cursor-help items-center text-sc-muted transition-colors hover:text-sc-ink"
+      >
+        <ShieldCheck size={14} />
+      </span>
+    </Tooltip>
+  );
+}
+
 function managerLockReason(session: ClassSession, classCancelled: boolean): string | null {
   if (classCancelled) return 'Lớp học đã bị hủy nên danh sách điểm danh ở chế độ chỉ đọc.';
   if (session.status === 'CANCELLED') return 'Buổi học này đã bị hủy nên không thể điểm danh.';
@@ -249,14 +262,7 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
       title: (
         <span className="inline-flex items-center gap-1.5">
           <span>Đánh giá của HLV</span>
-          <Tooltip title="Chỉ đọc">
-            <span
-              aria-label="Chỉ đọc"
-              className="inline-flex cursor-help items-center text-sc-muted transition-colors hover:text-sc-ink"
-            >
-              <ShieldCheck size={14} />
-            </span>
-          </Tooltip>
+          <ReadOnlyShield />
         </span>
       ),
       key: 'evaluation',
@@ -384,18 +390,25 @@ function ManagerSessionNotePanel({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <Alert
-        type="info"
-        showIcon
-        title={`Ghi chú do huấn luyện viên cập nhật lúc ${formatDateTime(saved.updatedAt)} · Chế độ chỉ đọc cho quản lý.`}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sc-border-soft bg-sc-paper/50 px-3.5 py-2.5 text-[13.5px]">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-sc-ink-2">
+          <span>Ghi chú của huấn luyện viên</span>
+          <ReadOnlyShield />
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-sc-muted">
+          <History size={13} className="shrink-0" />
+          <span>Cập nhật lúc {formatDateTime(saved.updatedAt)}</span>
+        </span>
+      </div>
 
       <Card size="small">
-        <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-sc-muted uppercase">
-          <FileText size={14} className="text-sc-primary" />
-          Nội dung giảng dạy
-        </div>
-        <h4 className="mt-1 mb-2 text-[17px] font-bold text-sc-ink">{saved.title}</h4>
+        <SectionTitle>
+          <span className="inline-flex items-center gap-1.5">
+            <FileText size={16} className="text-sc-primary" />
+            Nội dung giảng dạy
+          </span>
+        </SectionTitle>
+        <h4 className="mt-0 mb-2 text-[16.5px] font-bold text-sc-ink">{saved.title}</h4>
         <div className="rounded-lg bg-sc-paper/60 p-3 text-[14.5px] leading-relaxed whitespace-pre-line text-sc-ink-2">
           {saved.content}
         </div>
