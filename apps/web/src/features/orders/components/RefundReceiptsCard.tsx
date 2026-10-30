@@ -106,10 +106,12 @@ export function RefundReceiptsCard({ order }: RefundReceiptsCardProps) {
               <span className="text-[13.5px] text-sc-muted">{formatDateTime(refund.createdAt)}</span>
             </div>
             {item && line && (
-              <div className="flex flex-wrap items-center gap-1.5 text-[14.5px]">
-                <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
-                <span className="font-semibold text-sc-ink">{line.title}</span>
-                {line.detail && <span className="text-sc-muted">· {line.detail}</span>}
+              <div className="flex flex-col gap-0.5 text-[14.5px]">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Tag className="!m-0">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
+                  <span className="font-semibold text-sc-ink">{line.title}</span>
+                </div>
+                {line.detail && <span className="text-[13.5px] text-sc-muted">{line.detail}</span>}
               </div>
             )}
             {refund.reason && <span className="text-[14px] text-sc-muted">Lý do: {refund.reason}</span>}
@@ -187,6 +189,7 @@ export function RefundReceiptsCard({ order }: RefundReceiptsCardProps) {
         width={900}
         centered
         destroyOnHidden
+        styles={{ body: { maxHeight: '68vh', overflowY: 'auto' } }}
         title={
           activeRefund ? (
             <div className="flex flex-wrap items-center gap-2 pr-6">

@@ -22,12 +22,12 @@ export function useOrder(id: string) {
   });
 }
 
-/** Pending QR order-payment invoices created for the current member (`GET /me/invoices?purpose=ORDER_PAYMENT&status=PENDING`). */
+/** Pending counter QR order-payment invoices created for the current member (`GET /me/invoices?purpose=COUNTER_ORDER&status=PENDING`). */
 export function usePendingOrderInvoices() {
   const user = useCurrentUser();
   return useQuery({
-    queryKey: ['invoices', 'order-payment', user.id],
-    queryFn: () => walletService.listInvoices({ page: 1, limit: 10, purpose: 'ORDER_PAYMENT', status: 'PENDING' }),
+    queryKey: ['invoices', 'counter-order', user.id],
+    queryFn: () => walletService.listInvoices({ page: 1, limit: 10, purpose: 'COUNTER_ORDER', status: 'PENDING' }),
     enabled: user.role === 'MEMBER',
     refetchInterval: 30_000,
   });

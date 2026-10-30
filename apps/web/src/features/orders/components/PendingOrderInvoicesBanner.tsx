@@ -18,9 +18,9 @@ function PendingOrderInvoiceRow({ invoice }: { invoice: Invoice }) {
           <span className="font-mono text-[15px] font-bold text-sc-ink">{invoice.paymentCode}</span>
           <span className="text-[16px] font-extrabold text-amber-700 tabular-nums">{formatVND(invoice.amount)}</span>
           {remainingSeconds !== null && (
-            <Tag color="warning" className="!m-0 inline-flex items-center gap-1 font-medium tabular-nums">
+            <Tag color="warning" className="!m-0 !inline-flex items-center gap-1.5 font-medium tabular-nums">
               <Clock size={12} />
-              Còn {formatCountdown(remainingSeconds)}
+              <span>Còn {formatCountdown(remainingSeconds)}</span>
             </Tag>
           )}
         </div>
