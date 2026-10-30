@@ -1,14 +1,17 @@
 import type { Maintenance } from '@sports-center/shared';
-import { Button, Card, Segmented, type TableColumnsType } from 'antd';
+import { useQuery } from '@tanstack/react-query';
+import { Button, Card, Segmented, Select, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
+import { DateRangeFilter, type DateRange } from '~/components/form/DateRangeFilter';
 import { SearchInput } from '~/components/form/SearchInput';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useConfirm } from '~/hooks/useConfirm';
 import { VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -35,12 +38,16 @@ const formatAt = (iso: string) => dayjs(iso).tz(VN_TIMEZONE).format('HH:mm DD/MM
 /** `/admin/maintenances`: planned, ongoing and finished maintenance; a new one goes through a preview first. */
 export function MaintenancePage() {
   const confirm = useConfirm();
+  const facilities = useQuery(facilitiesQueryOptions);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Maintenance | null>(null);
   const [search, setSearch] = useState('');
+  const [facilityId, setFacilityId] = useState<string | undefined>();
+  const [range, setRange] = useState<DateRange>({});
   const [phaseFilter, setPhaseFilter] = useState<'ALL' | MaintenancePhase>('ALL');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const maintenances = useMaintenances({});
+  const maintenances = useMaintenances({ facilityId, from: range.from, to: range.to });
   const remove = useDeleteMaintenance();
   const complete = useCompleteMaintenance();
 
@@ -106,6 +113,12 @@ export function MaintenancePage() {
             phaseOf(item) === 'PLANNED'
               ? [
                   {
+                    key: 'edit',
+                    label: 'Chỉnh sửa',
+                    primary: true,
+                    onClick: () => setEditing(item),
+                  },
+                  {
                     key: 'cancel',
                     label: 'Hủy lịch',
                     danger: true,
@@ -142,6 +155,8 @@ export function MaintenancePage() {
     },
   ];
 
+  const hasFilters = Boolean(search || phaseFilter !== 'ALL' || facilityId || range.from || range.to);
+
   return (
     <>
       <PageHeader
@@ -155,15 +170,37 @@ export function MaintenancePage() {
       />
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <SearchInput
-            placeholder="Tìm theo sân, phòng, lý do..."
-            value={search}
-            onChange={(val) => {
-              setSearch(val);
-              setPage(1);
-            }}
-            className="w-full sm:!w-72"
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchInput
+              placeholder="Tìm theo sân, phòng, lý do..."
+              value={search}
+              onChange={(val) => {
+                setSearch(val);
+                setPage(1);
+              }}
+              className="w-full sm:!w-64"
+            />
+            <Select
+              allowClear
+              showSearch={{ optionFilterProp: 'label' }}
+              placeholder="Tất cả sân & phòng"
+              value={facilityId}
+              loading={facilities.isPending}
+              onChange={(val) => {
+                setFacilityId(val);
+                setPage(1);
+              }}
+              className="w-full sm:!w-56"
+              options={(facilities.data ?? []).map((entry) => ({ value: entry.id, label: entry.name }))}
+            />
+            <DateRangeFilter
+              value={range}
+              onChange={(val) => {
+                setRange(val);
+                setPage(1);
+              }}
+            />
+          </div>
           <div className="overflow-x-auto">
             <Segmented
               value={phaseFilter}
@@ -200,19 +237,22 @@ export function MaintenancePage() {
                 ' '
               ) : (
                 <EmptyState
-                  title={
-                    search || phaseFilter !== 'ALL' ? 'Không tìm thấy lịch bảo trì phù hợp' : 'Chưa có lịch bảo trì nào'
-                  }
-                  description={
-                    search || phaseFilter !== 'ALL' ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : undefined
-                  }
+                  title={hasFilters ? 'Không tìm thấy lịch bảo trì phù hợp' : 'Chưa có lịch bảo trì nào'}
+                  description={hasFilters ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : undefined}
                 />
               ),
             }}
           />
         )}
       </Card>
-      <MaintenanceWizard open={creating} onClose={() => setCreating(false)} />
+      <MaintenanceWizard
+        open={creating || editing !== null}
+        editing={editing}
+        onClose={() => {
+          setCreating(false);
+          setEditing(null);
+        }}
+      />
     </>
   );
 }
