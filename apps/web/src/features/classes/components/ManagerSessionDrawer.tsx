@@ -1,11 +1,30 @@
-import { ATTENDANCE_RULES, type Attendance, type AttendanceStatus } from '@sports-center/shared';
+import { ATTENDANCE_RULES, type Attendance, type AttendanceStatus, type Evaluation } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Alert, App, Button, Drawer, Input, Radio, Spin, Tag, type TableColumnsType } from 'antd';
-import { CalendarDays, Clock, History, MapPin, RotateCcw, ShieldCheck, UserCheck } from 'lucide-react';
+import { Alert, App, Button, Card, Drawer, Input, Radio, Rate, Spin, Tabs, Tag, type TableColumnsType } from 'antd';
+import {
+  BookOpenCheck,
+  CalendarDays,
+  Clock,
+  ExternalLink,
+  FileText,
+  History,
+  MapPin,
+  Paperclip,
+  RotateCcw,
+  ShieldCheck,
+  Star,
+  UserCheck,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
-import { useAttendance, useTrainingSession } from '~/features/training/hooks/useTraining';
+import { SectionTitle } from '~/components/ui/SectionTitle';
+import {
+  useAttendance,
+  useSessionEvaluations,
+  useSessionNote,
+  useTrainingSession,
+} from '~/features/training/hooks/useTraining';
 import { ATTENDANCE_ORDER, ATTENDANCE_TAG } from '~/features/training/types';
 import { SESSION_PHASE_TAG, sessionPhase } from '~/features/training/utils';
 import { formatDateTime } from '~/lib/format';
@@ -25,6 +44,8 @@ interface ManagerAttendancePanelProps {
   classCancelled: boolean;
 }
 
+const attachmentFileName = (url: string) => decodeURIComponent(url.split('/').at(-1) ?? url);
+
 function managerLockReason(session: ClassSession, classCancelled: boolean): string | null {
   if (classCancelled) return 'Lớp học đã bị hủy nên danh sách điểm danh ở chế độ chỉ đọc.';
   if (session.status === 'CANCELLED') return 'Buổi học này đã bị hủy nên không thể điểm danh.';
@@ -38,10 +59,26 @@ function managerLockReason(session: ClassSession, classCancelled: boolean): stri
 function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAttendancePanelProps) {
   const { message } = App.useApp();
   const attendance = useAttendance(session.id);
+  const evaluations = useSessionEvaluations(session.id);
   const save = useSaveManagerAttendance(classId, session.id);
   const [edits, setEdits] = useState<Record<string, AttendanceDraft>>({});
 
   const rows = useMemo(() => attendance.data ?? [], [attendance.data]);
+  const evaluationMap = useMemo(() => {
+    const map = new Map<string, Evaluation>();
+    for (const item of evaluations.data ?? []) {
+      map.set(item.account.id, item);
+    }
+    return map;
+  }, [evaluations.data]);
+
+  const avgRating = useMemo(() => {
+    const items = evaluations.data ?? [];
+    if (items.length === 0) return null;
+    const sum = items.reduce((acc, item) => acc + item.rating, 0);
+    return Math.round((sum / items.length) * 10) / 10;
+  }, [evaluations.data]);
+
   const lockReason = managerLockReason(session, classCancelled);
   const canEdit = lockReason === null;
   const isCoachWindowExpired =
@@ -118,11 +155,11 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
     {
       title: 'Học viên',
       key: 'student',
-      width: 230,
+      width: 215,
       render: (_, record) => {
         const isDirty = edits[record.account.id] !== undefined;
         return (
-          <div className="flex min-w-44 flex-col gap-0.5">
+          <div className="flex min-w-40 flex-col gap-0.5">
             <div className="flex flex-wrap items-center gap-1.5">
               <Link
                 to="/admin/users/$userId"
@@ -150,9 +187,9 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
       },
     },
     {
-      title: 'Trạng thái điểm danh',
+      title: 'Điểm danh',
       key: 'status',
-      width: 240,
+      width: 215,
       render: (_, record) =>
         canEdit ? (
           <Radio.Group
@@ -178,12 +215,13 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
     {
       title: 'Ghi chú điểm danh',
       key: 'note',
+      width: 210,
       render: (_, record) =>
         canEdit ? (
           <Input
             size="small"
             maxLength={200}
-            placeholder="Lý do đi muộn / vắng hoặc ghi chú..."
+            placeholder="Lý do đi muộn / vắng..."
             value={noteOf(record)}
             onChange={(event) => updateRow(record.account.id, { note: event.target.value })}
           />
@@ -192,6 +230,29 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
         ) : (
           <span className="text-sc-muted-2">—</span>
         ),
+    },
+    {
+      title: 'Đánh giá của HLV (chỉ đọc)',
+      key: 'evaluation',
+      render: (_, record) => {
+        const evaluation = evaluationMap.get(record.account.id);
+        if (!evaluation) {
+          return <span className="text-[13px] text-sc-muted-2">Chưa có đánh giá</span>;
+        }
+        return (
+          <div className="flex min-w-44 flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <Rate disabled value={evaluation.rating} className="!text-[13.5px] whitespace-nowrap" />
+              <span className="text-[12px] font-semibold text-sc-muted tabular-nums">{evaluation.rating}/5</span>
+            </div>
+            {evaluation.comment && (
+              <span className="line-clamp-2 text-[13px] text-sc-ink-2" title={evaluation.comment}>
+                {evaluation.comment}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -225,8 +286,14 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
             </Tag>
           )}
           <span className="text-sc-muted">
-            Đã lưu {savedCount}/{rows.length} học viên
+            Đã lưu {savedCount}/{rows.length} HV
           </span>
+          {avgRating !== null && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[12.5px] font-semibold text-amber-700">
+              <Star size={12} className="fill-amber-500 text-amber-500" />
+              TB {avgRating.toLocaleString('vi-VN')}/5 ({evaluations.data?.length ?? 0} ĐG)
+            </span>
+          )}
         </div>
 
         {canEdit && rows.length > 0 && (
@@ -256,10 +323,95 @@ function ManagerAttendancePanel({ classId, session, classCancelled }: ManagerAtt
         size="middle"
         columns={columns}
         dataSource={rows}
-        loading={attendance.isFetching && !attendance.data}
+        loading={(attendance.isFetching && !attendance.data) || (evaluations.isFetching && !evaluations.data)}
         pagination={false}
         locale={{ emptyText: <EmptyState title="Buổi học chưa có học viên đăng ký" /> }}
       />
+    </div>
+  );
+}
+
+function ManagerSessionNotePanel({ sessionId }: { sessionId: string }) {
+  const note = useSessionNote(sessionId);
+
+  if (note.isPending) {
+    return (
+      <div className="flex justify-center py-10">
+        <Spin />
+      </div>
+    );
+  }
+
+  if (note.isError) {
+    return <ErrorState message={toApiError(note.error).message} onRetry={() => void note.refetch()} />;
+  }
+
+  const saved = note.data;
+  if (!saved) {
+    return (
+      <EmptyState
+        title="HLV chưa tạo ghi chú cho buổi học này"
+        description="Nội dung giảng dạy, bài tập về nhà và tài liệu đính kèm sẽ hiển thị tại đây sau khi huấn luyện viên cập nhật."
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      <Alert
+        type="info"
+        showIcon
+        title={`Ghi chú do huấn luyện viên cập nhật lúc ${formatDateTime(saved.updatedAt)} · Chế độ chỉ đọc cho quản lý.`}
+      />
+
+      <Card size="small">
+        <div className="mb-1 inline-flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-sc-muted uppercase">
+          <FileText size={14} className="text-sc-primary" />
+          Nội dung giảng dạy
+        </div>
+        <h4 className="mt-1 mb-2 text-[17px] font-bold text-sc-ink">{saved.title}</h4>
+        <div className="rounded-lg bg-sc-paper/60 p-3 text-[14.5px] leading-relaxed whitespace-pre-line text-sc-ink-2">
+          {saved.content}
+        </div>
+      </Card>
+
+      <Card size="small">
+        <SectionTitle>
+          <span className="inline-flex items-center gap-1.5">
+            <BookOpenCheck size={16} className="text-sc-primary" />
+            Bài tập về nhà
+          </span>
+        </SectionTitle>
+        {saved.homework?.trim() ? (
+          <div className="rounded-lg bg-sc-paper/60 p-3 text-[14.5px] leading-relaxed whitespace-pre-line text-sc-ink-2">
+            {saved.homework}
+          </div>
+        ) : (
+          <span className="text-[14px] text-sc-muted-2">Không giao bài tập về nhà trong buổi này.</span>
+        )}
+      </Card>
+
+      {saved.attachments.length > 0 && (
+        <Card size="small">
+          <SectionTitle>Tệp đính kèm ({saved.attachments.length})</SectionTitle>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {saved.attachments.map((url) => (
+              <li key={url}>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-2 rounded-lg border border-sc-border-soft bg-sc-paper/45 px-3 py-1.5 text-[14px] font-medium text-sc-ink hover:border-sc-primary hover:text-sc-primary"
+                >
+                  <Paperclip size={14} className="text-sc-primary" />
+                  <span>{attachmentFileName(url)}</span>
+                  <ExternalLink size={13} className="text-sc-muted" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </div>
   );
 }
@@ -282,6 +434,7 @@ function ManagerSessionBody({
   session: ClassSession;
 }) {
   const detail = useTrainingSession(session.id);
+  const note = useSessionNote(session.id);
   const active = detail.data ?? session;
 
   return (
@@ -311,7 +464,37 @@ function ManagerSessionBody({
         <Alert type="error" showIcon title="Lý do hủy buổi học" description={active.cancelReason} />
       )}
 
-      <ManagerAttendancePanel key={active.id} classId={classId} session={active} classCancelled={classCancelled} />
+      <Tabs
+        defaultActiveKey="roster"
+        items={[
+          {
+            key: 'roster',
+            label: 'Điểm danh & đánh giá',
+            children: (
+              <ManagerAttendancePanel
+                key={active.id}
+                classId={classId}
+                session={active}
+                classCancelled={classCancelled}
+              />
+            ),
+          },
+          {
+            key: 'note',
+            label: (
+              <span className="inline-flex items-center gap-1.5">
+                Ghi chú & bài tập buổi
+                {note.data && (
+                  <Tag color="success" className="!m-0 !text-[11.5px]">
+                    Đã ghi chú
+                  </Tag>
+                )}
+              </span>
+            ),
+            children: <ManagerSessionNotePanel sessionId={active.id} />,
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -331,7 +514,7 @@ export function ManagerSessionDrawer({
       open={session !== null}
       onClose={onClose}
       destroyOnHidden
-      width={900}
+      width={940}
       title={
         session ? (
           <div className="flex flex-wrap items-center gap-2">
