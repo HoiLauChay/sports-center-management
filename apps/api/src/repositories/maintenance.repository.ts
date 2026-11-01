@@ -22,7 +22,7 @@ const affectedBookingSelect = {
   endTime: true,
   packageId: true,
   account: { select: { id: true, fullName: true } },
-  orderItem: { select: { order: { select: { guestName: true } } } },
+  orderItem: { select: { order: { select: { guestName: true, guestPhone: true } } } },
 } satisfies Prisma.FacilityBookingSelect;
 
 const affectedSessionSelect = {

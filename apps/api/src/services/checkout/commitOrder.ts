@@ -14,6 +14,7 @@ export interface OrderPayment {
   method: 'WALLET' | 'CASH' | 'CARD' | 'TRANSFER';
   idempotencyKey: string;
   requestHash: string | null;
+  skipPaidEmail?: boolean;
 }
 
 const buyerSnapshot = async (tx: Prisma.TransactionClient, ctx: CheckoutContext) => {
@@ -120,7 +121,7 @@ export const commitOrder = async (
             referenceType: 'ORDER',
             referenceId: order.id,
             dedupKey: `order-paid:${order.id}`,
-            sendEmail: true,
+            sendEmail: !payment.skipPaidEmail,
           },
         ],
         tx,

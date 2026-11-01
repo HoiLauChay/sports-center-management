@@ -10,6 +10,7 @@ import {
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Role } from '~/generated/prisma/client';
 import { toSupportResponse } from '~/mappers/support.mapper';
+import accountRepository from '~/repositories/account.repository';
 import supportRepository from '~/repositories/support.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import notificationService from '~/services/notification.service';
@@ -48,8 +49,23 @@ const noteRequired = () =>
   });
 
 class SupportService {
-  create = async (accountId: string, body: CreateSupportBody) =>
-    toSupportResponse(await supportRepository.create({ ...body, accountId }));
+  create = (accountId: string, body: CreateSupportBody) =>
+    runTransaction(async (tx) => {
+      const row = await supportRepository.create({ ...body, accountId }, tx);
+      const staffIds = await accountRepository.findActiveIdsWithRoles(['RECEPTIONIST', 'MANAGER'], tx);
+      await notificationService.create(
+        staffIds.map((staffId) => ({
+          accountId: staffId,
+          type: 'SUPPORT' as const,
+          title: 'Yêu cầu hỗ trợ mới',
+          message: `${row.account.fullName}: ${row.subject}`,
+          referenceType: 'SUPPORT_REQUEST',
+          referenceId: row.id,
+        })),
+        tx,
+      );
+      return toSupportResponse(row);
+    });
 
   listMine = async (accountId: string) => (await supportRepository.findMine(accountId)).map(toSupportResponse);
 
@@ -97,6 +113,7 @@ class SupportService {
             referenceType: 'SUPPORT_REQUEST',
             referenceId: id,
             ...(body.status && { dedupKey: `support:${id}:${status}` }),
+            sendEmail: body.resolutionNote !== undefined,
           },
         ],
         tx,
