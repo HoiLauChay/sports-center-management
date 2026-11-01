@@ -36,7 +36,7 @@ class SpecializationRepository {
       prisma.coachSpecialization.findMany({
         where,
         select: specializationSelect,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ reviewedAt: { sort: 'desc', nulls: 'first' } }, { createdAt: 'asc' }, { id: 'asc' }],
         ...pageArgs(page),
       }),
       prisma.coachSpecialization.count({ where }),

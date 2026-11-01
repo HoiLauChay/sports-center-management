@@ -78,8 +78,17 @@ const freeFacilities = async (
 };
 
 class MaintenanceService {
-  list = async (query: ListMaintenancesQuery) =>
-    (await maintenanceRepository.findMany(query)).map(toMaintenanceResponse);
+  list = async (query: ListMaintenancesQuery) => {
+    const now = new Date();
+    const rows = await maintenanceRepository.findMany(query);
+    return [
+      ...rows
+        .filter(({ startAt, endAt }) => startAt <= now && now < endAt)
+        .sort((a, b) => a.endAt.getTime() - b.endAt.getTime()),
+      ...rows.filter(({ startAt }) => now < startAt),
+      ...rows.filter(({ endAt }) => endAt <= now).reverse(),
+    ].map(toMaintenanceResponse);
+  };
 
   affected = async (
     { facilityId, startAt: start, endAt: end }: MaintenanceWindow,

@@ -3,7 +3,7 @@ import type { ClassDerivedStatus, ListClassesQuery, Role } from '@sports-center/
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
 import { courseSelect } from '~/repositories/course.repository';
-import { pageArgs } from '~/utils/pagination';
+import { pageArgs, pageOfGroups } from '~/utils/pagination';
 import { todayInCenter } from '~/utils/time';
 
 const classSelect = {
@@ -104,6 +104,28 @@ const derivedFilter = (status: ClassDerivedStatus, today: Date): Prisma.ClassWhe
   endDate: status === 'COMPLETED' ? { lt: today } : { gte: today },
 });
 
+const startAsc: Prisma.ClassOrderByWithRelationInput[] = [{ startDate: { sort: 'asc', nulls: 'last' } }, { id: 'asc' }];
+
+const managerGroups = (
+  where: Prisma.ClassWhereInput,
+  today: Date,
+): Pick<Prisma.ClassFindManyArgs, 'where' | 'orderBy'>[] => [
+  { where: { AND: [where, { status: 'PENDING_APPROVAL' }] }, orderBy: startAsc },
+  {
+    where: { AND: [where, { status: 'OPEN', OR: [{ endDate: null }, { endDate: { gte: today } }] }] },
+    orderBy: startAsc,
+  },
+  { where: { AND: [where, { status: 'DRAFT' }] }, orderBy: startAsc },
+  {
+    where: { AND: [where, { status: 'OPEN', endDate: { lt: today } }] },
+    orderBy: [{ endDate: 'desc' }, { id: 'desc' }],
+  },
+  {
+    where: { AND: [where, { status: 'CANCELLED' }] },
+    orderBy: [{ startDate: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+  },
+];
+
 class ClassRepository {
   findAssignedToCoach = (coachId: string) =>
     prisma.class.findMany({
@@ -136,7 +158,7 @@ class ClassRepository {
       data: { status: 'CANCELLED', cancelReason: reason },
     });
 
-  findPage = (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
+  findPage = async (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
     const today = new Date(todayInCenter());
     const where: Prisma.ClassWhereInput = {
       deletedAt: null,
@@ -160,6 +182,16 @@ class ClassRepository {
           : {},
       ],
     };
+    if (viewer.role === 'MANAGER') {
+      const groups = managerGroups(where, today);
+      const sizes = await Promise.all(groups.map((group) => prisma.class.count({ where: group.where })));
+      const rows = await Promise.all(
+        pageOfGroups(groups, sizes, { page, limit }).map((args) =>
+          prisma.class.findMany({ ...args, select: classSummarySelect }),
+        ),
+      );
+      return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
+    }
     return Promise.all([
       prisma.class.findMany({
         where,
