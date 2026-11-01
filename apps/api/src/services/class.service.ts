@@ -120,14 +120,17 @@ class ClassService {
     const notifications: CreatedNotification[] = [];
     const enrollments = await enrollmentRepository.findActiveByClass(current.id, tx);
     let refundTotal = 0;
+    const refunded = new Map<string, number>();
     for (const enrollment of enrollments) {
       await enrollmentRepository.cancel(enrollment.id, tx);
       const refund = await refundService.refundItem(tx, {
         orderItemId: enrollment.orderItemId,
         reason: `Lớp ${current.name} bị hủy`,
         createdById: managerId ?? undefined,
+        skipEmail: true,
       });
       refundTotal += refund.refunded;
+      refunded.set(enrollment.accountId, refund.refunded);
       notifications.push(...refund.notifications);
     }
 
@@ -199,7 +202,7 @@ class ClassService {
           accountId,
           type: 'CLASS' as const,
           title: 'Lớp học đã bị hủy',
-          message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}`,
+          message: `Lớp "${current.name}" đã bị hủy. Lý do: ${reason}.${refunded.get(accountId) ? ` Học phí ${refunded.get(accountId)!.toLocaleString('vi-VN')}đ đã được hoàn về ví.` : ''}`,
           referenceType: 'CLASS',
           referenceId: current.id,
           dedupKey: `class-cancelled:${current.id}:${accountId}`,

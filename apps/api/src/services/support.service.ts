@@ -113,6 +113,7 @@ class SupportService {
             referenceType: 'SUPPORT_REQUEST',
             referenceId: id,
             ...(body.status && { dedupKey: `support:${id}:${status}` }),
+            sendEmail: body.resolutionNote !== undefined,
           },
         ],
         tx,

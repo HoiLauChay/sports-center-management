@@ -10,6 +10,8 @@ export interface RefundItemInput {
   orderItemId: string;
   reason: string;
   createdById?: string;
+  /** The caller's own notice already tells the member about this refund by email. */
+  skipEmail?: boolean;
 }
 
 const skipped = { refunded: 0, notifications: [] as CreatedNotification[] };
@@ -47,7 +49,7 @@ class RefundService {
           referenceType: 'ORDER',
           referenceId: order.id,
           dedupKey: `refund:${ledger!.id}`,
-          sendEmail: true,
+          sendEmail: !input.skipEmail,
         },
       ],
       tx,
