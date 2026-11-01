@@ -277,7 +277,7 @@ class CoachAssignmentService {
             referenceType: 'CLASS',
             referenceId: classId,
             title: 'Lớp học cần phân công huấn luyện viên',
-            message: `Huấn luyện viên đã rút khỏi lớp "${current.name}". Lý do: ${reason}. Vui lòng phân công HLV thay thế.`,
+            message: `Huấn luyện viên đã rút khỏi lớp "${current.name}". Lý do: ${reason}.`,
           })),
         ],
         tx,

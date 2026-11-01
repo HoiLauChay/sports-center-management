@@ -37,22 +37,20 @@ class ReminderJobService {
         referenceId: booking.id,
         dedupKey: `reminder:booking:${booking.id}`,
       })),
-      ...sessions.filter(soon).flatMap((session) =>
-        [
-          ...new Set([
-            ...[session.coachId ?? session.class.coachId].filter((id): id is string => id !== null),
-            ...session.class.enrollments.map(({ accountId }) => accountId),
-          ]),
+      ...sessions.filter(soon).flatMap((session) => {
+        const coachId = session.coachId ?? session.class.coachId;
+        return [
+          ...new Set([...(coachId ? [coachId] : []), ...session.class.enrollments.map(({ accountId }) => accountId)]),
         ].map((accountId): NotificationInput => ({
           accountId,
           type: 'CLASS',
-          title: 'Sắp đến giờ học',
+          title: accountId === coachId ? 'Sắp đến giờ dạy' : 'Sắp đến giờ học',
           message: `Lớp "${session.class.name}" lúc ${formatTime(fromDbTime(session.startTime))} tại ${session.facility.name}.`,
           referenceType: 'CLASS',
           referenceId: session.class.id,
           dedupKey: `reminder:session:${session.id}:${accountId}`,
-        })),
-      ),
+        }));
+      }),
     ];
     const created = inputs.length > 0 ? await notificationService.create(inputs) : [];
     return { processed: created.length, remaining: 0 };
