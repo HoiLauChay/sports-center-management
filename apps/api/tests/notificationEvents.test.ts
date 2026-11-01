@@ -45,6 +45,21 @@ describe('staff notifications', () => {
     expect(await titlesOf(manager.id)).toEqual(['Yêu cầu hỗ trợ mới']);
   });
 
+  test('a support reply is emailed, a status change alone is not', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    const support = api('/support-requests');
+    const { id } = await readResult<{ id: string }>(
+      await support('POST', '', member, { category: 'OTHER', subject: 'Hỏi', description: 'Giờ mở cửa?' }),
+    );
+
+    expect((await support('PATCH', `/${id}`, receptionist, { status: 'IN_PROGRESS' })).status).toBe(200);
+    expect((await support('PATCH', `/${id}`, receptionist, { resolutionNote: 'Mở từ 6 giờ' })).status).toBe(200);
+
+    const told = await prisma.notification.findMany({ where: { accountId: member.id }, orderBy: { createdAt: 'asc' } });
+    expect(told.map(({ sendEmail }) => sendEmail)).toEqual([false, true]);
+  });
+
   test('receptionists hear about a guest booking moved by maintenance', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');

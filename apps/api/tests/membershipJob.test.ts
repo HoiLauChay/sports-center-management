@@ -81,6 +81,11 @@ describe('membership job', () => {
     expect(await prisma.walletTransaction.count({ where: { type: 'PAYMENT' } })).toBe(1);
     expect(await expectWalletConsistent(renewing.member.id)).toBe(100_000);
     expect(await expectWalletConsistent(cancelled.member.id)).toBe(600_000);
+    const emailed = await prisma.notification.findMany({
+      where: { accountId: renewing.member.id, sendEmail: true },
+      select: { title: true },
+    });
+    expect(emailed).toEqual([{ title: 'Đã tự động gia hạn gói' }]);
     expect(
       await prisma.notification.count({ where: { accountId: poor.member.id, title: 'Gói thành viên đã hết hạn' } }),
     ).toBe(1);

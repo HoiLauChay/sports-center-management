@@ -79,6 +79,13 @@ describe('cancel class', () => {
 
     const notified = await prisma.notification.findMany({ where: { type: 'CLASS', referenceId: cls.id } });
     expect(notified.map(({ accountId }) => accountId).sort()).toEqual([cls.coachId!, first!.id, second!.id].sort());
+    const toStudent = notified.find(({ accountId }) => accountId === second!.id)!;
+    expect(toStudent).toMatchObject({ sendEmail: true });
+    expect(toStudent.message).toContain('Học phí 300.000đ đã được hoàn về ví.');
+    expect(notified.find(({ accountId }) => accountId === cls.coachId)!.message).not.toContain('hoàn về ví');
+    expect(
+      await prisma.notification.findFirstOrThrow({ where: { accountId: second!.id, title: 'Hoàn tiền về ví' } }),
+    ).toMatchObject({ sendEmail: false });
   });
 
   test('cancelling twice or in parallel refunds each class line only once', async () => {
