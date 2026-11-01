@@ -60,6 +60,14 @@ class SpecializationRepository {
       select: { id: true },
     });
 
+  findQualifiedCoachIds = async (sportId: string, tx: Prisma.TransactionClient = prisma) =>
+    (
+      await tx.coachSpecialization.findMany({
+        where: { sportId, status: 'APPROVED', coach: { roles: { has: 'COACH' }, status: 'ACTIVE' } },
+        select: { coachId: true },
+      })
+    ).map(({ coachId }) => coachId);
+
   isQualified = async (coachId: string, sportId: string, tx: Prisma.TransactionClient = prisma) =>
     (await tx.coachSpecialization.count({
       where: { coachId, sportId, status: 'APPROVED', coach: { roles: { has: 'COACH' }, status: 'ACTIVE' } },

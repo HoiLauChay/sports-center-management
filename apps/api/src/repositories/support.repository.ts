@@ -22,8 +22,8 @@ const supportSelect = {
 export type SupportRow = Prisma.SupportRequestGetPayload<{ select: typeof supportSelect }>;
 
 class SupportRepository {
-  create = (data: Prisma.SupportRequestUncheckedCreateInput) =>
-    prisma.supportRequest.create({ data, select: supportSelect });
+  create = (data: Prisma.SupportRequestUncheckedCreateInput, tx: Prisma.TransactionClient = prisma) =>
+    tx.supportRequest.create({ data, select: supportSelect });
 
   findMine = (accountId: string) =>
     prisma.supportRequest.findMany({

@@ -15,6 +15,7 @@ import {
   toAffectedSessionResponse,
   toMaintenanceResponse,
 } from '~/mappers/maintenance.mapper';
+import accountRepository from '~/repositories/account.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import maintenanceRepository from '~/repositories/maintenance.repository';
 import { ErrorWithStatus } from '~/rules/error';
@@ -208,6 +209,9 @@ class MaintenanceService {
     );
 
     const notifications: CreatedNotification[] = [];
+    const receptionistIds = affectedBookings.some(({ row }) => !row.account)
+      ? await accountRepository.findActiveIdsWithRoles(['RECEPTIONIST'], tx)
+      : [];
     for (const { row } of affectedBookings) {
       const range = rangeOf(row);
       const conflicts = await scheduleService.findConflicts(tx, {
@@ -233,6 +237,19 @@ class MaintenanceService {
             ],
             tx,
           )),
+        );
+      } else {
+        const { guestName, guestPhone } = row.orderItem.order;
+        await notificationService.create(
+          receptionistIds.map((accountId) => ({
+            accountId,
+            type: 'BOOKING' as const,
+            title: 'Khách vãng lai bị chuyển sân',
+            message: `Lượt đặt của ${guestName} (${guestPhone}) ngày ${formatCenterDate(range.date)} ${formatTime(range.start)}–${formatTime(range.end)} chuyển sang ${moved.facility.name} do bảo trì.`,
+            referenceType: 'BOOKING',
+            referenceId: row.id,
+          })),
+          tx,
         );
       }
     }

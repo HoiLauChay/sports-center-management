@@ -22,6 +22,7 @@ import sportRepository from '~/repositories/sport.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
 import notificationService, { type CreatedNotification } from '~/services/notification.service';
+import { notifyOpenClasses } from '~/services/openClassNotice';
 import refundService from '~/services/refund.service';
 import scheduleService, { type TimeRange } from '~/services/schedule.service';
 import { toPage } from '~/utils/pagination';
@@ -373,6 +374,7 @@ class ClassService {
         },
         tx,
       );
+      await notifyOpenClasses(tx, [created]);
       return created;
     });
     return toClassDetailResponse(row);
