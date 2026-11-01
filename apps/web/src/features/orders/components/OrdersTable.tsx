@@ -120,7 +120,9 @@ export function OrdersTable({ showBuyer = false, link, keyword, ...table }: Orde
         <div className="flex flex-col items-start gap-0.5">
           <MappedTag value={order.status} map={ORDER_STATUS_TAG} />
           {refundedOf(order) > 0 && (
-            <span className="text-[14.5px] text-sc-error font-medium">Đã hoàn {formatVND(refundedOf(order))}</span>
+            <span className="text-[14.5px] font-medium text-sc-success tabular-nums">
+              Đã hoàn +{formatVND(refundedOf(order))}
+            </span>
           )}
         </div>
       ),

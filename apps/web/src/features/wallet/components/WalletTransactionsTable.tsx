@@ -84,11 +84,18 @@ interface WalletTransactionsTableProps {
   onPageChange: (page: number, limit: number) => void;
 }
 
-/** Rows of a payment open the order it paid for. */
+/** Rows of a payment open the order it paid for; refund rows open their refund receipt page. */
 export function WalletTransactionsTable(props: WalletTransactionsTableProps) {
-  const rowLink = useRowLink((transaction: WalletTransaction) =>
-    transaction.orderId ? { to: '/orders/$orderId', params: { orderId: transaction.orderId } } : null,
-  );
+  const rowLink = useRowLink((transaction: WalletTransaction) => {
+    if (!transaction.orderId) return null;
+    if (transaction.type === 'REFUND') {
+      return {
+        to: '/orders/$orderId/refunds/$refundId',
+        params: { orderId: transaction.orderId, refundId: transaction.id },
+      };
+    }
+    return { to: '/orders/$orderId', params: { orderId: transaction.orderId } };
+  });
   return (
     <DataTable<WalletTransaction>
       columns={columns}

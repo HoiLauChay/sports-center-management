@@ -8,6 +8,7 @@ import { ORDER_STATUS_TAG } from '~/constants/payment';
 import { DEFAULT_PAGE_SIZE } from '~/lib/search';
 import { useOrders } from '../hooks/useOrders';
 import { OrdersTable } from './OrdersTable';
+import { PendingOrderInvoicesBanner } from './PendingOrderInvoicesBanner';
 
 export function MyOrdersPage() {
   const [page, setPage] = useState(1);
@@ -27,6 +28,7 @@ export function MyOrdersPage() {
   return (
     <>
       <PageHeader title="Đơn hàng của tôi" />
+      <PendingOrderInvoicesBanner />
       <Card>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchInput

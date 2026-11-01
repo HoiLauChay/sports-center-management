@@ -1,4 +1,4 @@
-import type { FacilitySchedule, ListMyBookingsQuery } from '@sports-center/shared';
+import type { FacilitySchedule, ListBookingsQuery, ListMyBookingsQuery } from '@sports-center/shared';
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import { useCurrentUser } from '~/features/auth';
 import { bookingsService } from '../services/bookings.service';
@@ -68,5 +68,24 @@ export function useBookingsOn(date: string) {
     queryKey: ['bookings', 'on', date],
     queryFn: () => bookingsService.listOn(date),
     refetchInterval: 30_000,
+  });
+}
+
+/** Staff paginated booking lookup across facilities, members, guest phone numbers and date ranges. */
+export function useStaffBookings(query: ListBookingsQuery) {
+  return useQuery({
+    queryKey: ['bookings', 'staff-list', query],
+    queryFn: () => bookingsService.list(query),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Fetches a single booking by ID (`GET /bookings/:id`) when a detail drawer is open. */
+export function useBookingDetail(bookingId: string | null) {
+  return useQuery({
+    queryKey: ['bookings', 'detail', bookingId],
+    queryFn: () => bookingsService.getById(bookingId!),
+    enabled: Boolean(bookingId),
+    retry: false,
   });
 }

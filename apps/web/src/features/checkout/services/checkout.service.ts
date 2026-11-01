@@ -56,4 +56,13 @@ export const checkoutService = {
     const { data } = await privateApi.get<Blob>(`${orderPath(orderId)}/receipt`, { responseType: 'blob' });
     return data;
   },
+
+  /** Fetches the raw PDF receipt blob of a single refund transaction on an order. */
+  getRefundReceiptBlob: async (orderId: string, transactionId: string) => {
+    const { data } = await privateApi.get<Blob>(
+      `${orderPath(orderId)}/refunds/${encodeURIComponent(transactionId)}/receipt`,
+      { responseType: 'blob' },
+    );
+    return data;
+  },
 };

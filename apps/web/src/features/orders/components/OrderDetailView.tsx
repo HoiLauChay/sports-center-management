@@ -14,6 +14,7 @@ import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useOrder } from '../hooks/useOrders';
 import { ReceiptPdfActions, ReceiptPdfPreview } from './ReceiptPdf';
+import { RefundReceiptsCard } from './RefundReceiptsCard';
 
 /** The order's lines; refunds are read from `order.refunds` (one per refunded line, BR_3.7). */
 const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
@@ -73,8 +74,8 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
       render: (_, item) => {
         const value = refundedOf(order, item.id);
         return value ? (
-          <Tag color={value >= item.totalAmount ? 'error' : 'warning'} className="!m-0 font-medium">
-            −{formatVND(value)}
+          <Tag color="success" className="!m-0 font-medium tabular-nums">
+            +{formatVND(value)}
           </Tag>
         ) : (
           <span className="text-sc-muted-2">—</span>
@@ -147,10 +148,13 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
         <ReceiptPdfPreview pdf={pdf} />
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <Card>
-            <SectionTitle>Dịch vụ</SectionTitle>
-            <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
-          </Card>
+          <div className="flex flex-col gap-4">
+            <Card>
+              <SectionTitle>Dịch vụ</SectionTitle>
+              <Table<OrderItem> rowKey="id" columns={columnsOf(data)} dataSource={data.items} pagination={false} />
+            </Card>
+            <RefundReceiptsCard order={data} base={back.to} />
+          </div>
           <div className="flex flex-col gap-4">
             <Card>
               <SectionTitle>Thanh toán</SectionTitle>
@@ -181,9 +185,9 @@ export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
               </div>
               <QuoteTotals quote={toTotals(data)} />
               {refunded > 0 && (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-red-200/80 bg-red-50/70 px-3 py-2 text-[14.5px] text-red-700">
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-emerald-200/80 bg-emerald-50/70 px-3 py-2 text-[14.5px] text-emerald-700">
                   <span className="font-medium">Đã hoàn về ví</span>
-                  <span className="font-bold tabular-nums">−{formatVND(refunded)}</span>
+                  <span className="font-bold tabular-nums">+{formatVND(refunded)}</span>
                 </div>
               )}
             </Card>

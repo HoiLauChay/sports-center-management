@@ -87,10 +87,14 @@ export const trainingService = {
     return data.result;
   },
 
-  checkInsToday: async () => {
-    const { data } = await privateApi.get<ApiResponse<CheckIn[]>>('/checkins');
+  checkIns: async (date?: string) => {
+    const { data } = await privateApi.get<ApiResponse<CheckIn[]>>('/checkins', {
+      params: date ? { date } : undefined,
+    });
     return data.result;
   },
+
+  checkInsToday: () => trainingService.checkIns(),
 
   checkIn: async (accountId: string) => {
     const { data } = await privateApi.post<ApiResponse<CheckIn>>('/checkins', { accountId });

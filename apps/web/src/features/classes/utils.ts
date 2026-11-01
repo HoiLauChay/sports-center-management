@@ -1,6 +1,14 @@
+import { ATTENDANCE_RULES } from '@sports-center/shared';
 import { formatDate } from '~/lib/format';
-import { DAY_SHORT, WEEK_ORDER, todayVN } from '~/lib/time';
-import type { ClassDerivedStatus, ClassStatus, ClassSummary, CoachRegistrationStatus, WeeklySlot } from './types';
+import { addDays, DAY_SHORT, todayVN, WEEK_ORDER } from '~/lib/time';
+import type {
+  ClassDerivedStatus,
+  ClassSession,
+  ClassStatus,
+  ClassSummary,
+  CoachRegistrationStatus,
+  WeeklySlot,
+} from './types';
 
 export function weeklyText(schedule: WeeklySlot[]) {
   const first = schedule[0];
@@ -79,4 +87,9 @@ export function classAdminActions(item: ClassSummary): ClassAdminActions {
     reject: pending,
     cancel: live,
   };
+}
+
+/** True when a scheduled session is past the 3-day coach attendance window, requiring manager override to edit. */
+export function isCoachAttendanceExpired(session: Pick<ClassSession, 'date' | 'status'>): boolean {
+  return session.status === 'SCHEDULED' && todayVN() > addDays(session.date, ATTENDANCE_RULES.COACH_EDIT_DAYS);
 }

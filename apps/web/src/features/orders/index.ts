@@ -8,4 +8,10 @@ export {
   ReceptionOrdersPage,
   parseStaffOrdersSearch,
 } from './components/OrderPages';
+export {
+  AdminRefundDetailPage,
+  MemberRefundDetailPage,
+  ReceptionRefundDetailPage,
+  RefundDetailView,
+} from './components/RefundDetailView';
 export { useOrder, useOrders } from './hooks/useOrders';

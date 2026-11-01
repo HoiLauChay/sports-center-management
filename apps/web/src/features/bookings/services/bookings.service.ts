@@ -3,6 +3,7 @@ import type {
   Booking,
   FacilityPackage,
   FacilitySchedule,
+  ListBookingsQuery,
   ListMyBookingsQuery,
   Paginated,
 } from '@sports-center/shared';
@@ -43,5 +44,17 @@ export const bookingsService = {
       params: { date, status: 'CONFIRMED', page: 1, limit: PAGINATION.MAX_LIMIT },
     });
     return data.result.items.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  },
+
+  /** Paginated staff booking lookup (`GET /bookings`) supporting facility, member, guest phone, status and date filters. */
+  list: async (params: ListBookingsQuery) => {
+    const { data } = await privateApi.get<ApiResponse<Paginated<Booking>>>('/bookings', { params });
+    return data.result;
+  },
+
+  /** Full detail of a single booking (`GET /bookings/:id`). */
+  getById: async (id: string) => {
+    const { data } = await privateApi.get<ApiResponse<Booking>>(`/bookings/${encodeURIComponent(id)}`);
+    return data.result;
   },
 };

@@ -12,13 +12,13 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses/hooks/useCourses';
-import { useConfirm } from '~/hooks/useConfirm';
 import { useRowLink } from '~/hooks/useRowLink';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
 import type { ManagerClassesQuery } from '../services/classes.service';
 import { classDateRange, weeklyLines } from '../utils';
+import { ReviewClassModal } from './ClassAdminModals';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
 
@@ -43,7 +43,7 @@ export function ClassesAdminPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [createOpen, setCreateOpen] = useState(false);
-  const confirm = useConfirm();
+  const [reviewing, setReviewing] = useState<{ mode: 'approve' | 'reject'; item: ClassSummary } | null>(null);
   const rowLink = useRowLink((record: ClassSummary) => ({
     to: '/admin/classes/$classId',
     params: { classId: record.id },
@@ -151,21 +151,13 @@ export function ClassesAdminPage() {
                     primary: true,
                     disabled: !record.coach,
                     hint: 'Lớp chưa có HLV, phân công trong chi tiết lớp trước',
-                    loading: approve.isPending && approve.variables === record.id,
-                    onClick: () => approve.mutate(record.id),
+                    onClick: () => setReviewing({ mode: 'approve', item: record }),
                   },
                   {
                     key: 'reject',
                     label: 'Từ chối',
                     danger: true,
-                    loading: reject.isPending && reject.variables === record.id,
-                    onClick: () =>
-                      confirm({
-                        title: `Từ chối lớp ${record.name}?`,
-                        content: 'Lớp về trạng thái nháp.',
-                        okText: 'Từ chối',
-                        onOk: () => reject.mutate(record.id),
-                      }),
+                    onClick: () => setReviewing({ mode: 'reject', item: record }),
                   },
                 ]
               : []
@@ -279,6 +271,18 @@ export function ClassesAdminPage() {
       </Card>
 
       <ClassCreateModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <ReviewClassModal
+        open={reviewing !== null}
+        mode={reviewing?.mode ?? 'approve'}
+        item={reviewing?.item ?? null}
+        loading={approve.isPending || reject.isPending}
+        onClose={() => setReviewing(null)}
+        onConfirm={(note) => {
+          if (!reviewing) return;
+          const run = reviewing.mode === 'approve' ? approve : reject;
+          run.mutate({ classId: reviewing.item.id, note }, { onSuccess: () => setReviewing(null) });
+        }}
+      />
     </>
   );
 }

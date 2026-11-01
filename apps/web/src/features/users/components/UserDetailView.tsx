@@ -59,34 +59,38 @@ function UserSummary({ user, actions }: { user: Account; actions?: ReactNode }) 
 
 interface UserDetailViewProps {
   user: Account;
+  belowProfile?: ReactNode;
   aside?: ReactNode;
   actions?: ReactNode;
   editor?: ReactNode;
 }
 
-export function UserDetailView({ user, aside, actions, editor }: UserDetailViewProps) {
+export function UserDetailView({ user, belowProfile, aside, actions, editor }: UserDetailViewProps) {
   return (
     <div className="flex flex-col gap-4">
       <UserSummary user={user} actions={actions} />
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={aside ? 16 : 24}>
-          {editor ? (
-            <Card>{editor}</Card>
-          ) : (
-            <Card>
-              <SectionTitle>Thông tin cá nhân</SectionTitle>
-              <InfoGrid
-                items={[
-                  { label: 'Email', value: user.email, icon: Mail },
-                  { label: 'Số điện thoại', value: user.phone, icon: Phone },
-                  { label: 'Ngày sinh', value: user.dateOfBirth && formatDate(user.dateOfBirth), icon: Cake },
-                  { label: 'Giới tính', value: user.gender && GENDER_LABEL[user.gender], icon: VenusAndMars },
-                  { label: 'Địa chỉ', value: user.address, icon: MapPin, full: true },
-                ]}
-              />
-              <AccountRoleSection user={user} />
-            </Card>
-          )}
+          <div className="flex flex-col gap-4">
+            {editor ? (
+              <Card>{editor}</Card>
+            ) : (
+              <Card>
+                <SectionTitle>Thông tin cá nhân</SectionTitle>
+                <InfoGrid
+                  items={[
+                    { label: 'Email', value: user.email, icon: Mail },
+                    { label: 'Số điện thoại', value: user.phone, icon: Phone },
+                    { label: 'Ngày sinh', value: user.dateOfBirth && formatDate(user.dateOfBirth), icon: Cake },
+                    { label: 'Giới tính', value: user.gender && GENDER_LABEL[user.gender], icon: VenusAndMars },
+                    { label: 'Địa chỉ', value: user.address, icon: MapPin, full: true },
+                  ]}
+                />
+                <AccountRoleSection user={user} />
+              </Card>
+            )}
+            {belowProfile}
+          </div>
         </Col>
         {aside && (
           <Col xs={24} lg={8}>
@@ -102,12 +106,21 @@ interface UserDetailLoaderProps {
   id: string;
   backLabel: string;
   onBack: () => void;
+  belowProfile?: (user: Account) => ReactNode;
   aside?: (user: Account) => ReactNode;
   actions?: (user: Account) => ReactNode;
   editor?: (user: Account) => ReactNode;
 }
 
-export function UserDetailLoader({ id, backLabel, onBack, aside, actions, editor }: UserDetailLoaderProps) {
+export function UserDetailLoader({
+  id,
+  backLabel,
+  onBack,
+  belowProfile,
+  aside,
+  actions,
+  editor,
+}: UserDetailLoaderProps) {
   const { data: user, isPending, isError, error, notFound, refetch } = useUserDetail(id);
 
   const back = (
@@ -152,7 +165,13 @@ export function UserDetailLoader({ id, backLabel, onBack, aside, actions, editor
   return (
     <>
       {back}
-      <UserDetailView user={user} aside={aside?.(user)} actions={actions?.(user)} editor={editor?.(user)} />
+      <UserDetailView
+        user={user}
+        belowProfile={belowProfile?.(user)}
+        aside={aside?.(user)}
+        actions={actions?.(user)}
+        editor={editor?.(user)}
+      />
     </>
   );
 }

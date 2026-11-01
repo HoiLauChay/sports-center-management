@@ -7,6 +7,7 @@ import {
   type ClassSession,
   type ClassSummary,
   type Paginated,
+  type ReviewClassBody,
   type UpdateClassBody,
   type UpdateSessionBody,
 } from '@sports-center/shared';
@@ -50,13 +51,17 @@ export const classAdminService = {
     return data.result;
   },
 
-  approve: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/approve`, {});
+  approve: async (id: string, body?: ReviewClassBody) => {
+    const note = body?.note?.trim();
+    const payload: ReviewClassBody = note ? { note } : {};
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/approve`, payload);
     return data.result;
   },
 
-  reject: async (id: string) => {
-    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/reject`, {});
+  reject: async (id: string, body?: ReviewClassBody) => {
+    const note = body?.note?.trim();
+    const payload: ReviewClassBody = note ? { note } : {};
+    const { data } = await privateApi.post<ApiResponse<ClassDetail>>(`${path(id)}/reject`, payload);
     return data.result;
   },
 
