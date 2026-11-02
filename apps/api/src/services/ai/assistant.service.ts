@@ -32,6 +32,9 @@ import { addDays, formatDate, minutesInCenter, parseTime, todayInCenter } from '
 
 /** Rounds of tool calls allowed per question; stops a confused model from looping and burning the quota. */
 const MAX_ROUNDS = 5;
+/** Time for a whole answer, all rounds together; shorter than the web's 90 seconds so the person hears why it failed. */
+const ANSWER_TIMEOUT_MS = 75_000;
+const NO_ANSWER = 'Xin lỗi, mình chưa trả lời được câu này. Bạn thử hỏi cụ thể hơn nhé.';
 const DAY_MS = 86_400_000;
 
 /** Quotas count per calendar month in center time, e.g. "2026-10". */
@@ -239,28 +242,25 @@ const receptionOverview = async (): Promise<ReceptionAssistantOverview> => {
 
 /**
  * Answers the latest message. Gemini decides which tools it needs; this loop checks them against the caller's
- * role, runs them with the caller's own account and sends the results back, until Gemini answers or
- * MAX_ROUNDS is reached.
+ * role, runs them with the caller's own account and sends the results back, until Gemini answers. The last of
+ * MAX_ROUNDS offers no more tools, so the model answers from what it found. `reply` is null when it gave no answer.
  */
 const answer = async (
   actor: { id: string; role: AssistantRole },
   messages: AssistantMessage[],
-): Promise<Omit<AssistantReply, 'quota'>> => {
+): Promise<{ reply: string | null; actions: AssistantAction[] }> => {
+  const signal = AbortSignal.timeout(ANSWER_TIMEOUT_MS);
   const context: ToolContext = { accountId: actor.id, role: actor.role };
   const contents: GeminiContent[] = messages.map(({ role, text }) => ({ role, parts: [{ text }] }));
   const tools = toolsFor(actor.role).map(({ declaration }) => declaration);
   const system = systemPrompt(actor.role);
   const actions: AssistantAction[] = [];
 
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    const turn = await geminiClient.chat({ system, contents: [...contents], tools });
+  for (let round = 1; ; round++) {
+    const answerOnly = round === MAX_ROUNDS;
+    const turn = await geminiClient.chat({ system, contents: [...contents], tools, answerOnly, signal });
     contents.push(turn.content);
-    if (!turn.calls.length) {
-      return {
-        reply: turn.text || 'Xin lỗi, mình chưa trả lời được câu này. Bạn hỏi lại cách khác nhé.',
-        actions,
-      };
-    }
+    if (answerOnly || !turn.calls.length) return { reply: turn.text || null, actions };
     const parts: GeminiPart[] = [];
     for (const call of turn.calls) {
       let result = await toolResult(call.name, call.args, context);
@@ -273,10 +273,6 @@ const answer = async (
     }
     contents.push({ role: 'user', parts });
   }
-  return {
-    reply: 'Câu hỏi này cần tra cứu nhiều quá, mình chưa trả lời được. Bạn thử hỏi cụ thể hơn nhé.',
-    actions,
-  };
 };
 
 class AssistantService {
@@ -296,7 +292,10 @@ class AssistantService {
    * without a quota (the hourly rate limit still applies to everyone).
    */
   chat = async (actor: { id: string; role: AssistantRole }, messages: AssistantMessage[]): Promise<AssistantReply> => {
-    if (actor.role !== 'MEMBER') return { ...(await answer(actor, messages)), quota: null };
+    if (actor.role !== 'MEMBER') {
+      const { reply, actions } = await answer(actor, messages);
+      return { reply: reply ?? NO_ANSWER, actions, quota: null };
+    }
 
     const today = todayInCenter();
     const period = monthOf(today);
@@ -310,12 +309,19 @@ class AssistantService {
         meta: { limit, resetsOn: firstOfNextMonth(today) },
       });
     }
+    let result: Awaited<ReturnType<typeof answer>>;
     try {
-      return { ...(await answer(actor, messages)), quota: { used, limit, resetsOn: firstOfNextMonth(today) } };
+      result = await answer(actor, messages);
     } catch (err) {
       await assistantRepository.refundQuestion(actor.id, period);
       throw err;
     }
+    if (result.reply === null) await assistantRepository.refundQuestion(actor.id, period);
+    return {
+      reply: result.reply ?? NO_ANSWER,
+      actions: result.actions,
+      quota: { used: result.reply === null ? used - 1 : used, limit, resetsOn: firstOfNextMonth(today) },
+    };
   };
 
   /** What the assistant draws on for this role, summed up for the panel beside the chat. */

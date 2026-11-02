@@ -52,6 +52,10 @@ export interface ChatInput {
   contents: GeminiContent[];
   tools: FunctionDeclaration[];
   temperature?: number;
+  /** Makes the model answer from what it has instead of asking for more tools. */
+  answerOnly?: boolean;
+  /** Stops waiting for Gemini once the whole answer's deadline has passed. */
+  signal?: AbortSignal;
 }
 
 export interface ChatTurn {
@@ -71,7 +75,7 @@ const unavailable = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.SERVICE_UNAVAILABLE, code: ERROR_CODE.UPSTREAM_UNAVAILABLE, message });
 
 /** Sends one generateContent request; maps network, quota and server errors to messages for the user. */
-const generate = async (body: Record<string, unknown>) => {
+const generate = async (body: Record<string, unknown>, signal?: AbortSignal) => {
   if (!env.GEMINI_API_KEY) throw unavailable('Tính năng AI chưa được cấu hình');
 
   const send = () =>
@@ -79,7 +83,7 @@ const generate = async (body: Record<string, unknown>) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: signal ? AbortSignal.any([AbortSignal.timeout(TIMEOUT_MS), signal]) : AbortSignal.timeout(TIMEOUT_MS),
     });
 
   let response: Response;
@@ -87,10 +91,11 @@ const generate = async (body: Record<string, unknown>) => {
     response = await send();
     // The free tier is often briefly overloaded; one retry usually gets through.
     if (response.status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
-      await sleep(RETRY_DELAY_MS);
+      await sleep(RETRY_DELAY_MS, undefined, { signal });
       response = await send();
     }
   } catch (err) {
+    if (signal?.aborted) throw unavailable('Trợ lý trả lời quá lâu, vui lòng thử lại');
     console.error('Gemini request failed:', err);
     throw unavailable('Không kết nối được dịch vụ AI, vui lòng thử lại sau');
   }
@@ -141,13 +146,17 @@ class GeminiClient {
   };
 
   /** One turn of a conversation with tools: either the answer, or the tools the model wants run first. */
-  chat = async ({ system, contents, tools, temperature = 0.4 }: ChatInput): Promise<ChatTurn> => {
-    const parts = await generate({
-      systemInstruction: { parts: [{ text: system }] },
-      contents,
-      tools: [{ functionDeclarations: tools }],
-      generationConfig: { temperature },
-    });
+  chat = async ({ system, contents, tools, temperature = 0.4, answerOnly, signal }: ChatInput): Promise<ChatTurn> => {
+    const parts = await generate(
+      {
+        systemInstruction: { parts: [{ text: system }] },
+        contents,
+        tools: [{ functionDeclarations: tools }],
+        ...(answerOnly && { toolConfig: { functionCallingConfig: { mode: 'NONE' } } }),
+        generationConfig: { temperature },
+      },
+      signal,
+    );
     return {
       content: { role: 'model', parts },
       text: visibleText(parts),
