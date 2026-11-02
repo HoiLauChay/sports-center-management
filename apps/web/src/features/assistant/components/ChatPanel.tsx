@@ -79,6 +79,8 @@ interface ChatPanelProps {
   config: AssistantConfig;
   conversation: Conversation | null;
   pending: boolean;
+  /** What the assistant is looking up right now. */
+  status: string | null;
   /** The member's questions this month; null for staff, undefined while loading. */
   quota: AssistantQuota | null | undefined;
   onSend: (text: string) => void;
@@ -93,6 +95,7 @@ export function ChatPanel({
   config,
   conversation,
   pending,
+  status,
   quota,
   onSend,
   onRetry,
@@ -106,7 +109,7 @@ export function ChatPanel({
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages.length, pending]);
+  }, [messages.length, pending, status]);
 
   const submit = (value = text) => {
     if (!value.trim() || pending || usedUp) return;
@@ -138,7 +141,7 @@ export function ChatPanel({
                 onActionDone={onActionDone}
               />
             ))}
-            {pending && <TypingBubble />}
+            {pending && <TypingBubble status={status} />}
           </div>
         )}
         <div ref={bottom} />

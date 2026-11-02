@@ -59,6 +59,7 @@ export function AssistantPage() {
           config={config}
           conversation={chat.active}
           pending={chat.pending}
+          status={chat.status}
           quota={quota.data}
           onSend={chat.send}
           onRetry={chat.retry}

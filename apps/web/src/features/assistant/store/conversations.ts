@@ -8,6 +8,8 @@ export interface ChatMessage {
   actions?: AssistantAction[];
   /** Indexes of `actions` already confirmed, so a reopened chat does not offer them again. */
   doneActions?: number[];
+  /** The kinds of data the answer was built from. */
+  sources?: string[];
   /** A failed answer: shown with a retry button and never sent back to the assistant. */
   failed?: boolean;
 }

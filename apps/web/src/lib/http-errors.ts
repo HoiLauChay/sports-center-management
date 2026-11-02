@@ -17,7 +17,18 @@ export interface ApiError {
 
 const FALLBACK = 'Có lỗi xảy ra, vui lòng thử lại.';
 
+/** An error from a request that does not go through axios, such as a streamed answer. */
+export class ApiRequestError extends Error {
+  readonly detail: ApiError;
+
+  constructor(detail: ApiError) {
+    super(detail.message);
+    this.detail = detail;
+  }
+}
+
 export function toApiError(err: unknown, fallback = FALLBACK): ApiError {
+  if (err instanceof ApiRequestError) return err.detail;
   if (axios.isAxiosError<ApiErrorBody>(err)) {
     if (err.response) {
       const body = err.response.data;

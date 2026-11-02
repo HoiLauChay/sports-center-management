@@ -34,6 +34,7 @@ export function useAssistantChat() {
   const queryClient = useQueryClient();
   const [conversations, setConversations] = useState<Conversation[]>(() => loadConversations(user.id));
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const active = useMemo(() => conversations.find(({ id }) => id === activeId) ?? null, [conversations, activeId]);
 
   useEffect(() => {
@@ -57,16 +58,21 @@ export function useAssistantChat() {
   }, []);
 
   const ask = useMutation({
-    mutationFn: ({ history }: { conversationId: string; history: ChatMessage[] }) =>
-      assistantService.chat({
-        messages: history
-          .filter(({ failed }) => !failed)
-          .slice(-ASSISTANT_MAX_MESSAGES)
-          .map(({ role, text }) => ({ role, text })),
-      }),
-    onSuccess: ({ reply, actions, quota }, { conversationId }) => {
+    mutationFn: ({ conversationId, history }: { conversationId: string; history: ChatMessage[] }) =>
+      assistantService.chat(
+        {
+          conversationId,
+          messages: history
+            .filter(({ failed }) => !failed)
+            .slice(-ASSISTANT_MAX_MESSAGES)
+            .map(({ role, text }) => ({ role, text })),
+        },
+        setStatus,
+      ),
+    onSettled: () => setStatus(null),
+    onSuccess: ({ reply, actions, sources, quota }, { conversationId }) => {
       queryClient.setQueryData(quotaKey(user.id), quota);
-      append(conversationId, { id: newId(), role: 'model', text: reply, actions });
+      append(conversationId, { id: newId(), role: 'model', text: reply, actions, sources });
     },
     onError: (error, { conversationId }) => {
       if (toApiError(error).code === ERROR_CODE.AI_QUOTA_EXCEEDED) {
@@ -114,12 +120,15 @@ export function useAssistantChat() {
   const remove = (conversationId: string) => {
     setConversations((list) => list.filter(({ id }) => id !== conversationId));
     if (conversationId === activeId) setActiveId(null);
+    // It expires by itself soon anyway, so a failure here needs no message.
+    void assistantService.forget(conversationId).catch(() => undefined);
   };
 
   return {
     conversations,
     active,
     pending: ask.isPending,
+    status,
     send,
     retry,
     open: setActiveId,

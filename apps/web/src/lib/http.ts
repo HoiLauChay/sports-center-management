@@ -35,6 +35,16 @@ function refreshOnce(): Promise<void> {
   return pendingRefresh;
 }
 
+/** For requests made without axios: renews the session the way the interceptor below does. */
+export async function refreshSession() {
+  try {
+    await refreshOnce();
+  } catch (refreshError) {
+    onAuthRefreshFailed?.();
+    throw refreshError;
+  }
+}
+
 privateApi.interceptors.response.use(
   (response) => response,
   async (error) => {

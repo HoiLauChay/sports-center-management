@@ -65,6 +65,9 @@ export function MessageBubble({ message, role, isLast, onRetry, onOpenDraft, onA
         >
           {message.failed ? message.text : withLinks(message.text, role)}
         </div>
+        {message.sources && message.sources.length > 0 && (
+          <p className="m-0 pl-1 text-[12.5px] text-sc-muted">Dựa trên: {message.sources.join(' · ')}</p>
+        )}
         {message.failed && isLast && (
           <Button size="small" icon={<RotateCcw size={14} />} className="self-start" onClick={onRetry}>
             Thử lại
@@ -83,14 +86,18 @@ export function MessageBubble({ message, role, isLast, onRetry, onOpenDraft, onA
   );
 }
 
-export function TypingBubble() {
+export function TypingBubble({ status }: { status: string | null }) {
   return (
     <div className="flex items-center gap-3" aria-live="polite">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sc-ink text-sc-lime">
         <Sparkles size={16} />
       </span>
       <div className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-sc-border-soft bg-sc-surface px-4 py-3.5">
-        <span className="sr-only">Trợ lý đang trả lời</span>
+        {status ? (
+          <span className="mr-2 text-[14px] text-sc-muted">{status}…</span>
+        ) : (
+          <span className="sr-only">Trợ lý đang trả lời</span>
+        )}
         {[0, 150, 300].map((delay) => (
           <span
             key={delay}
