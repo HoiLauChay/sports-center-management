@@ -33,12 +33,14 @@ function withLinks(text: string, role: AssistantRole): ReactNode[] {
 interface MessageBubbleProps {
   message: ChatMessage;
   role: AssistantRole;
+  /** Only the latest message can be retried: an older error has newer turns after it. */
+  isLast: boolean;
   onRetry: () => void;
   onOpenDraft: (draft: SupportDraft) => void;
   onActionDone: (messageId: string, index: number) => void;
 }
 
-export function MessageBubble({ message, role, onRetry, onOpenDraft, onActionDone }: MessageBubbleProps) {
+export function MessageBubble({ message, role, isLast, onRetry, onOpenDraft, onActionDone }: MessageBubbleProps) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
@@ -63,7 +65,7 @@ export function MessageBubble({ message, role, onRetry, onOpenDraft, onActionDon
         >
           {message.failed ? message.text : withLinks(message.text, role)}
         </div>
-        {message.failed && (
+        {message.failed && isLast && (
           <Button size="small" icon={<RotateCcw size={14} />} className="self-start" onClick={onRetry}>
             Thử lại
           </Button>

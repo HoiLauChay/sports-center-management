@@ -132,6 +132,7 @@ export function ChatPanel({
                 key={message.id}
                 message={message}
                 role={role}
+                isLast={message.id === messages.at(-1)?.id}
                 onRetry={onRetry}
                 onOpenDraft={onOpenDraft}
                 onActionDone={onActionDone}

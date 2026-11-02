@@ -105,7 +105,7 @@ export function useAssistantChat() {
 
   /** Asks the last question again after a failed answer, dropping the error from the chat. */
   const retry = () => {
-    if (!active || ask.isPending) return;
+    if (!active?.messages.at(-1)?.failed || ask.isPending) return;
     const messages = active.messages.filter(({ failed }) => !failed);
     setConversations((list) => list.map((item) => (item.id === active.id ? { ...item, messages } : item)));
     ask.mutate({ conversationId: active.id, history: messages });
