@@ -3,6 +3,7 @@ import type {
   AssistantOverview,
   AssistantQuota,
   AssistantReply,
+  AssistantStreamEvent,
   CoachAssistantOverview,
   ReceptionAssistantOverview,
 } from '@sports-center/shared';
@@ -10,7 +11,9 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, spyOn, te
 import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
+import { ErrorWithStatus } from '~/rules/error';
 import geminiClient, { type ChatInput, type ChatTurn, type GeminiPart } from '~/services/ai/gemini.client';
+import assistantMemory from '~/services/ai/memory';
 import { addDays, todayInCenter } from '~/utils/time';
 import { setupAttendance } from './helpers/attendance';
 import { resetDatabase } from './helpers/db';
@@ -61,6 +64,7 @@ describe('AI assistant chat', () => {
     expect(reply).toEqual({
       reply: 'Ví của bạn còn 120.000đ.',
       actions: [],
+      sources: ['Ví của bạn'],
       quota: { used: 1, limit: 10, resetsOn: expect.any(String) },
     });
 
@@ -173,6 +177,152 @@ describe('AI assistant chat', () => {
     expect((await request('POST', '/chat', f.manager, ask('Xin chào'))).status).toBe(403);
     expect((await request('GET', '/overview', f.manager)).status).toBe(403);
     expect(chat).not.toHaveBeenCalled();
+  });
+});
+
+describe('AI assistant knowledge', () => {
+  const badminton = async () => {
+    await prisma.systemSetting.create({ data: {} });
+    const sport = await prisma.sport.create({ data: { name: 'Cầu lông' } });
+    const court = await seedFacility(1, {
+      name: 'Sân A',
+      sports: { create: { sport: { connect: { id: sport.id } } } },
+    });
+    return { court, date: addDays(todayInCenter(), 1) };
+  };
+
+  test('finds free slots of a sport typed without marks, within the hours asked', async () => {
+    const f = await setupAttendance();
+    const { court, date } = await badminton();
+    await seedBooking(court.id, '18:00', '19:00', { date });
+
+    const { result } = await runTool(f.member, 'find_available_slots', {
+      sport: 'cau long',
+      date,
+      from: '17:00',
+      to: '20:00',
+    });
+    const [found] = result.facilities as { facilityId: string; slots: { startTime: string; left: number }[] }[];
+    expect(found!.facilityId).toBe(court.id);
+    expect(found!.slots.map(({ startTime }) => startTime)).toEqual(['17:00', '19:00']);
+    expect(found!.slots[0]!.left).toBe(1);
+  });
+
+  test('an unknown sport is reported with the real names', async () => {
+    const f = await setupAttendance();
+    const { date } = await badminton();
+    const { result } = await runTool(f.member, 'find_available_slots', { sport: 'Khúc côn cầu', date });
+    expect(result.sports).toContain('Cầu lông');
+  });
+
+  test('every role can read the rules, and the reply says where it came from', async () => {
+    const f = await setupAttendance();
+    chat
+      .mockResolvedValueOnce(turn([{ name: 'get_policies', args: { topic: 'REFUND' } }]))
+      .mockResolvedValueOnce(turn([], 'Gói không được hoàn tiền.'));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.coach, ask('Gói có hoàn không?')));
+    expect(reply.sources).toEqual(['Quy định trung tâm']);
+    const [response] = toolResponses(1);
+    expect(JSON.stringify(response)).toContain('Không hoàn: gói thành viên');
+  });
+
+  test('a tool that failed is not named as a source', async () => {
+    const f = await setupAttendance();
+    chat
+      .mockResolvedValueOnce(turn([{ name: 'get_policies', args: { topic: 'NOPE' } }]))
+      .mockResolvedValueOnce(turn([], 'Mình chưa tra được.'));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Quy định?')));
+    expect(reply.sources).toEqual([]);
+  });
+});
+
+describe('AI assistant stream', () => {
+  const eventsOf = async (response: Response) =>
+    (await response.text())
+      .split('\n\n')
+      .filter(Boolean)
+      .map((message) => JSON.parse(message.slice('data: '.length)) as AssistantStreamEvent);
+
+  test('says what it is looking up, then gives the answer', async () => {
+    const f = await setupAttendance();
+    chat
+      .mockResolvedValueOnce(turn([{ name: 'my_wallet', args: {} }]))
+      .mockResolvedValueOnce(turn([], 'Ví của bạn còn 0đ.'));
+
+    const response = await request('POST', '/chat/stream', f.member, ask('Ví còn bao nhiêu?'));
+    expect(response.headers.get('content-type')).toContain('text/event-stream');
+    const events = await eventsOf(response);
+    expect(events[0]).toEqual({ type: 'status', text: 'Đang xem ví của bạn' });
+    expect(events.at(-1)).toMatchObject({ type: 'done', result: { reply: 'Ví của bạn còn 0đ.' } });
+  });
+
+  test('a refusal before the first event is a normal JSON error', async () => {
+    const f = await setupAttendance();
+    await prisma.assistantUsage.create({
+      data: { accountId: f.member.id, period: todayInCenter().slice(0, 7), count: 10 },
+    });
+
+    const response = await request('POST', '/chat/stream', f.member, ask('Xin chào'));
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({ code: 'AI_QUOTA_EXCEEDED' });
+  });
+
+  test('a failure after the stream opened arrives as an event and gives the question back', async () => {
+    const f = await setupAttendance();
+    chat.mockResolvedValueOnce(turn([{ name: 'my_wallet', args: {} }])).mockImplementationOnce(async () => {
+      throw new ErrorWithStatus({ status: 503, code: 'UPSTREAM_UNAVAILABLE', message: 'AI đang bận' });
+    });
+
+    const events = await eventsOf(await request('POST', '/chat/stream', f.member, ask('Ví?')));
+    expect(events.at(-1)).toEqual({ type: 'error', code: 'UPSTREAM_UNAVAILABLE', message: 'AI đang bận' });
+    const usage = await prisma.assistantUsage.findFirst({ where: { accountId: f.member.id } });
+    expect(usage?.count).toBe(0);
+  });
+});
+
+describe('AI assistant memory', () => {
+  const conversationId = 'chat-1';
+
+  test('hands earlier lookups to Gemini as tagged data and keeps only public items', async () => {
+    const f = await setupAttendance();
+    await prisma.systemSetting.create({ data: {} });
+    const facility = await seedFacility(1, { name: 'Sân B' });
+    const item = { type: 'FACILITY', id: facility.id, label: 'Sân <A>' } as const;
+    const recall = spyOn(assistantMemory, 'recall').mockResolvedValueOnce([item]);
+    const remember = spyOn(assistantMemory, 'remember').mockResolvedValueOnce(undefined);
+    chat
+      .mockResolvedValueOnce(
+        turn([
+          { name: 'my_wallet', args: {} },
+          { name: 'list_facilities', args: {} },
+        ]),
+      )
+      .mockResolvedValueOnce(turn([], 'Xong.'));
+
+    await request('POST', '/chat', f.member, { ...ask('Còn sân 2 thì sao?'), conversationId });
+    expect(recall).toHaveBeenCalledWith(f.member.id, conversationId, 'MEMBER');
+    const { system } = chat.mock.calls[0]![0] as ChatInput;
+    expect(system).toContain('<du_lieu_phien>');
+    expect(system).toContain('Sân  A ');
+
+    const stored = remember.mock.calls[0]!;
+    expect(stored[0]).toBe(f.member.id);
+    expect(stored[4]).toContainEqual({ type: 'FACILITY', id: facility.id, label: 'Sân B' });
+    expect(stored[4].every(({ type }) => type === 'FACILITY')).toBe(true);
+    recall.mockRestore();
+    remember.mockRestore();
+  });
+
+  test('only the signed-in account can forget, and a strange id is refused', async () => {
+    const f = await setupAttendance();
+    const forget = spyOn(assistantMemory, 'forget').mockResolvedValue(undefined);
+
+    expect((await request('DELETE', `/context/${conversationId}`, f.member)).status).toBe(200);
+    expect(forget).toHaveBeenCalledWith(f.member.id, conversationId);
+    expect((await request('DELETE', '/context/a%20b', f.member)).status).toBe(422);
+    forget.mockRestore();
   });
 });
 

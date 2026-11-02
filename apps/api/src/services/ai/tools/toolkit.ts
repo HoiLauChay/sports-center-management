@@ -51,12 +51,21 @@ export const dateRange = (args: { from?: string; to?: string }) => {
 
 export const badRange = { error: `Khoảng ngày phải hợp lệ và tối đa ${MAX_SCHEDULE_DAYS} ngày` };
 
+/** Vietnamese is often typed without its marks: "cau long" must find "Cầu lông". */
+const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').toLowerCase();
+
 export const findSportId = async (name?: string) => {
   if (!name) return undefined;
-  const wanted = name.toLowerCase();
+  const wanted = plain(name);
   const sports = await sportService.list(false);
-  return sports.find((sport) => sport.name.toLowerCase().includes(wanted))?.id ?? null;
+  return sports.find((sport) => plain(sport.name).includes(wanted))?.id ?? null;
 };
+
+/** Told to the model when a sport is not found, with the real names so it can correct itself. */
+export const unknownSport = async (name?: string) => ({
+  note: `Trung tâm không có bộ môn "${name}"`,
+  sports: (await sportService.list(false)).map((sport) => sport.name),
+});
 
 /**
  * What a tool returns when it prepared something for the person to confirm. Gemini reads `note`; the chat gets

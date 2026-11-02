@@ -39,8 +39,16 @@ export interface AssistantQuota {
 export interface AssistantReply {
   reply: string;
   actions: AssistantAction[];
+  /** The kinds of data the answer was built from, in the words the person reads. */
+  sources: string[];
   quota: AssistantQuota | null;
 }
+
+/** One message of `POST /assistant/chat/stream`. */
+export type AssistantStreamEvent =
+  | { type: 'status'; text: string }
+  | { type: 'done'; result: AssistantReply }
+  | { type: 'error'; code: string; message: string };
 
 /** What the assistant can see about the member, shown beside the chat. */
 export interface MemberAssistantOverview {

@@ -69,7 +69,15 @@ const assistantMessageSchema = z.strictObject(
   'Tin nhắn không hợp lệ',
 );
 
+/** The browser's id for a chat; it only names a field inside the signed-in account's own memory. */
+export const assistantConversationIdSchema = z
+  .string('Mã cuộc trò chuyện không hợp lệ')
+  .regex(/^[\w.-]{1,64}$/, 'Mã cuộc trò chuyện không hợp lệ');
+
+export const assistantContextParamsSchema = z.object({ conversationId: assistantConversationIdSchema });
+
 export const assistantChatBodySchema = z.strictObject({
+  conversationId: assistantConversationIdSchema.optional(),
   messages: z
     .array(assistantMessageSchema, 'Danh sách tin nhắn không hợp lệ')
     .min(1, 'Cần ít nhất một tin nhắn')
