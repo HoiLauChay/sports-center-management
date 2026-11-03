@@ -1,9 +1,10 @@
 import type { ClassDerivedStatus, ListClassesQuery, Role } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
+import { Prisma } from '~/generated/prisma/client';
 import { courseSelect } from '~/repositories/course.repository';
 import { pageArgs } from '~/utils/pagination';
+import { unaccentContains } from '~/utils/search';
 import { todayInCenter } from '~/utils/time';
 
 const classSelect = {
@@ -136,7 +137,16 @@ class ClassRepository {
       data: { status: 'CANCELLED', cancelReason: reason },
     });
 
-  findPage = (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
+  /** Classes whose name or coach's name contains `q`, marks or not; the rest of the filter stays in Prisma. */
+  private idsByName = async (q: string) => {
+    const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+      SELECT c.id FROM classes c LEFT JOIN accounts a ON a.id = c.coach_id
+      WHERE ${unaccentContains(Prisma.sql`c.name`, q)} OR ${unaccentContains(Prisma.sql`a.full_name`, q)}
+    `);
+    return rows.map(({ id }) => id);
+  };
+
+  findPage = async (viewer: ClassViewer, { page, limit, ...query }: ListClassesQuery) => {
     const today = new Date(todayInCenter());
     const where: Prisma.ClassWhereInput = {
       deletedAt: null,
@@ -150,14 +160,7 @@ class ClassRepository {
         query.needsCoach ? needsCoach(viewer, today) : {},
         query.openForEnrollment ? catalog(today) : {},
         query.derivedStatus ? derivedFilter(query.derivedStatus, today) : {},
-        query.q
-          ? {
-              OR: [
-                { name: { contains: query.q, mode: 'insensitive' } },
-                { coach: { fullName: { contains: query.q, mode: 'insensitive' } } },
-              ],
-            }
-          : {},
+        query.q ? { id: { in: await this.idsByName(query.q) } } : {},
       ],
     };
     return Promise.all([

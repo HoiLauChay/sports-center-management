@@ -1,8 +1,9 @@
 import { normalizePhone, type ListUsersQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
-import type { AccountStatus, Prisma, Role } from '~/generated/prisma/client';
+import { Prisma, type AccountStatus, type Role } from '~/generated/prisma/client';
 import { pageArgs } from '~/utils/pagination';
+import { unaccentContains } from '~/utils/search';
 
 export const accountProfileInclude = {
   memberProfile: true,
@@ -31,7 +32,15 @@ class AccountRepository {
   findById = (id: string, role?: Role, tx: Prisma.TransactionClient = prisma) =>
     tx.account.findUnique({ where: { id, ...(role && { roles: { has: role } }) }, include: accountProfileInclude });
 
-  findPage = ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
+  /** Accounts whose name contains `q`, marks or not; the rest of the filter stays in Prisma. */
+  private idsByName = async (q: string) => {
+    const rows = await prisma.$queryRaw<{ id: string }[]>(
+      Prisma.sql`SELECT id FROM accounts WHERE ${unaccentContains(Prisma.sql`full_name`, q)}`,
+    );
+    return rows.map(({ id }) => id);
+  };
+
+  findPage = async ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
     const trimmed = q?.trim();
     let searchFilter: Prisma.AccountWhereInput | undefined;
 
@@ -55,16 +64,13 @@ class AccountRepository {
             : { phone: { contains: normalizedPhone } },
         ];
         // Allow fallback to fullName or email in case name or email username contains digits.
-        orConditions.push({ fullName: { contains: trimmed, mode: 'insensitive' } });
+        orConditions.push({ id: { in: await this.idsByName(trimmed) } });
         orConditions.push({ email: { contains: trimmed, mode: 'insensitive' } });
         searchFilter = { OR: orConditions };
       } else {
         // Text query: search by fullName or email.
         searchFilter = {
-          OR: [
-            { fullName: { contains: trimmed, mode: 'insensitive' } },
-            { email: { contains: trimmed, mode: 'insensitive' } },
-          ],
+          OR: [{ id: { in: await this.idsByName(trimmed) } }, { email: { contains: trimmed, mode: 'insensitive' } }],
         };
       }
     }
