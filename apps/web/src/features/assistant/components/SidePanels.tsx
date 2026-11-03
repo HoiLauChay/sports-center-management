@@ -6,7 +6,7 @@ import type {
   ReceptionAssistantOverview,
 } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Skeleton, Tooltip } from 'antd';
+import { Popconfirm, Skeleton, Tooltip } from 'antd';
 import {
   BookOpenCheck,
   CalendarCheck,
@@ -20,6 +20,7 @@ import {
   ScanLine,
   ShieldCheck,
   Ticket,
+  Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { formatDate } from '~/lib/format';
@@ -313,7 +314,7 @@ export function OverviewCard({
 }) {
   const readOnly = overview && READ_ONLY[overview.role];
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-sc-border-soft bg-sc-surface">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-sc-border-soft bg-sc-surface lg:flex-1">
       <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-1">
         <div className="text-[13px] font-bold tracking-[0.08em] uppercase">Trợ lý đang dùng</div>
         {readOnly && (
@@ -348,8 +349,13 @@ export function OverviewCard({
 
 function when(iso: string) {
   const day = new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const time = new Date(iso).toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   const diff = Math.round((Date.parse(todayKey()) - Date.parse(day)) / DAY_MS);
-  return diff === 0 ? 'Hôm nay' : diff === 1 ? 'Hôm qua' : ddmm(day);
+  return diff === 0 ? `Hôm nay, ${time}` : diff === 1 ? `Hôm qua, ${time}` : ddmm(day);
 }
 
 /** Chats remembered in this browser; the server keeps none. */
@@ -357,38 +363,87 @@ export function RecentCard({
   conversations,
   activeId,
   onOpen,
+  onDelete,
 }: {
   conversations: Conversation[];
   activeId: string | null;
   onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-sc-border-soft bg-sc-surface">
-      <div className="flex shrink-0 items-center justify-between px-5 pt-4 pb-2">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-sc-border-soft bg-sc-surface lg:max-h-[50%] lg:shrink-0">
+      <div className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
         <div className="text-[13px] font-bold tracking-[0.08em] uppercase">Gần đây</div>
         {conversations.length > 0 && (
-          <span className="text-[12.5px] text-sc-muted-2">{conversations.length} cuộc trò chuyện</span>
+          <span className="rounded-full bg-sc-paper px-2 py-0.5 text-[12px] font-semibold text-sc-muted tabular-nums">
+            {conversations.length}
+          </span>
         )}
       </div>
       {conversations.length === 0 ? (
-        <p className="m-0 px-5 pb-4 text-[14px] text-sc-muted-2">Chưa có cuộc trò chuyện nào.</p>
+        <div className="flex items-center gap-3 px-5 pt-1 pb-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sc-paper text-sc-muted">
+            <MessagesSquare size={17} />
+          </span>
+          <p className="m-0 text-[13.5px] leading-snug text-sc-muted">
+            Chưa có cuộc trò chuyện nào. Câu hỏi bạn gửi sẽ được lưu ở đây.
+          </p>
+        </div>
       ) : (
-        <ul className="m-0 max-h-[264px] min-h-0 flex-1 list-none overflow-y-auto px-2 pb-2 lg:max-h-none">
-          {conversations.map(({ id, title, updatedAt }) => (
-            <li key={id}>
-              <button
-                type="button"
-                onClick={() => onOpen(id)}
-                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 px-3 py-2.5 text-left hover:bg-sc-paper ${
-                  id === activeId ? 'bg-sc-paper' : 'bg-transparent'
-                }`}
-              >
-                <MessageCircle size={15} className="shrink-0 text-sc-muted" />
-                <span className="min-w-0 flex-1 truncate text-[14.5px] text-sc-ink">{title}</span>
-                <span className="shrink-0 text-[12.5px] text-sc-muted-2">{when(updatedAt)}</span>
-              </button>
-            </li>
-          ))}
+        <ul className="m-0 flex max-h-[264px] min-h-0 flex-1 list-none flex-col gap-0.5 overflow-y-auto px-2 pb-2 lg:max-h-none">
+          {conversations.map(({ id, title, updatedAt, messages }) => {
+            const active = id === activeId;
+            const asked = messages.filter((message) => message.role === 'user').length;
+            return (
+              <li key={id} className="group relative">
+                <button
+                  type="button"
+                  title={title}
+                  aria-current={active || undefined}
+                  onClick={() => onOpen(id)}
+                  className={`flex w-full cursor-pointer items-start gap-3 rounded-xl border-0 py-2.5 pr-10 pl-3 text-left transition-colors ${
+                    active ? 'bg-sc-primary-soft' : 'bg-transparent hover:bg-sc-paper'
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                      active ? 'bg-sc-primary text-white' : 'bg-sc-paper text-sc-muted'
+                    }`}
+                  >
+                    <MessageCircle size={15} />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span
+                      className={`line-clamp-2 text-[14px] leading-snug ${active ? 'font-semibold text-sc-ink' : 'text-sc-ink-2'}`}
+                    >
+                      {title}
+                    </span>
+                    <span className="text-[12px] text-sc-muted-2 tabular-nums">
+                      {when(updatedAt)}
+                      {asked > 0 && ` · ${asked} câu hỏi`}
+                    </span>
+                  </span>
+                </button>
+                <Popconfirm
+                  title="Xóa cuộc trò chuyện này?"
+                  description="Cuộc trò chuyện chỉ lưu trên trình duyệt này, xóa rồi không khôi phục được."
+                  okText="Xóa"
+                  cancelText="Hủy"
+                  okButtonProps={{ danger: true }}
+                  placement="left"
+                  onConfirm={() => onDelete(id)}
+                >
+                  <button
+                    type="button"
+                    aria-label={`Xóa cuộc trò chuyện "${title}"`}
+                    className="absolute top-2.5 right-2 flex size-7 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-sc-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-sc-surface hover:text-sc-error focus-visible:opacity-100 [&.ant-popover-open]:opacity-100"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </Popconfirm>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

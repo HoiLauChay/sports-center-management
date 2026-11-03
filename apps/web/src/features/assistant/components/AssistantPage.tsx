@@ -66,8 +66,13 @@ export function AssistantPage() {
           onOpenDraft={(draft) => setSupport({ open: true, draft })}
           onActionDone={(messageId, index) => chat.active && chat.markDone(chat.active.id, messageId, index)}
         />
-        <aside className="flex flex-col gap-5 lg:grid lg:h-[max(560px,calc(100dvh-160px))] lg:grid-rows-2">
-          <RecentCard conversations={chat.conversations} activeId={chat.active?.id ?? null} onOpen={chat.open} />
+        <aside className="flex flex-col gap-5 lg:h-[max(560px,calc(100dvh-160px))]">
+          <RecentCard
+            conversations={chat.conversations}
+            activeId={chat.active?.id ?? null}
+            onOpen={chat.open}
+            onDelete={chat.remove}
+          />
           <OverviewCard overview={overview.data} quota={quota.data} loading={overview.isPending} />
         </aside>
       </div>
