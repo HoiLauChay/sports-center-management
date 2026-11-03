@@ -17,7 +17,6 @@ export interface ApiError {
 
 const FALLBACK = 'Có lỗi xảy ra, vui lòng thử lại.';
 
-/** An error from a request that does not go through axios, such as a streamed answer. */
 export class ApiRequestError extends Error {
   readonly detail: ApiError;
 
@@ -48,13 +47,11 @@ export function toApiError(err: unknown, fallback = FALLBACK): ApiError {
   return { code: CLIENT_ERROR_CODE.UNKNOWN, message: err instanceof Error ? err.message : fallback };
 }
 
-/** The most specific text to show in a toast: the first field error when there is one, else the general message. */
 export function describeApiError(err: unknown, fallback?: string): string {
   const apiError = toApiError(err, fallback);
   return apiError.errors?.[0]?.message ?? apiError.message;
 }
 
-/** Extra payload an error response carries next to `code`/`message` (e.g. the fresh `quote` of a `PRICE_CHANGED`). */
 export function errorPayload<T>(err: unknown, key: string): T | undefined {
   if (axios.isAxiosError<Record<string, unknown>>(err)) return err.response?.data?.[key] as T | undefined;
   return undefined;
@@ -74,7 +71,6 @@ export interface ScheduleConflicts {
   sessions: SessionConflict[];
 }
 
-/** Upcoming bookings / class sessions the API returned alongside a 409 `SCHEDULE_CONFLICT` / `HAS_DEPENDENCIES`. */
 export function scheduleConflictsOf(err: unknown): ScheduleConflicts | null {
   if (!axios.isAxiosError<Partial<ScheduleConflicts>>(err)) return null;
   const { bookings = [], sessions = [] } = err.response?.data ?? {};

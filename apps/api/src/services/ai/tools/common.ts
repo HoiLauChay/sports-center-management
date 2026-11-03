@@ -22,7 +22,6 @@ const outsideBookingWindow = async (date: string) => {
     : null;
 };
 
-/** Public information about the center, the same for every role. */
 export const COMMON_TOOLS: Tool[] = [
   tool(
     {

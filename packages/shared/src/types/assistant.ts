@@ -2,23 +2,15 @@ import type { AttendanceStatus, SupportCategory } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Ref } from './api';
 
-/** A support request the assistant wrote from the chat; the member reviews and sends it themselves. */
 export interface SupportDraft {
   category: SupportCategory;
   subject: string;
   description: string;
 }
 
-/**
- * Something the assistant prepared but never did. The person confirms it in the chat, and the page then calls the
- * same API it would without the assistant, so every usual check (price, availability, permissions) still runs.
- */
 export type AssistantAction =
   | { type: 'SUPPORT_REQUEST'; draft: SupportDraft }
-  /** A service for the member's cart; paying still goes through the cart. */
-  /** `subtotal` is the list price; `total` is what the member pays after their membership benefits. */
   | { type: 'CART_ITEM'; item: CheckoutItemInput; title: string; subtotal: number; total: number }
-  /** A coach's attendance for one session, everyone on the roster included. */
   | {
       type: 'ATTENDANCE';
       sessionId: string;
@@ -28,29 +20,24 @@ export type AssistantAction =
 
 export type AssistantActionType = AssistantAction['type'];
 
-/** A member's questions this month; staff have no quota. */
 export interface AssistantQuota {
   used: number;
   limit: number;
-  /** The first day of next month (YYYY-MM-DD), when `used` starts again from 0. */
   resetsOn: string;
 }
 
 export interface AssistantReply {
   reply: string;
   actions: AssistantAction[];
-  /** The kinds of data the answer was built from, in the words the person reads. */
   sources: string[];
   quota: AssistantQuota | null;
 }
 
-/** One message of `POST /assistant/chat/stream`. */
 export type AssistantStreamEvent =
   | { type: 'status'; text: string }
   | { type: 'done'; result: AssistantReply }
   | { type: 'error'; code: string; message: string };
 
-/** What the assistant can see about the member, shown beside the chat. */
 export interface MemberAssistantOverview {
   role: 'MEMBER';
   membership: { name: string; startDate: string; endDate: string; daysLeft: number } | null;
@@ -63,9 +50,7 @@ export interface CoachAssistantOverview {
   role: 'COACH';
   classes: (Ref & { enrolled: number; maxStudents: number })[];
   todaySessions: { id: string; startTime: string; endTime: string; className: string; facility: string }[];
-  /** Sessions already started in the last two weeks with attendance not fully marked or no note. */
   pendingSessions: number;
-  /** Students still waiting for a review whose milestone has been reached. */
   missingReviews: number;
 }
 

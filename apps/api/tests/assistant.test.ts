@@ -25,7 +25,6 @@ let server: Server;
 let request: Awaited<ReturnType<typeof startServer>>['request'];
 let chat: ReturnType<typeof spyOn<typeof geminiClient, 'chat'>>;
 
-/** A scripted Gemini turn: tool calls to make, or the final answer. */
 const turn = (calls: ChatTurn['calls'] = [], text = ''): ChatTurn => ({
   content: {
     role: 'model',
@@ -35,7 +34,6 @@ const turn = (calls: ChatTurn['calls'] = [], text = ''): ChatTurn => ({
   calls,
 });
 const ask = (text: string) => ({ messages: [{ role: 'user', text }] });
-/** What the app sent back to Gemini for each tool it ran, from the call numbered `index`. */
 const toolResponses = (index: number) =>
   (chat.mock.calls[index]![0] as ChatInput).contents
     .at(-1)!
@@ -345,7 +343,6 @@ describe('AI assistant overview', () => {
   });
 });
 
-/** Asks once with Gemini scripted to call one tool, and returns what that tool gave back. */
 const runTool = async (viewer: Parameters<typeof request>[2], name: string, args: Record<string, unknown> = {}) => {
   chat.mockResolvedValueOnce(turn([{ name, args }])).mockResolvedValueOnce(turn([], 'Xong.'));
   expect((await request('POST', '/chat', viewer, ask('Tra giúp tôi'))).status).toBe(200);
@@ -475,7 +472,6 @@ describe('AI assistant quota', () => {
   });
 });
 
-/** Asks once with Gemini scripted to call one tool, and returns the actions in the answer. */
 const actionsFrom = async (viewer: Parameters<typeof request>[2], name: string, args: Record<string, unknown>) => {
   chat.mockResolvedValueOnce(turn([{ name, args }])).mockResolvedValueOnce(turn([], 'Xong.'));
   const reply = await readResult<AssistantReply>(await request('POST', '/chat', viewer, ask('Làm giúp tôi')));
@@ -559,7 +555,6 @@ describe('AI assistant membership advice', () => {
     await prisma.systemSetting.create({ data: {} });
     const member = await createAccount('MEMBER', 'advice@example.com');
     const court = await seedFacility(4);
-    // Six one-hour slots at 100.000đ in the last 60 days: 300.000đ a month at list price.
     for (const day of [5, 12, 19, 26, 33, 40]) {
       const booking = await seedBooking(court.id, '18:00', '19:00', {
         date: addDays(todayInCenter(), -day),
@@ -591,7 +586,6 @@ describe('AI assistant membership advice', () => {
     await prisma.systemSetting.create({ data: {} });
     const member = await createAccount('MEMBER', 'free-slots@example.com');
     const court = await seedFacility(4);
-    // Evenly spread across the window: one free slot in each of the two months, four slots paid at 100.000đ.
     for (const day of [5, 12, 19, 26, 33, 40]) {
       const booking = await seedBooking(court.id, '18:00', '19:00', {
         date: addDays(todayInCenter(), -day),

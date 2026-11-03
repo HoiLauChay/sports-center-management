@@ -6,7 +6,6 @@ import { ErrorWithStatus } from '~/rules/error';
 import { ResponseClient } from '~/rules/response';
 import assistantService from '~/services/ai/assistant.service';
 
-/** The route only lets assistant roles through, so the role is one the assistant serves. */
 const actorOf = (req: Request) => ({ id: req.user!.id, role: req.user!.role as AssistantRole });
 
 class AssistantController {
@@ -16,10 +15,6 @@ class AssistantController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
-  /**
-   * The same answer, with what the assistant is looking up sent as it happens. The stream opens on the first event,
-   * so anything refused before that (no quota left, say) is still an ordinary JSON error.
-   */
   chatStream = async (req: Request, res: Response) => {
     const send = (event: AssistantStreamEvent) => {
       if (!res.headersSent) {
@@ -65,7 +60,6 @@ class AssistantController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
-  /** Forgets what the assistant remembered for a chat the person deleted. */
   forget = async (req: Request, res: Response) => {
     await assistantService.forget(req.user!.id, req.params.conversationId as string);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công' }));

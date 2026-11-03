@@ -8,7 +8,6 @@ import { ActionCards } from './ActionCards';
 
 const LINK = /\[([^\]\n]{1,60})\]\((\/[a-z0-9/-]*)\)/g;
 
-/** Plain text with the assistant's `[Tên trang](/duong-dan)` links; only allowed internal paths become links. */
 function withLinks(text: string, role: AssistantRole): ReactNode[] {
   const nodes: ReactNode[] = [];
   let last = 0;
@@ -33,7 +32,6 @@ function withLinks(text: string, role: AssistantRole): ReactNode[] {
 interface MessageBubbleProps {
   message: ChatMessage;
   role: AssistantRole;
-  /** Only the latest message can be retried: an older error has newer turns after it. */
   isLast: boolean;
   onRetry: () => void;
   onOpenDraft: (draft: SupportDraft) => void;

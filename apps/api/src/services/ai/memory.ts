@@ -8,7 +8,6 @@ const MAX_ITEMS = 20;
 const MAX_LABEL = 60;
 const TIMEOUT_MS = 1000;
 
-/** Public things the chat already looked up. Never money, health or contact details: tools below list what is kept. */
 const memoryItemSchema = z.object({
   type: z.enum(['FACILITY', 'CLASS', 'SESSION', 'PACKAGE']),
   id: z.uuid(),
@@ -41,7 +40,6 @@ const reader =
   (result: unknown): unknown[] =>
     rows(result, list).map((row) => ({ type, id: row[id], label: String(row[label] ?? '').slice(0, MAX_LABEL) }));
 
-/** What each tool leaves behind. A tool that is not listed leaves nothing, so private results are never stored. */
 const REMEMBERED: Record<string, (result: unknown) => unknown[]> = {
   list_facilities: reader('FACILITY', 'facilities', 'id', 'name'),
   find_available_slots: reader('FACILITY', 'facilities', 'facilityId', 'facility'),
@@ -53,14 +51,12 @@ const REMEMBERED: Record<string, (result: unknown) => unknown[]> = {
   coach_schedule: reader('SESSION', 'sessions', 'sessionId', 'className'),
 };
 
-/** The things a tool result is worth remembering; anything that does not fit the schema is dropped. */
 export const itemsFrom = (tool: string, result: unknown): MemoryItem[] =>
   (REMEMBERED[tool]?.(result) ?? []).flatMap((item) => {
     const parsed = memoryItemSchema.safeParse(item);
     return parsed.success ? [parsed.data] : [];
   });
 
-/** Memory is a convenience: when Redis is slow, down or not configured the chat goes on without it. */
 const guarded = async <T>(work: () => Promise<T>): Promise<T | null> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -78,11 +74,6 @@ const guarded = async <T>(work: () => Promise<T>): Promise<T | null> => {
   }
 };
 
-/**
- * Lets a follow-up question reuse the ids found earlier in a chat. One Redis hash per account, keyed from the session
- * and never from the request, holds one field per conversation, so knowing a conversation id gives nobody else's
- * memory. Ids only save a lookup: the tools still check permissions and read fresh data.
- */
 export class AssistantMemory {
   constructor(private readonly store: MemoryStore | null) {}
 
@@ -109,7 +100,6 @@ export class AssistantMemory {
   ) => {
     const { store } = this;
     if (!store || !conversationId || !found.length) return;
-    // Newest last, so the limit drops what was mentioned longest ago.
     const byId = new Map([...previous, ...found].map((item) => [item.id, item]));
     const items = [...byId.values()].slice(-MAX_ITEMS);
     const key = this.keyOf(accountId);

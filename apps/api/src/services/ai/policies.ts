@@ -1,8 +1,3 @@
-/**
- * The center's rules in plain words, for the assistant to quote (`get_policies`). Written from the business rules of
- * detail.v4.md; when a rule changes there, change it here. Amounts set by the manager stay out: they come from
- * `get_center_info`.
- */
 export const POLICY_TOPICS = [
   'BOOKING',
   'CLASS',

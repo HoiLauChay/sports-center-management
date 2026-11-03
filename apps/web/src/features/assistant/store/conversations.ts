@@ -4,13 +4,9 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'model';
   text: string;
-  /** What the assistant prepared for the person to confirm, shown as cards under the answer. */
   actions?: AssistantAction[];
-  /** Indexes of `actions` already confirmed, so a reopened chat does not offer them again. */
   doneActions?: number[];
-  /** The kinds of data the answer was built from. */
   sources?: string[];
-  /** A failed answer: shown with a retry button and never sent back to the assistant. */
   failed?: boolean;
 }
 
@@ -25,7 +21,6 @@ export const MAX_CONVERSATIONS = 20;
 const MAX_MESSAGES = 60;
 const keyOf = (userId: string) => `sc-assistant:${userId}`;
 
-/** Past chats live only in this browser, per account; the server keeps none. Storage may be unavailable. */
 export function loadConversations(userId: string): Conversation[] {
   try {
     const raw = window.localStorage.getItem(keyOf(userId));
@@ -43,7 +38,8 @@ export function saveConversations(userId: string, conversations: Conversation[])
       .slice(0, MAX_CONVERSATIONS)
       .map((conversation) => ({ ...conversation, messages: conversation.messages.slice(-MAX_MESSAGES) }));
     window.localStorage.setItem(keyOf(userId), JSON.stringify(trimmed));
+    return true;
   } catch {
-    // Private mode or full storage: the chat still works, it just is not remembered.
+    return false;
   }
 }

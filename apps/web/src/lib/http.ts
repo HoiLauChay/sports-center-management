@@ -35,7 +35,6 @@ function refreshOnce(): Promise<void> {
   return pendingRefresh;
 }
 
-/** For requests made without axios: renews the session the way the interceptor below does. */
 export async function refreshSession() {
   try {
     await refreshOnce();

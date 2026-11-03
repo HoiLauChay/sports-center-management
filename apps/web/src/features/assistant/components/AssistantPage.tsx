@@ -9,10 +9,6 @@ import { useAssistantChat, useAssistantOverview, useAssistantQuota } from '../ho
 import { ChatActions, ChatPanel } from './ChatPanel';
 import { OverviewCard, RecentCard } from './SidePanels';
 
-/**
- * The AI assistant page (Flow 6): `/assistant` for members, `/coach/assistant`, `/reception/assistant`.
- * The server picks the tools for the signed-in role; this page only changes the words and the side panel.
- */
 export function AssistantPage() {
   const user = useCurrentUser();
   const overview = useAssistantOverview();

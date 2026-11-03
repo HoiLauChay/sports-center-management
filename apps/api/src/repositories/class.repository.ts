@@ -137,7 +137,6 @@ class ClassRepository {
       data: { status: 'CANCELLED', cancelReason: reason },
     });
 
-  /** Classes whose name or coach's name contains `q`, marks or not; the rest of the filter stays in Prisma. */
   private idsByName = async (q: string) => {
     const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT c.id FROM classes c LEFT JOIN accounts a ON a.id = c.coach_id

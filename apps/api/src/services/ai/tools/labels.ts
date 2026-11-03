@@ -1,11 +1,8 @@
 interface ToolLabel {
-  /** Shown while the tool runs. */
   doing: string;
-  /** Shown under the answer as where it came from; tools that only prepare a card have none. */
   source?: string;
 }
 
-/** How each tool reads to the person: the same words in every role, so they live apart from the tools. */
 export const TOOL_LABELS: Record<string, ToolLabel> = {
   get_center_info: { doing: 'Đang xem thông tin trung tâm', source: 'Thông tin trung tâm' },
   list_facilities: { doing: 'Đang xem danh sách sân', source: 'Danh sách sân' },

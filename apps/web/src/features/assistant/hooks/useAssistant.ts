@@ -22,13 +22,11 @@ export function useAssistantOverview() {
 
 const quotaKey = (userId: string) => ['assistant', 'quota', userId] as const;
 
-/** The member's questions left this month; null for staff, who have no quota. */
 export function useAssistantQuota() {
   const user = useCurrentUser();
   return useQuery({ queryKey: quotaKey(user.id), queryFn: assistantService.quota });
 }
 
-/** The open conversation and the remembered ones; sends the latest messages and appends the answer. */
 export function useAssistantChat() {
   const user = useCurrentUser();
   const queryClient = useQueryClient();
@@ -52,7 +50,6 @@ export function useAssistantChat() {
             updatedAt: new Date().toISOString(),
             messages: [message],
           };
-      // Newest first; the oldest chats beyond the limit are dropped right away, not only when saved.
       return [updated, ...list.filter(({ id }) => id !== conversationId)].slice(0, MAX_CONVERSATIONS);
     });
   }, []);
@@ -82,7 +79,6 @@ export function useAssistantChat() {
     },
   });
 
-  /** Remembers that the person confirmed one of the cards under an answer. */
   const markDone = (conversationId: string, messageId: string, index: number) =>
     setConversations((list) =>
       list.map((conversation) =>
@@ -109,7 +105,6 @@ export function useAssistantChat() {
     ask.mutate({ conversationId, history: [...(active?.messages ?? []), message] });
   };
 
-  /** Asks the last question again after a failed answer, dropping the error from the chat. */
   const retry = () => {
     if (!active?.messages.at(-1)?.failed || ask.isPending) return;
     const messages = active.messages.filter(({ failed }) => !failed);
@@ -120,7 +115,6 @@ export function useAssistantChat() {
   const remove = (conversationId: string) => {
     setConversations((list) => list.filter(({ id }) => id !== conversationId));
     if (conversationId === activeId) setActiveId(null);
-    // It expires by itself soon anyway, so a failure here needs no message.
     void assistantService.forget(conversationId).catch(() => undefined);
   };
 

@@ -6,7 +6,6 @@ const FACILITY = '11111111-1111-4111-8111-111111111111';
 const CLASS = '22222222-2222-4222-8222-222222222222';
 const facility: MemoryItem = { type: 'FACILITY', id: FACILITY, label: 'Sân A' };
 
-/** Redis's hash commands, on a map. */
 const fakeStore = () => {
   const hashes = new Map<string, Record<string, unknown>>();
   const ttl = new Map<string, number>();

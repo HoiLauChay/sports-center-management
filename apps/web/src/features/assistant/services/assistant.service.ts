@@ -11,7 +11,6 @@ import { config } from '~/lib/config';
 import { privateApi, refreshSession } from '~/lib/http';
 import { ApiRequestError, CLIENT_ERROR_CODE } from '~/lib/http-errors';
 
-/** One answer may take a few rounds of tool calls on the server, well past the default 15s timeout. */
 const CHAT_TIMEOUT_MS = 90_000;
 
 const post = async (body: AssistantChatBody) => {
@@ -45,7 +44,6 @@ const refused = async (response: Response) => {
   });
 };
 
-/** Reads `data: {...}` messages as they arrive; a chunk may end in the middle of one. */
 async function* readEvents(response: Response) {
   const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = '';
@@ -62,7 +60,6 @@ async function* readEvents(response: Response) {
 }
 
 export const assistantService = {
-  /** Asks the assistant, calling `onStatus` with what it is looking up until the answer comes. */
   chat: async (body: AssistantChatBody, onStatus: (text: string) => void): Promise<AssistantReply> => {
     let response = await post(body);
     if (response.status === 401) {

@@ -32,7 +32,6 @@ class AccountRepository {
   findById = (id: string, role?: Role, tx: Prisma.TransactionClient = prisma) =>
     tx.account.findUnique({ where: { id, ...(role && { roles: { has: role } }) }, include: accountProfileInclude });
 
-  /** Accounts whose name contains `q`, marks or not; the rest of the filter stays in Prisma. */
   private idsByName = async (q: string) => {
     const rows = await prisma.$queryRaw<{ id: string }[]>(
       Prisma.sql`SELECT id FROM accounts WHERE ${unaccentContains(Prisma.sql`full_name`, q)}`,
@@ -45,30 +44,23 @@ class AccountRepository {
     let searchFilter: Prisma.AccountWhereInput | undefined;
 
     if (trimmed) {
-      // Normalize potential phone inputs (strip spaces, dots, dashes, parentheses).
       const rawDigits = trimmed.replace(/[\s.\-()]/g, '');
       const normalizedPhone = normalizePhone(rawDigits);
       const isDigitsOnly = normalizedPhone.length > 0 && /^\d+$/.test(normalizedPhone);
       const isEmail = trimmed.includes('@');
 
       if (isEmail) {
-        // Query contains '@': strictly search by email.
         searchFilter = { email: { contains: trimmed, mode: 'insensitive' } };
       } else if (isDigitsOnly) {
-        // Query is pure digits: search primarily by phone number.
-        // Short numbers (< 4 digits): match prefix only (e.g. "098" matches "098...").
-        // 4+ digits: allow matching prefix or last digits (e.g. "4321").
         const orConditions: Prisma.AccountWhereInput[] = [
           normalizedPhone.length < 4
             ? { phone: { startsWith: normalizedPhone } }
             : { phone: { contains: normalizedPhone } },
         ];
-        // Allow fallback to fullName or email in case name or email username contains digits.
         orConditions.push({ id: { in: await this.idsByName(trimmed) } });
         orConditions.push({ email: { contains: trimmed, mode: 'insensitive' } });
         searchFilter = { OR: orConditions };
       } else {
-        // Text query: search by fullName or email.
         searchFilter = {
           OR: [{ id: { in: await this.idsByName(trimmed) } }, { email: { contains: trimmed, mode: 'insensitive' } }],
         };

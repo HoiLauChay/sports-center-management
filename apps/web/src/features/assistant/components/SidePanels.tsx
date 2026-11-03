@@ -38,7 +38,6 @@ const TONE = {
   orange: 'bg-sc-accent-soft text-sc-accent',
 };
 
-/** One figure in the 2×2 grid: small enough that all four fit in half the side column. */
 function Tile({
   icon,
   tone,
@@ -63,7 +62,6 @@ function Tile({
   );
 }
 
-/** The detail under the grid: a titled list of short lines. */
 function Detail({ title, lines }: { title: string; lines: { key: string; main: ReactNode; title?: string }[] }) {
   if (!lines.length) return null;
   return (
@@ -248,7 +246,6 @@ function ReceptionContent({ overview }: { overview: ReceptionAssistantOverview }
   );
 }
 
-/** A member's questions this month, with when they come back and a way to get more. */
 function QuotaMeter({ quota }: { quota: AssistantQuota }) {
   const left = Math.max(0, quota.limit - quota.used);
   const ratio = quota.limit ? left / quota.limit : 0;
@@ -301,14 +298,12 @@ const READ_ONLY: Record<AssistantOverview['role'], string> = {
   RECEPTIONIST: 'Trợ lý chỉ đọc dữ liệu. Check-in, bán hàng, nạp ví vẫn làm trên trang quầy.',
 };
 
-/** What the assistant can read for this role, so the user knows what it answers from. */
 export function OverviewCard({
   overview,
   quota,
   loading,
 }: {
   overview?: AssistantOverview;
-  /** Only members have one. */
   quota?: AssistantQuota | null;
   loading: boolean;
 }) {
@@ -358,7 +353,6 @@ function when(iso: string) {
   return diff === 0 ? `Hôm nay, ${time}` : diff === 1 ? `Hôm qua, ${time}` : ddmm(day);
 }
 
-/** Chats remembered in this browser; the server keeps none. */
 export function RecentCard({
   conversations,
   activeId,
