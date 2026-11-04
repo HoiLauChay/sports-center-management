@@ -225,7 +225,7 @@ export const COACH_TOOLS: Tool[] = [
     {
       name: 'propose_attendance',
       description:
-        'Chuẩn bị điểm danh cho một buổi học của HLV: học viên được nêu là vắng hoặc đi muộn, những người còn lại có mặt. Cần mã buổi từ coach_schedule và mã học viên từ class_roster. KHÔNG lưu: HLV tự kiểm tra danh sách và bấm "Lưu điểm danh".',
+        'Chuẩn bị điểm danh cho một buổi học của HLV: học viên được nêu là vắng hoặc đi muộn; những người còn lại giữ trạng thái đã điểm danh, chưa điểm danh thì có mặt. Cần mã buổi từ coach_schedule và mã học viên từ class_roster. KHÔNG lưu: HLV tự kiểm tra danh sách và bấm "Lưu điểm danh".',
       parameters: {
         type: 'OBJECT',
         properties: {
@@ -249,12 +249,13 @@ export const COACH_TOOLS: Tool[] = [
       if (unknown.length) return { error: 'Có học viên không thuộc buổi học này, hãy tra lại class_roster' };
       if (!roster.length) return { error: 'Buổi học chưa có học viên nào' };
 
-      const statusOf = (id: string): AttendanceStatus =>
-        absentStudentIds.includes(id) ? 'ABSENT' : lateStudentIds.includes(id) ? 'LATE' : 'PRESENT';
-      const records = roster.map(({ account }) => ({
+      // Whoever the coach did not mention keeps what was already marked, so saving the card overwrites nothing.
+      const statusOf = (id: string, marked: AttendanceStatus | null): AttendanceStatus =>
+        absentStudentIds.includes(id) ? 'ABSENT' : lateStudentIds.includes(id) ? 'LATE' : (marked ?? 'PRESENT');
+      const records = roster.map(({ account, status }) => ({
         accountId: account.id,
         name: account.fullName,
-        status: statusOf(account.id),
+        status: statusOf(account.id, status),
       }));
       const session = (await assistantRepository.findSessionLabel(sessionId))!;
       const date = formatDate(session.sessionDate);
@@ -265,8 +266,8 @@ export const COACH_TOOLS: Tool[] = [
           'Chưa lưu: HLV tự kiểm tra danh sách và bấm "Lưu điểm danh" ngay dưới câu trả lời.',
         ),
         present: records.filter(({ status }) => status === 'PRESENT').length,
-        absent: absentStudentIds.length,
-        late: lateStudentIds.length,
+        absent: records.filter(({ status }) => status === 'ABSENT').length,
+        late: records.filter(({ status }) => status === 'LATE').length,
       };
     },
   ),

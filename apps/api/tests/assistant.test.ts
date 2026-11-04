@@ -95,7 +95,41 @@ describe('AI assistant chat', () => {
 
     const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Hỏi vòng vòng')));
     expect(chat).toHaveBeenCalledTimes(5);
+    expect((chat.mock.calls[3]![0] as ChatInput).answerOnly).toBe(false);
+    expect((chat.mock.calls[4]![0] as ChatInput).answerOnly).toBe(true);
     expect(reply.reply).toContain('chưa trả lời được');
+    expect(reply.quota).toMatchObject({ used: 0 });
+  });
+
+  test('the last round answers from what the tools found', async () => {
+    const f = await setupAttendance();
+    for (let i = 0; i < 4; i++) chat.mockResolvedValueOnce(turn([{ name: 'my_enrollments', args: {} }]));
+    chat.mockResolvedValueOnce(turn([], 'Bạn đang học một lớp.'));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Lớp của tôi?')));
+    expect(reply.reply).toBe('Bạn đang học một lớp.');
+    expect(reply.quota).toMatchObject({ used: 1 });
+  });
+
+  test('an empty answer gives the question back', async () => {
+    const f = await setupAttendance();
+    chat.mockResolvedValueOnce(turn([], ''));
+
+    const reply = await readResult<AssistantReply>(await request('POST', '/chat', f.member, ask('Xin chào')));
+    expect(reply.reply).toContain('chưa trả lời được');
+    expect(reply.quota).toMatchObject({ used: 0 });
+  });
+
+  test('every round of an answer shares one deadline', async () => {
+    const f = await setupAttendance();
+    chat
+      .mockResolvedValueOnce(turn([{ name: 'my_enrollments', args: {} }]))
+      .mockResolvedValueOnce(turn([], 'Bạn đang học một lớp.'));
+
+    await request('POST', '/chat', f.member, ask('Lớp của tôi?'));
+    const [first, second] = chat.mock.calls.map(([input]) => (input as ChatInput).signal);
+    expect(first).toBeInstanceOf(AbortSignal);
+    expect(second).toBe(first!);
   });
 
   test('a support request is only drafted for the member to send, never created', async () => {
@@ -349,6 +383,24 @@ describe('AI assistant actions', () => {
     const other = await runTool(f.otherCoach, 'propose_attendance', { sessionId: f.session.id });
     expect(other.result.error).toBeString();
   });
+
+  test('attendance already marked stays unless the coach changes it', async () => {
+    const f = await setupAttendance();
+    await prisma.classAttendance.create({
+      data: { sessionId: f.session.id, accountId: f.second.id, status: 'ABSENT', updatedById: f.coach.id },
+    });
+
+    const [action] = await actionsFrom(f.coach, 'propose_attendance', {
+      sessionId: f.session.id,
+      lateStudentIds: [f.member.id],
+    });
+    expect((action as Extract<AssistantAction, { type: 'ATTENDANCE' }>).records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ accountId: f.member.id, status: 'LATE' }),
+        expect.objectContaining({ accountId: f.second.id, status: 'ABSENT' }),
+      ]),
+    );
+  });
 });
 
 describe('AI assistant membership advice', () => {
@@ -382,5 +434,29 @@ describe('AI assistant membership advice', () => {
     expect(counter.result).toMatchObject({ member: member.fullName, usagePerMonth: { spendingVnd: 300_000 } });
     const staff = await runTool(f.receptionist, 'compare_memberships', { memberId: f.coach.id });
     expect(staff.result.error).toBeString();
+  });
+
+  test('free slots count for two months, however many calendar months the 60 days touch', async () => {
+    const f = await setupAttendance();
+    await prisma.systemSetting.create({ data: {} });
+    const member = await createAccount('MEMBER', 'free-slots@example.com');
+    const court = await seedFacility(4);
+    // Evenly spread across the window: one free slot in each of the two months, four slots paid at 100.000đ.
+    for (const day of [5, 12, 19, 26, 33, 40]) {
+      const booking = await seedBooking(court.id, '18:00', '19:00', {
+        date: addDays(todayInCenter(), -day),
+        accountId: member.id,
+      });
+      await prisma.facilityBooking.update({ where: { id: booking.id }, data: { unitPrice: 100_000 } });
+    }
+    await prisma.membership.create({
+      data: { name: 'Gói Một slot', price: 30_000, durationDays: 30, freeBookingSlotsPerMonth: 1 },
+    });
+
+    const { result } = await runTool(member, 'compare_memberships');
+    expect(result.options).toEqual([expect.objectContaining({ totalPerMonthVnd: 230_000 })]);
+
+    const own = await runTool(f.member, 'compare_memberships');
+    expect((own.result.usagePerMonth as { classesJoined: number }).classesJoined).toBe(0.5);
   });
 });

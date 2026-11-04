@@ -9,10 +9,19 @@ import { addDays, formatDate, fromDbTime, todayInCenter } from '~/utils/time';
 
 /** How far back the member's habits are read; the result is shown per month. */
 const USAGE_DAYS = 60;
-const MONTHS = USAGE_DAYS / 30;
+const DAYS_PER_MONTH = 30;
+const MONTHS = USAGE_DAYS / DAYS_PER_MONTH;
+const DAY_MS = 86_400_000;
+
+/**
+ * Which 30-day stretch of the window a date falls in. Sixty days often touch three calendar months, and counting
+ * free slots per calendar month would then grant three months of them against a two-month average.
+ */
+const monthIndex = (date: string, from: string) =>
+  Math.floor((Date.parse(date) - Date.parse(from)) / DAY_MS / DAYS_PER_MONTH);
 
 interface UsedSlots {
-  month: string;
+  month: number;
   slots: number;
   unitPrice: number;
   gym: boolean;
@@ -23,7 +32,7 @@ interface UsedSlots {
  * free with gym access, then the month's free slots, then the booking discount; classes get the class discount.
  */
 const costWith = (pkg: MembershipPackage, bookings: UsedSlots[], classFees: number[]) => {
-  const freeLeft = new Map<string, number>();
+  const freeLeft = new Map<number, number>();
   let bookingCost = 0;
   for (const { month, slots, unitPrice, gym } of bookings) {
     const subtotal = unitPrice * slots;
@@ -55,7 +64,7 @@ export const compareMemberships = async (accountId: string) => {
   ]);
 
   const bookings: UsedSlots[] = rawBookings.map((booking) => ({
-    month: formatDate(booking.bookingDate).slice(0, 7),
+    month: monthIndex(formatDate(booking.bookingDate), from),
     slots: Math.max(
       1,
       Math.round((fromDbTime(booking.endTime) - fromDbTime(booking.startTime)) / settings.slotDurationMinutes),
@@ -102,7 +111,7 @@ export const compareMemberships = async (accountId: string) => {
     usagePerMonth: {
       bookedSlots: roundMoney(bookings.reduce((sum, { slots }) => sum + slots, 0) / MONTHS),
       gymSlots: roundMoney(bookings.filter(({ gym }) => gym).reduce((sum, { slots }) => sum + slots, 0) / MONTHS),
-      classesJoined: classFees.length,
+      classesJoined: classFees.length / MONTHS,
       spendingVnd: withoutMembership,
     },
     options,
