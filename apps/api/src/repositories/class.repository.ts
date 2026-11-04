@@ -181,14 +181,7 @@ class ClassRepository {
         query.needsCoach ? needsCoach(viewer, today) : {},
         query.openForEnrollment ? catalog(today) : {},
         query.derivedStatus ? derivedFilter(query.derivedStatus, today) : {},
-        query.q
-          ? {
-              OR: [
-                { name: { contains: query.q, mode: 'insensitive' } },
-                { coach: { fullName: { contains: query.q, mode: 'insensitive' } } },
-              ],
-            }
-          : {},
+        query.q ? { id: { in: await this.idsByName(query.q) } } : {},
       ],
     };
     if (viewer.role === 'MANAGER') {
