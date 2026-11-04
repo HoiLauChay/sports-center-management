@@ -36,7 +36,7 @@ class SpecializationRepository {
       prisma.coachSpecialization.findMany({
         where,
         select: specializationSelect,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ reviewedAt: { sort: 'desc', nulls: 'first' } }, { createdAt: 'asc' }, { id: 'asc' }],
         ...pageArgs(page),
       }),
       prisma.coachSpecialization.count({ where }),
@@ -59,6 +59,14 @@ class SpecializationRepository {
       where: { coachId, sportId, status: { in: ['PENDING', 'APPROVED'] } },
       select: { id: true },
     });
+
+  findQualifiedCoachIds = async (sportId: string, tx: Prisma.TransactionClient = prisma) =>
+    (
+      await tx.coachSpecialization.findMany({
+        where: { sportId, status: 'APPROVED', coach: { roles: { has: 'COACH' }, status: 'ACTIVE' } },
+        select: { coachId: true },
+      })
+    ).map(({ coachId }) => coachId);
 
   isQualified = async (coachId: string, sportId: string, tx: Prisma.TransactionClient = prisma) =>
     (await tx.coachSpecialization.count({

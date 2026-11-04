@@ -63,9 +63,18 @@ const withCodeCheck = async <T>(fn: () => Promise<T>) => {
 
 class CouponService {
   list = async () => {
+    const now = new Date().toISOString();
     const rows = await couponRepository.findAll();
     const used = await couponRepository.countOrders(rows.map(({ id }) => id));
-    return rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
+    const coupons = rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
+    const isUsable = ({ isActive, validTo, maxUses, usedCount }: (typeof coupons)[number]) =>
+      isActive && now < validTo && (maxUses === null || usedCount < maxUses);
+    const usable = coupons.filter(isUsable);
+    return [
+      ...usable.filter(({ validFrom }) => validFrom <= now).sort((a, b) => a.validTo.localeCompare(b.validTo)),
+      ...usable.filter(({ validFrom }) => now < validFrom).sort((a, b) => a.validFrom.localeCompare(b.validFrom)),
+      ...coupons.filter((coupon) => !isUsable(coupon)).sort((a, b) => b.validTo.localeCompare(a.validTo)),
+    ];
   };
 
   create = async (managerId: string, body: CreateCouponBody, ip?: string) => {

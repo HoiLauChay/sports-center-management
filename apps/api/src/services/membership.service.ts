@@ -103,7 +103,7 @@ class MembershipService {
         accountId,
         type: 'SYSTEM' as const,
         title: `Gói thành viên đã ${action}`,
-        message: `Gói "${packageName}" đã ${action}. Bạn đang bật tự động gia hạn cho gói này, vui lòng kiểm tra lại.`,
+        message: `Gói "${packageName}" đã ${action} nên sẽ không tự gia hạn khi hết hạn.`,
         sendEmail: true,
       })),
       tx,

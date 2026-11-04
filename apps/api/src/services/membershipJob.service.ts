@@ -75,6 +75,7 @@ const settle = async (tx: Prisma.TransactionClient, id: string, accountId: strin
       method: 'WALLET',
       idempotencyKey: idempotencyKey.renew(id, current.endDate),
       requestHash: null,
+      skipPaidEmail: true,
     });
     const renewed = await notificationService.create(
       [

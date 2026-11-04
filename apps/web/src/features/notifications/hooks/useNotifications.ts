@@ -10,6 +10,7 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { App } from 'antd';
 import { useMemo } from 'react';
+import { useCurrentUser } from '~/features/auth';
 import { toApiError } from '~/lib/http-errors';
 import { notificationsService } from '../services/notifications.service';
 import { notificationTarget } from '../utils/notificationTarget';
@@ -88,6 +89,7 @@ export function useMarkAllRead() {
 }
 
 export function useOpenNotification() {
+  const { role } = useCurrentUser();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -106,7 +108,7 @@ export function useOpenNotification() {
 
   return (notification: AppNotification) => {
     if (!notification.readAt) markRead.mutate(notification.id);
-    const target = notificationTarget(notification);
+    const target = notificationTarget(notification, role);
     if (target) void navigate(target);
   };
 }

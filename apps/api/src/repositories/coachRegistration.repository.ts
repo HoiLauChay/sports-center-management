@@ -16,12 +16,15 @@ const registrationSelect = {
 export type CoachRegistrationRow = Prisma.ClassCoachRegistrationGetPayload<{ select: typeof registrationSelect }>;
 
 class CoachRegistrationRepository {
-  findAll = (classId: string, tx: Prisma.TransactionClient = prisma) =>
-    tx.classCoachRegistration.findMany({
+  findAll = async (classId: string, tx: Prisma.TransactionClient = prisma) => {
+    const rows = await tx.classCoachRegistration.findMany({
       where: { classId },
       select: registrationSelect,
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
     });
+    const rejected = rows.filter(({ status }) => status === 'REJECTED');
+    return [...rows.filter(({ status }) => status !== 'REJECTED'), ...rejected.reverse()];
+  };
 
   findByCoach = (coachId: string, status?: CoachRegistrationStatus) =>
     prisma.classCoachRegistration.findMany({

@@ -67,6 +67,9 @@ describe('coach assignment', () => {
     const other = await readResult<CoachRegistration>(await register(second));
     expect(await prisma.class.findUnique({ where: { id: cls.id } })).toMatchObject({ status: 'PENDING_APPROVAL' });
 
+    expect(await prisma.notification.count({ where: { accountId: manager.id, referenceId: cls.id } })).toBeGreaterThan(
+      0,
+    );
     const assign = (body: unknown) => request('POST', `/${cls.id}/assign-coach`, manager, body);
     const response = await assign({ registrationId: (await readResult<CoachRegistration>(chosen)).id });
     expect(response.status).toBe(200);
@@ -124,6 +127,8 @@ describe('coach assignment', () => {
     });
     expect(bought.status).toBe(201);
 
+    const { sportId } = await prisma.course.findUniqueOrThrow({ where: { id: cls.courseId } });
+    const other = await qualifiedCoach('other@example.com', sportId);
     const missing = await request('POST', `/${cls.id}/withdraw`, coach, {});
     expect(missing.status).toBe(422);
 
@@ -134,6 +139,11 @@ describe('coach assignment', () => {
     expect(await prisma.notification.count({ where: { accountId: member.id, referenceId: cls.id } })).toBe(1);
     const told = await prisma.notification.findFirstOrThrow({ where: { accountId: manager.id, referenceId: cls.id } });
     expect(told.message).toContain('Chấn thương vai');
+    expect(await prisma.notification.findFirstOrThrow({ where: { accountId: other.id } })).toMatchObject({
+      title: 'Lớp cần huấn luyện viên',
+      referenceType: 'OPEN_CLASS',
+      referenceId: cls.id,
+    });
 
     for (const startDate of [addDays(today, 6), today]) {
       const soon = await seedOpenClass({ startDate, endDate: addDays(today, 14) });
