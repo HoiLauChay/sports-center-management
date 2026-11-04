@@ -9,10 +9,6 @@ import { useAssistantChat, useAssistantOverview, useAssistantQuota } from '../ho
 import { ChatActions, ChatPanel } from './ChatPanel';
 import { OverviewCard, RecentCard } from './SidePanels';
 
-/**
- * The AI assistant page (Flow 6): `/assistant` for members, `/coach/assistant`, `/reception/assistant`.
- * The server picks the tools for the signed-in role; this page only changes the words and the side panel.
- */
 export function AssistantPage() {
   const user = useCurrentUser();
   const overview = useAssistantOverview();
@@ -59,14 +55,20 @@ export function AssistantPage() {
           config={config}
           conversation={chat.active}
           pending={chat.pending}
+          status={chat.status}
           quota={quota.data}
           onSend={chat.send}
           onRetry={chat.retry}
           onOpenDraft={(draft) => setSupport({ open: true, draft })}
           onActionDone={(messageId, index) => chat.active && chat.markDone(chat.active.id, messageId, index)}
         />
-        <aside className="flex flex-col gap-5 lg:grid lg:h-[max(560px,calc(100dvh-160px))] lg:grid-rows-2">
-          <RecentCard conversations={chat.conversations} activeId={chat.active?.id ?? null} onOpen={chat.open} />
+        <aside className="flex flex-col gap-5 lg:h-[max(560px,calc(100dvh-160px))]">
+          <RecentCard
+            conversations={chat.conversations}
+            activeId={chat.active?.id ?? null}
+            onOpen={chat.open}
+            onDelete={chat.remove}
+          />
           <OverviewCard overview={overview.data} quota={quota.data} loading={overview.isPending} />
         </aside>
       </div>

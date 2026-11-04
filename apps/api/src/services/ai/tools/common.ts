@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { findSportId, isoDate, noArgs, tool, weekdayOf, type Tool } from '~/services/ai/tools/toolkit';
+import { POLICIES, POLICY_TOPICS } from '~/services/ai/policies';
+import { findSportId, isoDate, noArgs, tool, unknownSport, weekdayOf, type Tool } from '~/services/ai/tools/toolkit';
 import classService from '~/services/class.service';
 import facilityService from '~/services/facility.service';
 import membershipService from '~/services/membership.service';
@@ -8,9 +9,19 @@ import settingService from '~/services/setting.service';
 import sportService from '~/services/sport.service';
 import { addDays, todayInCenter } from '~/utils/time';
 
-const optionalSport = z.object({ sport: z.string().trim().max(100).optional() });
+const MAX_SLOTS_PER_FACILITY = 8;
 
-/** Public information about the center, the same for every role. */
+const optionalSport = z.object({ sport: z.string().trim().max(100).optional() });
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ phải có dạng HH:mm');
+
+const outsideBookingWindow = async (date: string) => {
+  const today = todayInCenter();
+  const { maxAdvanceBookingDays } = await settingService.get();
+  return date < today || date > addDays(today, maxAdvanceBookingDays)
+    ? { error: `Chỉ xem được từ hôm nay đến ${maxAdvanceBookingDays} ngày tới` }
+    : null;
+};
+
 export const COMMON_TOOLS: Tool[] = [
   tool(
     {
@@ -45,7 +56,7 @@ export const COMMON_TOOLS: Tool[] = [
     optionalSport,
     async (_context, { sport }) => {
       const sportId = await findSportId(sport);
-      if (sportId === null) return { facilities: [], note: `Trung tâm không có bộ môn "${sport}"` };
+      if (sportId === null) return { facilities: [], ...(await unknownSport(sport)) };
       const facilities = await facilityService.list({ sportId }, false);
       return {
         facilities: facilities.map((facility) => ({
@@ -74,11 +85,8 @@ export const COMMON_TOOLS: Tool[] = [
     },
     z.object({ facilityId: z.uuid('Mã sân không hợp lệ'), date: isoDate }),
     async (_context, { facilityId, date }) => {
-      const today = todayInCenter();
-      const { maxAdvanceBookingDays } = await settingService.get();
-      if (date < today || date > addDays(today, maxAdvanceBookingDays)) {
-        return { error: `Chỉ xem được từ hôm nay đến ${maxAdvanceBookingDays} ngày tới` };
-      }
+      const outside = await outsideBookingWindow(date);
+      if (outside) return outside;
       const day = await facilityService.schedule(facilityId, date);
       return {
         facility: day.facility.name,
@@ -93,6 +101,70 @@ export const COMMON_TOOLS: Tool[] = [
         statusMeaning: 'AVAILABLE còn chỗ · FULL hết chỗ · CLASS có lớp học · MAINTENANCE bảo trì · CLOSED đã qua/đóng',
       };
     },
+  ),
+  tool(
+    {
+      name: 'find_available_slots',
+      description:
+        'Tìm slot còn trống của mọi sân/phòng thuộc một bộ môn trong một ngày, lọc theo khung giờ nếu có. Dùng khi người hỏi chưa chọn sân cụ thể, ví dụ "tối mai sân cầu lông nào trống".',
+      parameters: {
+        type: 'OBJECT',
+        properties: {
+          sport: { type: 'STRING', description: 'Tên bộ môn, ví dụ "Cầu lông"' },
+          date: { type: 'STRING', format: 'date', description: 'Ngày, dạng YYYY-MM-DD' },
+          from: { type: 'STRING', description: 'Từ giờ, HH:mm, không bắt buộc' },
+          to: { type: 'STRING', description: 'Đến giờ, HH:mm, không bắt buộc' },
+        },
+        required: ['sport', 'date'],
+      },
+    },
+    z.object({
+      sport: z.string().trim().min(1).max(100),
+      date: isoDate,
+      from: time.optional(),
+      to: time.optional(),
+    }),
+    async (_context, { sport, date, from = '00:00', to = '23:59' }) => {
+      const outside = await outsideBookingWindow(date);
+      if (outside) return outside;
+      const sportId = await findSportId(sport);
+      if (sportId === null) return { facilities: [], ...(await unknownSport(sport)) };
+      const facilities = await facilityService.list({ sportId }, false);
+      const days = await Promise.all(facilities.map(({ id }) => facilityService.schedule(id, date)));
+      const found = facilities.flatMap((facility, index) => {
+        const slots = days[index]!.slots.filter(
+          ({ status, startTime, endTime }) => status === 'AVAILABLE' && startTime >= from && endTime <= to,
+        );
+        return slots.length
+          ? [
+              {
+                facilityId: facility.id,
+                facility: facility.name,
+                pricePerSlotVnd: facility.pricePerSlot,
+                slotsFound: slots.length,
+                slots: slots
+                  .slice(0, MAX_SLOTS_PER_FACILITY)
+                  .map(({ startTime, endTime, booked, capacity }) => ({ startTime, endTime, left: capacity - booked })),
+              },
+            ]
+          : [];
+      });
+      return { date, weekday: weekdayOf(date), facilities: found };
+    },
+  ),
+  tool(
+    {
+      name: 'get_policies',
+      description:
+        'Quy định của trung tâm theo chủ đề: BOOKING (đặt sân, hủy sân), CLASS (đăng ký, hủy lớp), MEMBERSHIP (gói, gia hạn, đổi gói), WALLET (ví, nạp tiền), REFUND (hoàn tiền), COUPON, CHECKIN (check-in, điểm danh), SUPPORT (yêu cầu hỗ trợ).',
+      parameters: {
+        type: 'OBJECT',
+        properties: { topic: { type: 'STRING', enum: [...POLICY_TOPICS], description: 'Chủ đề' } },
+        required: ['topic'],
+      },
+    },
+    z.object({ topic: z.enum(POLICY_TOPICS, 'Chủ đề không hợp lệ') }),
+    async (_context, { topic }) => ({ topic, rules: POLICIES[topic] }),
   ),
   tool(
     {
@@ -130,7 +202,7 @@ export const COMMON_TOOLS: Tool[] = [
     optionalSport,
     async ({ accountId, role }, { sport }) => {
       const sportId = await findSportId(sport);
-      if (sportId === null) return { classes: [], note: `Trung tâm không có bộ môn "${sport}"` };
+      if (sportId === null) return { classes: [], ...(await unknownSport(sport)) };
       const page = await classService.list(
         { id: accountId, role },
         { page: 1, limit: 20, openForEnrollment: true, sportId },
@@ -149,6 +221,7 @@ export const COMMON_TOOLS: Tool[] = [
           coach: cls.coach?.fullName ?? null,
           seatsLeft: cls.maxStudents - cls.enrolledCount,
         })),
+        total: page.total,
         weekdayMeaning: 'dayOfWeek: 0 Chủ nhật, 1 Thứ 2, ... 6 Thứ 7',
       };
     },

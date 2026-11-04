@@ -9,27 +9,21 @@ const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const TIMEOUT_MS = 50_000;
 const RETRY_DELAY_MS = 1500;
 
-/** The subset of Gemini's schema format (an OpenAPI 3 schema) this app uses. */
 export type GeminiSchema =
   | { type: 'STRING'; description?: string; enum?: string[]; format?: 'date' }
   | { type: 'ARRAY'; items: GeminiSchema; description?: string }
   | { type: 'OBJECT'; properties: Record<string, GeminiSchema>; required: string[]; propertyOrdering?: string[] };
 
 export interface GenerateJsonInput {
-  /** Fixed instructions: the role, the rules and the output format. */
   system: string;
-  /** This request's data. */
   prompt: string;
-  /** Gemini only answers JSON that fits this schema (structured output). */
   schema: GeminiSchema;
   temperature?: number;
 }
 
 export interface GeminiPart {
   text?: string;
-  /** Set on the model's private reasoning; never shown to the user. */
   thought?: boolean;
-  /** Gemini 3 needs this sent back unchanged with the part it came on. */
   thoughtSignature?: string;
   functionCall?: { name: string; args?: Record<string, unknown> };
   functionResponse?: { name: string; response: Record<string, unknown> };
@@ -40,7 +34,6 @@ export interface GeminiContent {
   parts: GeminiPart[];
 }
 
-/** A tool the model may ask to run (function calling); the app runs it, never the model. */
 export interface FunctionDeclaration {
   name: string;
   description: string;
@@ -52,16 +45,12 @@ export interface ChatInput {
   contents: GeminiContent[];
   tools: FunctionDeclaration[];
   temperature?: number;
-  /** Makes the model answer from what it has instead of asking for more tools. */
   answerOnly?: boolean;
-  /** Stops waiting for Gemini once the whole answer's deadline has passed. */
   signal?: AbortSignal;
 }
 
 export interface ChatTurn {
-  /** The model's turn as returned, to append to `contents` unchanged on the next call. */
   content: GeminiContent;
-  /** The visible answer; empty when the model only asks for tools. */
   text: string;
   calls: { name: string; args: Record<string, unknown> }[];
 }
@@ -74,7 +63,6 @@ interface GeminiResponse {
 const unavailable = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.SERVICE_UNAVAILABLE, code: ERROR_CODE.UPSTREAM_UNAVAILABLE, message });
 
-/** Sends one generateContent request; maps network, quota and server errors to messages for the user. */
 const generate = async (body: Record<string, unknown>, signal?: AbortSignal) => {
   if (!env.GEMINI_API_KEY) throw unavailable('Tính năng AI chưa được cấu hình');
 
@@ -89,7 +77,6 @@ const generate = async (body: Record<string, unknown>, signal?: AbortSignal) => 
   let response: Response;
   try {
     response = await send();
-    // The free tier is often briefly overloaded; one retry usually gets through.
     if (response.status === HTTP_STATUS.SERVICE_UNAVAILABLE) {
       await sleep(RETRY_DELAY_MS, undefined, { signal });
       response = await send();
@@ -129,7 +116,6 @@ const visibleText = (parts: GeminiPart[]) =>
     .trim();
 
 class GeminiClient {
-  /** Calls Gemini's generateContent and returns its answer parsed as JSON; the caller still validates the shape. */
   generateJson = async ({ system, prompt, schema, temperature = 0.7 }: GenerateJsonInput): Promise<unknown> => {
     const parts = await generate({
       systemInstruction: { parts: [{ text: system }] },
@@ -145,7 +131,6 @@ class GeminiClient {
     }
   };
 
-  /** One turn of a conversation with tools: either the answer, or the tools the model wants run first. */
   chat = async ({ system, contents, tools, temperature = 0.4, answerOnly, signal }: ChatInput): Promise<ChatTurn> => {
     const parts = await generate(
       {

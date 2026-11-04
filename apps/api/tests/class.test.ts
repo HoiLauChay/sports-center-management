@@ -162,3 +162,23 @@ describe('classes', () => {
     expect(await prisma.class.count({ where: { courseId: course.id } })).toBe(created.status === 201 ? 1 : 0);
   });
 });
+
+describe('class search', () => {
+  test('finds a class by its name or its coach name typed without marks', async () => {
+    const { manager, body } = await setup();
+    const created = await readResult<ClassDetail>(await request('POST', '/', manager, body));
+    const coach = await createAccount('COACH', 'coach@example.com', { fullName: 'Trần Đức Dũng' });
+    await prisma.class.update({ where: { id: created.id }, data: { coachId: coach.id } });
+
+    const idsFor = async (q: string) =>
+      (
+        await readResult<{ items: { id: string }[] }>(await request('GET', `/?q=${encodeURIComponent(q)}`, manager))
+      ).items.map(({ id }) => id);
+
+    expect(await idsFor('boxing toi')).toEqual([created.id]);
+    expect(await idsFor('tran duc dung')).toEqual([created.id]);
+    expect(await idsFor('TỐI T3')).toEqual([created.id]);
+    expect(await idsFor('%')).toEqual([]);
+    expect(await idsFor('yoga')).toEqual([]);
+  });
+});

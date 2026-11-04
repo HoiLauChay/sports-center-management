@@ -27,7 +27,6 @@ const MILESTONE_LABEL: Record<ProgressMilestone, string> = { MID: 'Giữa khóa'
 
 const coachOf = (accountId: string) => ({ id: accountId, role: 'COACH' as const });
 
-/** Milestones whose review is due in a class: half the sessions started (MID), the last session reached (FINAL). */
 const dueMilestones = async (classId: string): Promise<ProgressMilestone[]> => {
   const cls = await classTrainingRepository.findClass(classId);
   const sessions = cls?.sessions.filter(({ status }) => status === 'SCHEDULED') ?? [];
@@ -42,10 +41,6 @@ const dueMilestones = async (classId: string): Promise<ProgressMilestone[]> => {
   return due;
 };
 
-/**
- * Work the coach still owes: sessions of the last two weeks that started without full attendance or a note,
- * and students in running classes whose due review is missing. Shared by coach_todo and the overview.
- */
 export const coachPendingWork = async (accountId: string) => {
   const today = todayInCenter();
   const now = new Date();
@@ -91,7 +86,6 @@ export const coachPendingWork = async (accountId: string) => {
   return { sessions, reviews };
 };
 
-/** The coach's own classes and students; every query goes through the same checks as the coach's pages. */
 export const COACH_TOOLS: Tool[] = [
   tool(
     {
@@ -242,14 +236,12 @@ export const COACH_TOOLS: Tool[] = [
       lateStudentIds: z.array(z.uuid('Mã học viên không hợp lệ')).default([]),
     }),
     async ({ accountId }, { sessionId, absentStudentIds, lateStudentIds }) => {
-      // Same checks as the attendance page: only a session this coach teaches.
       const roster = await attendanceService.list(coachOf(accountId), sessionId);
       const onRoster = new Set(roster.map(({ account }) => account.id));
       const unknown = [...absentStudentIds, ...lateStudentIds].filter((id) => !onRoster.has(id));
       if (unknown.length) return { error: 'Có học viên không thuộc buổi học này, hãy tra lại class_roster' };
       if (!roster.length) return { error: 'Buổi học chưa có học viên nào' };
 
-      // Whoever the coach did not mention keeps what was already marked, so saving the card overwrites nothing.
       const statusOf = (id: string, marked: AttendanceStatus | null): AttendanceStatus =>
         absentStudentIds.includes(id) ? 'ABSENT' : lateStudentIds.includes(id) ? 'LATE' : (marked ?? 'PRESENT');
       const records = roster.map(({ account, status }) => ({

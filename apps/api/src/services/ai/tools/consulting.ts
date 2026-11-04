@@ -7,16 +7,11 @@ import settingService from '~/services/setting.service';
 import { percentOf, roundMoney } from '~/utils/money';
 import { addDays, formatDate, fromDbTime, todayInCenter } from '~/utils/time';
 
-/** How far back the member's habits are read; the result is shown per month. */
 const USAGE_DAYS = 60;
 const DAYS_PER_MONTH = 30;
 const MONTHS = USAGE_DAYS / DAYS_PER_MONTH;
 const DAY_MS = 86_400_000;
 
-/**
- * Which 30-day stretch of the window a date falls in. Sixty days often touch three calendar months, and counting
- * free slots per calendar month would then grant three months of them against a two-month average.
- */
 const monthIndex = (date: string, from: string) =>
   Math.floor((Date.parse(date) - Date.parse(from)) / DAY_MS / DAYS_PER_MONTH);
 
@@ -27,10 +22,6 @@ interface UsedSlots {
   gym: boolean;
 }
 
-/**
- * What the member's last two months would have cost with `pkg`, using the checkout's order of benefits: gym slots
- * free with gym access, then the month's free slots, then the booking discount; classes get the class discount.
- */
 const costWith = (pkg: MembershipPackage, bookings: UsedSlots[], classFees: number[]) => {
   const freeLeft = new Map<number, number>();
   let bookingCost = 0;
@@ -48,10 +39,6 @@ const costWith = (pkg: MembershipPackage, bookings: UsedSlots[], classFees: numb
   return { bookingCost, classCost };
 };
 
-/**
- * Compares every membership on sale against the member's own spending over the last 60 days, per month. Done in
- * code so the assistant quotes figures instead of doing sums itself.
- */
 export const compareMemberships = async (accountId: string) => {
   const today = todayInCenter();
   const from = addDays(today, -USAGE_DAYS);

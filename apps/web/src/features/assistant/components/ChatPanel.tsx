@@ -56,7 +56,6 @@ function Welcome({
 
 const ddmm = (date: string) => `${date.slice(8, 10)}/${date.slice(5, 7)}`;
 
-/** Shown instead of the input once a member has used every question of the month. */
 function QuotaUsedUp({ quota }: { quota: AssistantQuota }) {
   return (
     <div className="flex flex-col items-start gap-3 rounded-xl border border-sc-accent-soft bg-sc-accent-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -79,7 +78,7 @@ interface ChatPanelProps {
   config: AssistantConfig;
   conversation: Conversation | null;
   pending: boolean;
-  /** The member's questions this month; null for staff, undefined while loading. */
+  status: string | null;
   quota: AssistantQuota | null | undefined;
   onSend: (text: string) => void;
   onRetry: () => void;
@@ -93,6 +92,7 @@ export function ChatPanel({
   config,
   conversation,
   pending,
+  status,
   quota,
   onSend,
   onRetry,
@@ -106,7 +106,7 @@ export function ChatPanel({
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages.length, pending]);
+  }, [messages.length, pending, status]);
 
   const submit = (value = text) => {
     if (!value.trim() || pending || usedUp) return;
@@ -138,7 +138,7 @@ export function ChatPanel({
                 onActionDone={onActionDone}
               />
             ))}
-            {pending && <TypingBubble />}
+            {pending && <TypingBubble status={status} />}
           </div>
         )}
         <div ref={bottom} />
@@ -215,7 +215,6 @@ interface ChatActionsProps {
   onSupport: () => void;
 }
 
-/** New chat and the chat menu, shown on the page title row. */
 export function ChatActions({ config, hasConversation, onNew, onDelete, onSupport }: ChatActionsProps) {
   return (
     <div className="flex shrink-0 items-center gap-2">

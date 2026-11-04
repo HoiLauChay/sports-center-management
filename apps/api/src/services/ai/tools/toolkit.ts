@@ -6,24 +6,20 @@ import type { FunctionDeclaration } from '~/services/ai/gemini.client';
 import sportService from '~/services/sport.service';
 import { addDays, todayInCenter } from '~/utils/time';
 
-/** Who is asking. Tools read only what this account may see; the model never chooses the account. */
 export interface ToolContext {
   accountId: string;
   role: AssistantRole;
 }
 
-/** The JSON schema of a tool's arguments, as Gemini reads it. */
 export type ToolParameters = NonNullable<FunctionDeclaration['parameters']>;
 
 export interface Tool {
   declaration: FunctionDeclaration;
-  /** Checks the arguments the model sent before anything runs. */
   args: z.ZodType;
   run: (context: ToolContext, args: never) => Promise<unknown>;
 }
 
 export const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-/** The model miscounts weekdays; every date it is given carries its weekday. */
 export const weekdayOf = (date: string) => WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()]!;
 
 export const MAX_SCHEDULE_DAYS = 14;
@@ -42,7 +38,6 @@ export const dateRangeParams: ToolParameters = {
   required: [],
 };
 
-/** A range of at most MAX_SCHEDULE_DAYS days, from today for a week by default; null when out of bounds. */
 export const dateRange = (args: { from?: string; to?: string }) => {
   const from = args.from ?? todayInCenter();
   const to = args.to ?? addDays(from, 7);
@@ -51,20 +46,22 @@ export const dateRange = (args: { from?: string; to?: string }) => {
 
 export const badRange = { error: `Khoảng ngày phải hợp lệ và tối đa ${MAX_SCHEDULE_DAYS} ngày` };
 
+const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').replace(/đ/gi, 'd').toLowerCase();
+
 export const findSportId = async (name?: string) => {
   if (!name) return undefined;
-  const wanted = name.toLowerCase();
+  const wanted = plain(name);
   const sports = await sportService.list(false);
-  return sports.find((sport) => sport.name.toLowerCase().includes(wanted))?.id ?? null;
+  return sports.find((sport) => plain(sport.name).includes(wanted))?.id ?? null;
 };
 
-/**
- * What a tool returns when it prepared something for the person to confirm. Gemini reads `note`; the chat gets
- * `action` as a card. Nothing is saved: confirming calls the usual API from the page.
- */
+export const unknownSport = async (name?: string) => ({
+  note: `Trung tâm không có bộ môn "${name}"`,
+  sports: (await sportService.list(false)).map((sport) => sport.name),
+});
+
 export const prepared = (action: AssistantAction, note: string) => ({ prepared: true, note, action });
 
-/** The action a tool prepared, if it returned one through `prepared`. */
 export const actionOf = (result: unknown): AssistantAction | null =>
   result && typeof result === 'object' && 'prepared' in result && 'action' in result
     ? (result.action as AssistantAction)

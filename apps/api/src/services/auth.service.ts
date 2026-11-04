@@ -30,6 +30,7 @@ import accountRepository from '~/repositories/account.repository';
 import otpRepository from '~/repositories/otp.repository';
 import refreshTokenRepository from '~/repositories/refreshToken.repository';
 import { ErrorWithStatus } from '~/rules/error';
+import assistantMemory from '~/services/ai/memory';
 import auditService from '~/services/audit.service';
 import mailService from '~/services/mail.service';
 import notificationService from '~/services/notification.service';
@@ -254,11 +255,17 @@ class AuthService {
 
   logout = async (rawToken: unknown) => {
     if (typeof rawToken === 'string' && rawToken) {
-      await refreshTokenRepository.revokeByHash(hashToken(rawToken));
+      const tokenHash = hashToken(rawToken);
+      const token = await refreshTokenRepository.findByHash(tokenHash);
+      await refreshTokenRepository.revokeByHash(tokenHash);
+      if (token) await assistantMemory.clear(token.accountId);
     }
   };
 
-  logoutAll = (accountId: string) => refreshTokenRepository.revokeAllByAccountId(accountId);
+  logoutAll = async (accountId: string) => {
+    await refreshTokenRepository.revokeAllByAccountId(accountId);
+    await assistantMemory.clear(accountId);
+  };
 
   getMe = async (accountId: string) => {
     const account = await accountRepository.findById(accountId);

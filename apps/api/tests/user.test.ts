@@ -88,6 +88,22 @@ describe('user list and detail permissions', () => {
     expect((await readResult<ListResult>(search)).items[0]?.id).toBe(member.id);
   });
 
+  test('finds a member by name typed without marks or in another case', async () => {
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    const member = await createMember('member@example.com');
+    await createAccount('MEMBER', 'other@example.com', { fullName: 'Lê Văn Đạt' });
+
+    const idsFor = async (q: string) =>
+      (await readResult<ListResult>(await getAs(`/?q=${encodeURIComponent(q)}`, receptionist))).items.map(
+        ({ id }) => id,
+      );
+
+    expect(await idsFor('nguyen minh')).toEqual([member.id]);
+    expect(await idsFor('NGUYỄN')).toEqual([member.id]);
+    expect(await idsFor('van dat')).not.toContain(member.id);
+    expect(await idsFor('nguyen_')).toEqual([]);
+  });
+
   test('receptionist cannot fetch staff by ID and coach cannot read unassigned members', async () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const manager = await createAccount('MANAGER', 'manager@example.com');

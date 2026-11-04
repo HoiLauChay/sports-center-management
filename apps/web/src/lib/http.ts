@@ -35,6 +35,15 @@ function refreshOnce(): Promise<void> {
   return pendingRefresh;
 }
 
+export async function refreshSession() {
+  try {
+    await refreshOnce();
+  } catch (refreshError) {
+    onAuthRefreshFailed?.();
+    throw refreshError;
+  }
+}
+
 privateApi.interceptors.response.use(
   (response) => response,
   async (error) => {
