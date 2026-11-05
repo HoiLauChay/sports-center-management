@@ -157,7 +157,7 @@ export function ChatPanel({
               rows={2}
               placeholder={config.placeholder}
               aria-label="Câu hỏi cho trợ lý"
-              className="block w-full resize-none border-0 bg-transparent text-[15px] text-sc-ink outline-none placeholder:text-sc-muted-2"
+              className="block w-full resize-none border-0 bg-transparent font-[inherit] text-[15px] text-sc-ink outline-none placeholder:text-sc-muted-2"
             />
             <div className="mt-1 flex items-center justify-between gap-2">
               <div className="flex min-w-0 gap-1.5 overflow-x-auto [scrollbar-width:none]">
