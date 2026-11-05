@@ -271,14 +271,10 @@
   text-decoration: none;
 }
 .lp-brand-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 3px;
-  background: var(--lime);
-  color: var(--ink);
+  display: block;
+  flex: none;
+  width: 34px;
+  height: 34px;
 }
 
 .lp-chip {
