@@ -1,8 +1,9 @@
-import { ArrowLeftOutlined, ThunderboltFilled } from '@ant-design/icons';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Link, useRouter } from '@tanstack/react-router';
 import { ConfigProvider, Grid } from 'antd';
 import { motion } from 'motion/react';
 import { useLayoutEffect, useRef, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import logoMark from '~/assets/brand/logo-mark.svg';
 import { PATHS } from '~/constants/paths';
 import { authCompactTheme, authTheme } from '~/styles/antd-theme';
 
@@ -58,9 +59,7 @@ export function AuthShell({ children, visual, width = 460 }: AuthShellProps) {
             to={PATHS.home}
             className="absolute top-1/2 left-5 z-10 inline-flex -translate-y-1/2 items-center gap-2.5 font-display text-[20px] font-extrabold tracking-[.02em] !text-white uppercase no-underline auth:static auth:translate-y-0 auth:self-start auth:text-[22px]"
           >
-            <i className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-[3px] bg-sc-lime text-[15px] not-italic text-sc-ink">
-              <ThunderboltFilled />
-            </i>
+            <img src={logoMark} width={34} height={34} alt="" className="block shrink-0" />
             Sports Center
           </Link>
 
