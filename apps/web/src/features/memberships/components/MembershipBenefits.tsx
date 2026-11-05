@@ -1,7 +1,7 @@
 import { Check, Minus } from 'lucide-react';
 import type { MembershipBenefits as Benefits } from '../types';
 
-export function MembershipBenefits({ benefits }: { benefits: Benefits }) {
+export function MembershipBenefits({ benefits, className = '' }: { benefits: Benefits; className?: string }) {
   const rows = [
     {
       enabled: benefits.gymAccess,
@@ -29,12 +29,12 @@ export function MembershipBenefits({ benefits }: { benefits: Benefits }) {
         ? `${benefits.aiQuestionsPerMonth} lượt hỏi trợ lý AI mỗi tháng`
         : 'Không có lượt hỏi trợ lý AI',
     },
-  ];
+  ].sort((a, b) => Number(b.enabled) - Number(a.enabled));
 
   return (
-    <ul className="m-0 flex list-none flex-col gap-3 p-0">
+    <ul className={`m-0 grid list-none gap-x-6 gap-y-3 p-0 ${className}`}>
       {rows.map(({ enabled, label }) => (
-        <li key={label} className={`flex items-start gap-2 text-[15px] ${enabled ? 'text-sc-ink-2' : 'text-sc-muted'}`}>
+        <li key={label} className={`flex items-start gap-2 text-[15px] ${enabled ? 'text-sc-ink' : 'text-sc-muted'}`}>
           {enabled ? (
             <Check size={17} className="mt-0.5 shrink-0 text-sc-primary" aria-hidden />
           ) : (

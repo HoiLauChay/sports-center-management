@@ -13,4 +13,11 @@ export const myMembershipsService = {
     );
     return data.result;
   },
+  terminate: async (id: string, reason: string) => {
+    const { data } = await privateApi.post<ApiResponse<MemberMembership>>(
+      `/me/memberships/${encodeURIComponent(id)}/terminate`,
+      { reason },
+    );
+    return data.result;
+  },
 };

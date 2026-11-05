@@ -104,6 +104,27 @@ describe('member memberships', () => {
       cancelledAt: null,
     });
   });
+
+  test('a member can end their own membership today with a reason, and only their own', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const other = await createAccount('MEMBER', 'other@example.com');
+    const active = await seedMembership(member.id);
+    const path = `/${active.id}/terminate`;
+
+    expect((await request('POST', path, member, { reason: ' ' })).status).toBe(422);
+    expect((await request('POST', path, other, { reason: 'Chuyển nhà' })).status).toBe(404);
+
+    const terminated = await request('POST', path, member, { reason: 'Chuyển nhà' });
+    expect(terminated.status).toBe(200);
+    expect(await readResult<MemberMembership>(terminated)).toMatchObject({
+      status: 'CANCELLED',
+      endDate: todayInCenter(),
+      autoRenew: false,
+      currentBenefits: null,
+    });
+    expect(await prisma.walletTransaction.count({ where: { accountId: member.id } })).toBe(0);
+    expect(await readCode(await request('POST', path, member, { reason: 'Chuyển nhà' }))).toBe('INVALID_STATE');
+  });
 });
 
 describe('staff membership support', () => {

@@ -1,4 +1,4 @@
-import { membershipIdParamsSchema } from '@sports-center/shared';
+import { membershipIdParamsSchema, terminateMembershipBodySchema } from '@sports-center/shared';
 import { Router } from 'express';
 
 import memberMembershipController from '~/controllers/memberMembership.controllers';
@@ -12,4 +12,9 @@ myMembershipRouter.post(
   '/:id/cancel',
   validate({ params: membershipIdParamsSchema }),
   memberMembershipController.cancelMine,
+);
+myMembershipRouter.post(
+  '/:id/terminate',
+  validate({ params: membershipIdParamsSchema, body: terminateMembershipBodySchema }),
+  memberMembershipController.terminateMine,
 );
