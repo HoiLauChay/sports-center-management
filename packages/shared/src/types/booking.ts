@@ -14,7 +14,7 @@ export interface Booking {
   paidAmount: number | null;
   packageId: string | null;
   orderItemId: string;
-  account: Person | null;
+  account: (Person & { avatarUrl: string | null }) | null;
   guestName: string | null;
   guestPhone: string | null;
   createdAt: string;
