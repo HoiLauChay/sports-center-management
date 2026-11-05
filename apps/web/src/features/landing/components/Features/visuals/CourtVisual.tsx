@@ -1,6 +1,9 @@
 import dayjs from 'dayjs';
+import { MapPin, Wallet } from 'lucide-react';
 import { motion } from 'motion/react';
+import { DAY_LABEL } from '~/lib/time';
 import { EASE } from '../../shared';
+import { VisFloat, VisHead } from './VisParts';
 
 const HOURS = Array.from({ length: 16 }, (_, i) => String(6 + i).padStart(2, '0'));
 
@@ -14,57 +17,70 @@ const COURTS: { name: string; slots: SlotState[] }[] = [
 ];
 
 export function CourtVisual() {
+  const today = dayjs();
   return (
-    <div className="lp-vis">
-      <div className="lp-vis-head">
-        <b>
-          Đặt sân · <span style={{ textTransform: 'capitalize' }}>{dayjs().format('dddd DD/MM')}</span>
-        </b>
-        <span className="lp-chip green">Gói của bạn · giảm 20%</span>
-      </div>
+    <div className="lp-vis-stage">
+      <div className="lp-vis">
+        <VisHead
+          icon={MapPin}
+          title="Đặt sân"
+          sub={`${DAY_LABEL[today.day()]}, ${today.format('DD/MM')} · 4 sân`}
+          extra={<span className="lp-chip green">Gói của bạn · −20%</span>}
+        />
 
-      <div className="lp-court">
-        <div className="lp-court-row head">
-          <span />
-          {HOURS.map((h) => (
-            <i key={h}>{h}</i>
-          ))}
-        </div>
-        {COURTS.map((court, row) => (
-          <div key={court.name} className="lp-court-row">
-            <span>{court.name}</span>
-            {court.slots.map((state, col) => (
-              <motion.i
-                key={col}
-                className={`s-${state}`}
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 + row * 0.06 + col * 0.015, duration: 0.35, ease: EASE }}
-              />
+        <div className="lp-court">
+          <div className="lp-court-row head">
+            <span />
+            {HOURS.map((h) => (
+              <i key={h}>{h}</i>
             ))}
           </div>
-        ))}
-      </div>
-
-      <div className="lp-court-legend">
-        <i className="s-F" /> Trống <i className="s-B" /> Đã đặt <i className="s-C" /> Lớp học <i className="s-S" />{' '}
-        Đang chọn
-      </div>
-
-      <motion.div
-        className="lp-vis-foot"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-      >
-        <div>
-          <small>Sân cầu lông 2 · 18:00–20:00</small>
-          <b>
-            <s>240.000đ</s> 192.000đ
-          </b>
+          {COURTS.map((court, row) => (
+            <div key={court.name} className="lp-court-row">
+              <span>{court.name}</span>
+              {court.slots.map((state, col) => (
+                <motion.i
+                  key={col}
+                  className={`s-${state}`}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.1 + row * 0.06 + col * 0.015, duration: 0.35, ease: EASE }}
+                />
+              ))}
+            </div>
+          ))}
         </div>
-        <span className="lp-btn lp-btn-primary sm">Xác nhận đặt sân</span>
-      </motion.div>
+
+        <div className="lp-court-legend">
+          <i className="s-F" /> Trống <i className="s-B" /> Đã đặt <i className="s-C" /> Lớp học <i className="s-S" />{' '}
+          Đang chọn
+        </div>
+
+        <motion.div
+          className="lp-vis-foot"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <div>
+            <small>Sân cầu lông 2 · 18:00–20:00</small>
+            <b>
+              <s>240.000đ</s> 192.000đ
+            </b>
+          </div>
+          <span className="lp-btn lp-btn-primary sm">Xác nhận đặt sân</span>
+        </motion.div>
+      </div>
+
+      <VisFloat>
+        <span className="lp-float-icon lime">
+          <Wallet size={16} />
+        </span>
+        <div>
+          <small>Thanh toán bằng ví</small>
+          <b>Số dư 1.250.000₫</b>
+        </div>
+      </VisFloat>
     </div>
   );
 }
