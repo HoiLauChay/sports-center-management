@@ -1,5 +1,5 @@
 import { Modal, Spin, Tag } from 'antd';
-import { ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
+import { Ban, ChevronLeft, ChevronRight, Clock, MapPin, Repeat2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { InfoGrid } from '~/components/data/InfoGrid';
 import {
@@ -90,7 +90,12 @@ function TimeBlock({
 }) {
   const style = KIND_STYLE[event.kind];
   const past = isPast(event.date, event.endTime);
-  const roomy = height >= HOUR_HEIGHT * 1.3;
+  const blockHeight = Math.max(height - 4, 24);
+  // Text rows that fit under the time row (padding 16px, time row 19px, a text row about 17px).
+  const rows = Math.floor((blockHeight - 35) / 17);
+  const titleLines = rows >= 4 ? 2 : 1;
+  const showSubtitle = Boolean(event.subtitle) && rows > titleLines;
+  const badge = event.cancelled ? 'Đã hủy' : event.substitute ? 'Dạy thay' : null;
   const look = event.cancelled
     ? 'bg-sc-paper text-sc-muted ring-1 ring-sc-line ring-inset'
     : past
@@ -101,31 +106,38 @@ function TimeBlock({
     <button
       type="button"
       onClick={onOpen}
-      title={`${event.startTime}–${event.endTime} · ${event.title}`}
+      title={`${event.startTime}–${event.endTime} · ${event.title}${badge ? ` · ${badge}` : ''}`}
       style={{
         top: top + 2,
-        height: Math.max(height - 4, 24),
+        height: blockHeight,
         left: `calc(${(lane / lanes) * 100}% + 4px)`,
         width: `calc(${100 / lanes}% - 8px)`,
         ...(event.cancelled ? CANCELLED_STRIPES : {}),
       }}
-      className={`absolute flex cursor-pointer flex-col overflow-hidden rounded-xl border-0 px-2.5 py-2 text-left leading-tight shadow-[0_6px_16px_-10px_rgba(20,19,15,0.55)] transition-[transform,box-shadow] duration-200 ease-sc hover:z-10 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-12px_rgba(20,19,15,0.6)] ${look}`}
+      className={`@container absolute flex cursor-pointer flex-col overflow-hidden rounded-xl border-0 px-2.5 py-2 text-left font-[inherit] leading-tight shadow-[0_6px_16px_-10px_rgba(20,19,15,0.55)] transition-[transform,box-shadow] duration-200 ease-sc hover:z-10 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-12px_rgba(20,19,15,0.6)] ${look}`}
     >
-      <span className={`font-display text-[15px] font-bold tracking-wide ${timeColor}`}>
-        {event.startTime}
-        <span className="opacity-70"> – {event.endTime}</span>
+      <span className="flex shrink-0 items-center justify-between gap-1.5">
+        <span className={`truncate font-display text-[15px] font-bold tracking-wide ${timeColor}`}>
+          {event.startTime}
+          <span className="hidden opacity-70 @[110px]:inline"> – {event.endTime}</span>
+        </span>
+        {badge && (
+          <span
+            aria-label={badge}
+            className={`flex shrink-0 items-center gap-1 rounded px-1 py-px text-[11.5px] font-semibold ${event.cancelled ? 'bg-sc-surface text-sc-error' : 'bg-sc-lime text-sc-ink'}`}
+          >
+            {event.cancelled ? <Ban size={11} /> : <Repeat2 size={12} />}
+            <span className="hidden @[160px]:inline">{badge}</span>
+          </span>
+        )}
       </span>
       <span
-        className={`mt-0.5 text-[14px] font-semibold ${event.cancelled ? 'line-through' : ''} ${roomy ? 'line-clamp-2' : 'truncate'}`}
+        className={`mt-0.5 shrink-0 text-[14px] font-semibold ${event.cancelled ? 'line-through' : ''} ${titleLines === 2 ? 'line-clamp-2' : 'truncate'}`}
       >
         <AttendanceDot event={event} />
         {event.title}
       </span>
-      {roomy && event.subtitle && (
-        <span className="mt-auto truncate pt-1 text-[12.5px] opacity-80">{event.subtitle}</span>
-      )}
-      {event.cancelled && <span className="text-[12px] font-semibold text-sc-error">Đã hủy</span>}
-      {event.substitute && <span className="text-[12px] font-semibold text-sc-lime">Dạy thay</span>}
+      {showSubtitle && <span className="mt-0.5 shrink-0 truncate text-[12.5px] opacity-80">{event.subtitle}</span>}
     </button>
   );
 }
