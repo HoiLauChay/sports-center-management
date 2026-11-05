@@ -8,7 +8,7 @@ import { fromDbTime } from '~/utils/time';
 const bookingSelect = {
   id: true,
   facility: { select: { id: true, name: true } },
-  account: { select: { id: true, fullName: true } },
+  account: { select: { id: true, fullName: true, avatarUrl: true } },
   bookingDate: true,
   startTime: true,
   endTime: true,
