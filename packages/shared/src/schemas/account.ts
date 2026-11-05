@@ -46,7 +46,7 @@ export const dateOfBirthSchema = z.iso
   .refine((value) => new Date(value) <= new Date(), 'Ngày sinh không được ở tương lai');
 
 export const MEMBER_PROFILE_FIELDS = ['emergencyContact', 'fitnessGoals', 'healthNotes'] as const;
-export const COACH_PROFILE_FIELDS = ['bio', 'experience', 'certifications', 'coverImageUrl'] as const;
+export const COACH_PROFILE_FIELDS = ['bio', 'experience', 'certifications'] as const;
 
 export const updateProfileFieldsSchema = z.object({
   emergencyContact: optionalText(255, 'Liên hệ khẩn cấp'),
@@ -55,7 +55,6 @@ export const updateProfileFieldsSchema = z.object({
   bio: optionalText(2000, 'Giới thiệu'),
   experience: optionalText(2000, 'Kinh nghiệm'),
   certifications: optionalText(2000, 'Chứng chỉ'),
-  coverImageUrl: optionalUrl('Ảnh bìa'),
 });
 
 export const updateMeBodySchema = z.object({
@@ -65,6 +64,7 @@ export const updateMeBodySchema = z.object({
   gender: z.enum(GENDERS, 'Giới tính không hợp lệ').nullable().optional(),
   address: optionalText(500, 'Địa chỉ'),
   avatarUrl: optionalUrl('Ảnh đại diện'),
+  coverImageUrl: optionalUrl('Ảnh bìa'),
   profile: updateProfileFieldsSchema.optional(),
 });
 

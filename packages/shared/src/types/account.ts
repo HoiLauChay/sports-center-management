@@ -11,7 +11,6 @@ export interface CoachProfile {
   bio: string | null;
   experience: string | null;
   certifications: string | null;
-  coverImageUrl: string | null;
 }
 
 export interface StaffProfile {
@@ -27,6 +26,7 @@ export interface Account {
   gender: Gender | null;
   address: string | null;
   avatarUrl: string | null;
+  coverImageUrl: string | null;
   role: Role;
   roles: Role[];
   status: AccountStatus;

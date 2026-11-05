@@ -50,6 +50,7 @@ model Account {
   passwordHash      String?       @map("password_hash") @db.VarChar(255)
   fullName          String        @map("full_name") @db.VarChar(255)
   avatarUrl         String?       @map("avatar_url")
+  coverImageUrl     String?       @map("cover_image_url")
   role              Role          @default(MEMBER)
   roles             Role[]        @default([MEMBER])
   status            AccountStatus @default(ACTIVE)
@@ -129,7 +130,6 @@ model CoachProfile {
   bio            String?
   experience     String?
   certifications String?
-  coverImageUrl  String?  @map("cover_image_url")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 

@@ -296,15 +296,13 @@ class AuthService {
     }
 
     uploadService.assertUploadedFile(fields.avatarUrl, current.avatarUrl, 'AVATAR', accountId, 'body.avatarUrl');
-    if (current.role === 'COACH') {
-      uploadService.assertUploadedFile(
-        profile?.coverImageUrl,
-        current.coachProfile?.coverImageUrl,
-        'COVER_IMAGE',
-        accountId,
-        'body.profile.coverImageUrl',
-      );
-    }
+    uploadService.assertUploadedFile(
+      fields.coverImageUrl,
+      current.coverImageUrl,
+      'COVER_IMAGE',
+      accountId,
+      'body.coverImageUrl',
+    );
 
     const { dateOfBirth, ...rest } = fields;
     const account: Prisma.AccountUpdateInput = {

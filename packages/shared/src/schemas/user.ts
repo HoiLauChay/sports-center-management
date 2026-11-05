@@ -28,11 +28,8 @@ export const createUserBodySchema = z.object({
   profile: createUserProfileSchema.optional(),
 });
 
-export const updateUserBodySchema = updateMeBodySchema.omit({ avatarUrl: true }).extend({
-  profile: updateProfileFieldsSchema
-    .omit({ coverImageUrl: true })
-    .extend({ staffNotes: optionalText(2000, 'Ghi chú nhân sự') })
-    .optional(),
+export const updateUserBodySchema = updateMeBodySchema.omit({ avatarUrl: true, coverImageUrl: true }).extend({
+  profile: updateProfileFieldsSchema.extend({ staffNotes: optionalText(2000, 'Ghi chú nhân sự') }).optional(),
 });
 
 export const updateUserStatusBodySchema = z.object({
