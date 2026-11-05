@@ -1,11 +1,9 @@
-import type { Account } from '@sports-center/shared';
-import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, DatePicker, Select } from 'antd';
+import type { Account, Facility } from '@sports-center/shared';
+import { Alert, Button, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { RefreshCw, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
-import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { ErrorState } from '~/components/feedback/States';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
@@ -14,7 +12,9 @@ import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
 import { useSlotSelection } from '../hooks/useSlotSelection';
+import { useSportFacilityChoice } from '../hooks/useSportFacilityChoice';
 import { SlotGrid } from './SlotGrid';
+import { SportFacilitySteps } from './SportFacilitySteps';
 
 const BENEFIT_TEXT: Record<string, string> = {
   GYM_ACCESS: 'Gym miễn phí theo gói',
@@ -29,38 +29,39 @@ interface SlotBookingPickerProps {
   onAdd: (selection: CheckoutItemInput) => void;
 }
 
-/** Sport → day → slot grid, with a live price (membership benefits included) and "Thêm vào đơn" (UC_2.6, UC_2.10). */
+/** Sport → facility → day and slot grid, with a live price (membership benefits included) and "Thêm vào giỏ" (UC_2.6, UC_2.10). */
 export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps) {
-  const facilities = useQuery(facilitiesQueryOptions);
-  const sports = useQuery(sportsQueryOptions);
-  const settings = useSettings();
-  const [sportChoice, setSportChoice] = useState<string>();
-  const [facilityChoice, setFacilityChoice] = useState<string>();
+  const choice = useSportFacilityChoice();
   const [date, setDate] = useState(todayVN());
 
-  const bookable = useMemo(() => (facilities.data ?? []).filter((facility) => facility.isActive), [facilities.data]);
-  const sportOptions = useMemo(
-    () =>
-      (sports.data ?? []).filter(
-        (sport) =>
-          sport.isActive && bookable.some((facility) => facility.sports.some((entry) => entry.id === sport.id)),
-      ),
-    [sports.data, bookable],
+  return (
+    <SportFacilitySteps choice={choice} finalLabel="Chọn giờ">
+      {choice.facility && (
+        // Keyed by facility so switching courts drops the picked slot.
+        <SlotSchedulePanel
+          key={choice.facility.id}
+          facility={choice.facility}
+          date={date}
+          onDateChange={setDate}
+          user={user}
+          buyer={buyer}
+          onAdd={onAdd}
+        />
+      )}
+    </SportFacilitySteps>
   );
-  const sportId = sportOptions.some((sport) => sport.id === sportChoice) ? sportChoice : undefined;
-  const sportFacilities = useMemo(
-    () => bookable.filter((facility) => facility.sports.some((entry) => entry.id === sportId)),
-    [bookable, sportId],
-  );
+}
 
-  const facilityId = sportFacilities.some((facility) => facility.id === facilityChoice) ? facilityChoice : undefined;
-  const rows = sportFacilities.filter((facility) => facility.id === facilityId);
+interface SlotSchedulePanelProps extends SlotBookingPickerProps {
+  facility: Facility;
+  date: string;
+  onDateChange: (date: string) => void;
+}
 
-  const schedule = useFacilitySchedules(
-    rows.map((facility) => facility.id),
-    date,
-  );
-
+function SlotSchedulePanel({ facility, date, onDateChange, user, buyer, onAdd }: SlotSchedulePanelProps) {
+  const settings = useSettings();
+  const rows = useMemo(() => [facility], [facility]);
+  const schedule = useFacilitySchedules([facility.id], date);
   const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
 
   const maxAdvance = settings.data?.maxAdvanceBookingDays ?? 14;
@@ -72,8 +73,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
     const slots = schedule.schedules[selection.facilityId]?.slots;
     const first = slots?.[selection.startIndex];
     const last = slots?.[selection.startIndex + selection.count - 1];
-    const facility = rows.find((entry) => entry.id === selection.facilityId);
-    if (!first || !last || !facility) return null;
+    if (!first || !last) return null;
     const input: CheckoutItemInput = {
       type: 'FACILITY_BOOKING',
       facilityId: facility.id,
@@ -81,31 +81,15 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
       startTime: first.startTime,
       endTime: last.endTime,
     };
-    return { facility, input, startTime: first.startTime, endTime: last.endTime };
-  }, [selection, schedule.schedules, rows, date]);
+    return { input, startTime: first.startTime, endTime: last.endTime };
+  }, [selection, schedule.schedules, facility.id, date]);
 
   const quote = useQuote({ user, buyer, items: selected ? [selected.input] : [], enabled: Boolean(selected) });
   const line = selected ? quote.data?.items[0] : undefined;
   const pricing = Boolean(selected) && (quote.isFetching || !line);
 
-  if (facilities.isPending || sports.isPending) return <PageLoading />;
-  if (facilities.isError || sports.isError) {
-    return (
-      <ErrorState
-        message={toApiError(facilities.error ?? sports.error).message}
-        onRetry={() => {
-          void facilities.refetch();
-          void sports.refetch();
-        }}
-      />
-    );
-  }
-  if (!sportOptions.length) {
-    return <Alert type="info" showIcon title="Chưa có sân hoặc phòng nào nhận đặt." />;
-  }
-
   const changeDay = (next: string) => {
-    setDate(next);
+    onDateChange(next);
     setSelection(null);
   };
 
@@ -119,38 +103,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select
-          aria-label="Chọn bộ môn"
-          showSearch
-          optionFilterProp="label"
-          placeholder="Chọn bộ môn"
-          className="w-full sm:!w-44"
-          value={sportId}
-          options={sportOptions.map((sport) => ({ value: sport.id, label: sport.name }))}
-          onChange={(value) => {
-            setSportChoice(value);
-            setFacilityChoice(undefined);
-            setSelection(null);
-          }}
-        />
-        <Select
-          aria-label="Chọn sân / phòng"
-          showSearch
-          optionFilterProp="label"
-          placeholder="Chọn sân / phòng"
-          disabled={!sportId}
-          className="w-full sm:!w-auto sm:!min-w-48"
-          value={facilityId}
-          options={sportFacilities.map((facility) => ({ value: facility.id, label: facility.name }))}
-          onChange={(value) => {
-            setFacilityChoice(value);
-            setSelection(null);
-          }}
-        />
-      </div>
-
+    <>
       <div
         className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]"
         role="group"
@@ -192,9 +145,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
         <div className="min-w-0 rounded-xl border border-sc-border-soft bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">
-              {[sportOptions.find((sport) => sport.id === sportId)?.name, formatDayLabel(date)]
-                .filter(Boolean)
-                .join(' · ')}
+              {facility.name} · {formatDayLabel(date)}
             </h3>
             <span className="flex items-center gap-1 text-[14.5px] text-sc-muted" role="status">
               {schedule.updatedAt ? `Cập nhật ${dayjs(schedule.updatedAt).format('HH:mm')}` : 'Đang tải lịch'}
@@ -216,9 +167,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
               title="Khung giờ đã chọn không còn khả dụng. Vui lòng chọn lại."
             />
           )}
-          {!facilityId ? (
-            <EmptyState title="Chọn bộ môn và sân / phòng để xem lịch" />
-          ) : schedule.error ? (
+          {schedule.error ? (
             <ErrorState message={toApiError(schedule.error).message} onRetry={schedule.refetch} />
           ) : (
             <SlotGrid
@@ -244,7 +193,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           ) : (
             <div className="mt-2 flex flex-col gap-3">
               <div>
-                <h3 className="m-0 font-display text-[22px] font-extrabold uppercase">{selected.facility.name}</h3>
+                <h3 className="m-0 font-display text-[22px] font-extrabold uppercase">{facility.name}</h3>
                 <div className="text-[14.5px] text-sc-muted">
                   {formatDayLabel(date)} · {selected.startTime}–{selected.endTime}
                 </div>
@@ -284,7 +233,7 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           <div className="mx-auto flex max-w-[1120px] items-center gap-3">
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate font-semibold">
-                {selected.facility.name} · {selected.startTime}–{selected.endTime}
+                {facility.name} · {selected.startTime}–{selected.endTime}
               </span>
               <span className="text-[14.5px] text-sc-muted">
                 {formatDayLabel(date)} · <span className="font-semibold text-sc-ink tabular-nums">{total}</span>
@@ -298,6 +247,6 @@ export function SlotBookingPicker({ user, buyer, onAdd }: SlotBookingPickerProps
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
