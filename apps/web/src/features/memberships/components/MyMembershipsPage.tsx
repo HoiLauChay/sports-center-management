@@ -32,12 +32,47 @@ function StatusTag({ status }: { status: keyof typeof STATUS }) {
   );
 }
 
-function Panel({ title, className = '', children }: { title: string; className?: string; children: ReactNode }) {
+const HISTORY_LIMIT = 2;
+const PERIOD_LIMIT = 3;
+
+function Panel({
+  title,
+  extra,
+  className = '',
+  children,
+}: {
+  title: string;
+  extra?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <section className={`rounded-2xl border border-sc-border bg-sc-surface p-5 md:p-6 ${className}`}>
-      <h2 className="m-0 mb-4 text-[16px] font-semibold">{title}</h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="m-0 text-[16px] font-semibold">{title}</h2>
+        {extra}
+      </div>
       {children}
     </section>
+  );
+}
+
+function ShowAllToggle({
+  total,
+  limit,
+  expanded,
+  onToggle,
+}: {
+  total: number;
+  limit: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (total <= limit) return null;
+  return (
+    <Button type="link" size="small" className="!h-auto !p-0 !text-[14px] !font-semibold" onClick={onToggle}>
+      {expanded ? 'Thu gọn' : `Xem tất cả (${total})`}
+    </Button>
   );
 }
 
@@ -114,6 +149,8 @@ function PeriodList({ periods, activeId }: { periods: PeriodRow[]; activeId?: st
 export function MyMembershipsPage() {
   const { query, cancel, terminate } = useMyMemberships();
   const [ending, setEnding] = useState(false);
+  const [allHistory, setAllHistory] = useState(false);
+  const [allPeriods, setAllPeriods] = useState(false);
   const current = query.data?.current;
   const today = dayjs().tz(VN_TIMEZONE).format('YYYY-MM-DD');
   const isEffective = Boolean(
@@ -294,11 +331,35 @@ export function MyMembershipsPage() {
               </section>
             )}
             <div className="flex flex-col gap-5">
-              <Panel title="Lịch sử gói">
-                <HistoryList memberships={allMemberships} />
+              <Panel
+                title="Lịch sử gói"
+                extra={
+                  <ShowAllToggle
+                    total={allMemberships.length}
+                    limit={HISTORY_LIMIT}
+                    expanded={allHistory}
+                    onToggle={() => setAllHistory((value) => !value)}
+                  />
+                }
+              >
+                <HistoryList memberships={allHistory ? allMemberships : allMemberships.slice(0, HISTORY_LIMIT)} />
               </Panel>
-              <Panel title="Các kỳ đã mua" className="flex-1">
-                <PeriodList periods={periods} activeId={activePeriod?.orderItemId} />
+              <Panel
+                title="Các kỳ đã mua"
+                className="flex-1"
+                extra={
+                  <ShowAllToggle
+                    total={periods.length}
+                    limit={PERIOD_LIMIT}
+                    expanded={allPeriods}
+                    onToggle={() => setAllPeriods((value) => !value)}
+                  />
+                }
+              >
+                <PeriodList
+                  periods={allPeriods ? periods : periods.slice(0, PERIOD_LIMIT)}
+                  activeId={activePeriod?.orderItemId}
+                />
               </Panel>
             </div>
           </div>
