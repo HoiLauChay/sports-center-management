@@ -1,11 +1,11 @@
 import type { Booking } from '@sports-center/shared';
 import { Link } from '@tanstack/react-router';
-import { Button, Drawer, Skeleton, Tag } from 'antd';
+import { Avatar, Button, Drawer, Skeleton, Tag } from 'antd';
 import { Calendar, Clock, MapPin, Phone, Receipt, User } from 'lucide-react';
 import { ErrorState } from '~/components/feedback/States';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
 import { useCurrentUser } from '~/features/auth';
-import { formatDateTime, formatVND } from '~/lib/format';
+import { formatDateTime, formatVND, initialsOf } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel } from '~/lib/time';
 import { useBookingDetail } from '../hooks/useBookings';
@@ -80,9 +80,13 @@ export function BookingDetailDrawer({ bookingId, onClose }: BookingDetailDrawerP
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sc-primary-soft text-sc-primary">
-                      <User size={17} />
-                    </span>
+                    <Avatar
+                      size={36}
+                      src={booking.account.avatarUrl ?? undefined}
+                      className="shrink-0 !bg-sc-primary-soft !text-[13px] !font-semibold !text-sc-primary"
+                    >
+                      {initialsOf(booking.account.fullName)}
+                    </Avatar>
                     <div>
                       <div className="text-[16px] font-bold text-sc-ink">{booking.account.fullName}</div>
                       <div className="text-[13px] text-sc-muted">Hội viên trung tâm</div>
