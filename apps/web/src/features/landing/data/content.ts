@@ -113,6 +113,9 @@ export const FEATURE_STEPS: FeatureStep[] = [
 export interface Benefit {
   key: string;
   tag: string;
+  /** Headline number shown in the detail panel, e.g. "-40%". */
+  stat: string;
+  statLabel: string;
   title: string;
   desc: string;
   items: string[];
@@ -122,7 +125,7 @@ export const BENEFITS_SECTION = {
   eyebrow: 'Quyền lợi thành viên',
   title: 'Bạn nhận được gì khi có gói.',
   emphasis: 'khi có gói.',
-  backgroundText: 'THÀNH VIÊN',
+  sub: 'Một gói dùng chung cho sân, lớp và HLV — mua lúc nào cũng được, quyền lợi áp dụng ngay.',
   endCard: {
     title: 'Chưa có gói vẫn thuê sân được',
     desc: 'Tạo tài khoản miễn phí, đặt sân theo giá thường. Muốn giảm giá sân và vào lớp thì mua gói sau, lúc nào cũng được.',
@@ -133,6 +136,8 @@ export const BENEFITS_SECTION = {
 export const BENEFITS: Benefit[] = [
   {
     key: 'court',
+    stat: '-40%',
+    statLabel: 'giá thuê sân với gói 1 năm',
     tag: 'Sân',
     title: 'Đặt sân online, giảm tới 40%',
     desc: 'Mở app, chọn sân, chọn giờ — 24/7. Thành viên có gói được giảm 10–40% giá thuê sân tùy gói; hủy trước giờ chơi không mất phí.',
@@ -145,6 +150,8 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: 'class',
+    stat: '11',
+    statLabel: 'lớp nhóm đang mở',
     tag: 'Lớp',
     title: 'Lớp nhóm không giới hạn',
     desc: 'Gói All-access vào được mọi lớp đang mở: gym, yoga, boxing, bơi, zumba, cầu lông, tennis… Gói theo môn thì không giới hạn số buổi của môn đó.',
@@ -157,6 +164,8 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: 'coach',
+    stat: '100%',
+    statLabel: 'buổi tập được HLV ghi lại',
     tag: 'HLV',
     title: 'HLV theo dõi từng buổi tập',
     desc: 'Mỗi buổi HLV ghi lại chỉ số của bạn — tạ, thời gian, quãng đường, độ gắng sức. Bạn xem lại biểu đồ tiến bộ và kỷ lục cá nhân bất cứ lúc nào.',
@@ -169,6 +178,8 @@ export const BENEFITS: Benefit[] = [
   },
   {
     key: 'ai',
+    stat: '24/7',
+    statLabel: 'trợ lý trả lời thắc mắc',
     tag: 'Kế hoạch',
     title: 'Kế hoạch tuần cho riêng bạn',
     desc: 'Dựa trên mục tiêu và kết quả gần nhất, hệ thống đề xuất lịch tập tuần; HLV xem và chỉnh trước khi gửi cho bạn. Có trợ lý trả lời thắc mắc 24/7.',
@@ -199,7 +210,7 @@ export const OPENING_HOURS = [
   { name: 'Hồ bơi', time: '06:00 – 21:00', note: 'Nghỉ vệ sinh hồ 13:00 – 14:00' },
   { name: 'Phòng gym', time: '06:00 – 22:00', note: 'Hằng ngày, kể cả lễ' },
   { name: 'Phòng Yoga · Zumba · Boxing', time: 'Theo lịch lớp', note: 'Xem lịch tuần sau khi đăng nhập' },
-  { name: 'Quầy tiếp đón', time: '06:00 – 22:00', note: 'Đăng ký, gia hạn gói, thanh toán tại chỗ' },
+  { name: 'Quầy lễ tân', time: '06:00 – 22:00', note: 'Đăng ký, gia hạn gói, thanh toán tại chỗ' },
 ];
 
 export const CONTACT = {

@@ -1,59 +1,77 @@
-import { Bot } from 'lucide-react';
+import { CheckCircle2, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { VisFloat, VisHead } from './VisParts';
 
-const PLAN = ['T2 · Squat 4×8 @ 40kg', 'T4 · Bench 4×6 + core', 'T6 · Chạy interval 6×400m', 'CN · Yoga phục hồi 30′'];
+const PLAN = [
+  { day: 'T2', text: 'Squat 4×8 @ 40kg' },
+  { day: 'T4', text: 'Bench 4×6 + core' },
+  { day: 'T6', text: 'Chạy interval 6×400m' },
+  { day: 'CN', text: 'Yoga phục hồi 30′' },
+];
 
 export function AiVisual() {
   return (
-    <div className="lp-vis">
-      <div className="lp-vis-head">
-        <b>
-          <Bot size={16} style={{ verticalAlign: '-3px', marginRight: 6 }} />
-          Trợ lý AI
-        </b>
-        <span className="lp-chip purple">Gym · Trung cấp</span>
+    <div className="lp-vis-stage">
+      <div className="lp-vis">
+        <VisHead
+          icon={Sparkles}
+          title="Trợ lý AI"
+          sub="Dựa trên kết quả tập của bạn"
+          extra={<span className="lp-chip purple">Gym · Trung cấp</span>}
+        />
+
+        <div className="lp-chat">
+          <motion.div
+            className="lp-msg me"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            Tuần này mình nên tập gì để cải thiện squat?
+          </motion.div>
+
+          <motion.div
+            className="lp-msg-row"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <span className="lp-msg-av">
+              <Sparkles size={13} />
+            </span>
+            <div className="lp-msg ai">
+              Dựa trên PR 40kg và RPE 7 buổi trước, mình đề xuất kế hoạch 4 buổi:
+              <ul>
+                {PLAN.map((item, i) => (
+                  <motion.li
+                    key={item.day}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1 + i * 0.15 }}
+                  >
+                    <i>{item.day}</i>
+                    {item.text}
+                  </motion.li>
+                ))}
+              </ul>
+              <div className="lp-msg-actions">
+                <span className="lp-btn lp-btn-primary sm">Thêm vào lịch tuần</span>
+                <span className="lp-msg-ghost">Hỏi tiếp</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      <div className="lp-chat">
-        <motion.div
-          className="lp-msg me"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          Tuần này mình nên tập gì để cải thiện squat?
-        </motion.div>
-
-        <motion.div
-          className="lp-msg ai"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          Dựa trên PR 40kg và RPE 7 buổi trước, mình đề xuất kế hoạch 4 buổi:
-          <ul>
-            {PLAN.map((item, i) => (
-              <motion.li
-                key={item}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1 + i * 0.15 }}
-              >
-                {item}
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
-
-        <motion.div
-          className="lp-vis-note"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.7 }}
-        >
-          HLV Lê Văn An đã duyệt · <b>Thêm vào lịch tuần</b>
-        </motion.div>
-      </div>
+      <VisFloat delay={1.8}>
+        <span className="lp-float-icon">
+          <CheckCircle2 size={16} />
+        </span>
+        <div>
+          <small>HLV Lê Văn An</small>
+          <b>Đã duyệt kế hoạch</b>
+        </div>
+      </VisFloat>
     </div>
   );
 }
