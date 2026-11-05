@@ -87,7 +87,7 @@ export function ClassesPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(270px,320px))]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
             {classes.data.items.map((item) => (
               <ClassCard key={item.id} item={item} keyword={q} discountPct={discountPct} />
             ))}
