@@ -1,5 +1,5 @@
-import type { COACH_PROFILE_FIELDS } from '@sports-center/shared';
 import {
+  COACH_PROFILE_FIELDS,
   ERROR_CODE,
   MEMBER_PROFILE_FIELDS,
   type ChangeUserEmailBody,
@@ -71,15 +71,11 @@ const notFound = () =>
 const forbidden = (message: string) =>
   new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 
-const COACH_EDITABLE_FIELDS = ['bio', 'experience', 'certifications'] as const satisfies readonly Exclude<
-  (typeof COACH_PROFILE_FIELDS)[number],
-  'coverImageUrl'
->[];
 const STAFF_PROFILE_FIELDS = ['staffNotes'] as const;
 
 const profileUpdates = (role: Role, profile: UpdateUserBody['profile']) => ({
   memberProfile: role === 'MEMBER' ? pickDefined(profile, MEMBER_PROFILE_FIELDS) : undefined,
-  coachProfile: role === 'COACH' ? pickDefined(profile, COACH_EDITABLE_FIELDS) : undefined,
+  coachProfile: role === 'COACH' ? pickDefined(profile, COACH_PROFILE_FIELDS) : undefined,
   receptionistProfile: role === 'RECEPTIONIST' ? pickDefined(profile, STAFF_PROFILE_FIELDS) : undefined,
   managerProfile: role === 'MANAGER' ? pickDefined(profile, STAFF_PROFILE_FIELDS) : undefined,
 });

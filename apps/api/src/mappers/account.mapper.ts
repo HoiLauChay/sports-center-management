@@ -31,7 +31,6 @@ const toProfile = (account: AccountWithProfile): Account['profile'] => {
         bio: profile.bio,
         experience: profile.experience,
         certifications: profile.certifications,
-        coverImageUrl: profile.coverImageUrl,
       };
     }
     case 'RECEPTIONIST':
@@ -50,6 +49,7 @@ export const toAccountResponse = (account: AccountWithProfile): Account => ({
   gender: account.gender,
   address: account.address,
   avatarUrl: account.avatarUrl,
+  coverImageUrl: account.coverImageUrl,
   role: account.role,
   roles: account.roles,
   status: account.status,
