@@ -197,7 +197,11 @@ export function CoachSpecializationsPage() {
             <Card title="Hồ sơ & Chuyên môn" className="overflow-hidden" styles={cardHeader}>
               {/* Coach Identity */}
               <div className="flex items-center gap-3">
-                <Avatar size={48} className="!bg-emerald-600 font-bold text-white shadow-sm shrink-0">
+                <Avatar
+                  size={48}
+                  src={user.avatarUrl ?? undefined}
+                  className="!bg-emerald-600 font-bold text-white shadow-sm shrink-0"
+                >
                   {user.fullName.slice(0, 2).toUpperCase()}
                 </Avatar>
                 <div className="min-w-0">
