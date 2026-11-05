@@ -51,6 +51,18 @@ class MemberMembershipController {
     res.status(HTTP_STATUS.CREATED).json(new ResponseClient({ message: 'Đã đăng ký gói cho thành viên', result }));
   };
 
+  terminateMine = async (req: Request, res: Response) => {
+    const { reason } = req.body as TerminateMembershipBody;
+    const result = await memberMembershipService.terminate(
+      req.user!,
+      req.user!.id,
+      req.params.id as string,
+      reason,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã chấm dứt gói, không hoàn tiền', result }));
+  };
+
   terminateForMember = async (req: Request, res: Response) => {
     const { reason } = req.body as TerminateMembershipBody;
     const result = await memberMembershipService.terminate(
