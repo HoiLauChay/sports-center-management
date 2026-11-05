@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
-import { Alert, Button, Collapse, Popconfirm } from 'antd';
+import { Alert, Button, Collapse } from 'antd';
 import dayjs from 'dayjs';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { EmptyState, ErrorState, PageLoading } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { PATHS } from '~/constants/paths';
@@ -9,6 +9,7 @@ import { formatDate, formatVND, VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useMyMemberships } from '../hooks/useMyMemberships';
 import type { MemberMembership, MembershipPeriod } from '../types';
+import { EndMembershipModal } from './EndMembershipModal';
 import { MembershipBenefits } from './MembershipBenefits';
 
 const STATUS = {
@@ -111,7 +112,8 @@ function PeriodList({ periods, activeId }: { periods: PeriodRow[]; activeId?: st
 }
 
 export function MyMembershipsPage() {
-  const { query, cancel } = useMyMemberships();
+  const { query, cancel, terminate } = useMyMemberships();
+  const [ending, setEnding] = useState(false);
   const current = query.data?.current;
   const today = dayjs().tz(VN_TIMEZONE).format('YYYY-MM-DD');
   const isEffective = Boolean(
@@ -251,33 +253,30 @@ export function MyMembershipsPage() {
                     </div>
                   )}
                 </div>
-                {!current.cancelledAt && (
+                {isEffective && (
                   <div className="flex items-center justify-between gap-4 border-t border-sc-border-soft bg-sc-paper/50 px-5 py-4 md:px-6">
                     <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-[15px] font-semibold">Hủy gói thành viên</span>
+                      <span className="text-[15px] font-semibold">
+                        {current.cancelledAt ? 'Chấm dứt gói' : 'Hủy gói thành viên'}
+                      </span>
                       <span className="text-[14px] text-sc-muted">
-                        Dùng tiếp quyền lợi đến {formatDate(current.endDate)}, không hoàn tiền.
+                        {current.cancelledAt
+                          ? 'Không dùng nữa? Bạn có thể kết thúc gói ngay hôm nay.'
+                          : 'Dừng gia hạn hoặc chấm dứt ngay, không hoàn tiền.'}
                       </span>
                     </div>
-                    <Popconfirm
-                      title="Hủy gói? Gói sẽ không gia hạn, không hoàn tiền."
-                      description={`Bạn vẫn còn quyền lợi đến ${formatDate(current.endDate)}.`}
-                      okText="Hủy gói"
-                      cancelText="Không"
-                      okButtonProps={{ danger: true }}
-                      styles={{ container: { maxWidth: 340 } }}
-                      disabled={cancel.isPending || !isEffective}
-                      onConfirm={() => cancel.mutateAsync(current.id).catch(() => undefined)}
-                    >
-                      <Button
-                        danger
-                        loading={cancel.isPending}
-                        disabled={cancel.isPending || !isEffective}
-                        className="shrink-0"
-                      >
-                        Hủy gói
-                      </Button>
-                    </Popconfirm>
+                    <Button danger className="shrink-0" onClick={() => setEnding(true)}>
+                      {current.cancelledAt ? 'Chấm dứt' : 'Hủy gói'}
+                    </Button>
+                    {ending && (
+                      <EndMembershipModal
+                        membership={current}
+                        daysLeft={daysLeft}
+                        today={today}
+                        actions={{ cancel, terminate }}
+                        onClose={() => setEnding(false)}
+                      />
+                    )}
                   </div>
                 )}
               </section>
