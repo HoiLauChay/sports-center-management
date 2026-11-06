@@ -2,6 +2,7 @@ import { ERROR_CODE } from '@sports-center/shared';
 import { Ratelimit, type Duration } from '@upstash/ratelimit';
 import type { NextFunction, Request, Response } from 'express';
 
+import { appUrl } from '~/configs/env';
 import { redis } from '~/configs/redis';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
@@ -23,13 +24,14 @@ const byIp = (req: Request) => getClientIp(req) ?? 'unknown';
 const byAccount = (req: Request) => req.user?.id ?? byIp(req);
 
 const rateLimit =
-  (limiter: Ratelimit | null, keyOf: (req: Request) => string = byIp) =>
-  async (req: Request, _res: Response, next: NextFunction) => {
+  (limiter: Ratelimit | null, keyOf: (req: Request) => string = byIp, onLimited?: (res: Response) => void) =>
+  async (req: Request, res: Response, next: NextFunction) => {
     if (!limiter) return next();
 
     try {
       const { success, reset } = await limiter.limit(keyOf(req));
       if (success) return next();
+      if (onLimited) return onLimited(res);
 
       const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
       next(
@@ -56,7 +58,9 @@ export const activateLimit = rateLimit(createLimiter('auth:activate', 30, '15 m'
 export const registerLimit = rateLimit(createLimiter('auth:register', 30, '15 m'));
 export const resetPasswordLimit = rateLimit(createLimiter('auth:reset-password', 30, '15 m'));
 export const refreshLimit = rateLimit(createLimiter('auth:refresh', 120, '15 m'));
-export const googleAuthLimit = rateLimit(createLimiter('auth:google', 30, '15 m'));
+export const googleAuthLimit = rateLimit(createLimiter('auth:google', 30, '15 m'), byIp, (res) =>
+  res.redirect(`${appUrl}/login?error=RATE_LIMITED`),
+);
 export const uploadLimit = rateLimit(createLimiter('uploads:token', 30, '1 h'), byAccount);
 export const aiSuggestionLimit = rateLimit(createLimiter('ai:plan-suggestion', 20, '1 h'), byAccount);
 export const assistantLimit = rateLimit(createLimiter('ai:assistant', 30, '1 h'), byAccount);

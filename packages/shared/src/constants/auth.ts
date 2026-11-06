@@ -5,6 +5,7 @@ export const GOOGLE_LOGIN_ERROR = {
   EMAIL_UNVERIFIED: 'Email Google của bạn chưa được xác minh.',
   ACCOUNT_INACTIVE: 'Tài khoản đã bị vô hiệu hóa.',
   FAILED: 'Không đăng nhập được bằng Google, vui lòng thử lại.',
+  RATE_LIMITED: 'Bạn đăng nhập bằng Google quá nhiều lần, vui lòng thử lại sau ít phút.',
 } as const;
 
 export type GoogleLoginErrorCode = keyof typeof GOOGLE_LOGIN_ERROR;
