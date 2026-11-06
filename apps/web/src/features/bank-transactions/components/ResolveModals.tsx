@@ -1,4 +1,5 @@
 import type { BankTransaction } from '@sports-center/shared';
+import { Link } from '@tanstack/react-router';
 import { Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
@@ -14,6 +15,20 @@ function Summary({ transaction }: { transaction: BankTransaction }) {
       </div>
       <div className="mt-1 [overflow-wrap:anywhere]">{transaction.content}</div>
       <div className="text-sc-muted-2">Mã tham chiếu: {transaction.referenceCode ?? '—'}</div>
+      {transaction.codeOwner && (
+        <div className="text-sc-muted-2">
+          Mã thanh toán của:{' '}
+          <Link
+            to="/admin/users/$userId"
+            params={{ userId: transaction.codeOwner.id }}
+            target="_blank"
+            rel="noopener"
+            className="font-semibold text-sc-ink underline decoration-sc-border underline-offset-[3px] hover:text-sc-primary"
+          >
+            {transaction.codeOwner.fullName}
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
