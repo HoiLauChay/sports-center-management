@@ -242,4 +242,31 @@ describe('checkout', () => {
       totalAmount: 200_000,
     });
   });
+
+  test('the counter can charge a member buyer wallet, never a guest', async () => {
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    await seedBalance(member.id, 250_000);
+
+    const guest = await request(
+      'POST',
+      '/',
+      receptionist,
+      pay('counter-wallet-1', { buyer: { guest: { name: 'Khách A', phone: '0901234567' } } }),
+    );
+    expect(await readCode(guest)).toBe('VALIDATION_ERROR');
+
+    const paid = await request('POST', '/', receptionist, pay('counter-wallet-2', { buyer: { accountId: member.id } }));
+    expect(paid.status).toBe(201);
+    expect(await readResult<Order>(paid)).toMatchObject({
+      paymentMethod: 'WALLET',
+      totalAmount: 200_000,
+      createdBy: { id: receptionist.id },
+    });
+    expect(await expectWalletConsistent(member.id)).toBe(50_000);
+
+    const poor = await request('POST', '/', receptionist, pay('counter-wallet-3', { buyer: { accountId: member.id } }));
+    expect(await readCode(poor)).toBe('INSUFFICIENT_BALANCE');
+    expect(await prisma.order.count()).toBe(1);
+  });
 });

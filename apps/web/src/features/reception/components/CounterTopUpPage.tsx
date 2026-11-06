@@ -25,13 +25,15 @@ const routeApi = getRouteApi('/_authenticated/_receptionist/reception/top-up');
 type Member = Extract<DraftBuyer, { kind: 'MEMBER' }>;
 
 const PRESET_AMOUNTS = [100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000];
-const METHODS: CounterMethod[] = ['CASH', 'CARD', 'TRANSFER'];
+type TopUpMethod = Exclude<CounterMethod, 'WALLET'>;
+
+const METHODS: TopUpMethod[] = ['CASH', 'TRANSFER'];
 
 const focusSearch = () => window.setTimeout(() => document.getElementById(CUSTOMER_SEARCH_ID)?.focus(), 0);
 
 interface Done {
   amount: number;
-  method: CounterMethod;
+  method: TopUpMethod;
   balanceAfter: number | null;
   tendered: number | null;
 }
@@ -150,7 +152,7 @@ export function CounterTopUpPage() {
 
   const [picked, setPicked] = useState<Member | null>(null);
   const [amount, setAmount] = useState<number | null>(500_000);
-  const [method, setMethod] = useState<CounterMethod | null>(null);
+  const [method, setMethod] = useState<TopUpMethod | null>(null);
   const [cash, setCash] = useState<{ amount: number; value: number } | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();
@@ -186,13 +188,7 @@ export function CounterTopUpPage() {
   };
 
   const record = useMutation({
-    mutationFn: (input: {
-      amount: number;
-      method: 'CASH' | 'CARD';
-      note: string;
-      key: string;
-      tendered: number | null;
-    }) =>
+    mutationFn: (input: { amount: number; method: 'CASH'; note: string; key: string; tendered: number | null }) =>
       walletService.counterTopUp(member!.accountId, {
         amount: input.amount,
         method: input.method,
@@ -409,6 +405,7 @@ export function CounterTopUpPage() {
             </span>
           </div>
           <CounterPaymentPanel
+            methods={METHODS}
             total={amountValue ?? 0}
             method={method}
             onMethod={setMethod}
@@ -420,9 +417,7 @@ export function CounterTopUpPage() {
             blockedReason={`Số tiền nạp tối thiểu là ${formatVND(minAmount)}`}
             busy={busy}
             onPay={submit}
-            actionLabel={(value) =>
-              value === 'TRANSFER' ? 'Tạo mã QR' : value === 'CARD' ? 'Xác nhận đã quẹt thẻ' : 'Xác nhận đã thu'
-            }
+            actionLabel={(value) => (value === 'TRANSFER' ? 'Tạo mã QR' : 'Xác nhận đã thu')}
             hints={{ TRANSFER: 'Khách quét mã QR để tự chuyển khoản. Ví được cộng ngay khi tiền về.' }}
           >
             {method !== 'TRANSFER' && (

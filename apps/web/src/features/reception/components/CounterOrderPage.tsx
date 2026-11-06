@@ -37,7 +37,8 @@ import { CounterServicePicker, type CounterServiceTab } from './CounterServicePi
 
 const routeApi = getRouteApi('/_authenticated/_receptionist/reception/order');
 
-const METHODS: CounterMethod[] = ['CASH', 'CARD', 'TRANSFER'];
+/** Card is not taken at the counter: a member pays cash, from their wallet, or by transfer. */
+const METHODS: CounterMethod[] = ['CASH', 'WALLET', 'TRANSFER'];
 
 /** Whether any part of the element is on screen (the stacked layout hides the bottom bar once the cart shows). */
 function useInView(ref: RefObject<HTMLElement | null>) {
@@ -230,12 +231,16 @@ export function CounterOrderPage() {
 
   const busy = checkout.isPaying || startTransfer.isPending;
   const short = method === 'CASH' && tendered !== null && quote !== undefined && tendered < quote.total;
+  const walletBalance = quote?.walletBalance ?? null;
+  const walletUnusable =
+    method === 'WALLET' && (walletBalance === null || (quote !== undefined && walletBalance < quote.total));
   const canPay =
     Boolean(quote?.canCheckout) &&
     !quoteQuery.isFetching &&
     !busy &&
     method !== null &&
     !short &&
+    !walletUnusable &&
     !(method === 'TRANSFER' && quote?.total === 0) &&
     !checkout.priceChange;
 
@@ -341,6 +346,7 @@ export function CounterOrderPage() {
             disabled={busy}
             onClear={() => {
               store.setBuyer(null);
+              setMethod(null);
               focusCustomerSearch();
             }}
             onAdd={(selection) => void add(selection)}
@@ -379,7 +385,9 @@ export function CounterOrderPage() {
           >
             {quote && (
               <CounterPaymentPanel
+                methods={METHODS}
                 total={quote.total}
+                walletBalance={walletBalance}
                 method={method}
                 onMethod={setMethod}
                 tendered={tendered}

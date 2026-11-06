@@ -83,7 +83,7 @@ export const idempotencyKeySchema = z
   .max(100, 'Khóa chống gửi lặp quá dài');
 
 export const checkoutBodySchema = checkoutQuoteBodySchema.extend({
-  paymentMethod: z.enum(['WALLET', 'CASH', 'CARD'], 'Phương thức thanh toán không hợp lệ'),
+  paymentMethod: z.enum(['WALLET', 'CASH'], 'Phương thức thanh toán không hợp lệ'),
   expectedTotal: expectedTotalSchema,
   idempotencyKey: idempotencyKeySchema,
 });
