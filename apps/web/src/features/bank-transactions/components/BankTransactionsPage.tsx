@@ -22,6 +22,7 @@ import { DATE_FORMAT, formatDayLabel, nowVN } from '~/lib/time';
 import { useBankTransactions, useReconciliation } from '../hooks/useBankTransactions';
 import { BANK_TX_STATUS_TAG, INVOICE_PURPOSE_LABEL } from '../types';
 import { IgnoreModal, ResolveModal } from './ResolveModals';
+import { TransferIssue, TransferPayer } from './TransferOrigin';
 
 type StatusFilter = BankTransactionStatus | 'ALL';
 
@@ -85,29 +86,34 @@ function TransactionsTab() {
       ),
     },
     {
+      title: 'Người chuyển',
+      key: 'payer',
+      render: (_, transaction) => <TransferPayer transaction={transaction} />,
+    },
+    {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      render: (value: BankTransactionStatus) => (
-        <Tag color={BANK_TX_STATUS_TAG[value].color} className="!m-0">
-          {BANK_TX_STATUS_TAG[value].label}
-        </Tag>
-      ),
+      key: 'status',
+      render: (_, transaction) =>
+        transaction.issue ? (
+          <TransferIssue transaction={transaction} />
+        ) : (
+          <Tag color={BANK_TX_STATUS_TAG[transaction.status].color} className="!m-0">
+            {BANK_TX_STATUS_TAG[transaction.status].label}
+          </Tag>
+        ),
     },
     {
       title: 'Xử lý',
       key: 'handled',
       render: (_, transaction) => {
-        const { invoice } = transaction;
-        const member = invoice?.account ?? transaction.resolvedAccount;
-        if (!member && !invoice && !transaction.note) return <span className="text-sc-muted-2">—</span>;
+        const { invoice, resolvedAccount } = transaction;
+        if (!invoice && !resolvedAccount && !transaction.note) return <span className="text-sc-muted-2">—</span>;
         return (
           <div className="flex min-w-36 flex-col gap-0.5 text-[14.5px]">
-            {member ? (
-              <span className="font-medium">{member.fullName}</span>
-            ) : (
-              invoice && <span className="font-medium">Khách vãng lai</span>
+            {invoice && (
+              <span className="font-medium">Đã trả {INVOICE_PURPOSE_LABEL[invoice.purpose].toLowerCase()}</span>
             )}
-            {invoice && <span className="text-[14.5px] text-sc-muted">{INVOICE_PURPOSE_LABEL[invoice.purpose]}</span>}
+            {resolvedAccount && <span className="font-medium">Cộng ví {resolvedAccount.fullName}</span>}
             {transaction.note && <span className="text-sc-muted [overflow-wrap:anywhere]">{transaction.note}</span>}
             {transaction.handledBy && (
               <span className="text-[14.5px] text-sc-muted-2">
@@ -191,7 +197,7 @@ function TransactionsTab() {
         emptyTitle={status === 'UNMATCHED' ? 'Không còn giao dịch chưa khớp' : 'Không có giao dịch phù hợp'}
         emptyDescription={status === 'UNMATCHED' ? 'Mọi giao dịch tiền vào đều đã được xử lý.' : undefined}
       />
-      <ResolveModal transaction={resolving} onClose={() => setResolving(null)} />
+      <ResolveModal key={resolving?.id} transaction={resolving} onClose={() => setResolving(null)} />
       <IgnoreModal transaction={ignoring} onClose={() => setIgnoring(null)} />
     </>
   );

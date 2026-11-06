@@ -14,7 +14,7 @@ import { HTTP_STATUS } from '~/constants/httpStatus';
 import type { Prisma } from '~/generated/prisma/client';
 import { fromSepayApi, toBankTransactionResponse } from '~/mappers/bankTransaction.mapper';
 import accountRepository from '~/repositories/account.repository';
-import bankTransactionRepository from '~/repositories/bankTransaction.repository';
+import bankTransactionRepository, { type BankTransactionRow } from '~/repositories/bankTransaction.repository';
 import invoiceRepository from '~/repositories/invoice.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import auditService from '~/services/audit.service';
@@ -112,12 +112,19 @@ class BankTransactionService {
 
         const managerIds = await accountRepository.findActiveManagerIds(tx);
         const amount = input.amount.toLocaleString('vi-VN');
+        const reason =
+          settled?.note ??
+          (invoice?.status === 'PAID'
+            ? `hóa đơn ${paymentCode} đã được thanh toán trước đó, có thể khách chuyển trùng`
+            : invoice && Number(invoice.amount) !== input.amount
+              ? `khác số tiền hóa đơn ${paymentCode} là ${Number(invoice.amount).toLocaleString('vi-VN')}đ`
+              : undefined);
         const managerNotifications = await notificationService.create(
           managerIds.map((accountId) => ({
             accountId,
             type: 'PAYMENT' as const,
             title: 'Giao dịch ngân hàng chưa khớp',
-            message: `Giao dịch ${amount}đ với nội dung "${input.content}" ${settled?.note ? `chưa khớp (${settled.note})` : 'chưa khớp hóa đơn nào'}, cần đối soát.`,
+            message: `Giao dịch ${amount}đ với nội dung "${input.content}" ${reason ? `chưa khớp (${reason})` : 'chưa khớp hóa đơn nào'}, cần đối soát.`,
             referenceType: 'BANK_TRANSACTION',
             referenceId: id,
             dedupKey: `bank-unmatched:${id}:${accountId}`,
@@ -169,7 +176,15 @@ class BankTransactionService {
 
   list = async (query: ListBankTransactionsQuery) => {
     const [rows, total] = await bankTransactionRepository.findPage(query);
-    return toPage(rows.map(toBankTransactionResponse), total, query);
+    return toPage(await this.withCodeInvoices(rows), total, query);
+  };
+
+  /** Pairs each transfer with the invoice its payment code points to (who meant to pay, and whether it was paid already). */
+  private withCodeInvoices = async (rows: BankTransactionRow[]) => {
+    const codes = [...new Set(rows.flatMap(({ paymentCode }) => (paymentCode ? [paymentCode] : [])))];
+    const invoices = await bankTransactionRepository.findInvoicesByCodes(codes);
+    const byCode = new Map(invoices.map((invoice) => [invoice.paymentCode, invoice]));
+    return rows.map((row) => toBankTransactionResponse(row, (row.paymentCode && byCode.get(row.paymentCode)) || null));
   };
 
   resolve = async (managerId: string, id: string, body: ResolveBankTransactionBody, ip?: string) => {
@@ -247,7 +262,7 @@ class BankTransactionService {
       }),
     );
     notificationService.sendEmailsAfterCommit(notifications);
-    return toBankTransactionResponse(row);
+    return (await this.withCodeInvoices([row]))[0]!;
   };
 
   ignore = async (managerId: string, id: string, body: IgnoreBankTransactionBody, ip?: string) => {
@@ -276,7 +291,7 @@ class BankTransactionService {
       );
       return updated;
     });
-    return toBankTransactionResponse(row);
+    return (await this.withCodeInvoices([row]))[0]!;
   };
 
   reconcile = async ({ from, to }: ReconciliationQuery): Promise<{ days: ReconciliationDay[] }> => {

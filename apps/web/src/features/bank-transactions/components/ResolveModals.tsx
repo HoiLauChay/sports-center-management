@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { useIgnoreBankTransaction, useResolveBankTransaction } from '../hooks/useBankTransactions';
+import { TransferIssue, TransferPayer } from './TransferOrigin';
 
 function Summary({ transaction }: { transaction: BankTransaction }) {
   return (
@@ -14,9 +15,23 @@ function Summary({ transaction }: { transaction: BankTransaction }) {
       </div>
       <div className="mt-1 [overflow-wrap:anywhere]">{transaction.content}</div>
       <div className="text-sc-muted-2">Mã tham chiếu: {transaction.referenceCode ?? '—'}</div>
+      {transaction.issue && (
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3 border-t border-sc-border pt-3">
+          <TransferPayer transaction={transaction} />
+          <TransferIssue transaction={transaction} />
+        </div>
+      )}
     </div>
   );
 }
+
+const draftNote = (transaction: BankTransaction | null) => {
+  if (!transaction?.codeInvoice?.account) return '';
+  const code = transaction.paymentCode;
+  if (transaction.issue === 'ALREADY_PAID') return `Khách chuyển trùng hóa đơn ${code}, cộng lại vào ví`;
+  if (transaction.issue === 'AMOUNT_MISMATCH') return `Chuyển khác số tiền hóa đơn ${code}, cộng vào ví`;
+  return `Tiền về sau khi hóa đơn ${code} đã đóng, cộng vào ví`;
+};
 
 interface ModalProps {
   transaction: BankTransaction | null;
@@ -26,9 +41,13 @@ interface ModalProps {
 /** Assign an unmatched transaction to a member: the exact amount is credited to their wallet. */
 export function ResolveModal({ transaction, onClose }: ModalProps) {
   const resolve = useResolveBankTransaction();
-  const [accountId, setAccountId] = useState<string>();
-  const [note, setNote] = useState('');
+  // The payment code tells who meant to pay: start from that member and a drafted note; the manager can change both.
+  // The page remounts this modal per transaction (`key`), so these defaults follow the row being handled.
+  const [accountId, setAccountId] = useState(transaction?.codeInvoice?.account?.id);
+  const [note, setNote] = useState(() => draftNote(transaction));
   const [touched, setTouched] = useState(false);
+
+  const guest = Boolean(transaction?.codeInvoice && !transaction.codeInvoice.account);
 
   const noteError = touched && !note.trim() ? 'Vui lòng nhập ghi chú đối soát' : undefined;
   const memberError = touched && !accountId ? 'Vui lòng chọn thành viên' : undefined;
@@ -59,9 +78,20 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
       destroyOnHidden
     >
       {transaction && <Summary transaction={transaction} />}
+      {guest && (
+        <p className="m-0 mb-4 rounded-lg bg-sc-accent-soft px-3 py-2 text-[14.5px] text-sc-ink-2">
+          Người chuyển là khách vãng lai, không có ví. Liên hệ khách theo số điện thoại để hoàn tiền, rồi bấm Bỏ qua và
+          ghi lại cách đã xử lý.
+        </p>
+      )}
       <Form layout="vertical" requiredMark={false}>
         <Form.Item label="Thành viên nhận tiền" validateStatus={memberError ? 'error' : undefined} help={memberError}>
-          <MemberSelect value={accountId} status={memberError ? 'error' : undefined} onChange={setAccountId} />
+          <MemberSelect
+            value={accountId}
+            initial={transaction?.codeInvoice?.account ? [transaction.codeInvoice.account] : undefined}
+            status={memberError ? 'error' : undefined}
+            onChange={setAccountId}
+          />
         </Form.Item>
         <Form.Item
           label="Ghi chú đối soát"
