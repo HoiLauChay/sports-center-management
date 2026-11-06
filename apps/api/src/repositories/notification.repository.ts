@@ -24,7 +24,14 @@ class NotificationRepository {
   findPendingEmails = (where: Prisma.NotificationWhereInput, take: number) =>
     prisma.notification.findMany({
       where: { ...where, sendEmail: true, emailSentAt: null },
-      select: { id: true, title: true, message: true, account: { select: { email: true, fullName: true } } },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        message: true,
+        createdAt: true,
+        account: { select: { email: true, fullName: true } },
+      },
       orderBy: { createdAt: 'asc' },
       take,
     });

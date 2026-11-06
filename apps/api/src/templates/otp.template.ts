@@ -1,5 +1,6 @@
 import { AUTH } from '~/constants/auth';
 import type { OtpPurpose } from '~/generated/prisma/client';
+import { renderEmail } from '~/templates/email/layout';
 
 export type CodePurpose = Exclude<OtpPurpose, 'ACCOUNT_ACTIVATION'>;
 
@@ -9,21 +10,28 @@ const TITLES: Record<CodePurpose, string> = {
   ACCOUNT_SETUP: 'Mã xác nhận đặt mật khẩu tài khoản',
 };
 
+const INTROS: Record<CodePurpose, string> = {
+  REGISTER: 'Cảm ơn bạn đã đăng ký tài khoản Sports Center. Nhập mã dưới đây để xác nhận email và hoàn tất đăng ký.',
+  PASSWORD_RESET:
+    'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản Sports Center gắn với email này. Nhập mã dưới đây để tiếp tục.',
+  ACCOUNT_SETUP: 'Nhập mã dưới đây để đặt mật khẩu và bắt đầu dùng tài khoản Sports Center của bạn.',
+};
+
 export const otpTemplate = (purpose: CodePurpose, code: string) => {
   const minutes = AUTH.OTP_TTL / 60;
   const title = TITLES[purpose];
 
-  return {
+  return renderEmail({
     subject: `[Sports Center] ${title}`,
-    text: `${title}: ${code}. Mã có hiệu lực trong ${minutes} phút. Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">
-        <h2 style="margin:0 0 16px">${title}</h2>
-        <p>Mã xác nhận của bạn là:</p>
-        <p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:16px 0">${code}</p>
-        <p>Mã có hiệu lực trong <strong>${minutes} phút</strong>.</p>
-        <p style="color:#666;font-size:13px">Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.</p>
-      </div>
-    `,
-  };
+    preheader: `Mã ${code} có hiệu lực trong ${minutes} phút. Không chia sẻ mã này với bất kỳ ai.`,
+    eyebrow: 'Bảo mật tài khoản',
+    title,
+    paragraphs: [INTROS[purpose]],
+    code,
+    details: [{ label: 'Hiệu lực', value: `${minutes} phút` }],
+    notes: [
+      'Sports Center không bao giờ hỏi mã này qua điện thoại hay tin nhắn. Đừng chia sẻ mã với bất kỳ ai.',
+      'Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email. Tài khoản của bạn vẫn an toàn.',
+    ],
+  });
 };

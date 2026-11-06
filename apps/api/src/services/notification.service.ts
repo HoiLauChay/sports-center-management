@@ -77,9 +77,9 @@ class NotificationService {
       const batch = pending.slice(i, i + NOTIFICATION.EMAIL_BATCH_SIZE);
       try {
         await mailService.sendBatch(
-          batch.map(({ title, message, account }) => ({
+          batch.map(({ account, ...notification }) => ({
             to: account.email,
-            ...notificationTemplate(account.fullName, title, message),
+            ...notificationTemplate(account.fullName, notification),
           })),
         );
         await notificationRepository.markEmailSent(batch.map(({ id }) => id));

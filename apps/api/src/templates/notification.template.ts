@@ -1,13 +1,49 @@
-import { escapeHtml } from '~/utils/html';
+import { appUrl } from '~/configs/env';
+import type { NotificationType } from '~/generated/prisma/client';
+import { MONEY, renderEmail } from '~/templates/email/layout';
+import { formatCenterDateTime } from '~/utils/time';
 
-export const notificationTemplate = (fullName: string, title: string, message: string) => ({
-  subject: `[Sports Center] ${title}`,
-  text: `Xin chào ${fullName},\n\n${message}`,
-  html: `
-      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">
-        <h2 style="margin:0 0 16px">${escapeHtml(title)}</h2>
-        <p>Xin chào <strong>${escapeHtml(fullName)}</strong>,</p>
-        <p style="white-space:pre-line">${escapeHtml(message)}</p>
-      </div>
-    `,
-});
+const TYPE_LABELS: Record<NotificationType, string> = {
+  PAYMENT: 'Thanh toán',
+  MEMBERSHIP: 'Gói thành viên',
+  BOOKING: 'Đặt sân',
+  CLASS: 'Lớp học',
+  TRAINING: 'Huấn luyện',
+  SUPPORT: 'Hỗ trợ',
+  SYSTEM: 'Hệ thống',
+};
+
+export interface NotificationEmail {
+  type: NotificationType;
+  title: string;
+  message: string;
+  createdAt: Date;
+}
+
+const PREHEADER_LENGTH = 140;
+
+const preheaderOf = (message: string) => {
+  const flat = message.replace(/\s+/g, ' ').trim();
+  return flat.length > PREHEADER_LENGTH ? `${flat.slice(0, PREHEADER_LENGTH - 1)}…` : flat;
+};
+
+// Messages are free text; surface the amount as its own row only when there is exactly one, so it is unambiguous.
+const detailsOf = (message: string, createdAt: Date) => {
+  const amounts = message.match(MONEY) ?? [];
+  return [
+    ...(amounts.length === 1 ? [{ label: 'Số tiền', value: amounts[0]! }] : []),
+    { label: 'Thời gian', value: formatCenterDateTime(createdAt) },
+  ];
+};
+
+export const notificationTemplate = (fullName: string, { type, title, message, createdAt }: NotificationEmail) =>
+  renderEmail({
+    subject: `[Sports Center] ${title}`,
+    preheader: preheaderOf(message),
+    eyebrow: TYPE_LABELS[type],
+    title,
+    greeting: `Xin chào ${fullName},`,
+    paragraphs: [message],
+    details: detailsOf(message, createdAt),
+    action: { label: 'Xem trong ứng dụng', url: `${appUrl}/notifications` },
+  });
