@@ -1,6 +1,8 @@
 import type { BankTransactionStatus, InvoicePurpose } from '../constants/enums';
 import type { Person } from './audit';
 
+export type PaymentCodeOwner = Person & { email: string; phone: string | null };
+
 export interface BankTransaction {
   id: string;
   sepayId: number | null;
@@ -13,6 +15,7 @@ export interface BankTransaction {
   transactionDate: string;
   status: BankTransactionStatus;
   invoice: { id: string; purpose: InvoicePurpose; account: Person | null } | null;
+  codeOwner: PaymentCodeOwner | null;
   resolvedAccount: Person | null;
   handledBy: Person | null;
   handledAt: string | null;

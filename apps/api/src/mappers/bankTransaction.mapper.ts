@@ -1,4 +1,4 @@
-import type { BankTransaction, SepayWebhookBody } from '@sports-center/shared';
+import type { BankTransaction, PaymentCodeOwner, SepayWebhookBody } from '@sports-center/shared';
 
 import type { Prisma } from '~/generated/prisma/client';
 import type { BankTransactionRow } from '~/repositories/bankTransaction.repository';
@@ -29,7 +29,10 @@ export const fromSepayApi = (row: SepayTransaction): IncomingBankTransaction => 
   rawPayload: row as unknown as Prisma.InputJsonObject,
 });
 
-export const toBankTransactionResponse = (row: BankTransactionRow): BankTransaction => ({
+export const toBankTransactionResponse = (
+  row: BankTransactionRow,
+  owners: Map<string, PaymentCodeOwner> = new Map(),
+): BankTransaction => ({
   id: row.id,
   sepayId: row.sepayId === null ? null : Number(row.sepayId),
   bankName: row.bankName,
@@ -43,6 +46,7 @@ export const toBankTransactionResponse = (row: BankTransactionRow): BankTransact
   invoice: row.invoice
     ? { id: row.invoice.id, purpose: row.invoice.purpose, account: row.invoice.account?.account ?? null }
     : null,
+  codeOwner: row.paymentCode ? (owners.get(row.paymentCode) ?? null) : null,
   resolvedAccount: row.resolvedAccount?.account ?? null,
   handledBy: row.handledBy,
   handledAt: row.handledAt?.toISOString() ?? null,

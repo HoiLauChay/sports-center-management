@@ -38,6 +38,19 @@ class InvoiceRepository {
       select: { id: true, purpose: true, accountId: true, amount: true, status: true },
     });
 
+  findOwnersByPaymentCodes = async (paymentCodes: string[]) =>
+    new Map(
+      (
+        await prisma.invoice.findMany({
+          where: { paymentCode: { in: paymentCodes }, accountId: { not: null } },
+          select: {
+            paymentCode: true,
+            account: { select: { account: { select: { id: true, fullName: true, email: true, phone: true } } } },
+          },
+        })
+      ).map(({ paymentCode, account }) => [paymentCode, account!.account]),
+    );
+
   markPaid = (id: string, bankTransactionId: string, tx: Prisma.TransactionClient, orderId?: string) =>
     tx.invoice.update({
       where: { id },

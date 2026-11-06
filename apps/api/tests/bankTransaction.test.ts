@@ -136,6 +136,32 @@ describe('bank transactions', () => {
     expect(list.items.map(({ id }) => id)).toEqual([first.id]);
   });
 
+  test('an unmatched transfer names the member whose invoice issued its payment code', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await prisma.invoice.create({
+      data: {
+        purpose: 'WALLET_TOP_UP',
+        accountId: member.id,
+        createdById: member.id,
+        paymentCode: 'HLCOWNER001',
+        amount: 100_000,
+        status: 'EXPIRED',
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+    const coded = await prisma.bankTransaction.update({
+      where: { id: (await unmatched('REF-CODED')).id },
+      data: { paymentCode: 'HLCOWNER001', content: 'HLCOWNER001 nap vi' },
+    });
+    const plain = await unmatched('REF-PLAIN');
+
+    const list = await readResult<{ items: BankTransaction[] }>(await request('GET', '?status=UNMATCHED', manager));
+    const byId = new Map(list.items.map((item) => [item.id, item]));
+    expect(byId.get(coded.id)?.codeOwner).toMatchObject({ id: member.id, email: 'member@example.com' });
+    expect(byId.get(plain.id)?.codeOwner).toBeNull();
+  });
+
   test('sync adds transfers the webhook missed, matches them like the webhook and never credits twice', async () => {
     const member = await createAccount('MEMBER', 'member@example.com');
     await prisma.invoice.create({

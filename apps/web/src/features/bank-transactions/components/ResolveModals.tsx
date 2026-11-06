@@ -26,15 +26,17 @@ interface ModalProps {
 /** Assign an unmatched transaction to a member: the exact amount is credited to their wallet. */
 export function ResolveModal({ transaction, onClose }: ModalProps) {
   const resolve = useResolveBankTransaction();
-  const [accountId, setAccountId] = useState<string>();
+  const [chosenId, setChosenId] = useState<string | null>();
   const [note, setNote] = useState('');
   const [touched, setTouched] = useState(false);
+  const owner = transaction?.codeOwner ?? null;
+  const accountId = chosenId === undefined ? owner?.id : (chosenId ?? undefined);
 
   const noteError = touched && !note.trim() ? 'Vui lòng nhập ghi chú đối soát' : undefined;
   const memberError = touched && !accountId ? 'Vui lòng chọn thành viên' : undefined;
 
   const close = () => {
-    setAccountId(undefined);
+    setChosenId(undefined);
     setNote('');
     setTouched(false);
     onClose();
@@ -61,7 +63,12 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
       {transaction && <Summary transaction={transaction} />}
       <Form layout="vertical" requiredMark={false}>
         <Form.Item label="Thành viên nhận tiền" validateStatus={memberError ? 'error' : undefined} help={memberError}>
-          <MemberSelect value={accountId} status={memberError ? 'error' : undefined} onChange={setAccountId} />
+          <MemberSelect
+            value={accountId}
+            initial={owner ? [owner] : []}
+            status={memberError ? 'error' : undefined}
+            onChange={(id) => setChosenId(id ?? null)}
+          />
         </Form.Item>
         <Form.Item
           label="Ghi chú đối soát"

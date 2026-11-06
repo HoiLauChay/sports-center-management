@@ -6,10 +6,12 @@ import { Highlight } from '~/components/ui/Highlight';
 import { usersService } from '~/features/users/services/users.service';
 import { useDebounce } from '~/hooks/useDebounce';
 
+type MemberOption = Pick<AccountSummary, 'id' | 'fullName' | 'email' | 'phone'>;
+
 interface MemberSelectProps extends Pick<SelectProps, 'placeholder' | 'status' | 'disabled' | 'className' | 'style'> {
   value?: string | null;
-  onChange?: (memberId: string | undefined, member: AccountSummary | undefined) => void;
-  initial?: AccountSummary[];
+  onChange?: (memberId: string | undefined, member: MemberOption | undefined) => void;
+  initial?: MemberOption[];
 }
 
 /** Server-side searchable member picker (name / email / phone). */
@@ -28,7 +30,7 @@ export function MemberSelect({
     staleTime: 15_000,
   });
 
-  const options = new Map<string, AccountSummary>();
+  const options = new Map<string, MemberOption>();
   for (const member of initial) options.set(member.id, member);
   for (const member of members.data?.items ?? []) options.set(member.id, member);
 

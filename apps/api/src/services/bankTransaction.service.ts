@@ -169,7 +169,13 @@ class BankTransactionService {
 
   list = async (query: ListBankTransactionsQuery) => {
     const [rows, total] = await bankTransactionRepository.findPage(query);
-    return toPage(rows.map(toBankTransactionResponse), total, query);
+    const codes = rows.flatMap(({ paymentCode }) => (paymentCode ? [paymentCode] : []));
+    const owners = codes.length > 0 ? await invoiceRepository.findOwnersByPaymentCodes(codes) : new Map();
+    return toPage(
+      rows.map((row) => toBankTransactionResponse(row, owners)),
+      total,
+      query,
+    );
   };
 
   resolve = async (managerId: string, id: string, body: ResolveBankTransactionBody, ip?: string) => {
