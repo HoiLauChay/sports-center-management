@@ -28,6 +28,21 @@ const bankTransactionSelect = {
 
 export type BankTransactionRow = Prisma.BankTransactionGetPayload<{ select: typeof bankTransactionSelect }>;
 
+const codeInvoiceSelect = {
+  id: true,
+  paymentCode: true,
+  purpose: true,
+  status: true,
+  amount: true,
+  guestName: true,
+  guestPhone: true,
+  createdAt: true,
+  account: { select: { account: { select: { id: true, fullName: true, phone: true } } } },
+  bankTransaction: { select: { id: true, transactionDate: true, amount: true, referenceCode: true } },
+} satisfies Prisma.InvoiceSelect;
+
+export type CodeInvoiceRow = Prisma.InvoiceGetPayload<{ select: typeof codeInvoiceSelect }>;
+
 const dayRange = (from?: string, to?: string): Prisma.DateTimeFilter | undefined =>
   from || to
     ? { ...(from && { gte: toCenterDateTime(from, 0) }), ...(to && { lt: toCenterDateTime(to, 24 * 60) }) }
@@ -90,6 +105,12 @@ class BankTransactionRepository {
     );
     return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
   };
+
+  /** The invoices that the payment codes of these transfers point to. */
+  findInvoicesByCodes = (codes: string[], tx: Prisma.TransactionClient = prisma) =>
+    codes.length
+      ? tx.invoice.findMany({ where: { paymentCode: { in: codes } }, select: codeInvoiceSelect })
+      : Promise.resolve([]);
 
   findForReconciliation = (accountNumber: string, from: string, to: string) =>
     prisma.bankTransaction.findMany({

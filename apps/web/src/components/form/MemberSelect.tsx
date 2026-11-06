@@ -6,10 +6,14 @@ import { Highlight } from '~/components/ui/Highlight';
 import { usersService } from '~/features/users/services/users.service';
 import { useDebounce } from '~/hooks/useDebounce';
 
+/** What the picker needs to label a member; a search result carries the email too. */
+type MemberOption = Pick<AccountSummary, 'id' | 'fullName' | 'phone'> & { email?: string };
+
 interface MemberSelectProps extends Pick<SelectProps, 'placeholder' | 'status' | 'disabled' | 'className' | 'style'> {
   value?: string | null;
-  onChange?: (memberId: string | undefined, member: AccountSummary | undefined) => void;
-  initial?: AccountSummary[];
+  onChange?: (memberId: string | undefined, member: MemberOption | undefined) => void;
+  /** Members to label before any search, e.g. the one already picked. */
+  initial?: MemberOption[];
 }
 
 /** Server-side searchable member picker (name / email / phone). */
@@ -28,7 +32,7 @@ export function MemberSelect({
     staleTime: 15_000,
   });
 
-  const options = new Map<string, AccountSummary>();
+  const options = new Map<string, MemberOption>();
   for (const member of initial) options.set(member.id, member);
   for (const member of members.data?.items ?? []) options.set(member.id, member);
 
@@ -55,8 +59,12 @@ export function MemberSelect({
             ) : (
               ''
             )}
-            {' · '}
-            <Highlight keyword={q}>{member.email}</Highlight>
+            {member.email && (
+              <>
+                {' · '}
+                <Highlight keyword={q}>{member.email}</Highlight>
+              </>
+            )}
           </span>
         ),
       }))}

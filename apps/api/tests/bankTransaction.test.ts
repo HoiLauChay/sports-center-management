@@ -189,6 +189,53 @@ describe('bank transactions', () => {
     expect(await expectWalletConsistent(member.id)).toBe(200_000);
   });
 
+  test('a second transfer for a paid invoice is listed as a duplicate with who meant to pay', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const member = await createAccount('MEMBER', 'member@example.com');
+    await prisma.invoice.create({
+      data: {
+        purpose: 'WALLET_TOP_UP',
+        accountId: member.id,
+        createdById: member.id,
+        paymentCode: 'HLCDUP00001',
+        amount: 200_000,
+        expiresAt: new Date(Date.now() + 15 * 60_000),
+      },
+    });
+    const transfer = (referenceCode: string, amount: number) =>
+      bankTransactionService.ingest({
+        sepayId: null,
+        bankName: 'MBBank',
+        accountNumber: ACCOUNT,
+        amount,
+        content: 'nap vi HLCDUP00001',
+        referenceCode,
+        transactionDate: new Date(),
+        rawPayload: {},
+      });
+
+    expect(await transfer('REF-DUP-1', 200_000)).toBe('MATCHED');
+    expect(await transfer('REF-DUP-2', 200_000)).toBe('UNMATCHED');
+    expect(await expectWalletConsistent(member.id)).toBe(200_000);
+
+    const list = await readResult<{ items: BankTransaction[] }>(await request('GET', '?status=UNMATCHED', manager));
+    const first = await prisma.bankTransaction.findFirstOrThrow({ where: { referenceCode: 'REF-DUP-1' } });
+    expect(list.items).toHaveLength(1);
+    expect(list.items[0]).toMatchObject({
+      referenceCode: 'REF-DUP-2',
+      issue: 'ALREADY_PAID',
+      codeInvoice: {
+        status: 'PAID',
+        amount: 200_000,
+        account: { id: member.id, fullName: member.fullName },
+        paidBy: { id: first.id, referenceCode: 'REF-DUP-1' },
+      },
+    });
+
+    const all = await readResult<{ items: BankTransaction[] }>(await request('GET', '', manager));
+    expect(all.items.find(({ id }) => id === first.id)).toMatchObject({ issue: null, codeInvoice: { paidBy: null } });
+  });
+
   test('reconciliation compares SePay and the system per day and reports missing references', async () => {
     const manager = await createAccount('MANAGER', 'manager@example.com');
     await unmatched('REF-1');
