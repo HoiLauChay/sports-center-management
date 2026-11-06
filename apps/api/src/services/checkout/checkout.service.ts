@@ -135,8 +135,11 @@ const prepareLocked = async (
   return { ctx, prepared };
 };
 
-const assertPaymentMethod = (actor: Actor, method: CheckoutBody['paymentMethod']) => {
-  const allowed = actor.role === 'MEMBER' ? method === 'WALLET' : method !== 'WALLET';
+/** Members pay from their wallet; the counter takes cash, or the wallet of a member buyer (a guest has none). */
+const assertPaymentMethod = (actor: Actor, body: CheckoutBody) => {
+  const method = body.paymentMethod;
+  const memberBuyer = Boolean(body.buyer && 'accountId' in body.buyer);
+  const allowed = actor.role === 'MEMBER' ? method === 'WALLET' : method !== 'WALLET' || memberBuyer;
   if (allowed) return;
   throw new ErrorWithStatus({
     status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
@@ -145,7 +148,8 @@ const assertPaymentMethod = (actor: Actor, method: CheckoutBody['paymentMethod']
     errors: [
       {
         path: 'body.paymentMethod',
-        message: actor.role === 'MEMBER' ? 'Thành viên chỉ thanh toán bằng ví' : 'Tại quầy chỉ thu tiền mặt hoặc thẻ',
+        message:
+          actor.role === 'MEMBER' ? 'Thành viên chỉ thanh toán bằng ví' : 'Khách vãng lai không có ví để thanh toán',
       },
     ],
   });
@@ -162,7 +166,7 @@ class CheckoutService {
   };
 
   checkout = async (actor: Actor, body: CheckoutBody) => {
-    assertPaymentMethod(actor, body.paymentMethod);
+    assertPaymentMethod(actor, body);
     const { idempotencyKey: clientKey, ...payload } = body;
     const requestHash = hashRequest(payload);
     const key =

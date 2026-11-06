@@ -50,7 +50,7 @@ describe('counter top-up', () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const coach = await createAccount('COACH', 'coach@example.com');
     const locked = await createAccount('MEMBER', 'locked@example.com', { status: 'BANNED' });
-    const body = { amount: 100_000, method: 'CARD', idempotencyKey: 'counter-top-up-2' };
+    const body = { amount: 100_000, method: 'CASH', idempotencyKey: 'counter-top-up-2' };
 
     expect((await request('POST', `/${coach.id}/wallet/top-ups`, receptionist, body)).status).toBe(404);
     expect((await request('POST', `/${locked.id}/wallet/top-ups`, receptionist, body)).status).toBe(404);

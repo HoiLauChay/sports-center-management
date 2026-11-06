@@ -15,7 +15,7 @@ export const createTopUpBodySchema = z.object({
 
 export const counterTopUpBodySchema = z.object({
   amount: z.int('Số tiền phải là số nguyên').min(1, 'Số tiền phải lớn hơn 0').max(MAX_MONEY, 'Số tiền quá lớn'),
-  method: z.enum(['CASH', 'CARD'], 'Phương thức không hợp lệ'),
+  method: z.enum(['CASH'], 'Phương thức không hợp lệ'),
   note: z.string().trim().max(500, 'Ghi chú tối đa 500 ký tự').optional(),
   idempotencyKey: z
     .string('Thiếu khóa chống gửi lặp')
