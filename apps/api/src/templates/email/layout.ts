@@ -19,7 +19,9 @@ const COLOR = {
 } as const;
 
 const FONT_BODY = "'Barlow', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-const FONT_DISPLAY = "'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif";
+// No 'Arial Narrow' fallback: it lacks Vietnamese stacked diacritics (Ả, Ậ…), so clients that strip the web
+// font (Gmail) rendered those letters in a serif font.
+const FONT_DISPLAY = "'Barlow Condensed', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 const FONT_MONO = "'SFMono-Regular', Menlo, Consolas, 'Courier New', monospace";
 
 export interface EmailDetail {
