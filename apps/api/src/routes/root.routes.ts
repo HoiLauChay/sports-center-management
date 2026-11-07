@@ -17,6 +17,7 @@ import facilityRouter from '~/routes/facility.routes';
 import { facilityPackageRouter, myFacilityPackageRouter } from '~/routes/facilityPackage.routes';
 import { invoiceRouter, myInvoiceRouter } from '~/routes/invoice.routes';
 import maintenanceRouter from '~/routes/maintenance.routes';
+import managerAiRouter from '~/routes/managerAi.routes';
 import { myMembershipRouter } from '~/routes/memberMembership.routes';
 import membershipRouter from '~/routes/membership.routes';
 import notificationRouter from '~/routes/notification.routes';
@@ -42,6 +43,7 @@ rootRouter.get('/health', (_req, res) => {
 });
 
 export const apiRoutes: [string, Router][] = [
+  ['/ai', managerAiRouter],
   ['/assistant', assistantRouter],
   ['/audit-logs', auditRouter],
   ['/auth', authRouter],

@@ -23,6 +23,7 @@ import { StatCard } from '~/components/ui/StatCard';
 import { useClassOverview } from '~/features/classes';
 import type { ClassSummary } from '~/features/classes/types';
 import { classStatusTag, weeklyText } from '~/features/classes/utils';
+import { WeeklyDigestCard } from '~/features/manager-ai/components/WeeklyDigestCard';
 import { useOverviewReport, useRevenueReport } from '~/features/reports/hooks/useReports';
 import { periodLabel, REVENUE_SERIES } from '~/features/reports/utils';
 import { useSessionsOn } from '~/features/schedule';
@@ -221,6 +222,8 @@ export function ManagerDashboard() {
           value={data?.ongoingClasses ?? 0}
         />
       </div>
+
+      <WeeklyDigestCard className="mt-4" />
 
       {(pending.length > 0 || unmatched > 0) && (
         <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-solid border-[#ffe58f] bg-[#fffbe6] px-4 py-3 text-[15px]">
