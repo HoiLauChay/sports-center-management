@@ -9,6 +9,7 @@ cronRouter.use(cronAuth);
 cronRouter.post('/class-min-students', cronController.classMinStudents);
 cronRouter.post('/cleanup', cronController.cleanup);
 cronRouter.post('/attendance-defaults', cronController.attendanceDefaults);
+cronRouter.post('/automations', cronController.automations);
 cronRouter.post('/memberships', cronController.memberships);
 cronRouter.post('/reminders', cronController.reminders);
 cronRouter.post('/sepay-sync', cronController.sepaySync);

@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ResponseClient } from '~/rules/response';
 import attendanceJobService from '~/services/attendanceJob.service';
+import automationService from '~/services/automation.service';
 import bankTransactionService from '~/services/bankTransaction.service';
 import classJobService from '~/services/classJob.service';
 import cleanupService from '~/services/cleanup.service';
@@ -12,6 +13,10 @@ import reminderJobService from '~/services/reminderJob.service';
 class CronController {
   attendanceDefaults = async (_req: Request, res: Response) => {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ result: await attendanceJobService.run() }));
+  };
+
+  automations = async (_req: Request, res: Response) => {
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ result: await automationService.run() }));
   };
 
   classMinStudents = async (_req: Request, res: Response) => {

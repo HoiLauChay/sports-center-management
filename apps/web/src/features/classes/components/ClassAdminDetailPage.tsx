@@ -11,6 +11,7 @@ import { MoneyFigure } from '~/components/ui/MoneyFigure';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
+import { ClassReviewPanel, CoachSuggestionsPanel } from '~/features/manager-ai/components/ClassAiPanels';
 import { AnnouncementsTab } from '~/features/training/components/class/AnnouncementsTab';
 import { RosterTab } from '~/features/training/components/class/RosterTab';
 import { useRoster } from '~/features/training/hooks/useClassTraining';
@@ -303,6 +304,9 @@ export function ClassAdminDetailPage() {
           description={item.cancelReason ?? undefined}
         />
       )}
+
+      {item.status === 'PENDING_APPROVAL' && <ClassReviewPanel classId={item.id} className="mb-4" />}
+      {!item.coach && item.status !== 'CANCELLED' && <CoachSuggestionsPanel classId={item.id} className="mb-4" />}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />

@@ -26,6 +26,8 @@ export const reportRangeQuerySchema = reportDateQuerySchema.safeExtend({
 export const reportExportQuerySchema = reportRangeQuerySchema.safeExtend({
   report: z.enum(REPORT_TYPES, 'Loại báo cáo không hợp lệ'),
   format: z.enum(REPORT_EXPORT_FORMATS, 'Định dạng tệp không hợp lệ'),
+  /** Adds the AI commentary as the first table of the file. */
+  insight: z.stringbool('Tùy chọn nhận xét AI không hợp lệ').optional(),
 });
 
 export type ReportDateQuery = z.infer<typeof reportDateQuerySchema>;

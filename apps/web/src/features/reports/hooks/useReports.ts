@@ -61,7 +61,7 @@ export function useReportExport() {
   const { message } = App.useApp();
   const [downloading, setDownloading] = useState<ReportExportFormat | null>(null);
 
-  const exportReport = async (report: ReportType, format: ReportExportFormat, range: ReportRange) => {
+  const exportReport = async (report: ReportType, format: ReportExportFormat, range: ReportRange, insight = false) => {
     try {
       setDownloading(format);
       const blob = await reportsService.exportBlob({
@@ -70,6 +70,7 @@ export function useReportExport() {
         from: range.from,
         to: range.to,
         granularity: range.granularity,
+        ...(insight && { insight: true }),
       });
       const fileName = reportExportFileName(report, format, range);
       saveReportBlob(blob, fileName, format);

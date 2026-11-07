@@ -11,6 +11,7 @@ export * from './coupon';
 export * from './course';
 export * from './facility';
 export * from './maintenance';
+export * from './managerAi';
 export * from './membership';
 export * from './notification';
 export * from './order';

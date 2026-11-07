@@ -2,6 +2,7 @@ import type { AssistantRole } from '@sports-center/shared';
 
 import { COACH_TOOLS } from '~/services/ai/tools/coach';
 import { COMMON_TOOLS } from '~/services/ai/tools/common';
+import { MANAGER_TOOLS } from '~/services/ai/tools/manager';
 import { MEMBER_TOOLS } from '~/services/ai/tools/member';
 import { RECEPTION_TOOLS } from '~/services/ai/tools/reception';
 import type { Tool } from '~/services/ai/tools/toolkit';
@@ -10,6 +11,7 @@ const ROLE_TOOLS: Record<AssistantRole, Tool[]> = {
   MEMBER: MEMBER_TOOLS,
   COACH: COACH_TOOLS,
   RECEPTIONIST: RECEPTION_TOOLS,
+  MANAGER: MANAGER_TOOLS,
 };
 
 /** The only tools offered to, and runnable for, this role. */

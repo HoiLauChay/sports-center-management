@@ -160,7 +160,7 @@ describe('AI assistant chat', () => {
     });
   });
 
-  test('only plain user/model text is accepted from the browser, and only from members', async () => {
+  test('only plain user/model text is accepted from the browser', async () => {
     const f = await setupAttendance();
     const user = { role: 'user', text: 'Xin chào' };
     const bodies = [
@@ -172,8 +172,6 @@ describe('AI assistant chat', () => {
     ];
     for (const body of bodies) expect((await request('POST', '/chat', f.member, body)).status).toBe(422);
 
-    expect((await request('POST', '/chat', f.manager, ask('Xin chào'))).status).toBe(403);
-    expect((await request('GET', '/overview', f.manager)).status).toBe(403);
     expect(chat).not.toHaveBeenCalled();
   });
 });

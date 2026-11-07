@@ -12,6 +12,7 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { MappedTag, type TagMap } from '~/components/ui/MappedTag';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { MaintenanceNoticeModal } from '~/features/manager-ai/components/MaintenanceNoticeModal';
 import { useConfirm } from '~/hooks/useConfirm';
 import { VN_TIMEZONE } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -41,6 +42,7 @@ export function MaintenancePage() {
   const facilities = useQuery(facilitiesQueryOptions);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Maintenance | null>(null);
+  const [announcing, setAnnouncing] = useState<Maintenance | null>(null);
   const [search, setSearch] = useState('');
   const [facilityId, setFacilityId] = useState<string | undefined>();
   const [range, setRange] = useState<DateRange>({});
@@ -119,6 +121,11 @@ export function MaintenancePage() {
                     onClick: () => setEditing(item),
                   },
                   {
+                    key: 'announce',
+                    label: 'Báo hội viên (AI soạn)',
+                    onClick: () => setAnnouncing(item),
+                  },
+                  {
                     key: 'cancel',
                     label: 'Hủy lịch',
                     danger: true,
@@ -134,6 +141,11 @@ export function MaintenancePage() {
                 ]
               : phaseOf(item) === 'ONGOING'
                 ? [
+                    {
+                      key: 'announce',
+                      label: 'Báo hội viên (AI soạn)',
+                      onClick: () => setAnnouncing(item),
+                    },
                     {
                       key: 'complete',
                       label: 'Hoàn thành',
@@ -245,6 +257,11 @@ export function MaintenancePage() {
           />
         )}
       </Card>
+      <MaintenanceNoticeModal
+        key={announcing?.id ?? 'none'}
+        maintenance={announcing}
+        onClose={() => setAnnouncing(null)}
+      />
       <MaintenanceWizard
         open={creating || editing !== null}
         editing={editing}

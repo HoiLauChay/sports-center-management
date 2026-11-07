@@ -23,6 +23,7 @@ import { SectionTitle } from '~/components/ui/SectionTitle';
 import { StatCard } from '~/components/ui/StatCard';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { ORDER_ITEM_TYPE_LABEL, ORDER_ITEM_TYPES } from '~/features/checkout/types';
+import { ReportInsightCard } from '~/features/manager-ai/components/ReportInsightCard';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { todayVN } from '~/lib/time';
@@ -405,6 +406,7 @@ export function ReportsPage() {
         title="Báo cáo"
         description="Theo dõi vận hành, doanh thu, dòng tiền ví, hội viên, công suất sân và chất lượng lớp học."
       />
+      <ReportInsightCard key={`${tab}:${range.from}:${range.to}:${range.granularity}`} report={tab} range={range} />
       <Card>
         <Tabs
           activeKey={tab}

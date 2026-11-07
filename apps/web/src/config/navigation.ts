@@ -132,7 +132,12 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
       ],
     },
-    { items: [{ path: '/admin/settings', label: 'Cấu hình', icon: Settings }] },
+    {
+      items: [
+        { path: '/admin/assistant', label: 'Trợ lý AI', icon: Sparkles },
+        { path: '/admin/settings', label: 'Cấu hình', icon: Settings },
+      ],
+    },
   ],
 };
 
