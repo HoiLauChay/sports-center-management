@@ -1,6 +1,8 @@
 import type { AttendanceStatus, SupportCategory } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
+import type { CreateCouponInput } from '../schemas/coupon';
 import type { Ref } from './api';
+import type { Person } from './audit';
 
 export interface SupportDraft {
   category: SupportCategory;
@@ -16,7 +18,30 @@ export type AssistantAction =
       sessionId: string;
       title: string;
       records: { accountId: string; name: string; status: AttendanceStatus }[];
-    };
+    }
+  /** Manager: approve or reject a class a coach proposed. */
+  | { type: 'CLASS_REVIEW'; classId: string; title: string; decision: 'APPROVE' | 'REJECT'; note: string | null }
+  /** Manager: credit an unmatched transfer to the member it most likely came from. */
+  | {
+      type: 'BANK_MATCH';
+      transactionId: string;
+      title: string;
+      amount: number;
+      account: Person & { phone: string | null };
+      reasons: string[];
+      note: string;
+    }
+  /** Manager: put a coach on a class that has none. */
+  | {
+      type: 'ASSIGN_COACH';
+      classId: string;
+      title: string;
+      coach: Person;
+      registrationId: string | null;
+      reasons: string[];
+    }
+  /** Manager: a discount code for quiet hours, created only when the manager confirms. */
+  | { type: 'CREATE_COUPON'; title: string; reason: string; coupon: CreateCouponInput };
 
 export type AssistantActionType = AssistantAction['type'];
 
@@ -62,4 +87,16 @@ export interface ReceptionAssistantOverview {
   openSupport: number;
 }
 
-export type AssistantOverview = MemberAssistantOverview | CoachAssistantOverview | ReceptionAssistantOverview;
+export interface ManagerAssistantOverview {
+  role: 'MANAGER';
+  revenueToday: number;
+  bookingsToday: number;
+  pendingClasses: number;
+  classesNeedingCoach: number;
+  unmatchedBankTransactions: number;
+  openSupport: number;
+  upcomingMaintenances: number;
+}
+
+export type AssistantOverview =
+  MemberAssistantOverview | CoachAssistantOverview | ReceptionAssistantOverview | ManagerAssistantOverview;

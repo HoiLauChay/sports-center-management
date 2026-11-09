@@ -2,6 +2,7 @@ import type { BankTransaction } from '@sports-center/shared';
 import { Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 import { MemberSelect } from '~/components/form/MemberSelect';
+import { BankMatchSuggestions } from '~/features/manager-ai/components/BankMatchSuggestions';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { useIgnoreBankTransaction, useResolveBankTransaction } from '../hooks/useBankTransactions';
 import { TransferIssue, TransferPayer } from './TransferOrigin';
@@ -46,6 +47,7 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
   const [accountId, setAccountId] = useState(transaction?.codeInvoice?.account?.id);
   const [note, setNote] = useState(() => draftNote(transaction));
   const [touched, setTouched] = useState(false);
+  const [picked, setPicked] = useState<{ id: string; fullName: string; phone: string | null; email?: string }[]>([]);
 
   const guest = Boolean(transaction?.codeInvoice && !transaction.codeInvoice.account);
 
@@ -84,11 +86,24 @@ export function ResolveModal({ transaction, onClose }: ModalProps) {
           ghi lại cách đã xử lý.
         </p>
       )}
+      {transaction && !guest && (
+        <BankMatchSuggestions
+          transactionId={transaction.id}
+          selectedId={accountId}
+          onPick={({ account, reasons }) => {
+            setPicked([
+              { id: account.id, fullName: account.fullName, phone: account.phone, email: account.email ?? undefined },
+            ]);
+            setAccountId(account.id);
+            if (!note.trim()) setNote(`Khớp theo gợi ý: ${reasons.join('; ')}`.slice(0, 500));
+          }}
+        />
+      )}
       <Form layout="vertical" requiredMark={false}>
         <Form.Item label="Thành viên nhận tiền" validateStatus={memberError ? 'error' : undefined} help={memberError}>
           <MemberSelect
             value={accountId}
-            initial={transaction?.codeInvoice?.account ? [transaction.codeInvoice.account] : undefined}
+            initial={[...(transaction?.codeInvoice?.account ? [transaction.codeInvoice.account] : []), ...picked]}
             status={memberError ? 'error' : undefined}
             onChange={setAccountId}
           />

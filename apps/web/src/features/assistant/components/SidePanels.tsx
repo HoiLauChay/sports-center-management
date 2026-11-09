@@ -2,6 +2,7 @@ import type {
   AssistantOverview,
   AssistantQuota,
   CoachAssistantOverview,
+  ManagerAssistantOverview,
   MemberAssistantOverview,
   ReceptionAssistantOverview,
 } from '@sports-center/shared';
@@ -13,6 +14,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Dumbbell,
+  Landmark,
   LayoutGrid,
   LifeBuoy,
   MessageCircle,
@@ -21,9 +23,12 @@ import {
   ShieldCheck,
   Ticket,
   Trash2,
+  UserRoundPlus,
+  Wallet,
+  Wrench,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { formatDate } from '~/lib/format';
+import { formatDate, formatVND } from '~/lib/format';
 import type { Conversation } from '../store/conversations';
 
 const DAY_MS = 86_400_000;
@@ -246,6 +251,75 @@ function ReceptionContent({ overview }: { overview: ReceptionAssistantOverview }
   );
 }
 
+function ManagerContent({ overview }: { overview: ManagerAssistantOverview }) {
+  const todo = [
+    { key: 'pending', count: overview.pendingClasses, main: 'lớp chờ duyệt', to: '/admin/classes' as const },
+    { key: 'coach', count: overview.classesNeedingCoach, main: 'lớp chưa có HLV', to: '/admin/classes' as const },
+    {
+      key: 'bank',
+      count: overview.unmatchedBankTransactions,
+      main: 'giao dịch chưa khớp',
+      to: '/admin/bank-transactions' as const,
+    },
+    { key: 'support', count: overview.openSupport, main: 'yêu cầu hỗ trợ đang mở', to: '/admin/support' as const },
+    {
+      key: 'maintenance',
+      count: overview.upcomingMaintenances,
+      main: 'lịch bảo trì 14 ngày tới',
+      to: '/admin/maintenances' as const,
+    },
+  ].filter(({ count }) => count > 0);
+  return (
+    <>
+      <Grid>
+        <Tile
+          icon={<Wallet size={14} />}
+          tone={TONE.lime}
+          label="Doanh thu hôm nay"
+          value={formatVND(overview.revenueToday)}
+        />
+        <Tile
+          icon={<CalendarCheck size={14} />}
+          tone={TONE.sky}
+          label="Đặt sân hôm nay"
+          value={`${overview.bookingsToday} lượt`}
+        />
+        <Tile
+          icon={<UserRoundPlus size={14} />}
+          tone={TONE.green}
+          label="Lớp chờ duyệt"
+          value={`${overview.pendingClasses} lớp`}
+        />
+        <Tile
+          icon={<Landmark size={14} />}
+          tone={TONE.orange}
+          label="Giao dịch chưa khớp"
+          value={`${overview.unmatchedBankTransactions}`}
+        />
+      </Grid>
+      <div className="px-5 pt-1 pb-4">
+        <div className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold tracking-[0.06em] text-sc-muted uppercase">
+          <Wrench size={14} className="text-sc-primary" />
+          Việc đang chờ
+        </div>
+        {todo.length ? (
+          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {todo.map(({ key, count, main, to }) => (
+              <li key={key}>
+                <Link to={to} className="text-[13.5px] !text-sc-ink hover:!text-sc-primary">
+                  <b>{count}</b> {main}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="m-0 text-[13.5px] text-sc-muted">Không còn việc tồn.</p>
+        )}
+      </div>
+    </>
+  );
+}
+
 function QuotaMeter({ quota }: { quota: AssistantQuota }) {
   const left = Math.max(0, quota.limit - quota.used);
   const ratio = quota.limit ? left / quota.limit : 0;
@@ -296,6 +370,7 @@ const READ_ONLY: Record<AssistantOverview['role'], string> = {
   MEMBER: 'Trợ lý chỉ đọc dữ liệu của bạn. Thanh toán hay đặt chỗ luôn cần bạn bấm xác nhận.',
   COACH: 'Trợ lý chỉ đọc dữ liệu các lớp bạn phụ trách. Điểm danh, chấm điểm, đánh giá vẫn do bạn thực hiện.',
   RECEPTIONIST: 'Trợ lý chỉ đọc dữ liệu. Check-in, bán hàng, nạp ví vẫn làm trên trang quầy.',
+  MANAGER: 'Trợ lý chỉ đọc dữ liệu. Duyệt lớp, ghi nhận giao dịch, phân công HLV hay tạo mã luôn cần bạn bấm xác nhận.',
 };
 
 export function OverviewCard({
@@ -334,6 +409,8 @@ export function OverviewCard({
           <CoachContent overview={overview} />
         ) : overview.role === 'RECEPTIONIST' ? (
           <ReceptionContent overview={overview} />
+        ) : overview.role === 'MANAGER' ? (
+          <ManagerContent overview={overview} />
         ) : (
           <MemberContent overview={overview} />
         )}

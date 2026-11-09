@@ -1,6 +1,7 @@
-import { App, Button, DatePicker, Segmented, Space, Tooltip } from 'antd';
+import { App, Button, Checkbox, DatePicker, Segmented, Space, Tooltip } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { CalendarRange, FileSpreadsheet, FileText, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import { DATE_FORMAT } from '~/lib/time';
 import { useReportExport } from '../hooks/useReports';
 import { GRANULARITIES, GRANULARITY_LABEL, REPORT_TAB_LABEL, type ReportRange, type ReportType } from '../types';
@@ -30,31 +31,39 @@ interface ReportExportActionsProps {
 /** Excel (.xlsx) and PDF (.pdf) download buttons for any manager report tab. */
 export function ReportExportActions({ report, range }: ReportExportActionsProps) {
   const { downloading, isExporting, exportReport } = useReportExport();
+  const [insight, setInsight] = useState(false);
   const label = REPORT_TAB_LABEL[report].toLowerCase();
 
   return (
-    <Space.Compact>
-      <Tooltip title={`Tải báo cáo ${label} dạng bảng tính Excel (.xlsx)`}>
-        <Button
-          icon={<FileSpreadsheet size={16} />}
-          loading={downloading === 'xlsx'}
-          disabled={isExporting && downloading !== 'xlsx'}
-          onClick={() => void exportReport(report, 'xlsx', range)}
-        >
-          Xuất Excel
-        </Button>
+    <Space wrap size={10}>
+      <Tooltip title="Thêm đoạn nhận xét do AI viết vào đầu file">
+        <Checkbox checked={insight} onChange={(event) => setInsight(event.target.checked)}>
+          Kèm nhận xét AI
+        </Checkbox>
       </Tooltip>
-      <Tooltip title={`Tải báo cáo ${label} dạng tài liệu PDF (.pdf)`}>
-        <Button
-          icon={<FileText size={16} />}
-          loading={downloading === 'pdf'}
-          disabled={isExporting && downloading !== 'pdf'}
-          onClick={() => void exportReport(report, 'pdf', range)}
-        >
-          Xuất PDF
-        </Button>
-      </Tooltip>
-    </Space.Compact>
+      <Space.Compact>
+        <Tooltip title={`Tải báo cáo ${label} dạng bảng tính Excel (.xlsx)`}>
+          <Button
+            icon={<FileSpreadsheet size={16} />}
+            loading={downloading === 'xlsx'}
+            disabled={isExporting && downloading !== 'xlsx'}
+            onClick={() => void exportReport(report, 'xlsx', range, insight)}
+          >
+            Xuất Excel
+          </Button>
+        </Tooltip>
+        <Tooltip title={`Tải báo cáo ${label} dạng tài liệu PDF (.pdf)`}>
+          <Button
+            icon={<FileText size={16} />}
+            loading={downloading === 'pdf'}
+            disabled={isExporting && downloading !== 'pdf'}
+            onClick={() => void exportReport(report, 'pdf', range, insight)}
+          >
+            Xuất PDF
+          </Button>
+        </Tooltip>
+      </Space.Compact>
+    </Space>
   );
 }
 

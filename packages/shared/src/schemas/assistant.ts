@@ -5,7 +5,7 @@ export const ASSISTANT_MAX_TEXT = 1000;
 export const ASSISTANT_FREE_QUESTIONS = 10;
 export const ASSISTANT_MAX_ACTIONS = 3;
 
-export const ASSISTANT_ROLES = ['MEMBER', 'COACH', 'RECEPTIONIST'] as const;
+export const ASSISTANT_ROLES = ['MEMBER', 'COACH', 'RECEPTIONIST', 'MANAGER'] as const;
 export type AssistantRole = (typeof ASSISTANT_ROLES)[number];
 
 export const ASSISTANT_LINKS: Record<AssistantRole, readonly string[]> = {
@@ -41,6 +41,23 @@ export const ASSISTANT_LINKS: Record<AssistantRole, readonly string[]> = {
     '/reception/bookings',
     '/reception/orders',
     '/reception/support',
+    '/profile',
+  ],
+  MANAGER: [
+    '/dashboard',
+    '/admin/reports',
+    '/admin/orders',
+    '/admin/bank-transactions',
+    '/admin/users',
+    '/admin/users/:id',
+    '/admin/support',
+    '/admin/classes',
+    '/admin/classes/:id',
+    '/admin/facilities',
+    '/admin/memberships',
+    '/admin/coupons',
+    '/admin/maintenances',
+    '/admin/settings',
     '/profile',
   ],
 };

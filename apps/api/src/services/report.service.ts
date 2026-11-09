@@ -98,6 +98,60 @@ const facilityOccupancy = (facility: FacilityUsage, from: string, to: string, se
   return { available, occupied };
 };
 
+export interface SlotOccupancy {
+  facilityId: string;
+  facility: string;
+  /** 0 is Sunday, as in `Date.getUTCDay`. */
+  weekday: number;
+  start: number;
+  end: number;
+  available: number;
+  occupied: number;
+}
+
+/** Same counting as `facilityOccupancy`, kept per facility, weekday and slot so quiet hours can be found. */
+const slotOccupancy = (facility: FacilityUsage, from: string, to: string, settings: SettingRow) => {
+  const grid = generateSlots(
+    fromDbTime(settings.openTime),
+    fromDbTime(settings.closeTime),
+    settings.slotDurationMinutes,
+  );
+  const cells = new Map<string, SlotOccupancy>();
+  for (let date = from; date <= to; date = addDays(date, 1)) {
+    if (date < todayInCenter(facility.createdAt) || (facility.deletedAt && date > todayInCenter(facility.deletedAt)))
+      continue;
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    const bookings = facility.bookings.filter((row) => formatDate(row.bookingDate) === date);
+    const sessions = facility.sessions.filter((row) => formatDate(row.sessionDate) === date);
+    for (const slot of grid) {
+      const startAt = toCenterDateTime(date, slot.start);
+      const endAt = toCenterDateTime(date, slot.end);
+      if (facility.maintenances.some((row) => row.startAt < endAt && startAt < row.endAt)) continue;
+      const key = `${weekday}:${slot.start}`;
+      let cell = cells.get(key);
+      if (!cell) {
+        cell = {
+          facilityId: facility.id,
+          facility: facility.name,
+          weekday,
+          start: slot.start,
+          end: slot.end,
+          available: 0,
+          occupied: 0,
+        };
+        cells.set(key, cell);
+      }
+      cell.available += facility.capacityPerSlot;
+      const hits = (row: { startTime: Date; endTime: Date }) =>
+        overlaps(slot, { start: fromDbTime(row.startTime), end: fromDbTime(row.endTime) });
+      cell.occupied += sessions.some(hits)
+        ? facility.capacityPerSlot
+        : Math.min(bookings.filter(hits).length, facility.capacityPerSlot);
+    }
+  }
+  return [...cells.values()];
+};
+
 const percentage = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 10_000) / 100 : 0);
 
 class ReportService {
@@ -160,6 +214,17 @@ class ReportService {
       };
     });
     return { utilizationRate: percentage(occupied, available), byFacility };
+  };
+
+  /** Occupancy per facility × weekday × slot over the range, for peak and quiet hours. */
+  occupancyBySlot = async (query: ReportDateQuery): Promise<SlotOccupancy[]> => {
+    const [facilities, settings] = await Promise.all([
+      reportRepository.facilityUsage(query.from, query.to, windowOf(query.from, query.to)),
+      settingRepository.get(),
+    ]);
+    return facilities
+      .filter((facility) => !facility.deletedAt)
+      .flatMap((facility) => slotOccupancy(facility, query.from, query.to, settings));
   };
 
   courses = async (query: ReportDateQuery): Promise<CoursesReport> => {
@@ -271,7 +336,8 @@ class ReportService {
     };
   };
 
-  exportFile = async ({ report, format, ...range }: ReportExportQuery) => {
+  /** `commentary` (the AI insight, when asked for) goes in as the first table of the file. */
+  exportFile = async ({ report, format, insight: _insight, ...range }: ReportExportQuery, commentary?: string) => {
     const tables: Record<ReportExportQuery['report'], () => Promise<ReportTable[]>> = {
       overview: async () => overviewTables(await this.overview()),
       revenue: async () => revenueTables(await this.revenue(range)),
@@ -284,7 +350,10 @@ class ReportService {
     const document = {
       title: `Báo cáo ${REPORT_TITLE[report].toLowerCase()}`,
       period: report === 'overview' ? `Ngày ${today}` : `Từ ${range.from} đến ${range.to}`,
-      tables: await tables[report](),
+      tables: [
+        ...(commentary ? [{ name: 'Nhận xét AI', columns: ['Nhận xét'], rows: [[commentary]] }] : []),
+        ...(await tables[report]()),
+      ],
     };
     const name = `bao-cao-${report}-${report === 'overview' ? today : `${range.from}_${range.to}`}`;
     return format === 'pdf'
