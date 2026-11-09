@@ -13,10 +13,17 @@ interface SportFacilityStepsProps {
   finalLabel: string;
   /** Content of the last step; only rendered once both sport and facility are chosen. */
   children: ReactNode;
+  /** Heading of the sport step; the counter asks about the customer instead of "you". */
+  sportTitle?: string;
 }
 
 /** Bộ môn → Sân / phòng → `finalLabel`: each step shows only what it needs, and finished steps can be reopened. */
-export function SportFacilitySteps({ choice, finalLabel, children }: SportFacilityStepsProps) {
+export function SportFacilitySteps({
+  choice,
+  finalLabel,
+  children,
+  sportTitle = 'Bạn muốn chơi môn gì?',
+}: SportFacilityStepsProps) {
   const { sport, facility, step } = choice;
 
   if (choice.isPending) return <PageLoading />;
@@ -77,7 +84,7 @@ export function SportFacilitySteps({ choice, finalLabel, children }: SportFacili
 
       {step === 0 && (
         <section className="flex flex-col gap-3">
-          <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">Bạn muốn chơi môn gì?</h3>
+          <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">{sportTitle}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {choice.sportOptions.map((entry) => (
               <button
