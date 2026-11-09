@@ -171,7 +171,7 @@ describe('first login', () => {
       users('PATCH', `/${id}/email`, viewer, { email });
     expect((await change('new@example.com', receptionist)).status).toBe(403);
     const self = await change('boss@example.com', manager, manager.id);
-    expect([self.status, await readCode(self)]).toEqual([409, 'INVALID_STATE']);
+    expect([self.status, await readCode(self)]).toEqual([404, 'NOT_FOUND']);
     const taken = await change('taken@example.com');
     expect([taken.status, await readCode(taken)]).toEqual([409, 'EMAIL_TAKEN']);
     const same = await change('lost@example.com');

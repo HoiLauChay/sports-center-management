@@ -88,6 +88,25 @@ describe('user list and detail permissions', () => {
     expect((await readResult<ListResult>(search)).items[0]?.id).toBe(member.id);
   });
 
+  test('a manager neither lists nor manages any manager account, their own included', async () => {
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const other = await createAccount('MANAGER', 'other-manager@example.com');
+    const coach = await createAccount('COACH', 'coach@example.com');
+
+    const listed = await readResult<ListResult>(await getAs('/', manager));
+    expect(listed.items.map(({ id }) => id)).toEqual([coach.id]);
+    expect(await readResult<ListResult>(await getAs('/?role=MANAGER', manager))).toMatchObject({ total: 0 });
+
+    for (const target of [manager, other]) {
+      expect((await getAs(`/${target.id}`, manager)).status).toBe(404);
+      expect((await patchAs(`/${target.id}`, manager, { fullName: 'Đổi tên' })).status).toBe(404);
+      expect((await patchAs(`/${target.id}/email`, manager, { email: 'taken-over@example.com' })).status).toBe(404);
+    }
+    expect((await prisma.account.findUniqueOrThrow({ where: { id: other.id } })).email).toBe(
+      'other-manager@example.com',
+    );
+  });
+
   test('finds a member by name typed without marks or in another case', async () => {
     const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
     const member = await createMember('member@example.com');
@@ -221,7 +240,7 @@ describe('update account status', () => {
     const blocked = await request('GET', '/', member);
     expect(blocked.status).toBe(401);
 
-    expect((await patchAs(`/${manager.id}/status`, manager, { status: 'INACTIVE' })).status).toBe(403);
+    expect((await patchAs(`/${manager.id}/status`, manager, { status: 'INACTIVE' })).status).toBe(404);
   });
 
   test('coach with an in-progress class cannot be deactivated; upcoming classes lose their coach', async () => {
@@ -283,7 +302,7 @@ describe('account roles', () => {
     expect((await prisma.class.findUniqueOrThrow({ where: { id: upcoming.id } })).coachId).toBeNull();
 
     const untouchable = await request('PUT', `/${manager.id}/roles`, manager, { roles: ['MEMBER'] });
-    expect([untouchable.status, await readCode(untouchable)]).toEqual([403, 'FORBIDDEN']);
+    expect([untouchable.status, await readCode(untouchable)]).toEqual([404, 'NOT_FOUND']);
     const escalate = await request('PUT', `/${member.id}/roles`, manager, { roles: ['MANAGER'] });
     expect(escalate.status).toBe(422);
   });
