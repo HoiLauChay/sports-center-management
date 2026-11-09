@@ -4,6 +4,7 @@ import { formatVND } from '~/lib/format';
 import type { CartLine, Quote, QuoteLine } from '../types';
 import { ORDER_ITEM_TYPE_LABEL } from '../types';
 import { describeLine } from '../utils';
+import { QuantityStepper } from './QuantityStepper';
 
 const BENEFIT_LABEL: Record<string, string> = {
   GYM_ACCESS: 'Gym miễn phí theo gói',
@@ -27,6 +28,8 @@ interface QuoteLinesProps {
   /** True while a new quote is on its way (prices shown may be stale). */
   pricing?: boolean;
   onRemove?: (lineKey: string) => void;
+  /** Changes the quantity of a product line; without it quantities are read-only. */
+  onQuantity?: (lineKey: string, quantity: number) => void;
   disabled?: boolean;
 }
 
@@ -48,7 +51,7 @@ function Breakdown({ item }: { item: QuoteLine }) {
   );
 }
 
-export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }: QuoteLinesProps) {
+export function QuoteLines({ lines, quote, pricing = false, onRemove, onQuantity, disabled }: QuoteLinesProps) {
   const aligned = quote?.items.length === lines.length;
   const rows: Row[] = lines.map((line, index) => ({ line, item: aligned ? quote?.items[index] : undefined }));
 
@@ -67,6 +70,15 @@ export function QuoteLines({ lines, quote, pricing = false, onRemove, disabled }
                 <span className="font-semibold [overflow-wrap:anywhere]">{description?.title ?? 'Đang tính giá…'}</span>
               </div>
               {description?.detail && <span className="text-[14.5px] text-sc-muted">{description.detail}</span>}
+              {onQuantity && line.selection.type === 'PRODUCT_SALE' && (
+                <div className="mt-1">
+                  <QuantityStepper
+                    value={line.selection.quantity}
+                    disabled={disabled}
+                    onChange={(quantity) => onQuantity(line.key, quantity)}
+                  />
+                </div>
+              )}
               {benefitLabel(item) && (
                 <span className="text-[14.5px] font-semibold text-sc-success">{benefitLabel(item)}</span>
               )}

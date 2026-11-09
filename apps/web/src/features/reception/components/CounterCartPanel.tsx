@@ -1,7 +1,18 @@
 import { Alert, Button, Skeleton } from 'antd';
-import { CalendarRange, Crown, Dumbbell, LandPlot, ShoppingBag, Ticket, Trash2, type LucideIcon } from 'lucide-react';
+import {
+  CalendarRange,
+  Crown,
+  Dumbbell,
+  LandPlot,
+  Package,
+  ShoppingBag,
+  Ticket,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { CouponInput } from '~/features/checkout/components/CouponInput';
+import { QuantityStepper } from '~/features/checkout/components/QuantityStepper';
 import type { CartLine, OrderItemType, Quote, QuoteLine } from '~/features/checkout/types';
 import { ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
 import { describeLine } from '~/features/checkout/utils';
@@ -12,6 +23,7 @@ const TYPE_ICON: Record<OrderItemType, LucideIcon> = {
   FACILITY_PACKAGE: CalendarRange,
   COURSE_ENROLLMENT: Dumbbell,
   MEMBERSHIP: Crown,
+  PRODUCT_SALE: Package,
 };
 
 const BENEFIT_LABEL: Record<string, string> = {
@@ -26,12 +38,14 @@ function LineCard({
   fresh,
   disabled,
   onRemove,
+  onQuantity,
 }: {
   line: CartLine;
   item: QuoteLine | undefined;
   fresh: boolean;
   disabled?: boolean;
   onRemove: () => void;
+  onQuantity?: (quantity: number) => void;
 }) {
   const Icon = TYPE_ICON[line.selection.type];
   const description = item ? describeLine(item.type, item.snapshot ?? {}) : null;
@@ -62,6 +76,11 @@ function LineCard({
           </>
         ) : (
           <Skeleton active title={false} paragraph={{ rows: 1, width: '70%' }} className="!mt-1" />
+        )}
+        {onQuantity && line.selection.type === 'PRODUCT_SALE' && (
+          <div className="mt-1">
+            <QuantityStepper value={line.selection.quantity} disabled={disabled} onChange={onQuantity} />
+          </div>
         )}
         {benefit && <span className="text-[13.5px] font-semibold text-sc-success">{benefit}</span>}
         {item && !item.valid && (
@@ -113,6 +132,7 @@ interface CounterCartPanelProps {
   pricing: boolean;
   disabled?: boolean;
   onRemove: (lineKey: string) => void;
+  onQuantity?: (lineKey: string, quantity: number) => void;
   /** Coupons are for members only; `undefined` hides the box. */
   coupons?: {
     codes: string[];
@@ -132,6 +152,7 @@ export function CounterCartPanel({
   pricing,
   disabled,
   onRemove,
+  onQuantity,
   coupons,
   children,
 }: CounterCartPanelProps) {
@@ -174,7 +195,7 @@ export function CounterCartPanel({
               <ShoppingBag size={22} />
             </span>
             <b className="text-sc-ink">Đơn đang trống</b>
-            <span className="text-[14.5px] text-sc-muted">Chọn sân, lớp hoặc gói để thêm vào đơn.</span>
+            <span className="text-[14.5px] text-sc-muted">Chọn sân, lớp, gói hoặc sản phẩm để thêm vào đơn.</span>
           </div>
         ) : (
           <>
@@ -188,6 +209,7 @@ export function CounterCartPanel({
                   fresh={line.key === freshKey}
                   disabled={disabled}
                   onRemove={() => onRemove(line.key)}
+                  onQuantity={onQuantity && ((quantity) => onQuantity(line.key, quantity))}
                 />
               ))}
             </ul>

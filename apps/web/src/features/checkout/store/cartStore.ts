@@ -1,3 +1,4 @@
+import { MAX_PRODUCT_QUANTITY } from '@sports-center/shared';
 import type { CartLine, CheckoutItemInput } from '../types';
 import { selectionKey } from '../utils';
 
@@ -92,13 +93,45 @@ export class CartStore {
     };
   };
 
-  /** Adds a service; returns `false` when the very same selection is already in the draft. */
+  /**
+   * Adds a service; returns `false` when the very same selection is already in the draft.
+   * A product already in the draft gets the new quantity added to its line instead.
+   */
   add = (selection: CheckoutItemInput): boolean => {
     const state = this.read();
     const key = selectionKey(selection);
-    if (state.lines.some((line) => selectionKey(line.selection) === key)) return false;
+    const existing = state.lines.find((line) => selectionKey(line.selection) === key);
+    if (existing?.selection.type === 'PRODUCT_SALE' && selection.type === 'PRODUCT_SALE') {
+      this.setQuantity(existing.key, existing.selection.quantity + selection.quantity);
+      return true;
+    }
+    if (existing) return false;
     this.write({ ...state, lines: [...state.lines, { key: crypto.randomUUID(), selection }] });
     return true;
+  };
+
+  /** Changes the quantity of a product line, kept within what one order line allows. */
+  setQuantity = (lineKey: string, quantity: number) => {
+    const state = this.read();
+    const next = Math.min(Math.max(Math.trunc(quantity) || 1, 1), MAX_PRODUCT_QUANTITY);
+    this.write({
+      ...state,
+      lines: state.lines.map((line) =>
+        line.key === lineKey && line.selection.type === 'PRODUCT_SALE'
+          ? { ...line, selection: { ...line.selection, quantity: next } }
+          : line,
+      ),
+    });
+  };
+
+  /** Sets how many of a product the draft holds; 0 takes its line out. */
+  setProductQuantity = (productId: string, quantity: number) => {
+    const line = this.read().lines.find(
+      ({ selection }) => selection.type === 'PRODUCT_SALE' && selection.productId === productId,
+    );
+    if (!line) return;
+    if (quantity <= 0) this.remove(line.key);
+    else this.setQuantity(line.key, quantity);
   };
 
   remove = (lineKey: string) => {

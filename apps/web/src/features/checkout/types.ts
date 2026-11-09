@@ -21,6 +21,7 @@ export const ORDER_ITEM_TYPES = [
   'FACILITY_PACKAGE',
   'COURSE_ENROLLMENT',
   'MEMBERSHIP',
+  'PRODUCT_SALE',
 ] as const satisfies readonly OrderItemType[];
 
 export const ORDER_ITEM_TYPE_LABEL: Record<OrderItemType, string> = {
@@ -28,6 +29,7 @@ export const ORDER_ITEM_TYPE_LABEL: Record<OrderItemType, string> = {
   FACILITY_PACKAGE: 'Gói sân định kỳ',
   COURSE_ENROLLMENT: 'Đăng ký lớp',
   MEMBERSHIP: 'Gói thành viên',
+  PRODUCT_SALE: 'Sản phẩm',
 };
 
 /** One line of the cart that is stored in the browser: the selection plus a stable key. */

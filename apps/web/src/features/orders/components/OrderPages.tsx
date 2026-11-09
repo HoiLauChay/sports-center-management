@@ -27,6 +27,7 @@ const SERVICE_LABEL: Record<OrderService, string> = {
   MEMBERSHIP: 'Gói thành viên',
   BOOKING: 'Đặt sân',
   CLASS: 'Lớp học',
+  SHOP: 'Cửa hàng',
 };
 
 const memberDetail = getRouteApi('/_authenticated/_member/orders/$orderId');

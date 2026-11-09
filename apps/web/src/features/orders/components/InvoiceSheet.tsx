@@ -58,6 +58,8 @@ function timing(type: OrderItemType, snapshot: Record<string, unknown>) {
       };
     case 'MEMBERSHIP':
       return { slots: '1', start: when(snapshot.periodStart), end: when(snapshot.periodEnd) };
+    case 'PRODUCT_SALE':
+      return { slots: asText(snapshot.quantity) || '1', start: '—', end: '—' };
   }
 }
 

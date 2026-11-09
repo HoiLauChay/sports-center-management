@@ -97,6 +97,7 @@ const TYPE_COLOR = {
   FACILITY_BOOKING: '#0f4d34',
   FACILITY_PACKAGE: '#06b6d4',
   COURSE_ENROLLMENT: '#c94a1e',
+  PRODUCT_SALE: '#d97706',
 } as const;
 
 export const REVENUE_SERIES: ChartSeries[] = ORDER_ITEM_TYPES.map((type) => ({

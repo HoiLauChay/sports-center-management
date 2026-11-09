@@ -1,4 +1,4 @@
-import { formatDate } from '~/lib/format';
+import { formatDate, formatVND } from '~/lib/format';
 import { DAY_SHORT, WEEK_ORDER } from '~/lib/time';
 import type { CheckoutItemInput, LineDescription, Order, OrderItemType, Quote } from './types';
 
@@ -63,6 +63,17 @@ export function describeLine(type: OrderItemType, snapshot: Record<string, unkno
           .filter(Boolean)
           .join(' · '),
       };
+    case 'PRODUCT_SALE':
+      return {
+        title: text(snapshot.productName) || 'Sản phẩm',
+        detail: [
+          snapshot.quantity ? `SL ${text(snapshot.quantity)}` : '',
+          typeof snapshot.unitPrice === 'number' ? `${formatVND(snapshot.unitPrice)} / sp` : '',
+          text(snapshot.sku),
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      };
   }
 }
 
@@ -77,6 +88,9 @@ export function selectionKey(selection: CheckoutItemInput): string {
       return `C:${selection.classId}`;
     case 'MEMBERSHIP':
       return `M:${selection.packageId}`;
+    // One line per product: adding it again raises the quantity instead.
+    case 'PRODUCT_SALE':
+      return `S:${selection.productId}`;
   }
 }
 

@@ -207,6 +207,9 @@ function SettingsForm({ settings }: { settings: SystemSettings }) {
               <Col xs={12} md={8}>
                 <NumberInputField control={control} name="invoiceExpiryMinutes" label="Hạn hóa đơn" unit="phút" />
               </Col>
+              <Col xs={12} md={8}>
+                <NumberInputField control={control} name="shopPickupHours" label="Hạn nhận hàng online" unit="giờ" />
+              </Col>
             </Row>
 
             <div className="flex justify-end gap-2 border-t border-sc-border-soft pt-5">

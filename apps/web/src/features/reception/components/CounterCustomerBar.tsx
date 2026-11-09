@@ -166,7 +166,7 @@ export function CounterCustomerBar({
           />
         </>
       ) : (
-        <span className="text-[14.5px] text-sc-muted">Chỉ đặt sân lẻ · không ưu đãi · không mã giảm giá</span>
+        <span className="text-[14.5px] text-sc-muted">Đặt sân lẻ, mua sản phẩm · không ưu đãi · không mã giảm giá</span>
       )}
 
       <div className="ml-auto">
