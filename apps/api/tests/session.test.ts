@@ -192,6 +192,14 @@ describe('substitute coach for one session', () => {
     expect(await scheduleOf(substitute)).toEqual([first.id]);
     expect(await scheduleOf(classCoach)).toEqual([last.id]);
 
+    const student = await createAccount('COACH', 'student-coach@example.com');
+    await prisma.coachSpecialization.create({
+      data: { coachId: student.id, sportId: course.sportId, status: 'APPROVED' },
+    });
+    await enroll(cls.id, student.id);
+    const ownClass = await request('PATCH', `/${last.id}`, manager, { coachId: student.id });
+    expect(ownClass.status).toBe(422);
+
     const busy = await seedOpenClass();
     await prisma.class.update({ where: { id: busy.id }, data: { coachId: substitute.id } });
     const clash = await request('PATCH', `/${last.id}`, manager, { coachId: substitute.id });

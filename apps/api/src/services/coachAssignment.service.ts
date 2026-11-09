@@ -58,8 +58,12 @@ const assertQualifiedAndAvailable = async (current: ClassDetailRow, coachId: str
   const sessions = sessionsOf(current).filter(
     ({ sessionDate, endTime }) => toCenterDateTime(formatDate(sessionDate), fromDbTime(endTime)) > now,
   );
+  if (await enrollmentRepository.hasActive(current.id, coachId, tx)) {
+    throw invalidState('Huấn luyện viên đang là học viên của lớp này nên không thể phụ trách lớp');
+  }
   await scheduleService.assertAvailable(tx, {
     coachId,
+    accountId: coachId,
     ignoreSessionIds: current.sessions.map(({ id }) => id),
     ranges: sessions.map(({ sessionDate, startTime, endTime }) => ({
       date: formatDate(sessionDate),
