@@ -1,12 +1,15 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Alert, App, Button, Card, Popconfirm } from 'antd';
 import { Plus, ShoppingCart } from 'lucide-react';
+import { useMemo } from 'react';
 import { EmptyState } from '~/components/feedback/States';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { WalletCard } from '~/components/ui/WalletCard';
 import { useCurrentUser } from '~/features/auth';
+import { facilitiesQueryOptions, sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
+import { ProductSuggestions } from '~/features/shop/components/ProductSuggestions';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { quoteQueryKey, useMemberCart, useQuote } from '../hooks/useCart';
@@ -28,6 +31,7 @@ export function CartPage() {
   const items = cart.lines.map((line) => line.selection);
   const quoteQuery = useQuote({ user, items, couponCodes: cart.couponCodes });
   const quote = cart.lines.length ? quoteQuery.data : undefined;
+  const bookedSportIds = useBookedSportIds(quote);
 
   const checkout = useCheckout({
     onPaid: (order) => {
@@ -106,9 +110,18 @@ export function CartPage() {
                 quote={quote}
                 pricing={quoteQuery.isFetching && !quote}
                 onRemove={store.remove}
+                onQuantity={store.setQuantity}
                 disabled={checkout.isPaying}
               />
             </Card>
+            {bookedSportIds.length > 0 && (
+              <ProductSuggestions
+                sportIds={bookedSportIds}
+                title="Có thể bạn cần"
+                description="Đồ dùng cho buổi chơi trong giỏ, nhận tại quầy khi đến."
+                hideInCart
+              />
+            )}
             <Card>
               <CouponInput
                 codes={cart.couponCodes}
@@ -203,4 +216,24 @@ export function CartPage() {
       />
     </>
   );
+}
+
+/** Sports of the courts and classes in the cart, read from the priced lines (snapshots carry sport names). */
+function useBookedSportIds(quote: Quote | undefined) {
+  const sports = useQuery(sportsQueryOptions);
+  const facilities = useQuery(facilitiesQueryOptions);
+  return useMemo(() => {
+    const ids = new Set<string>();
+    for (const item of quote?.items ?? []) {
+      if (item.selection.type === 'FACILITY_BOOKING' || item.selection.type === 'FACILITY_PACKAGE') {
+        const { facilityId } = item.selection;
+        facilities.data?.find(({ id }) => id === facilityId)?.sports.forEach(({ id }) => ids.add(id));
+      } else if (item.selection.type === 'COURSE_ENROLLMENT') {
+        const name = item.snapshot?.sportName;
+        const sport = sports.data?.find((entry) => entry.name === name);
+        if (sport) ids.add(sport.id);
+      }
+    }
+    return [...ids];
+  }, [quote, sports.data, facilities.data]);
 }
