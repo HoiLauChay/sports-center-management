@@ -4,7 +4,6 @@ import { Button, Dropdown } from 'antd';
 import { ChevronDown, Mail, PencilLine, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
-import { useCurrentUser } from '~/features/auth';
 import { StaffMembershipBlock } from '~/features/memberships';
 import { MemberBookingsBlock, MemberHistoryBlock, MemberSupportBlock, MemberWalletBlock } from '~/features/reception';
 import { STATUS_ACTION } from '../utils/statusActions';
@@ -19,13 +18,10 @@ const routeApi = getRouteApi('/_authenticated/_manager/admin/users/$userId');
 interface UserActionsProps {
   user: Account;
   editing: boolean;
-  canChangeStatus: boolean;
-  canChangeEmail: boolean;
-  canChangeRoles: boolean;
   onEdit: () => void;
 }
 
-function UserActions({ user, editing, canChangeStatus, canChangeEmail, canChangeRoles, onEdit }: UserActionsProps) {
+function UserActions({ user, editing, onEdit }: UserActionsProps) {
   const [target, setTarget] = useState<AccountStatus>('ACTIVE');
   const [confirming, setConfirming] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
@@ -44,33 +40,27 @@ function UserActions({ user, editing, canChangeStatus, canChangeEmail, canChange
           Sửa thông tin
         </Button>
       )}
-      {canChangeStatus && (
-        <Dropdown
-          trigger={['click']}
-          menu={{
-            items,
-            onClick: ({ key }) => {
-              setTarget(key as AccountStatus);
-              setConfirming(true);
-            },
-          }}
-          disabled={editing}
-        >
-          <Button>
-            Đổi trạng thái <ChevronDown size={14} />
-          </Button>
-        </Dropdown>
-      )}
-      {canChangeRoles && (
-        <Button icon={<UsersRound size={16} />} disabled={editing} onClick={() => setChangingRoles(true)}>
-          Phân vai trò
+      <Dropdown
+        trigger={['click']}
+        menu={{
+          items,
+          onClick: ({ key }) => {
+            setTarget(key as AccountStatus);
+            setConfirming(true);
+          },
+        }}
+        disabled={editing}
+      >
+        <Button>
+          Đổi trạng thái <ChevronDown size={14} />
         </Button>
-      )}
-      {canChangeEmail && (
-        <Button icon={<Mail size={16} />} disabled={editing} onClick={() => setChangingEmail(true)}>
-          Đổi email
-        </Button>
-      )}
+      </Dropdown>
+      <Button icon={<UsersRound size={16} />} disabled={editing} onClick={() => setChangingRoles(true)}>
+        Phân vai trò
+      </Button>
+      <Button icon={<Mail size={16} />} disabled={editing} onClick={() => setChangingEmail(true)}>
+        Đổi email
+      </Button>
       <UserStatusModal user={user} target={target} open={confirming} onClose={() => setConfirming(false)} />
       {changingEmail && <ChangeEmailModal user={user} onClose={() => setChangingEmail(false)} />}
       {changingRoles && <UserRolesModal user={user} onClose={() => setChangingRoles(false)} />}
@@ -82,7 +72,6 @@ export function AdminUserDetailPage() {
   const { userId } = routeApi.useParams();
   const router = useRouter();
   const navigate = routeApi.useNavigate();
-  const viewer = useCurrentUser();
   const [editingId, setEditingId] = useState<string | null>(null);
   const editing = editingId === userId;
 
@@ -114,15 +103,7 @@ export function AdminUserDetailPage() {
         ) : null
       }
       actions={(user) => (
-        <UserActions
-          key={user.id}
-          user={user}
-          editing={editing}
-          canChangeStatus={user.id !== viewer.id && !user.roles.includes('MANAGER')}
-          canChangeRoles={!user.roles.includes('MANAGER')}
-          canChangeEmail={user.id !== viewer.id}
-          onEdit={() => setEditingId(user.id)}
-        />
+        <UserActions key={user.id} user={user} editing={editing} onEdit={() => setEditingId(user.id)} />
       )}
       editor={(user) =>
         editing ? <AdminUserEditForm key={user.id} user={user} onDone={() => setEditingId(null)} /> : null

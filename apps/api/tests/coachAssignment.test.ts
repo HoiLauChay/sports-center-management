@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import { addDays, todayInCenter } from '~/utils/time';
-import { seedOpenClass } from './helpers/class';
+import { seedEnrollment, seedOpenClass } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { buildFetcher, createAccount, readCode, readResult, startServer, type Viewer } from './helpers/http';
 import { seedBalance } from './helpers/wallet';
@@ -110,6 +110,27 @@ describe('coach assignment', () => {
     expect([response.status, await readCode(response)]).toEqual([409, 'SCHEDULE_CONFLICT']);
     expect(await prisma.class.findUnique({ where: { id: target.id } })).toMatchObject({ coachId: null });
     expect(await prisma.classCoachRegistration.count()).toBe(0);
+  });
+
+  test('a coach who is also a student cannot take over the class they attend or one overlapping it', async () => {
+    const attended = await seedDraftClass();
+    const overlapping = await seedDraftClass();
+    const manager = await createAccount('MANAGER', 'manager@example.com');
+    const coach = await qualifiedCoach('student-coach@example.com', attended.sportId);
+    await prisma.coachSpecialization.create({
+      data: { coachId: coach.id, sportId: overlapping.sportId, status: 'APPROVED' },
+    });
+    await seedEnrollment(attended.id, coach.id);
+
+    const own = await request('POST', `/${attended.id}/coach-registrations`, coach);
+    expect([own.status, await readCode(own)]).toEqual([409, 'INVALID_STATE']);
+    const assigned = await request('POST', `/${attended.id}/assign-coach`, manager, { coachId: coach.id });
+    expect([assigned.status, await readCode(assigned)]).toEqual([409, 'INVALID_STATE']);
+
+    const clash = await request('POST', `/${overlapping.id}/coach-registrations`, coach);
+    expect([clash.status, await readCode(clash)]).toEqual([409, 'SCHEDULE_CONFLICT']);
+    expect(await prisma.classCoachRegistration.count()).toBe(0);
+    expect(await prisma.class.count({ where: { coachId: coach.id } })).toBe(0);
   });
 
   test('a coach leaving a week ahead with a reason keeps the students enrolled; later or without a reason refuses', async () => {

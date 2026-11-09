@@ -38,3 +38,39 @@ export const seedOpenClass = async ({
     },
   });
 };
+
+let enrollmentSeq = 0;
+
+export const seedEnrollment = async (classId: string, accountId: string) => {
+  const n = ++enrollmentSeq;
+  const order = await prisma.order.create({
+    data: {
+      orderNumber: `SEED-ENROLL-${n}`,
+      idempotencyKey: `seed-enroll-${n}`,
+      accountId,
+      paymentMethod: 'WALLET',
+      subtotal: 100_000,
+      totalAmount: 100_000,
+      receiptSnapshot: { schema_version: 1 },
+      items: {
+        create: {
+          lineNumber: 1,
+          type: 'COURSE_ENROLLMENT',
+          subtotal: 100_000,
+          totalAmount: 100_000,
+          itemSnapshot: { schema_version: 1 },
+        },
+      },
+    },
+    include: { items: true },
+  });
+  return prisma.classEnrollment.create({
+    data: { classId, accountId, status: 'ENROLLED', orderItemId: order.items[0]!.id },
+  });
+};
+
+export const switchToMember = async (accountId: string) => {
+  await prisma.account.update({ where: { id: accountId }, data: { role: 'MEMBER', roles: ['COACH', 'MEMBER'] } });
+  await prisma.memberProfile.upsert({ where: { accountId }, create: { accountId }, update: {} });
+  return { id: accountId, role: 'MEMBER' as const };
+};

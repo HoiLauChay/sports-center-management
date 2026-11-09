@@ -4,6 +4,7 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import { addDays, todayInCenter } from '~/utils/time';
+import { seedOpenClass, switchToMember } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
 import { giveActiveMembership } from './helpers/membership';
@@ -157,5 +158,20 @@ describe('facility booking line', () => {
       }),
     );
     expect(summary(guest)).toEqual([{ valid: true, total: 100_000, benefit: 'NONE', code: undefined }]);
+  });
+
+  test('a coach shopping as a member cannot book over the sessions they teach', async () => {
+    const cls = await seedOpenClass();
+    const teachingDay = addDays(todayInCenter(), 3);
+    const court = await seedFacility(1);
+    const coachAsMember = await switchToMember(cls.coachId!);
+    await seedBalance(coachAsMember.id, 500_000);
+
+    const quote = await readResult<Quote>(
+      await request('POST', '/quote', coachAsMember, {
+        items: [line(court.id, '18:00', '19:00', teachingDay), line(court.id, '20:00', '21:00', teachingDay)],
+      }),
+    );
+    expect(quote.items.map(({ valid, error }) => (valid ? null : error?.code))).toEqual(['SCHEDULE_CONFLICT', null]);
   });
 });

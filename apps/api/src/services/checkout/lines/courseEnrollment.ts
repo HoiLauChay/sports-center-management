@@ -32,6 +32,9 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
     const accountId = ctx.buyer.accountId;
     const row = await classRepository.findDetail(input.classId, db);
     if (!row) return lineError(ERROR_CODE.NOT_FOUND, 'Lớp không tồn tại');
+    if (row.coachId === accountId) {
+      return lineError(ERROR_CODE.INVALID_STATE, 'Bạn đang phụ trách lớp này nên không đăng ký học được');
+    }
     const closed = notOpen(row, ctx);
     if (closed) return lineError(ERROR_CODE.INVALID_STATE, closed);
 

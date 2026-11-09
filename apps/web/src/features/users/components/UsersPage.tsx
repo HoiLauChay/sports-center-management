@@ -15,7 +15,6 @@ import { RowActions } from '~/components/data/RowActions';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { ACCOUNT_STATUS_LABEL, ROLE_LABEL } from '~/constants/roles';
-import { useCurrentUser } from '~/features/auth';
 import { useRowLink } from '~/hooks/useRowLink';
 import { withPaginationDefaults } from '~/lib/search';
 import { usersService } from '../services/users.service';
@@ -30,7 +29,6 @@ export function UsersPage() {
   const search = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const rowLink = useRowLink((user: AccountSummary) => ({ to: '/admin/users/$userId', params: { userId: user.id } }));
-  const viewer = useCurrentUser();
   const [creating, setCreating] = useState(false);
   const [statusChange, setStatusChange] = useState<{ user: AccountSummary; target: AccountStatus } | null>(null);
   const { page, limit } = withPaginationDefaults(search);
@@ -60,16 +58,12 @@ export function UsersPage() {
         <RowActions
           label={`Thao tác với ${user.fullName}`}
           inlineLimit={0}
-          actions={
-            user.id === viewer.id || user.roles.includes('MANAGER')
-              ? []
-              : ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
-                  key: status,
-                  label: STATUS_ACTION[status].label,
-                  danger: status !== 'ACTIVE',
-                  onClick: () => setStatusChange({ user, target: status }),
-                }))
-          }
+          actions={ACCOUNT_STATUSES.filter((status) => status !== user.status).map((status) => ({
+            key: status,
+            label: STATUS_ACTION[status].label,
+            danger: status !== 'ACTIVE',
+            onClick: () => setStatusChange({ user, target: status }),
+          }))}
         />
       ),
     },
@@ -99,7 +93,10 @@ export function UsersPage() {
             value={search.role}
             placeholder="Vai trò"
             allowClear
-            options={ROLES.map((role) => ({ value: role, label: ROLE_LABEL[role] }))}
+            options={ROLES.filter((role) => role !== 'MANAGER').map((role) => ({
+              value: role,
+              label: ROLE_LABEL[role],
+            }))}
             onChange={(role) => updateSearch({ role, page: undefined })}
             className="w-[calc(50%-6px)] sm:!w-44"
           />

@@ -45,6 +45,9 @@ const ROLE_LABEL: Record<Role, string> = {
 const visibleRole = (viewer: Viewer): Role | undefined =>
   ['RECEPTIONIST', 'COACH'].includes(viewer.role) ? 'MEMBER' : undefined;
 
+/** No role manages an account of its own rank: a manager never sees a manager here, and edits themselves in the profile. */
+const hiddenRole = (viewer: Viewer): Role | undefined => (viewer.role === 'MANAGER' ? 'MANAGER' : undefined);
+
 const taken = (code: ErrorCode, field: 'email' | 'phone', message: string) =>
   new ErrorWithStatus({
     status: HTTP_STATUS.CONFLICT,
@@ -67,9 +70,6 @@ const notFound = () =>
     code: ERROR_CODE.NOT_FOUND,
     message: 'Không tìm thấy người dùng',
   });
-
-const forbidden = (message: string) =>
-  new ErrorWithStatus({ status: HTTP_STATUS.FORBIDDEN, code: ERROR_CODE.FORBIDDEN, message });
 
 const STAFF_PROFILE_FIELDS = ['staffNotes'] as const;
 
@@ -103,14 +103,13 @@ const profileData = ({
 
 class UserService {
   list = async (viewer: Viewer, query: ListUsersQuery) => {
-    const [rows, total] = await accountRepository.findPage(query, visibleRole(viewer));
+    const [rows, total] = await accountRepository.findPage(query, visibleRole(viewer), hiddenRole(viewer));
     return toPage(rows.map(toAccountSummary), total, query);
   };
 
   getById = async (viewer: Viewer, id: string) => {
     if (viewer.role === 'COACH' && !(await enrollmentRepository.hasCurrentStudent(viewer.id, id))) throw notFound();
-    const account = await accountRepository.findById(id, visibleRole(viewer));
-    if (!account) throw notFound();
+    const account = await this.findManaged(viewer, id);
     return viewer.role === 'COACH' ? toStudentResponse(account) : toAccountResponse(account);
   };
 
@@ -161,8 +160,7 @@ class UserService {
   };
 
   update = async (viewer: Viewer, id: string, { profile, ...fields }: UpdateUserBody, ip?: string) => {
-    const current = await accountRepository.findById(id);
-    if (!current) throw notFound();
+    const current = await this.findManaged(viewer, id);
 
     if (fields.phone && fields.phone !== current.phone && (await accountRepository.existsByPhone(fields.phone, id))) {
       throw phoneTaken();
@@ -198,15 +196,11 @@ class UserService {
   };
 
   updateStatus = async (viewer: Viewer, id: string, { status, reason }: UpdateUserStatusBody, ip?: string) => {
-    if (id === viewer.id) throw forbidden('Không thể tự đổi trạng thái tài khoản của mình');
-
     const { account, notifications } = await runTransaction(async (tx) => {
       await withScheduleLock(tx);
       await lockRows(tx, { accounts: [id] });
 
-      const current = await accountRepository.findById(id, undefined, tx);
-      if (!current) throw notFound();
-      if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi trạng thái tài khoản quản lý');
+      const current = await this.findManaged(viewer, id, tx);
       if (current.status === status) return { account: current, notifications: [] };
 
       const deactivating = status !== 'ACTIVE';
@@ -242,9 +236,7 @@ class UserService {
       await withScheduleLock(tx);
       await lockRows(tx, { accounts: [id] });
 
-      const current = await accountRepository.findById(id, undefined, tx);
-      if (!current) throw notFound();
-      if (current.roles.includes('MANAGER')) throw forbidden('Không thể đổi vai trò tài khoản quản lý');
+      const current = await this.findManaged(viewer, id, tx);
       if (roles.length === current.roles.length && roles.every((role) => current.roles.includes(role))) {
         return { account: current, notifications: [] };
       }
@@ -287,8 +279,6 @@ class UserService {
   changeEmail = async (viewer: Viewer, id: string, { email }: ChangeUserEmailBody, ip?: string) => {
     const invalidState = (message: string) =>
       new ErrorWithStatus({ status: HTTP_STATUS.CONFLICT, code: ERROR_CODE.INVALID_STATE, message });
-    if (id === viewer.id) throw invalidState('Không thể tự đổi email của mình');
-
     try {
       const { account, activationUrl } = await this.replaceEmail(viewer, id, email, invalidState, ip);
       authService.sendActivationAfterCommit(account.email, account.fullName, activationUrl, 'EMAIL_CHANGED');
@@ -308,8 +298,7 @@ class UserService {
   ) =>
     runTransaction(async (tx) => {
       await lockRows(tx, { accounts: [id] });
-      const current = await accountRepository.findById(id, undefined, tx);
-      if (!current) throw notFound();
+      const current = await this.findManaged(viewer, id, tx);
       if (current.email === email) throw invalidState('Email mới trùng email hiện tại');
       if (await accountRepository.existsByEmail(email)) throw emailTaken();
 
@@ -341,6 +330,13 @@ class UserService {
       );
       return { account: next, activationUrl: await authService.createActivationLink(email, tx) };
     });
+
+  private findManaged = async (viewer: Viewer, id: string, tx?: Prisma.TransactionClient) => {
+    const account = await accountRepository.findById(id, visibleRole(viewer), tx);
+    const hidden = hiddenRole(viewer);
+    if (!account || (hidden && account.roles.includes(hidden))) throw notFound();
+    return account;
+  };
 
   private releaseCoachClasses = async (
     viewer: Viewer,

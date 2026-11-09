@@ -138,41 +138,32 @@ const facilityClashes = async (tx: Prisma.TransactionClient, query: ConflictQuer
   });
 };
 
+/** A person is busy with their bookings and with the sessions they attend or teach, whatever role is checking. */
 const personClashes = async (tx: Prisma.TransactionClient, query: ConflictQuery) => {
   const dates = [...new Set(query.ranges.map(({ date }) => date))];
   const ignored = new Set(query.ignoreSessionIds);
-  const clashes: ScheduleClash[] = [];
-
-  if (query.coachId) {
-    const sessions = (await scheduleRepository.findCoachSessions(query.coachId, dates, tx)).filter(
-      (session) => !ignored.has(session.id),
-    );
-    for (const range of query.ranges) {
-      for (const session of sessions) {
-        if (sameDayOverlap(range, timed(session.sessionDate, session.startTime, session.endTime))) {
-          clashes.push(clashOf(range, 'COACH_BUSY', { classSession: sessionRef(session) }));
-        }
-      }
-    }
-  }
+  const busyOf = async (accountIds: string[], reason: ScheduleClashReason) => {
+    const [bookings, sessions] = await scheduleRepository.findCommitments(accountIds, dates, tx);
+    return query.ranges.flatMap((range) => [
+      ...bookings
+        .filter((booking) => sameDayOverlap(range, timed(booking.bookingDate, booking.startTime, booking.endTime)))
+        .map((booking) => clashOf(range, reason, { bookingId: booking.id })),
+      ...sessions
+        .filter(
+          (session) =>
+            !ignored.has(session.id) &&
+            sameDayOverlap(range, timed(session.sessionDate, session.startTime, session.endTime)),
+        )
+        .map((session) => clashOf(range, reason, { classSession: sessionRef(session) })),
+    ]);
+  };
 
   const accountIds = [...new Set([...(query.accountIds ?? []), ...(query.accountId ? [query.accountId] : [])])];
-  if (accountIds.length > 0) {
-    const [bookings, sessions] = await scheduleRepository.findMemberCommitments(accountIds, dates, tx);
-    for (const range of query.ranges) {
-      for (const booking of bookings) {
-        if (sameDayOverlap(range, timed(booking.bookingDate, booking.startTime, booking.endTime))) {
-          clashes.push(clashOf(range, 'MEMBER_BUSY', { bookingId: booking.id }));
-        }
-      }
-      for (const session of sessions.filter(({ id }) => !ignored.has(id))) {
-        if (sameDayOverlap(range, timed(session.sessionDate, session.startTime, session.endTime))) {
-          clashes.push(clashOf(range, 'MEMBER_BUSY', { classSession: sessionRef(session) }));
-        }
-      }
-    }
-  }
-  return clashes;
+  const [coach, members] = await Promise.all([
+    query.coachId ? busyOf([query.coachId], 'COACH_BUSY') : [],
+    accountIds.length > 0 ? busyOf(accountIds, 'MEMBER_BUSY') : [],
+  ]);
+  return [...coach, ...members];
 };
 
 class ScheduleService {
@@ -235,9 +226,11 @@ class ScheduleService {
     const sessions = await scheduleRepository.findSessionsOfClasses(classIds, from, tx);
     const dates = [...new Set(sessions.map(({ sessionDate }) => formatDate(sessionDate)))];
     if (dates.length === 0) return new Set<string>();
-    const busy = (await scheduleRepository.findCoachSessions(coachId, dates, tx)).map((session) =>
-      timed(session.sessionDate, session.startTime, session.endTime),
-    );
+    const [bookings, taughtOrAttended] = await scheduleRepository.findCommitments([coachId], dates, tx);
+    const busy = [
+      ...bookings.map((booking) => timed(booking.bookingDate, booking.startTime, booking.endTime)),
+      ...taughtOrAttended.map((session) => timed(session.sessionDate, session.startTime, session.endTime)),
+    ];
     return new Set(
       sessions
         .filter((session) =>

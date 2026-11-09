@@ -107,6 +107,9 @@ class SessionService {
       if (substituteId && !(await specializationRepository.isQualified(substituteId, cls.course.sportId, tx))) {
         throw invalid('coachId', 'Huấn luyện viên không hoạt động hoặc chưa được duyệt bộ môn');
       }
+      if (substituteId && cls.enrollments.some(({ accountId }) => accountId === substituteId)) {
+        throw invalid('coachId', 'Huấn luyện viên đang là học viên của lớp này nên không thể dạy thay');
+      }
     }
     const nextCoachId = substituteId ?? cls.coachId;
     const coachChanged = nextCoachId !== currentCoachId;

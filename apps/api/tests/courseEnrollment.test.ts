@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 
 import { prisma } from '~/configs/db';
 import { addDays, todayInCenter } from '~/utils/time';
-import { seedOpenClass } from './helpers/class';
+import { seedOpenClass, switchToMember } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { createAccount, readCode, readResult, startServer } from './helpers/http';
 import { giveActiveMembership } from './helpers/membership';
@@ -124,5 +124,24 @@ describe('course enrollment line', () => {
       }),
     );
     expect(guest.items[0]!.error?.code).toBe('GUEST_NOT_ALLOWED');
+  });
+
+  test('a coach acting as a member cannot enroll in their own class or one that overlaps their teaching', async () => {
+    const own = await seedOpenClass();
+    const other = await seedOpenClass();
+    const coachAsMember = await switchToMember(own.coachId!);
+    await seedBalance(own.coachId!, 600_000);
+
+    const quote = await readResult<Quote>(
+      await request('POST', '/quote', coachAsMember, { items: [enrollment(own.id), enrollment(other.id)] }),
+    );
+    expect(quote.items.map(({ valid, error }) => (valid ? null : error?.code))).toEqual([
+      'INVALID_STATE',
+      'SCHEDULE_CONFLICT',
+    ]);
+
+    const paid = await request('POST', '/', coachAsMember, pay([enrollment(own.id)], 300_000, 'coach-own-class'));
+    expect(paid.status).toBe(409);
+    expect(await prisma.classEnrollment.count()).toBe(0);
   });
 });

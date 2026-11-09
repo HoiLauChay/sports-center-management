@@ -39,7 +39,7 @@ class AccountRepository {
     return rows.map(({ id }) => id);
   };
 
-  findPage = async ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role) => {
+  findPage = async ({ q, role, status, ...page }: ListUsersQuery, visibleRole?: Role, hiddenRole?: Role) => {
     const trimmed = q?.trim();
     let searchFilter: Prisma.AccountWhereInput | undefined;
 
@@ -70,6 +70,7 @@ class AccountRepository {
     const where: Prisma.AccountWhereInput = {
       AND: [
         visibleRole ? { roles: { has: visibleRole } } : {},
+        hiddenRole ? { NOT: { roles: { has: hiddenRole } } } : {},
         role ? { roles: { has: role } } : {},
         { status },
         searchFilter ?? {},
