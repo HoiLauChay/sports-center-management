@@ -1186,3 +1186,15 @@ model ProductSale {
   @@index([productId], map: "idx_product_sales_product")
   @@map("product_sales")
 }
+
+/// One row per automation job the manager can switch off or tune; a missing row means "on, default threshold".
+model AutomationSetting {
+  key         String    @id @db.VarChar(50)
+  enabled     Boolean   @default(true)
+  threshold   Int?
+  lastRunAt   DateTime? @map("last_run_at") @db.Timestamptz()
+  updatedById String?   @map("updated_by") @db.Uuid
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("automation_settings")
+}

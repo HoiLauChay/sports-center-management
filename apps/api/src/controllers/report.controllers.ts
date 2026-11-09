@@ -3,11 +3,14 @@ import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ResponseClient } from '~/rules/response';
+import managerInsightsService from '~/services/ai/managerInsights.service';
 import reportService from '~/services/report.service';
 
 class ReportController {
   exportFile = async (req: Request, res: Response) => {
-    const { fileName, contentType, body } = await reportService.exportFile(req.query as unknown as ReportExportQuery);
+    const query = req.query as unknown as ReportExportQuery;
+    const commentary = query.insight ? (await managerInsightsService.reportInsight(query)).text : undefined;
+    const { fileName, contentType, body } = await reportService.exportFile(query, commentary);
     res.status(HTTP_STATUS.OK).type(contentType).attachment(fileName).send(body);
   };
 

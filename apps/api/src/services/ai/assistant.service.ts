@@ -10,12 +10,14 @@ import {
   type AssistantReply,
   type AssistantRole,
   type CoachAssistantOverview,
+  type ManagerAssistantOverview,
   type MemberAssistantOverview,
   type ReceptionAssistantOverview,
 } from '@sports-center/shared';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import assistantRepository from '~/repositories/assistant.repository';
+import managerAiRepository from '~/repositories/managerAi.repository';
 import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import { ErrorWithStatus } from '~/rules/error';
 import geminiClient, { type GeminiContent, type GeminiPart } from '~/services/ai/gemini.client';
@@ -28,6 +30,7 @@ import classService from '~/services/class.service';
 import enrollmentService from '~/services/enrollment.service';
 import memberMembershipService from '~/services/memberMembership.service';
 import personalScheduleService from '~/services/personalSchedule.service';
+import reportService from '~/services/report.service';
 import sessionService from '~/services/session.service';
 import supportService from '~/services/support.service';
 import { addDays, formatDate, minutesInCenter, parseTime, todayInCenter } from '~/utils/time';
@@ -87,6 +90,18 @@ const ROLE_BRIEF: Record<AssistantRole, { who: string; scope: string; rules: str
       'Tra hội viên thì gọi find_members trước rồi member_overview với đúng mã. Có nhiều người trùng tên thì liệt kê để lễ tân chọn, kèm SĐT.',
       'Chỉ nêu thông tin hội viên cần cho việc ở quầy; không suy đoán thông tin không có trong kết quả.',
       'Tư vấn gói cho khách: tra find_members rồi gọi compare_memberships với đúng mã; trình bày để lễ tân giải thích lại cho khách: gói nên chọn (tối đa 2), phép tính ngắn từ kết quả, và nói thật nếu khách chưa cần gói.',
+    ],
+  },
+  MANAGER: {
+    who: 'Manager (quản lý) của trung tâm đã đăng nhập',
+    scope:
+      'báo cáo kinh doanh (doanh thu, ví, hội viên, sân, lớp, HLV), việc đang chờ Manager (lớp chờ duyệt, lớp thiếu HLV, giao dịch chưa khớp, hỗ trợ, bảo trì) và tra cứu vận hành',
+    rules: [
+      'Số liệu chỉ lấy từ kết quả công cụ; dùng sẵn các tổng (totals, utilizationRate, renewalRate...) đã tính, không tự cộng trừ hay suy ra số mới. Luôn nói rõ khoảng ngày của số liệu (ví dụ "từ 01/11 đến 07/11"). Không nói tới tháng/tuần nào thì mặc định từ đầu tháng tới hôm nay.',
+      'So sánh hai kỳ thì gọi công cụ hai lần với hai khoảng ngày; chỉ nói tăng/giảm khi cả hai số đều có trong kết quả.',
+      'Bạn không tự thực hiện thao tác. Khi Manager muốn duyệt/từ chối lớp, gọi class_review rồi propose_class_review; ghi nhận chuyển khoản thì gọi bank_match_candidates rồi propose_bank_match (chỉ khi điểm cao, lý do rõ); phân công HLV thì gọi class_coach_options rồi propose_coach_assignment; mã giảm giá giờ vắng thì gọi quiet_hour_promos rồi propose_coupon. Nói Manager kiểm tra thẻ ngay dưới câu trả lời và bấm nút để thực hiện.',
+      'Việc khác (sửa lớp, hủy lớp, hoàn tiền, bảo trì, đổi cấu hình) thì hướng dẫn Manager làm ở trang quản trị tương ứng.',
+      'Nêu thông tin cá nhân của hội viên (SĐT, email) chỉ khi cần cho việc đang hỏi.',
     ],
   },
 };
@@ -248,6 +263,28 @@ const receptionOverview = async (): Promise<ReceptionAssistantOverview> => {
   };
 };
 
+const managerOverview = async (): Promise<ManagerAssistantOverview> => {
+  const now = new Date();
+  const today = todayInCenter(now);
+  const [overview, pendingClasses, classesNeedingCoach, open, upcomingMaintenances] = await Promise.all([
+    reportService.overview(now),
+    managerAiRepository.countPendingClasses(),
+    managerAiRepository.countClassesNeedingCoach(new Date(today)),
+    supportService.list({ page: 1, limit: 1, status: 'OPEN' }),
+    managerAiRepository.countUpcomingMaintenances(now, new Date(now.getTime() + 14 * DAY_MS)),
+  ]);
+  return {
+    role: 'MANAGER',
+    revenueToday: overview.revenueToday,
+    bookingsToday: overview.bookingsToday,
+    pendingClasses,
+    classesNeedingCoach,
+    unmatchedBankTransactions: overview.unmatchedBankTransactions,
+    openSupport: open.total,
+    upcomingMaintenances,
+  };
+};
+
 const answer = async (
   actor: { id: string; role: AssistantRole },
   messages: AssistantMessage[],
@@ -347,6 +384,7 @@ class AssistantService {
   overview = (actor: { id: string; role: AssistantRole }): Promise<AssistantOverview> => {
     if (actor.role === 'COACH') return coachOverview(actor.id);
     if (actor.role === 'RECEPTIONIST') return receptionOverview();
+    if (actor.role === 'MANAGER') return managerOverview();
     return memberOverview(actor.id);
   };
 }

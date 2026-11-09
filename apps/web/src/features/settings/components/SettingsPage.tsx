@@ -12,6 +12,7 @@ import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { AutomationSettingsCard } from '~/features/manager-ai/components/AutomationSettingsCard';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { scheduleConflictsOf, toApiError, type ScheduleConflicts } from '~/lib/http-errors';
 import { settingsService } from '../services/settings.service';
@@ -265,6 +266,7 @@ export function SettingsPage() {
       ) : (
         <SettingsForm settings={settings.data} />
       )}
+      <AutomationSettingsCard />
     </>
   );
 }

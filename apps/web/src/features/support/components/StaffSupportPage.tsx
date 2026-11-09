@@ -6,6 +6,7 @@ import { SearchInput } from '~/components/form/SearchInput';
 import { Highlight } from '~/components/ui/Highlight';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useCurrentUser } from '~/features/auth';
+import { SupportTriagePanel } from '~/features/manager-ai/components/SupportTriagePanel';
 import { useConfirm } from '~/hooks/useConfirm';
 import { clickableRow } from '~/hooks/useRowLink';
 import { formatDateTime, formatRelative } from '~/lib/format';
@@ -89,6 +90,12 @@ function RequestPanel({ request, onClose }: { request: SupportRequest; onClose: 
             {request.description}
           </p>
         </div>
+        <SupportTriagePanel
+          requestId={request.id}
+          categoryLabel={SUPPORT_CATEGORY_LABEL}
+          disabled={closed}
+          onUseReply={setNote}
+        />
         <div>
           <div className="mb-1 text-[14.5px] font-semibold text-sc-muted">Phản hồi cho thành viên</div>
           <Input.TextArea

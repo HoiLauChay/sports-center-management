@@ -49,6 +49,8 @@ const REMEMBERED: Record<string, (result: unknown) => unknown[]> = {
   find_classes: reader('CLASS', 'classes', 'classId', 'name'),
   list_memberships: reader('PACKAGE', 'packages', 'packageId', 'name'),
   coach_schedule: reader('SESSION', 'sessions', 'sessionId', 'className'),
+  pending_classes: reader('CLASS', 'classes', 'classId', 'name'),
+  class_performance: reader('CLASS', 'classes', 'classId', 'name'),
 };
 
 export const itemsFrom = (tool: string, result: unknown): MemoryItem[] =>

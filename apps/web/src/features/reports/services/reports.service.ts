@@ -48,6 +48,8 @@ export const reportsService = {
     const { data } = await privateApi.get<Blob>('/reports/export', {
       params,
       responseType: 'blob',
+      // The AI commentary is written while the file is built, which takes longer than a plain export.
+      ...(params.insight && { timeout: 60_000 }),
     });
     return data;
   },
