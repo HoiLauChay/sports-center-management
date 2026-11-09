@@ -33,6 +33,7 @@ const TYPE_LABEL: Record<OrderItemType, string> = {
   FACILITY_BOOKING: 'Đặt sân',
   FACILITY_PACKAGE: 'Gói sân định kỳ',
   COURSE_ENROLLMENT: 'Đăng ký lớp',
+  PRODUCT_SALE: 'Cửa hàng',
 };
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {

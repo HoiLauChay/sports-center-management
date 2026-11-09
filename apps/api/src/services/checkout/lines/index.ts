@@ -4,6 +4,7 @@ import { courseEnrollmentHandler } from '~/services/checkout/lines/courseEnrollm
 import { facilityBookingHandler } from '~/services/checkout/lines/facilityBooking';
 import { facilityPackageHandler } from '~/services/checkout/lines/facilityPackage';
 import { membershipHandler } from '~/services/checkout/lines/membership';
+import { productSaleHandler } from '~/services/checkout/lines/productSale';
 import type { AnyLineHandler } from '~/services/checkout/types';
 
 export const lineHandlers: Partial<Record<OrderItemType, AnyLineHandler>> = {
@@ -11,4 +12,5 @@ export const lineHandlers: Partial<Record<OrderItemType, AnyLineHandler>> = {
   FACILITY_PACKAGE: facilityPackageHandler,
   COURSE_ENROLLMENT: courseEnrollmentHandler,
   MEMBERSHIP: membershipHandler,
+  PRODUCT_SALE: productSaleHandler,
 };

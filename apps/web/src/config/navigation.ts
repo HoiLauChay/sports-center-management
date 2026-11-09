@@ -17,10 +17,13 @@ import {
   LayoutDashboard,
   LifeBuoy,
   MapPin,
+  Package,
+  PackageCheck,
   Receipt,
   ScanLine,
   School,
   Settings,
+  ShoppingBag,
   ShoppingCart,
   Sparkles,
   Store,
@@ -66,6 +69,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       title: 'Thanh toán',
       items: [
+        { path: '/shop', label: 'Cửa hàng', icon: ShoppingBag },
         { path: '/memberships', label: 'Gói thành viên', icon: BadgeCheck },
         { path: '/memberships/mine', label: 'Gói của tôi', icon: IdCard },
         { path: '/wallet', label: 'Ví', icon: Wallet },
@@ -98,6 +102,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [
         { path: '/reception/checkin', label: 'Check-in', icon: ScanLine },
         { path: '/reception/order', label: 'Bán tại quầy', icon: Store },
+        { path: '/reception/pickups', label: 'Nhận hàng', icon: PackageCheck },
         { path: '/reception/top-up', label: 'Nạp ví', icon: HandCoins },
         { path: '/reception/members', label: 'Thành viên', icon: Users },
         { path: '/reception/bookings', label: 'Lịch sân', icon: CalendarCheck },
@@ -128,6 +133,7 @@ const ROLE_NAV: Record<Role, NavGroup[]> = {
         { path: '/admin/courses', label: 'Khóa học', icon: BookOpen },
         { path: '/admin/classes', label: 'Lớp học', icon: School },
         { path: '/admin/memberships', label: 'Gói thành viên', icon: BadgeCheck },
+        { path: '/admin/shop', label: 'Cửa hàng', icon: Package },
         { path: '/admin/coupons', label: 'Mã giảm giá', icon: Ticket },
         { path: '/admin/maintenances', label: 'Bảo trì', icon: Wrench },
       ],

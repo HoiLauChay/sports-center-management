@@ -20,6 +20,7 @@ export const updateSettingsBodySchema = z
       .min(1, 'Số tiền nạp tối thiểu phải lớn hơn 0')
       .max(MAX_MONEY, 'Số tiền nạp tối thiểu quá lớn'),
     invoiceExpiryMinutes: count('Thời hạn hóa đơn', 1),
+    shopPickupHours: count('Hạn nhận hàng', 1),
   })
   .partial()
   .refine(({ openTime, closeTime }) => !openTime || !closeTime || openTime < closeTime, {

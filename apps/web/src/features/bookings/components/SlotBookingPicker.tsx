@@ -7,6 +7,7 @@ import { ErrorState } from '~/components/feedback/States';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
+import { ProductSuggestions } from '~/features/shop/components/ProductSuggestions';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
@@ -61,6 +62,7 @@ interface SlotSchedulePanelProps extends SlotBookingPickerProps {
 function SlotSchedulePanel({ facility, date, onDateChange, user, buyer, onAdd }: SlotSchedulePanelProps) {
   const settings = useSettings();
   const rows = useMemo(() => [facility], [facility]);
+  const sportIds = useMemo(() => facility.sports.map((sport) => sport.id), [facility]);
   const schedule = useFacilitySchedules([facility.id], date);
   const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
 
@@ -222,10 +224,28 @@ function SlotSchedulePanel({ facility, date, onDateChange, user, buyer, onAdd }:
               <Button block type="text" onClick={() => setSelection(null)}>
                 Bỏ chọn
               </Button>
+              <ProductSuggestions
+                variant="inline"
+                sportIds={sportIds}
+                limit={3}
+                title="Mua kèm"
+                description="Thêm vào giỏ, nhận tại quầy khi đến chơi."
+                className="border-t border-sc-border pt-3"
+              />
             </div>
           )}
         </aside>
       </div>
+
+      {selected && (
+        <ProductSuggestions
+          sportIds={sportIds}
+          limit={4}
+          title="Mua kèm cho buổi chơi"
+          description="Thêm vào giỏ, nhận tại quầy khi đến chơi."
+          className="lg:hidden"
+        />
+      )}
 
       {selected && <div className="h-16 lg:hidden" />}
       {selected && (

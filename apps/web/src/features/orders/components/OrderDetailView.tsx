@@ -9,6 +9,7 @@ import { QuoteTotals } from '~/features/checkout/components/QuoteTotals';
 import { checkoutService } from '~/features/checkout/services/checkout.service';
 import { ORDER_ITEM_TYPE_LABEL, type Order, type OrderItem } from '~/features/checkout/types';
 import { describeLine, refundedOf } from '~/features/checkout/utils';
+import { SaleStatusActions } from '~/features/shop/components/SaleStatusActions';
 import { useReceiptPdf } from '~/hooks/useReceiptPdf';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -37,6 +38,7 @@ const columnsOf = (order: Order): TableColumnsType<OrderItem> => {
             <Tag className="!m-0 self-start">{ORDER_ITEM_TYPE_LABEL[item.type]}</Tag>
             <span className="text-[18px] font-bold text-sc-ink [overflow-wrap:anywhere]">{title}</span>
             {detail && <span className="text-[15.5px] leading-relaxed text-sc-muted">{detail}</span>}
+            {item.productSale && <SaleStatusActions item={item} />}
           </div>
         );
       },

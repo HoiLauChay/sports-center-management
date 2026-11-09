@@ -12,4 +12,5 @@ export const toSettingResponse = (setting: SettingRow): SystemSettings => ({
   membershipExpiryWarningDays: setting.membershipExpiryWarningDays,
   topUpMinAmount: roundMoney(setting.topUpMinAmount),
   invoiceExpiryMinutes: setting.invoiceExpiryMinutes,
+  shopPickupHours: setting.shopPickupHours,
 });

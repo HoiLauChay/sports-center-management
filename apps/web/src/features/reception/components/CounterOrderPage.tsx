@@ -203,6 +203,15 @@ export function CounterOrderPage() {
   const quote = cart.lines.length ? quoteQuery.data : undefined;
   const memberships = useMemberMemberships(cart.buyer?.kind === 'MEMBER' ? cart.buyer.accountId : undefined);
   const inCart = useMemo(() => new Set(cart.lines.map((line) => selectionKey(line.selection))), [cart.lines]);
+  const productsInCart = useMemo(
+    () =>
+      new Map(
+        cart.lines.flatMap(({ selection }) =>
+          selection.type === 'PRODUCT_SALE' ? [[selection.productId, selection.quantity] as const] : [],
+        ),
+      ),
+    [cart.lines],
+  );
 
   // Cash handed over belongs to one total: once the total changes it no longer applies.
   const tendered = cash && cash.total === quote?.total ? cash.value : null;
@@ -359,6 +368,8 @@ export function CounterOrderPage() {
             tab={tab}
             onTab={setTab}
             inCart={inCart}
+            productsInCart={productsInCart}
+            onProductQuantity={store.setProductQuantity}
             currentPackageId={memberships.data?.current?.package.id}
             onAdd={(selection) => void add(selection)}
           />
@@ -372,6 +383,7 @@ export function CounterOrderPage() {
             pricing={quoteQuery.isFetching && !quote}
             disabled={busy}
             onRemove={store.remove}
+            onQuantity={store.setQuantity}
             coupons={
               isMember
                 ? {

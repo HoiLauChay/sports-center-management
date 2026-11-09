@@ -1,13 +1,13 @@
 import type { Account } from '@sports-center/shared';
-import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, DatePicker, InputNumber, Select, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Info } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Table } from '~/components/data/Table';
+import { SportFacilitySteps } from '~/features/bookings/components/SportFacilitySteps';
 import { usePackagePreview } from '~/features/bookings/hooks/useBookings';
+import { useSportFacilityChoice } from '~/features/bookings/hooks/useSportFacilityChoice';
 import type { PackageConflict, PackagePreviewBooking, PackagePreviewRequest } from '~/features/bookings/types';
-import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
@@ -71,11 +71,12 @@ interface CounterRecurringPackagePickerProps {
 /**
  * Recurring facility package (UC_2.8): weekdays + slot + number of weeks → preview every session. One conflicting
  * session rejects the whole package (BR_2.18), and the conflicting dates are listed so the person can adjust.
+ * Sport and facility are chosen first, in the same steps members go through.
  */
 export function CounterRecurringPackagePicker({ user, buyer, onAdd }: CounterRecurringPackagePickerProps) {
-  const facilities = useQuery(facilitiesQueryOptions);
+  const choice = useSportFacilityChoice();
   const settings = useSettings();
-  const [facilityId, setFacilityId] = useState<string>();
+  const facilityId = choice.facility?.id;
   const [startDate, setStartDate] = useState<string | null>(null);
   const [slotIndex, setSlotIndex] = useState<number>();
   const [weeks, setWeeks] = useState<number | null>(null);
@@ -87,7 +88,6 @@ export function CounterRecurringPackagePicker({ user, buyer, onAdd }: CounterRec
     [settings.data],
   );
   const slot = slotIndex === undefined ? undefined : slots[slotIndex];
-  const bookable = (facilities.data ?? []).filter((facility) => facility.isActive);
 
   const request: PackagePreviewRequest | null =
     facilityId && startDate && slot && days.length > 0 && weeks && weeks >= 1
@@ -129,202 +129,204 @@ export function CounterRecurringPackagePicker({ user, buyer, onAdd }: CounterRec
   const sessions = weeks ? days.length * weeks : 0;
 
   return (
-    <div className="@container">
-      <div className="grid items-start gap-4 @4xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="@container flex flex-col gap-5 rounded-xl border border-sc-border-soft bg-white p-4">
-          <div>
-            <FieldLabel>Sân / phòng</FieldLabel>
-            <Select
-              className="w-full"
-              size="large"
-              placeholder="Chọn sân / phòng"
-              loading={facilities.isPending}
-              value={facilityId}
-              onChange={setFacilityId}
-              options={bookable.map((facility) => ({
-                value: facility.id,
-                label: `${facility.name} · ${formatVND(facility.pricePerSlot)}/slot`,
-              }))}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 @lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)]">
-            <div>
-              <FieldLabel>Bắt đầu từ</FieldLabel>
-              <DatePicker
-                allowClear={false}
-                size="large"
-                className="w-full"
-                format="DD/MM/YYYY"
-                value={startDate ? dayjs(startDate, DATE_FORMAT) : null}
-                minDate={dayjs(todayVN(), DATE_FORMAT)}
-                onChange={(value) => value && setStartDate(value.format(DATE_FORMAT))}
-              />
-            </div>
-            <div>
-              <FieldLabel>Khung giờ</FieldLabel>
-              <Select
-                className="w-full"
-                size="large"
-                value={slotIndex}
-                placeholder="Chọn khung giờ"
-                onChange={setSlotIndex}
-                options={slots.map((entry, index) => ({ value: index, label: `${entry.startTime}–${entry.endTime}` }))}
-              />
-            </div>
-            <div className="col-span-2 @lg:col-span-1">
-              <FieldLabel>Số tuần</FieldLabel>
-              <div className="flex items-center gap-1.5">
-                <InputNumber
-                  className="!w-[72px]"
-                  size="large"
-                  min={1}
-                  max={12}
-                  precision={0}
-                  value={weeks}
-                  onChange={setWeeks}
-                />
-                {WEEK_PRESETS.map((value) => (
-                  <ChoiceChip key={value} tall active={weeks === value} onClick={() => setWeeks(value)}>
-                    {value}
-                  </ChoiceChip>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <FieldLabel className="!mb-0">Thứ trong tuần</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {DAY_PRESETS.map((preset) => (
-                  <ChoiceChip
-                    key={preset.label}
-                    active={sameDays(preset.days)}
-                    onClick={() => setDays([...preset.days].sort())}
-                  >
-                    {preset.label}
-                  </ChoiceChip>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-1.5">
-              {WEEK_ORDER.map((day) => {
-                const isSelected = days.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    aria-pressed={isSelected}
-                    aria-label={DAY_LABEL[day]}
-                    title={DAY_LABEL[day]}
-                    onClick={() =>
-                      setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
-                    }
-                    className={`h-11 cursor-pointer rounded-lg border font-display text-[17px] font-bold uppercase transition-colors ${
-                      isSelected
-                        ? 'border-sc-primary bg-sc-primary text-white'
-                        : day === 0 || day === 6
-                          ? 'border-sc-border bg-sc-paper/60 text-sc-ink hover:border-sc-primary-border'
-                          : 'border-sc-border bg-white text-sc-ink hover:border-sc-primary-border hover:bg-sc-paper'
-                    }`}
-                  >
-                    {DAY_SHORT[day]}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-2.5 rounded-lg bg-sc-paper px-3 py-2 text-[14.5px]">
-              {days.length === 0 ? (
-                <span className="font-medium text-sc-error">Chọn ít nhất một thứ trong tuần</span>
-              ) : (
-                <span className="text-sc-ink-2">
-                  {WEEK_ORDER.filter((d) => days.includes(d))
-                    .map((d) => DAY_SHORT[d])
-                    .join(', ')}{' '}
-                  · {days.length} buổi/tuần × {weeks ?? '?'} tuần = <b className="text-sc-primary">{sessions} buổi</b>
+    <SportFacilitySteps choice={choice} finalLabel="Lịch định kỳ" sportTitle="Khách muốn chơi môn gì?">
+      <div className="@container">
+        <div className="grid items-start gap-4 @4xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <div className="@container flex flex-col gap-5 rounded-xl border border-sc-border-soft bg-white p-4">
+            {choice.facility && (
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="m-0 font-display text-[17px] font-bold tracking-wide uppercase">
+                  {choice.facility.name}
+                </h3>
+                <span className="text-[14.5px] text-sc-muted tabular-nums">
+                  {formatVND(choice.facility.pricePerSlot)}/slot
                 </span>
-              )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 @lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)]">
+              <div>
+                <FieldLabel>Bắt đầu từ</FieldLabel>
+                <DatePicker
+                  allowClear={false}
+                  size="large"
+                  className="w-full"
+                  format="DD/MM/YYYY"
+                  value={startDate ? dayjs(startDate, DATE_FORMAT) : null}
+                  minDate={dayjs(todayVN(), DATE_FORMAT)}
+                  onChange={(value) => value && setStartDate(value.format(DATE_FORMAT))}
+                />
+              </div>
+              <div>
+                <FieldLabel>Khung giờ</FieldLabel>
+                <Select
+                  className="w-full"
+                  size="large"
+                  value={slotIndex}
+                  placeholder="Chọn khung giờ"
+                  onChange={setSlotIndex}
+                  options={slots.map((entry, index) => ({
+                    value: index,
+                    label: `${entry.startTime}–${entry.endTime}`,
+                  }))}
+                />
+              </div>
+              <div className="col-span-2 @lg:col-span-1">
+                <FieldLabel>Số tuần</FieldLabel>
+                <div className="flex items-center gap-1.5">
+                  <InputNumber
+                    className="!w-[72px]"
+                    size="large"
+                    min={1}
+                    max={12}
+                    precision={0}
+                    value={weeks}
+                    onChange={setWeeks}
+                  />
+                  {WEEK_PRESETS.map((value) => (
+                    <ChoiceChip key={value} tall active={weeks === value} onClick={() => setWeeks(value)}>
+                      {value}
+                    </ChoiceChip>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            <div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <FieldLabel className="!mb-0">Thứ trong tuần</FieldLabel>
+                <div className="flex flex-wrap gap-1.5">
+                  {DAY_PRESETS.map((preset) => (
+                    <ChoiceChip
+                      key={preset.label}
+                      active={sameDays(preset.days)}
+                      onClick={() => setDays([...preset.days].sort())}
+                    >
+                      {preset.label}
+                    </ChoiceChip>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {WEEK_ORDER.map((day) => {
+                  const isSelected = days.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      aria-pressed={isSelected}
+                      aria-label={DAY_LABEL[day]}
+                      title={DAY_LABEL[day]}
+                      onClick={() =>
+                        setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
+                      }
+                      className={`h-11 cursor-pointer rounded-lg border font-display text-[17px] font-bold uppercase transition-colors ${
+                        isSelected
+                          ? 'border-sc-primary bg-sc-primary text-white'
+                          : day === 0 || day === 6
+                            ? 'border-sc-border bg-sc-paper/60 text-sc-ink hover:border-sc-primary-border'
+                            : 'border-sc-border bg-white text-sc-ink hover:border-sc-primary-border hover:bg-sc-paper'
+                      }`}
+                    >
+                      {DAY_SHORT[day]}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2.5 rounded-lg bg-sc-paper px-3 py-2 text-[14.5px]">
+                {days.length === 0 ? (
+                  <span className="font-medium text-sc-error">Chọn ít nhất một thứ trong tuần</span>
+                ) : (
+                  <span className="text-sc-ink-2">
+                    {WEEK_ORDER.filter((d) => days.includes(d))
+                      .map((d) => DAY_SHORT[d])
+                      .join(', ')}{' '}
+                    · {days.length} buổi/tuần × {weeks ?? '?'} tuần = <b className="text-sc-primary">{sessions} buổi</b>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <p className="m-0 flex items-start gap-1.5 text-[13.5px] leading-relaxed text-sc-muted">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              Gói chỉ đặt được khi mọi buổi đều còn trống.
+            </p>
           </div>
 
-          <p className="m-0 flex items-start gap-1.5 text-[13.5px] leading-relaxed text-sc-muted">
-            <Info size={14} className="mt-0.5 shrink-0" />
-            Gói chỉ đặt được khi mọi buổi đều còn trống.
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-sc-border-soft bg-white p-4">
-          <h3 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-wide uppercase">
-            Xem trước {preview.data ? `${preview.data.bookings.length} buổi` : 'lịch'}
-          </h3>
-          {!request ? (
-            <p className="m-0 text-sc-muted">Chọn sân / phòng và thứ trong tuần để xem lịch dự kiến.</p>
-          ) : preview.isError ? (
-            <Alert type="error" showIcon title={toApiError(preview.error).message} />
-          ) : (
-            <>
-              {preview.data && !preview.data.isValid && (
-                <Alert
-                  type="error"
-                  showIcon
-                  className="!mb-3"
-                  title={
-                    preview.data.bookings.length === 0
-                      ? 'Gói không sinh được buổi nào trong khoảng đã chọn.'
-                      : `Không thể thêm gói: ${conflicts.length} buổi bị xung đột`
-                  }
-                  description={
-                    conflicts.length > 0 && (
-                      <ul className="m-0 pl-4">
-                        {conflicts.slice(0, 6).map((entry) => (
-                          <li key={entry.date}>
-                            {formatDayLabel(entry.date)} {entry.startTime}–{entry.endTime}:{' '}
-                            {entry.conflict ? CONFLICT_LABEL[entry.conflict].toLowerCase() : 'không đặt được'}
-                          </li>
-                        ))}
-                        {conflicts.length > 6 && <li>và {conflicts.length - 6} buổi khác…</li>}
-                      </ul>
-                    )
-                  }
+          <div className="rounded-xl border border-sc-border-soft bg-white p-4">
+            <h3 className="mt-0 mb-3 font-display text-[17px] font-bold tracking-wide uppercase">
+              Xem trước {preview.data ? `${preview.data.bookings.length} buổi` : 'lịch'}
+            </h3>
+            {!request ? (
+              <p className="m-0 text-sc-muted">
+                Chọn ngày bắt đầu, khung giờ, số tuần và thứ trong tuần để xem lịch dự kiến.
+              </p>
+            ) : preview.isError ? (
+              <Alert type="error" showIcon title={toApiError(preview.error).message} />
+            ) : (
+              <>
+                {preview.data && !preview.data.isValid && (
+                  <Alert
+                    type="error"
+                    showIcon
+                    className="!mb-3"
+                    title={
+                      preview.data.bookings.length === 0
+                        ? 'Gói không sinh được buổi nào trong khoảng đã chọn.'
+                        : `Không thể thêm gói: ${conflicts.length} buổi bị xung đột`
+                    }
+                    description={
+                      conflicts.length > 0 && (
+                        <ul className="m-0 pl-4">
+                          {conflicts.slice(0, 6).map((entry) => (
+                            <li key={entry.date}>
+                              {formatDayLabel(entry.date)} {entry.startTime}–{entry.endTime}:{' '}
+                              {entry.conflict ? CONFLICT_LABEL[entry.conflict].toLowerCase() : 'không đặt được'}
+                            </li>
+                          ))}
+                          {conflicts.length > 6 && <li>và {conflicts.length - 6} buổi khác…</li>}
+                        </ul>
+                      )
+                    }
+                  />
+                )}
+                <Table<PackagePreviewBooking>
+                  rowKey="date"
+                  columns={columns}
+                  dataSource={preview.data?.bookings}
+                  loading={preview.isFetching}
+                  pagination={false}
+                  scroll={{ y: 280 }}
+                  rowClassName={(entry) => (entry.available ? '' : 'bg-[#fdf1ef]')}
                 />
-              )}
-              <Table<PackagePreviewBooking>
-                rowKey="date"
-                columns={columns}
-                dataSource={preview.data?.bookings}
-                loading={preview.isFetching}
-                pagination={false}
-                scroll={{ y: 280 }}
-                rowClassName={(entry) => (entry.available ? '' : 'bg-[#fdf1ef]')}
-              />
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="text-[13.5px] text-sc-muted">
-                    Tổng gói ({preview.data?.bookings.length ?? 0} buổi, giá {formatVND(preview.data?.unitPrice ?? 0)}
-                    /buổi)
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[13.5px] text-sc-muted">
+                      Tổng gói ({preview.data?.bookings.length ?? 0} buổi, giá {formatVND(preview.data?.unitPrice ?? 0)}
+                      /buổi)
+                    </div>
+                    <b className="text-[20px] tabular-nums">{line ? formatVND(line.total) : '…'}</b>
+                    {line && line.membershipDiscount > 0 && (
+                      <span className="ml-2 text-sc-success">đã giảm {formatVND(line.membershipDiscount)}</span>
+                    )}
                   </div>
-                  <b className="text-[20px] tabular-nums">{line ? formatVND(line.total) : '…'}</b>
-                  {line && line.membershipDiscount > 0 && (
-                    <span className="ml-2 text-sc-success">đã giảm {formatVND(line.membershipDiscount)}</span>
-                  )}
+                  <Button
+                    type="primary"
+                    size="large"
+                    disabled={!preview.data?.isValid || !selection || preview.isFetching || (line ? !line.valid : true)}
+                    onClick={() => selection && onAdd(selection)}
+                  >
+                    Thêm vào đơn
+                  </Button>
                 </div>
-                <Button
-                  type="primary"
-                  size="large"
-                  disabled={!preview.data?.isValid || !selection || preview.isFetching || (line ? !line.valid : true)}
-                  onClick={() => selection && onAdd(selection)}
-                >
-                  Thêm vào giỏ
-                </Button>
-              </div>
-              {line && !line.valid && preview.data?.isValid && (
-                <Alert type="error" showIcon className="!mt-3" title={line.error?.message} />
-              )}
-            </>
-          )}
+                {line && !line.valid && preview.data?.isValid && (
+                  <Alert type="error" showIcon className="!mt-3" title={line.error?.message} />
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </SportFacilitySteps>
   );
 }

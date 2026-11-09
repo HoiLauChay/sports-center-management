@@ -1,5 +1,15 @@
 import type { AppNotification, NotificationType } from '@sports-center/shared';
-import { BadgeCheck, Bell, CalendarCheck, CreditCard, Dumbbell, LifeBuoy, School, type LucideIcon } from 'lucide-react';
+import {
+  BadgeCheck,
+  Bell,
+  CalendarCheck,
+  CreditCard,
+  Dumbbell,
+  LifeBuoy,
+  School,
+  ShoppingBag,
+  type LucideIcon,
+} from 'lucide-react';
 import { formatRelative } from '~/lib/format';
 
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
@@ -9,6 +19,7 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   CLASS: School,
   TRAINING: Dumbbell,
   SUPPORT: LifeBuoy,
+  SHOP: ShoppingBag,
   SYSTEM: Bell,
 };
 
@@ -19,6 +30,7 @@ const TYPE_TONE: Record<NotificationType, string> = {
   CLASS: 'bg-amber-50 text-amber-700',
   TRAINING: 'bg-rose-50 text-rose-700',
   SUPPORT: 'bg-slate-100 text-slate-700',
+  SHOP: 'bg-orange-50 text-orange-700',
   SYSTEM: 'bg-sc-paper text-sc-ink-2',
 };
 

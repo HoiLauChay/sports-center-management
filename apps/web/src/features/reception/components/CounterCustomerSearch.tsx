@@ -143,7 +143,8 @@ function GuestForm({
       </div>
       <p className="m-0 flex items-start gap-1.5 text-[13.5px] text-sc-muted">
         <Info size={14} className="mt-px shrink-0" />
-        Khách vãng lai chỉ đặt sân lẻ, không có ưu đãi gói, không dùng mã giảm giá và không được hoàn tiền.
+        Khách vãng lai chỉ đặt sân lẻ hoặc mua sản phẩm, không có ưu đãi gói, không dùng mã giảm giá và không được hoàn
+        tiền.
       </p>
     </div>
   );
@@ -196,7 +197,9 @@ export function CounterCustomerSearch({
           </span>
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-sc-ink">Bán cho khách vãng lai{typed ? ` · ${typed}` : ''}</span>
-            <span className="text-[14.5px] text-sc-muted">Khách không có tài khoản, chỉ đặt sân lẻ</span>
+            <span className="text-[14.5px] text-sc-muted">
+              Khách không có tài khoản, chỉ đặt sân lẻ hoặc mua sản phẩm
+            </span>
           </div>
         </div>
       ),

@@ -12,6 +12,7 @@ const LOCK_ORDER = [
   ['facilities', 'facilities', 'id'],
   ['memberMemberships', 'member_memberships', 'id'],
   ['coupons', 'coupons', 'id'],
+  ['products', 'products', 'id'],
   ['orders', 'orders', 'id'],
   ['orderItems', 'order_items', 'id'],
   ['invoices', 'invoices', 'id'],

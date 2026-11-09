@@ -13,5 +13,6 @@ cronRouter.post('/automations', cronController.automations);
 cronRouter.post('/memberships', cronController.memberships);
 cronRouter.post('/reminders', cronController.reminders);
 cronRouter.post('/sepay-sync', cronController.sepaySync);
+cronRouter.post('/shop-pickups', cronController.shopPickups);
 
 export default cronRouter;

@@ -20,6 +20,7 @@ export const UPLOAD_PURPOSES = [
   'COURSE_THUMBNAIL',
   'SPORT_ICON',
   'CERTIFICATE',
+  'PRODUCT_IMAGE',
 ] as const;
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 export const AUDIT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'APPROVE', 'REJECT', 'RESOLVE', 'IGNORE'] as const;
@@ -49,6 +50,9 @@ export const AUDIT_ENTITY_TYPES = [
   'BANK_TRANSACTION',
   'INVOICE',
   'WALLET_TRANSACTION',
+  'PRODUCT_CATEGORY',
+  'PRODUCT',
+  'PRODUCT_SALE',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 
@@ -80,6 +84,7 @@ export const NOTIFICATION_TYPES = [
   'CLASS',
   'TRAINING',
   'SUPPORT',
+  'SHOP',
   'SYSTEM',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -99,10 +104,16 @@ export type InvoicePurpose = (typeof INVOICE_PURPOSES)[number];
 export const INVOICE_STATUSES = ['PENDING', 'PAID', 'EXPIRED', 'CANCELLED', 'FAILED'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-export const ORDER_ITEM_TYPES = ['MEMBERSHIP', 'FACILITY_BOOKING', 'FACILITY_PACKAGE', 'COURSE_ENROLLMENT'] as const;
+export const ORDER_ITEM_TYPES = [
+  'MEMBERSHIP',
+  'FACILITY_BOOKING',
+  'FACILITY_PACKAGE',
+  'COURSE_ENROLLMENT',
+  'PRODUCT_SALE',
+] as const;
 export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
 
-export const ORDER_SERVICES = ['MEMBERSHIP', 'BOOKING', 'CLASS'] as const;
+export const ORDER_SERVICES = ['MEMBERSHIP', 'BOOKING', 'CLASS', 'SHOP'] as const;
 export type OrderService = (typeof ORDER_SERVICES)[number];
 
 export const DISCOUNT_TYPES = ['PERCENT', 'FIXED'] as const;
@@ -156,3 +167,13 @@ export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
 
 export const SUPPORT_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
 export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
+
+export const STOCK_REASONS = ['IMPORT', 'ADJUST', 'SALE', 'SALE_CANCEL'] as const;
+export type StockReason = (typeof STOCK_REASONS)[number];
+
+/** Reasons a manager can record by hand; SALE / SALE_CANCEL come from orders. */
+export const MANUAL_STOCK_REASONS = ['IMPORT', 'ADJUST'] as const;
+export type ManualStockReason = (typeof MANUAL_STOCK_REASONS)[number];
+
+export const FULFILLMENT_STATUSES = ['PENDING_PICKUP', 'PICKED_UP', 'CANCELLED'] as const;
+export type FulfillmentStatus = (typeof FULFILLMENT_STATUSES)[number];

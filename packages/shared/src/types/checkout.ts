@@ -2,6 +2,7 @@ import type { BookingBenefit, OrderItemType, OrderStatus, PaymentMethod } from '
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { Person } from './audit';
 import type { MembershipBenefits } from './membership';
+import type { ProductSaleInfo } from './shop';
 
 export type ItemSnapshotBase = {
   title: string;
@@ -55,8 +56,23 @@ export type MembershipSnapshot = ItemSnapshotBase & {
   benefits: MembershipBenefits;
 };
 
+export type ProductSaleSnapshot = ItemSnapshotBase & {
+  productId: string;
+  productName: string;
+  sku: string;
+  categoryName: string;
+  sportName: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPrice: number;
+};
+
 export type ItemSnapshot =
-  FacilityBookingSnapshot | FacilityPackageSnapshot | CourseEnrollmentSnapshot | MembershipSnapshot;
+  | FacilityBookingSnapshot
+  | FacilityPackageSnapshot
+  | CourseEnrollmentSnapshot
+  | MembershipSnapshot
+  | ProductSaleSnapshot;
 
 export interface FacilityPackagePreview {
   bookings: {
@@ -117,6 +133,8 @@ export interface OrderItem {
   totalAmount: number;
   refundedAt: string | null;
   refId: string | null;
+  /** Hand-over state of a PRODUCT_SALE line; null for every other line. */
+  productSale: ProductSaleInfo | null;
 }
 
 export interface OrderRefund {

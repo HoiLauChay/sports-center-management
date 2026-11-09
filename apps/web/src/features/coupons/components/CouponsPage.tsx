@@ -6,7 +6,7 @@ import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
-import { ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
+import { ORDER_ITEM_TYPE_LABEL, ORDER_ITEM_TYPES } from '~/features/checkout/types';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -124,7 +124,7 @@ export function CouponsPage() {
       title: 'Áp dụng',
       key: 'types',
       render: (_, coupon) =>
-        coupon.applicableTypes && coupon.applicableTypes.length < 4 ? (
+        coupon.applicableTypes && coupon.applicableTypes.length < ORDER_ITEM_TYPES.length ? (
           <div className="flex flex-wrap gap-1">
             {coupon.applicableTypes.map((type) => (
               <Tag key={type} className="!m-0">

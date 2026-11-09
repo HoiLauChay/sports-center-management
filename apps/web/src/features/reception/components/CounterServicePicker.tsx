@@ -1,7 +1,7 @@
 import type { Account } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Progress, Skeleton, Tabs, Tag } from 'antd';
-import { CalendarRange, Check, CircleCheck, Crown, Dumbbell, LandPlot, Plus } from 'lucide-react';
+import { CalendarRange, Check, CircleCheck, Crown, Dumbbell, LandPlot, Package, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState } from '~/components/feedback/States';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
@@ -9,12 +9,16 @@ import { selectionKey } from '~/features/checkout/utils';
 import { useClasses } from '~/features/classes/hooks/useClasses';
 import { weeklyText } from '~/features/classes/utils';
 import { membershipsQueryOptions } from '~/features/memberships/hooks/useMemberships';
+import { CounterProductPicker } from '~/features/shop/components/CounterProductPicker';
 import { formatDate, formatVND } from '~/lib/format';
 import { benefitsText } from '../utils';
 import { CounterRecurringPackagePicker } from './CounterRecurringPackagePicker';
 import { CounterSlotBookingPicker } from './CounterSlotBookingPicker';
 
-export type CounterServiceTab = 'slot' | 'package' | 'class' | 'membership';
+export type CounterServiceTab = 'slot' | 'package' | 'class' | 'membership' | 'product';
+
+/** Tabs a walk-in guest can use: single bookings and shop products. */
+const GUEST_TABS: CounterServiceTab[] = ['slot', 'product'];
 
 interface PickerProps {
   onAdd: (selection: CheckoutItemInput) => void;
@@ -172,11 +176,13 @@ interface CounterServicePickerProps {
   tab: CounterServiceTab;
   onTab: (tab: CounterServiceTab) => void;
   inCart: Set<string>;
+  productsInCart: Map<string, number>;
+  onProductQuantity: (productId: string, quantity: number) => void;
   currentPackageId?: string;
   onAdd: (selection: CheckoutItemInput) => void;
 }
 
-/** The catalogue of the counter: slot grid, recurring package, classes and memberships. Guests only book slots. */
+/** The catalogue of the counter: slot grid, recurring package, classes, memberships and shop products. Guests only book slots or buy products. */
 export function CounterServicePicker({
   user,
   buyer,
@@ -184,13 +190,15 @@ export function CounterServicePicker({
   tab,
   onTab,
   inCart,
+  productsInCart,
+  onProductQuantity,
   currentPackageId,
   onAdd,
 }: CounterServicePickerProps) {
   return (
     <section className="rounded-xl border border-sc-border bg-white px-4 pt-1 pb-4 shadow-xs">
       <Tabs
-        activeKey={isMember ? tab : 'slot'}
+        activeKey={isMember || GUEST_TABS.includes(tab) ? tab : 'slot'}
         onChange={(key) => onTab(key as CounterServiceTab)}
         items={[
           {
@@ -217,6 +225,11 @@ export function CounterServicePicker({
                 },
               ]
             : []),
+          {
+            key: 'product',
+            label: <TabLabel icon={<Package size={16} />}>Sản phẩm</TabLabel>,
+            children: <CounterProductPicker onAdd={onAdd} inCart={productsInCart} onQuantity={onProductQuantity} />,
+          },
         ]}
       />
     </section>
