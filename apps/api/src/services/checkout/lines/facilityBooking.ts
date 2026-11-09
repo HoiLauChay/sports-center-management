@@ -9,7 +9,7 @@ import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import scheduleRepository from '~/repositories/schedule.repository';
 import { priceBookings } from '~/services/checkout/lines/bookingPricing';
-import { busyInOrder, buyerClashReason, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
+import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { LineHandler } from '~/services/checkout/types';
 import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { addDays, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
@@ -48,11 +48,10 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
       ranges: [range],
       facility: { id: facility.id, exclusive: false },
       accountId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
-      coachId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
       planned: ctx.planned.flatMap(({ uses }) => uses),
       now: ctx.now,
     });
-    if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[buyerClashReason(clash.reason)]);
+    if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[clash.reason]);
 
     const slots = (range.end - range.start) / ctx.settings.slotDurationMinutes;
     const unitPrice = Number(facility.pricePerSlot);

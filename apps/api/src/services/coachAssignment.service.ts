@@ -63,7 +63,6 @@ const assertQualifiedAndAvailable = async (current: ClassDetailRow, coachId: str
   }
   await scheduleService.assertAvailable(tx, {
     coachId,
-    accountId: coachId,
     ignoreSessionIds: current.sessions.map(({ id }) => id),
     ranges: sessions.map(({ sessionDate, startTime, endTime }) => ({
       date: formatDate(sessionDate),

@@ -10,7 +10,7 @@ import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
 import scheduleRepository from '~/repositories/schedule.repository';
 import { priceBookings, type BookedSlots } from '~/services/checkout/lines/bookingPricing';
-import { busyInOrder, buyerClashReason, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
+import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
 import scheduleService, { type PlannedUse, type TimeRange } from '~/services/schedule.service';
 import { addDays, formatCenterDate, parseTime, toCenterDateTime, toDbTime } from '~/utils/time';
@@ -46,13 +46,12 @@ export const planPackage = async (db: Db, ctx: CheckoutContext, input: FacilityP
     ranges,
     facility: { id: facility.id, exclusive: true },
     accountId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
-    coachId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
     planned: ctx.planned.flatMap(({ uses }) => uses),
     now: ctx.now,
   });
   const sessions = ranges.map((range) => {
     const clash: ScheduleClashReason | undefined =
-      buyerClashReason(clashes.find(({ date }) => date === range.date)?.reason) ??
+      clashes.find(({ date }) => date === range.date)?.reason ??
       (busyInOrder(ctx, [range]) ? 'MEMBER_BUSY' : undefined);
     return { ...range, clash };
   });

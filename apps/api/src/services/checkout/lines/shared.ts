@@ -16,12 +16,6 @@ export const CLASH_MESSAGE: Record<ScheduleClashReason, string> = {
   MEMBER_BUSY: 'Người mua đã có lịch khác trùng giờ',
 };
 
-export function buyerClashReason(reason: ScheduleClashReason): ScheduleClashReason;
-export function buyerClashReason(reason: ScheduleClashReason | undefined): ScheduleClashReason | undefined;
-export function buyerClashReason(reason: ScheduleClashReason | undefined): ScheduleClashReason | undefined {
-  return reason === 'COACH_BUSY' ? 'MEMBER_BUSY' : reason;
-}
-
 export const lineError = (code: LineError['code'], message: string) => ({
   ok: false as const,
   error: { code, message },

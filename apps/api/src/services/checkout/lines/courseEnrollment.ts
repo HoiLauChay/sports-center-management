@@ -2,7 +2,7 @@ import { ERROR_CODE, type CheckoutItemInput, type CourseEnrollmentSnapshot } fro
 
 import classRepository, { type ClassDetailRow } from '~/repositories/class.repository';
 import enrollmentRepository from '~/repositories/enrollment.repository';
-import { busyInOrder, buyerClashReason, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
+import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, LineHandler } from '~/services/checkout/types';
 import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { percentOf } from '~/utils/money';
@@ -33,7 +33,7 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
     const row = await classRepository.findDetail(input.classId, db);
     if (!row) return lineError(ERROR_CODE.NOT_FOUND, 'Lớp không tồn tại');
     if (row.coachId === accountId) {
-      return lineError(ERROR_CODE.INVALID_STATE, 'Huấn luyện viên không thể đăng ký lớp do chính mình phụ trách');
+      return lineError(ERROR_CODE.INVALID_STATE, 'Bạn đang phụ trách lớp này nên không đăng ký học được');
     }
     const closed = notOpen(row, ctx);
     if (closed) return lineError(ERROR_CODE.INVALID_STATE, closed);
@@ -58,8 +58,8 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
       end: fromDbTime(session.endTime),
     }));
     if (busyInOrder(ctx, ranges)) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE.MEMBER_BUSY);
-    const [clash] = await scheduleService.findConflicts(db, { ranges, accountId, coachId: accountId, now: ctx.now });
-    if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[buyerClashReason(clash.reason)]);
+    const [clash] = await scheduleService.findConflicts(db, { ranges, accountId, now: ctx.now });
+    if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[clash.reason]);
 
     const subtotal = Number(row.course.price);
     const discountPct = ctx.benefits?.current?.classDiscountPct ?? 0;

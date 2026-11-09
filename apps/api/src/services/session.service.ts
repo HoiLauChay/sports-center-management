@@ -135,7 +135,7 @@ class SessionService {
         ranges: [{ date, start, end }],
         facility: { id: facilityId, exclusive: true },
         coachId: nextCoachId ?? undefined,
-        accountIds: [...cls.enrollments.map(({ accountId }) => accountId), ...(nextCoachId ? [nextCoachId] : [])],
+        accountIds: cls.enrollments.map(({ accountId }) => accountId),
         ignoreSessionIds: [id],
         now,
       });
@@ -143,7 +143,6 @@ class SessionService {
       await scheduleService.assertAvailable(tx, {
         ranges: [{ date, start, end }],
         coachId: nextCoachId,
-        accountId: nextCoachId,
         ignoreSessionIds: [id],
         now,
       });
