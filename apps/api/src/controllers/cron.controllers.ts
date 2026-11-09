@@ -8,6 +8,7 @@ import classJobService from '~/services/classJob.service';
 import cleanupService from '~/services/cleanup.service';
 import membershipJobService from '~/services/membershipJob.service';
 import reminderJobService from '~/services/reminderJob.service';
+import shopService from '~/services/shop.service';
 
 class CronController {
   attendanceDefaults = async (_req: Request, res: Response) => {
@@ -28,6 +29,10 @@ class CronController {
 
   reminders = async (_req: Request, res: Response) => {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ result: await reminderJobService.run() }));
+  };
+
+  shopPickups = async (_req: Request, res: Response) => {
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ result: await shopService.runPickupJob() }));
   };
 
   sepaySync = async (_req: Request, res: Response) => {

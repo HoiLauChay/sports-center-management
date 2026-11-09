@@ -10,6 +10,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   CLASS: 'Lớp học',
   TRAINING: 'Huấn luyện',
   SUPPORT: 'Hỗ trợ',
+  SHOP: 'Cửa hàng',
   SYSTEM: 'Hệ thống',
 };
 

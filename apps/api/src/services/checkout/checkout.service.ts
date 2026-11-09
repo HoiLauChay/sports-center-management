@@ -76,6 +76,7 @@ const lockCheckout = async (tx: Prisma.TransactionClient, { buyerId, items, coup
     classes: unique(targets.flatMap((target) => target.classes ?? [])),
     facilities: unique(targets.flatMap((target) => target.facilities ?? [])),
     memberMemberships: unique(targets.flatMap((target) => target.memberMemberships ?? [])),
+    products: unique(targets.flatMap((target) => target.products ?? [])),
     coupons: unique(couponIds),
     invoices: unique([invoiceId]),
   });

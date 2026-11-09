@@ -12,5 +12,6 @@ cronRouter.post('/attendance-defaults', cronController.attendanceDefaults);
 cronRouter.post('/memberships', cronController.memberships);
 cronRouter.post('/reminders', cronController.reminders);
 cronRouter.post('/sepay-sync', cronController.sepaySync);
+cronRouter.post('/shop-pickups', cronController.shopPickups);
 
 export default cronRouter;

@@ -67,7 +67,12 @@ export interface LineHandler<Input extends CheckoutItemInput, Data, Snapshot ext
   type: Input['type'];
   guestAllowed: boolean;
   needsScheduleLock: boolean;
-  lockTargets(input: Input): { facilities?: string[]; classes?: string[]; memberMemberships?: string[] };
+  lockTargets(input: Input): {
+    facilities?: string[];
+    classes?: string[];
+    memberMemberships?: string[];
+    products?: string[];
+  };
   prepare(db: Db, ctx: CheckoutContext, input: Input): Promise<LineResult<Data, Snapshot>>;
   verify(tx: Prisma.TransactionClient, ctx: CheckoutContext, line: PricedLine<Data>): Promise<LineError | null>;
   fulfill(

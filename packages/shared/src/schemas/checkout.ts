@@ -5,6 +5,8 @@ import { MAX_MONEY } from '../constants/money';
 import { phoneSchema } from './account';
 import { timeOfDaySchema as timeSchema } from './time';
 
+export const MAX_PRODUCT_QUANTITY = 99;
+
 const dateSchema = z.iso.date('Ngày không hợp lệ');
 const facilityIdSchema = z.uuid('Mã cơ sở không hợp lệ');
 
@@ -38,6 +40,14 @@ export const checkoutItemInputSchema = z.discriminatedUnion(
     z.object({ type: z.literal('FACILITY_PACKAGE'), ...packageFields }),
     z.object({ type: z.literal('COURSE_ENROLLMENT'), classId: z.uuid('Mã lớp không hợp lệ') }),
     z.object({ type: z.literal('MEMBERSHIP'), packageId: z.uuid('Mã gói không hợp lệ') }),
+    z.object({
+      type: z.literal('PRODUCT_SALE'),
+      productId: z.uuid('Mã sản phẩm không hợp lệ'),
+      quantity: z
+        .int('Số lượng phải là số nguyên')
+        .min(1, 'Số lượng tối thiểu là 1')
+        .max(MAX_PRODUCT_QUANTITY, `Số lượng tối đa là ${MAX_PRODUCT_QUANTITY}`),
+    }),
   ],
   'Loại dòng không hợp lệ',
 );

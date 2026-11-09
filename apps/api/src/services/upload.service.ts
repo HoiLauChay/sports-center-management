@@ -22,6 +22,7 @@ const FOLDER: Record<UploadPurpose, string> = {
   COURSE_THUMBNAIL: 'course-thumbnails',
   SPORT_ICON: 'sport-icons',
   CERTIFICATE: 'certificates',
+  PRODUCT_IMAGE: 'product-images',
 };
 
 const EXTENSION: Record<string, string> = {

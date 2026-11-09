@@ -8,6 +8,7 @@ export interface SystemSettings {
   membershipExpiryWarningDays: number;
   topUpMinAmount: number;
   invoiceExpiryMinutes: number;
+  shopPickupHours: number;
 }
 
 export interface ScheduleConflict {

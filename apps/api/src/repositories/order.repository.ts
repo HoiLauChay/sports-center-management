@@ -15,6 +15,7 @@ const SERVICE_ITEM_TYPES: Record<OrderService, OrderItemType[]> = {
   MEMBERSHIP: ['MEMBERSHIP'],
   BOOKING: ['FACILITY_BOOKING', 'FACILITY_PACKAGE'],
   CLASS: ['COURSE_ENROLLMENT'],
+  SHOP: ['PRODUCT_SALE'],
 };
 
 const person = { select: { id: true, fullName: true } } as const;
@@ -63,6 +64,16 @@ const orderSelect = {
       facilityPackage: { select: { id: true } },
       enrollment: { select: { id: true } },
       membershipOrder: { select: { membershipId: true } },
+      productSale: {
+        select: {
+          id: true,
+          status: true,
+          quantity: true,
+          pickupDeadline: true,
+          pickedUpAt: true,
+          cancelledAt: true,
+        },
+      },
     },
     orderBy: { lineNumber: 'asc' },
   },

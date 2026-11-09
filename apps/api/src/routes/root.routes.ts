@@ -26,6 +26,7 @@ import { coachScheduleRouter, memberScheduleRouter } from '~/routes/personalSche
 import reportRouter from '~/routes/report.routes';
 import sessionRouter from '~/routes/session.routes';
 import settingRouter from '~/routes/setting.routes';
+import shopRouter from '~/routes/shop.routes';
 import { coachSpecializationRouter, managerSpecializationRouter } from '~/routes/specialization.routes';
 import sportRouter from '~/routes/sport.routes';
 import { mySupportRouter, supportRouter } from '~/routes/support.routes';
@@ -82,6 +83,7 @@ export const apiRoutes: [string, Router][] = [
   ['/payments', paymentRouter],
   ['/reports', reportRouter],
   ['/settings', settingRouter],
+  ['/shop', shopRouter],
   ['/sessions', sessionRouter],
   ['/specializations', managerSpecializationRouter],
   ['/sports', sportRouter],

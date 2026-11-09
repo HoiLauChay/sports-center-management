@@ -11,6 +11,7 @@ const settingSelect = {
   membershipExpiryWarningDays: true,
   topUpMinAmount: true,
   invoiceExpiryMinutes: true,
+  shopPickupHours: true,
 } satisfies Prisma.SystemSettingSelect;
 
 export type SettingRow = Prisma.SystemSettingGetPayload<{ select: typeof settingSelect }>;

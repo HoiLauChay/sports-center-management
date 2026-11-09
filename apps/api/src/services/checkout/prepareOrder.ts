@@ -16,10 +16,16 @@ const precheck = (ctx: CheckoutContext, input: CheckoutItemInput, earlier: Check
   const handler = lineHandlers[input.type];
   if (!handler) return { code: ERROR_CODE.LINE_TYPE_UNSUPPORTED, message: 'Loại dịch vụ này chưa được hỗ trợ' };
   if (ctx.buyer.kind === 'GUEST' && !handler.guestAllowed) {
-    return { code: ERROR_CODE.GUEST_NOT_ALLOWED, message: 'Khách vãng lai chỉ được đặt sân lẻ' };
+    return { code: ERROR_CODE.GUEST_NOT_ALLOWED, message: 'Khách vãng lai chỉ được đặt sân lẻ hoặc mua sản phẩm' };
   }
   if (input.type === 'MEMBERSHIP' && earlier.some(({ type }) => type === 'MEMBERSHIP')) {
     return { code: ERROR_CODE.MEMBERSHIP_LINE_LIMIT, message: 'Mỗi đơn chỉ được mua một gói thành viên' };
+  }
+  if (
+    input.type === 'PRODUCT_SALE' &&
+    earlier.some((line) => line.type === 'PRODUCT_SALE' && line.productId === input.productId)
+  ) {
+    return { code: ERROR_CODE.CONFLICT, message: 'Sản phẩm đã có trong đơn, hãy tăng số lượng ở dòng trước' };
   }
   return null;
 };

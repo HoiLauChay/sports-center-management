@@ -5,7 +5,12 @@ import type { OrderRow } from '~/repositories/order.repository';
 type ItemRow = OrderRow['items'][number];
 
 const refIdOf = (item: ItemRow) =>
-  item.bookings[0]?.id ?? item.facilityPackage?.id ?? item.enrollment?.id ?? item.membershipOrder?.membershipId ?? null;
+  item.bookings[0]?.id ??
+  item.facilityPackage?.id ??
+  item.enrollment?.id ??
+  item.membershipOrder?.membershipId ??
+  item.productSale?.id ??
+  null;
 
 const statusOf = (items: ItemRow[]): OrderStatus => {
   if (!items.some((item) => item.refundedAt)) return 'PAID';
@@ -47,6 +52,14 @@ export const toOrderResponse = (row: OrderRow): Order => ({
     totalAmount: Number(item.totalAmount),
     refundedAt: item.refundedAt?.toISOString() ?? null,
     refId: refIdOf(item),
+    productSale: item.productSale && {
+      id: item.productSale.id,
+      status: item.productSale.status,
+      quantity: item.productSale.quantity,
+      pickupDeadline: item.productSale.pickupDeadline?.toISOString() ?? null,
+      pickedUpAt: item.productSale.pickedUpAt?.toISOString() ?? null,
+      cancelledAt: item.productSale.cancelledAt?.toISOString() ?? null,
+    },
   })),
   refunds: row.walletTransactions.map((refund) => ({
     id: refund.id,

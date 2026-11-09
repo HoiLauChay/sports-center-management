@@ -19,6 +19,7 @@ export * from './payment';
 export * from './personalSchedule';
 export * from './report';
 export * from './setting';
+export * from './shop';
 export * from './specialization';
 export * from './sport';
 export * from './support';

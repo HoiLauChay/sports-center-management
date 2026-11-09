@@ -24,4 +24,5 @@ export const UPLOAD_RULES: Record<
   COURSE_THUMBNAIL: { contentTypes: IMAGE_CONTENT_TYPES, maxSize: 5 * MB, roles: ['MANAGER'] },
   SPORT_ICON: { contentTypes: IMAGE_CONTENT_TYPES, maxSize: 5 * MB, roles: ['MANAGER'] },
   CERTIFICATE: { contentTypes: ATTACHMENT_CONTENT_TYPES, maxSize: 10 * MB, roles: ['COACH'] },
+  PRODUCT_IMAGE: { contentTypes: IMAGE_CONTENT_TYPES, maxSize: 5 * MB, roles: ['MANAGER'] },
 };
