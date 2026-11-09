@@ -93,7 +93,8 @@ export function ShopReportPanel() {
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
-        <Card title="Bán chạy" size="small">
+        {/* min-w-0: an empty antd table sizes its placeholder to the table, so an auto-min grid cell would keep widening */}
+        <Card title="Bán chạy" size="small" className="min-w-0">
           <Table<TopProduct>
             rowKey={(row) => row.product.id}
             size="small"
@@ -104,7 +105,7 @@ export function ShopReportPanel() {
             locale={{ emptyText: <EmptyState title="Chưa bán được sản phẩm nào trong khoảng này" /> }}
           />
         </Card>
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Card title="Theo danh mục" size="small">
             {data?.byCategory.length ? (
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
