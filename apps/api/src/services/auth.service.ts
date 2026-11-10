@@ -236,8 +236,10 @@ class AuthService {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     // A token rotated a moment ago is two tabs (or a retry after a lost response) refreshing at once, not a theft:
-    // only a reuse after the grace window ends every session of the account.
-    if (record.revokedAt && Date.now() - record.revokedAt.getTime() > REFRESH_REUSE_GRACE_MS) {
+    // only a reuse after the grace window ends every session of the account. A token revoked on purpose (logout,
+    // password change, locked account) was never rotated, so it gets no grace at all.
+    const justRotated = record.rotatedAt !== null && Date.now() - record.rotatedAt.getTime() <= REFRESH_REUSE_GRACE_MS;
+    if (record.revokedAt && !justRotated) {
       await refreshTokenRepository.revokeAllByAccountId(record.accountId);
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
@@ -250,7 +252,7 @@ class AuthService {
 
     const refreshToken = generateOpaqueToken();
     await prisma.$transaction(async (tx) => {
-      await refreshTokenRepository.revokeByHash(tokenHash, tx);
+      await refreshTokenRepository.rotateByHash(tokenHash, tx);
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, record.accountId, meta), tx);
     });
 

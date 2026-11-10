@@ -16,6 +16,15 @@ class RefreshTokenRepository {
   revokeByHash = (tokenHash: string, tx: Prisma.TransactionClient = prisma) =>
     tx.refreshToken.updateMany({ where: { tokenHash, revokedAt: null }, data: { revokedAt: new Date() } });
 
+  /** Revokes a token because a refresh replaced it; only such a token gets the short reuse grace. */
+  rotateByHash = (tokenHash: string, tx: Prisma.TransactionClient = prisma) => {
+    const now = new Date();
+    return tx.refreshToken.updateMany({
+      where: { tokenHash, revokedAt: null },
+      data: { revokedAt: now, rotatedAt: now },
+    });
+  };
+
   revokeAllByAccountId = (accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.refreshToken.updateMany({ where: { accountId, revokedAt: null }, data: { revokedAt: new Date() } });
 }
