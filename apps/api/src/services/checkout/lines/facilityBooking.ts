@@ -16,6 +16,9 @@ import { addDays, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~
 
 type BookingInput = Extract<CheckoutItemInput, { type: 'FACILITY_BOOKING' }>;
 
+/** Same limit the slot grid of the web app applies; enforced here so a direct API call cannot take a whole day. */
+const MAX_SLOTS_PER_BOOKING = 3;
+
 interface BookingData {
   facilityId: string;
   date: string;
@@ -54,6 +57,9 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
     if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[clash.reason]);
 
     const slots = (range.end - range.start) / ctx.settings.slotDurationMinutes;
+    if (slots > MAX_SLOTS_PER_BOOKING) {
+      return lineError(ERROR_CODE.VALIDATION, `Mỗi lượt đặt tối đa ${MAX_SLOTS_PER_BOOKING} slot liên tiếp`);
+    }
     const unitPrice = Number(facility.pricePerSlot);
     const [priced] = await priceBookings(db, ctx, facility, [{ date: input.date, slots }]);
     const { subtotal, discount, discountPct, benefit } = priced!;

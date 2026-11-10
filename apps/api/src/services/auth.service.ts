@@ -57,6 +57,8 @@ const GOOGLE_TIMEOUT_MS = 10_000;
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
+const REFRESH_REUSE_GRACE_MS = 30_000;
+
 const invalidActivation = () =>
   fail(
     HTTP_STATUS.BAD_REQUEST,
@@ -233,7 +235,9 @@ class AuthService {
     if (!record) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
-    if (record.revokedAt) {
+    // A token rotated a moment ago is two tabs (or a retry after a lost response) refreshing at once, not a theft:
+    // only a reuse after the grace window ends every session of the account.
+    if (record.revokedAt && Date.now() - record.revokedAt.getTime() > REFRESH_REUSE_GRACE_MS) {
       await refreshTokenRepository.revokeAllByAccountId(record.accountId);
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
@@ -434,7 +438,13 @@ class AuthService {
       codeHash: hashToken(code),
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
-    await mailService.sendOtp(email, purpose, code);
+    try {
+      await mailService.sendOtp(email, purpose, code);
+    } catch (err) {
+      // A code nobody received must not start the resend cooldown.
+      await otpRepository.invalidateAll(email, purpose);
+      throw err;
+    }
   };
 
   getGoogleAuthUrl = (state: string, callbackUrl: string) => {

@@ -1,5 +1,6 @@
 import { CRON } from '~/constants/cron';
 import type { Prisma } from '~/generated/prisma/client';
+import accountRepository from '~/repositories/account.repository';
 import memberMembershipRepository from '~/repositories/memberMembership.repository';
 import membershipRepository from '~/repositories/membership.repository';
 import settingRepository from '~/repositories/setting.repository';
@@ -56,11 +57,13 @@ const settle = async (tx: Prisma.TransactionClient, id: string, accountId: strin
     ? null
     : !membership?.isActive
       ? 'gói đã ngừng bán'
-      : addDays(start, membership.durationDays) <= today
-        ? 'đã quá hạn gia hạn'
-        : (await walletRepository.readBalance(accountId, tx)) < Number(membership.price)
-          ? 'số dư ví không đủ'
-          : undefined;
+      : (await accountRepository.findById(accountId, 'MEMBER', tx))?.status !== 'ACTIVE'
+        ? 'tài khoản không còn hoạt động'
+        : addDays(start, membership.durationDays) <= today
+          ? 'đã quá hạn gia hạn'
+          : (await walletRepository.readBalance(accountId, tx)) < Number(membership.price)
+            ? 'số dư ví không đủ'
+            : undefined;
 
   if (reason === undefined && membership) {
     const ctx: CheckoutContext = {
@@ -109,16 +112,26 @@ class MembershipJobService {
     const counts = { renewed: 0, expired: 0, cancelled: 0, failed: 0, reminded: 0 };
     let notifications: CreatedNotification[] = [];
 
-    for (const { id, accountId } of await memberMembershipRepository.findDueIds(today, CRON.BATCH_SIZE)) {
-      try {
-        const result = await retryOnDuplicateCode('order_number_key', () =>
-          retryOnDuplicateCode('transaction_code_key', () => runTransaction((tx) => settle(tx, id, accountId, now))),
-        );
-        if (result.outcome !== 'skipped') counts[result.outcome] += 1;
-        notifications = [...notifications, ...result.notifications];
-      } catch (err) {
-        counts.failed += 1;
-        console.error(`Membership job failed for ${id}:`, err);
+    // A membership that keeps failing stays due: it is left out of the next page so it cannot starve the others.
+    const failedIds: string[] = [];
+    let settled = 0;
+    while (settled < CRON.BATCH_SIZE && failedIds.length < CRON.BATCH_SIZE) {
+      const due = await memberMembershipRepository.findDueIds(today, CRON.BATCH_SIZE - settled, failedIds);
+      if (due.length === 0) break;
+      for (const { id, accountId } of due) {
+        try {
+          const result = await retryOnDuplicateCode('order_number_key', () =>
+            retryOnDuplicateCode('transaction_code_key', () => runTransaction((tx) => settle(tx, id, accountId, now))),
+          );
+          if (result.outcome === 'skipped') failedIds.push(id);
+          else counts[result.outcome] += 1;
+          settled += 1;
+          notifications = [...notifications, ...result.notifications];
+        } catch (err) {
+          counts.failed += 1;
+          failedIds.push(id);
+          console.error(`Membership job failed for ${id}:`, err);
+        }
       }
     }
 
