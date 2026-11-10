@@ -11,6 +11,7 @@ import { SportTag } from '~/components/ui/SportTag';
 import { enrollmentProgress } from '~/features/classes/components/enrollmentActions';
 import { useMyEnrollments } from '~/features/classes/hooks/useClasses';
 import { weeklyText } from '~/features/classes/utils';
+import { CoachLink } from '~/features/coaches';
 import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, todayVN } from '~/lib/time';
@@ -327,7 +328,14 @@ export function TrainingClassPage({ classId }: { classId: string }) {
     <>
       <PageHeader
         title={enrollment?.class.name ?? 'Kết quả tập luyện'}
-        description={enrollment ? `Kết quả tập luyện · ${enrollmentProgress(enrollment)}` : undefined}
+        description={
+          enrollment && (
+            <>
+              HLV <CoachLink coach={enrollment.class.coach} fallback="đang cập nhật" /> · Kết quả tập luyện ·{' '}
+              {enrollmentProgress(enrollment)}
+            </>
+          )
+        }
         back={{ to: '/training', label: 'Lớp của tôi' }}
         extra={
           <Link to="/classes/$classId" params={{ classId }}>

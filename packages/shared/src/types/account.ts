@@ -13,6 +13,15 @@ export interface CoachProfile {
   certifications: string | null;
 }
 
+/** What any signed-in user may see of a coach: no contact details, birthday or address. */
+export interface CoachPublicProfile extends CoachProfile {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  coverImageUrl: string | null;
+  sports: { id: string; name: string; iconUrl: string | null; experienceYears: number | null }[];
+}
+
 export interface StaffProfile {
   staffNotes: string | null;
 }

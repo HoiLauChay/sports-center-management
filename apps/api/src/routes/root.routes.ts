@@ -9,6 +9,7 @@ import { bookingRouter, myBookingRouter } from '~/routes/booking.routes';
 import { checkinRouter, myCheckinRouter } from '~/routes/checkin.routes';
 import checkoutRouter from '~/routes/checkout.routes';
 import { classRouter, coachClassRouter, coachRegistrationRouter } from '~/routes/class.routes';
+import coachRouter from '~/routes/coach.routes';
 import couponRouter from '~/routes/coupon.routes';
 import courseRouter from '~/routes/course.routes';
 import cronRouter from '~/routes/cron.routes';
@@ -56,6 +57,7 @@ export const apiRoutes: [string, Router][] = [
   ['/coach/registrations', coachRegistrationRouter],
   ['/coach/specializations', coachSpecializationRouter],
   ['/coach/schedule', coachScheduleRouter],
+  ['/coaches', coachRouter],
   ['/classes', classRouter],
   ['/coupons', couponRouter],
   ['/courses', courseRouter],
