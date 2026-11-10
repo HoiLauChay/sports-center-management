@@ -12,6 +12,7 @@ import { useCurrentUser } from '~/features/auth';
 import { AddToCartButton } from '~/features/checkout';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import { canCancelEnrollment } from '~/features/checkout/refundPolicy';
+import { CoachLink } from '~/features/coaches';
 import { formatDate, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { formatDayLabel, isPast, parseDate, todayVN } from '~/lib/time';
@@ -104,7 +105,7 @@ export function ClassDetailPage() {
       <InfoGrid
         single={Boolean(enrollment)}
         items={[
-          { label: 'Huấn luyện viên', value: item.coach?.fullName ?? 'Đang cập nhật' },
+          { label: 'Huấn luyện viên', value: <CoachLink coach={item.coach} /> },
           { label: 'Cơ sở', value: item.facility.name },
           { label: 'Lịch học', value: weeklyText(item.weeklySchedule) },
           {
@@ -141,7 +142,8 @@ export function ClassDetailPage() {
           <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
             <SportTag name={item.course.sport.name} />
             <span>
-              HLV {item.coach?.fullName ?? 'đang cập nhật'} · {item.facility.name} · {item.course.totalSessions} buổi
+              HLV <CoachLink coach={item.coach} fallback="đang cập nhật" /> · {item.facility.name} ·{' '}
+              {item.course.totalSessions} buổi
             </span>
           </span>
         }
