@@ -57,13 +57,13 @@ function periodLabel(plan: MembershipPackage) {
 interface PlanCardProps {
   plan: MembershipPackage;
   current: boolean;
-  locked: boolean;
+  /** The member holds another package that this one would replace. */
+  switching: boolean;
   daysLeft: number;
 }
 
-function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
-  const buttonLabel = current ? 'Gói đang dùng' : locked ? 'Đang dùng gói khác' : 'Đăng ký gói này';
-  const lockedReason = 'Bạn đang có gói khác còn hiệu lực. Đổi gói được sau khi gói hiện tại hết hạn.';
+function PlanCard({ plan, current, switching, daysLeft }: PlanCardProps) {
+  const buttonLabel = current ? 'Gói đang dùng' : switching ? 'Đổi sang gói này' : 'Đăng ký gói này';
 
   return (
     <div
@@ -100,13 +100,17 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
           </li>
         ))}
       </ul>
-      {locked && <p className="mt-0 mb-3 text-[14.5px] text-sc-muted">{lockedReason}</p>}
+      {switching && (
+        <p className="mt-0 mb-3 text-[14.5px] text-sc-muted">
+          Gói hiện tại kết thúc ngay khi thanh toán, mất quyền lợi còn lại, không hoàn tiền.
+        </p>
+      )}
       <AddToCartButton
         block
         label={buttonLabel}
         type={current ? 'primary' : 'default'}
         selection={{ type: 'MEMBERSHIP', packageId: plan.id }}
-        disabledReason={current ? 'Gói tự gia hạn bằng ví khi hết hạn' : locked ? lockedReason : undefined}
+        disabledReason={current ? 'Gói tự gia hạn bằng ví khi hết hạn' : undefined}
         className="!h-[46px] !font-display !text-[17px] !font-extrabold !tracking-[.04em] !uppercase"
       />
     </div>
@@ -154,7 +158,7 @@ export function MembershipPlansPage() {
                   key={plan.id}
                   plan={plan}
                   current={ownedPlan?.package.id === plan.id}
-                  locked={Boolean(ownedPlan) && ownedPlan?.package.id !== plan.id}
+                  switching={Boolean(ownedPlan) && ownedPlan?.package.id !== plan.id}
                   daysLeft={daysLeft}
                 />
               ))}
