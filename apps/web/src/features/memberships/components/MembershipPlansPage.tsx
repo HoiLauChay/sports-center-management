@@ -62,7 +62,7 @@ interface PlanCardProps {
 }
 
 function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
-  const buttonLabel = current ? 'Gia hạn gói này' : locked ? 'Đang dùng gói khác' : 'Đăng ký gói này';
+  const buttonLabel = current ? 'Gói đang dùng' : locked ? 'Đang dùng gói khác' : 'Đăng ký gói này';
   const lockedReason = 'Bạn đang có gói khác còn hiệu lực. Đổi gói được sau khi gói hiện tại hết hạn.';
 
   return (
@@ -106,7 +106,7 @@ function PlanCard({ plan, current, locked, daysLeft }: PlanCardProps) {
         label={buttonLabel}
         type={current ? 'primary' : 'default'}
         selection={{ type: 'MEMBERSHIP', packageId: plan.id }}
-        disabledReason={locked ? lockedReason : undefined}
+        disabledReason={current ? 'Gói tự gia hạn bằng ví khi hết hạn' : locked ? lockedReason : undefined}
         className="!h-[46px] !font-display !text-[17px] !font-extrabold !tracking-[.04em] !uppercase"
       />
     </div>
@@ -165,9 +165,6 @@ export function MembershipPlansPage() {
             </Card>
           )}
           <ul className="mt-4 mb-0 flex list-disc flex-col gap-1 pl-5 text-[14.5px] text-sc-muted">
-            <li>
-              Gia hạn nối tiếp từ ngày hết hạn; gói mua trong cùng đơn chưa giảm giá cho các dòng khác của đơn đó.
-            </li>
             <li>
               Hủy gói: không gia hạn, không hoàn tiền, vẫn dùng đến hết hạn.{' '}
               <Link
