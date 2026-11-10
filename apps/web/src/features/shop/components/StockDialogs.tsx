@@ -41,6 +41,13 @@ function StockModalBody({ product, onClose }: StockModalProps) {
     },
   });
 
+  const blocked = !amount || after < 0;
+  /** One guard for the button and for Enter: a second submit while saving would record the movement twice. */
+  const submit = () => {
+    if (blocked || mutation.isPending) return;
+    mutation.mutate();
+  };
+
   return (
     <Modal
       open={Boolean(product)}
@@ -49,12 +56,12 @@ function StockModalBody({ product, onClose }: StockModalProps) {
       cancelText="Hủy"
       width={460}
       confirmLoading={mutation.isPending}
-      okButtonProps={{ disabled: !amount || after < 0 }}
-      onOk={() => mutation.mutate()}
+      okButtonProps={{ disabled: blocked }}
+      onOk={submit}
       onCancel={onClose}
       destroyOnHidden
     >
-      <Form layout="vertical" requiredMark={false} onFinish={() => mutation.mutate()}>
+      <Form layout="vertical" requiredMark={false} onFinish={submit}>
         {mutation.error && <Alert type="error" showIcon className="!mb-4" title={toApiError(mutation.error).message} />}
         <Form.Item label="Loại">
           <Segmented

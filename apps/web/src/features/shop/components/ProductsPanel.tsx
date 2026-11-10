@@ -13,6 +13,7 @@ import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useProductCategories, useProducts, useRefreshShop } from '../hooks/useShop';
 import { shopService } from '../services/shop.service';
+import { lastPageOf } from '../utils';
 import { ProductFormModal } from './ProductFormModal';
 import { ProductThumb } from './ProductThumb';
 import { MovementsDrawer, StockModal } from './StockDialogs';
@@ -40,6 +41,9 @@ export function ProductsPanel() {
     page,
     limit,
   });
+
+  const lastPage = lastPageOf(products.data, page, limit);
+  if (lastPage !== null) setPage(lastPage);
 
   const [editing, setEditing] = useState<Product | null>(null);
   const [formOpen, setFormOpen] = useState(false);

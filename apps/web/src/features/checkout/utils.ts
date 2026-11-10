@@ -94,6 +94,15 @@ export function selectionKey(selection: CheckoutItemInput): string {
   }
 }
 
+/** How many of each product a cart or counter draft holds, by product id. */
+export function productQuantities(lines: { selection: CheckoutItemInput }[]) {
+  return new Map(
+    lines.flatMap(({ selection }) =>
+      selection.type === 'PRODUCT_SALE' ? [[selection.productId, selection.quantity] as const] : [],
+    ),
+  );
+}
+
 /** Money already refunded on an order, or on one of its lines when `orderItemId` is given (BR_3.7). */
 export function refundedOf(order: Pick<Order, 'refunds'>, orderItemId?: string) {
   return order.refunds

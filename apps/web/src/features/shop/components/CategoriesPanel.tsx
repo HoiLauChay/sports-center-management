@@ -60,7 +60,9 @@ function CategoryFormModal({
     },
     onError: handleApiError,
   });
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = form.handleSubmit((values) => {
+    if (!mutation.isPending) mutation.mutate(values);
+  });
 
   return (
     <Modal

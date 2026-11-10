@@ -35,11 +35,17 @@ function refreshOnce(): Promise<void> {
   return pendingRefresh;
 }
 
+/** The session is over only when the server refuses the refresh token; a network error or a 5xx is worth a retry. */
+function notifyIfSessionEnded(refreshError: unknown) {
+  const status = axios.isAxiosError(refreshError) ? refreshError.response?.status : undefined;
+  if (status === 401 || status === 403) onAuthRefreshFailed?.();
+}
+
 export async function refreshSession() {
   try {
     await refreshOnce();
   } catch (refreshError) {
-    onAuthRefreshFailed?.();
+    notifyIfSessionEnded(refreshError);
     throw refreshError;
   }
 }
@@ -58,7 +64,7 @@ privateApi.interceptors.response.use(
     try {
       await refreshOnce();
     } catch (refreshError) {
-      onAuthRefreshFailed?.();
+      notifyIfSessionEnded(refreshError);
       return Promise.reject(refreshError);
     }
 

@@ -13,7 +13,7 @@ import { quoteQueryKey, useCounterDraft, useQuote } from '~/features/checkout/ho
 import { useCheckout } from '~/features/checkout/hooks/useCheckout';
 import { checkoutService } from '~/features/checkout/services/checkout.service';
 import type { Order } from '~/features/checkout/types';
-import { blockedReason, selectionKey } from '~/features/checkout/utils';
+import { blockedReason, productQuantities, selectionKey } from '~/features/checkout/utils';
 import { InvoiceSheet } from '~/features/orders/components/InvoiceSheet';
 import { useOrder } from '~/features/orders/hooks/useOrders';
 import { usersService } from '~/features/users/services/users.service';
@@ -53,6 +53,23 @@ function useInView(ref: RefObject<HTMLElement | null>) {
     return () => observer.disconnect();
   });
   return visible;
+}
+
+function readStored(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string | null) {
+  try {
+    if (value === null) window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, value);
+  } catch {
+    // Storage blocked: the invoice screen then lives for this page view only.
+  }
 }
 
 const focusCustomerSearch = () => window.setTimeout(() => document.getElementById(CUSTOMER_SEARCH_ID)?.focus(), 0);
@@ -142,7 +159,21 @@ function TransferPhase({
   }, [paid, queryClient]);
 
   if (invoice.isPending) return <PageLoading />;
-  if (invoice.isError) return <Alert type="error" showIcon title={toApiError(invoice.error).message} />;
+  if (invoice.isError) {
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+        <Alert type="error" showIcon title={toApiError(invoice.error).message} />
+        <div className="flex justify-center gap-2">
+          <Button type="primary" size="large" onClick={() => void invoice.refetch()}>
+            Thử lại
+          </Button>
+          <Button size="large" onClick={onBack}>
+            Quay lại đơn
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const data = invoice.data;
 
   if (paid && orderQuery.data) return <Receipt order={orderQuery.data} tendered={null} onNew={onFinished} />;
@@ -172,6 +203,7 @@ function TransferPhase({
 export function CounterOrderPage() {
   const user = useCurrentUser();
   const search = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
   const queryClient = useQueryClient();
   const { store, cart } = useCounterDraft();
   const add = useAddToCart(store);
@@ -180,7 +212,13 @@ export function CounterOrderPage() {
   const [cash, setCash] = useState<{ total: number; value: number } | null>(null);
   const [tab, setTab] = useState<CounterServiceTab>('slot');
   const [paid, setPaid] = useState<{ order: Order; tendered: number | null } | null>(null);
-  const [invoiceId, setInvoiceId] = useState<string | null>(null);
+  // Kept in sessionStorage next to the draft, so a reload while a transfer is pending comes back to its QR screen.
+  const invoiceStorageKey = `sc_counter_invoice_v1:${user.id}`;
+  const [invoiceId, setInvoiceIdState] = useState<string | null>(() => readStored(invoiceStorageKey));
+  const setInvoiceId = (id: string | null) => {
+    writeStored(invoiceStorageKey, id);
+    setInvoiceIdState(id);
+  };
   const cartRef = useRef<HTMLElement>(null);
   const cartVisible = useInView(cartRef);
 
@@ -191,10 +229,15 @@ export function CounterOrderPage() {
     enabled: Boolean(search.memberId) && !cart.buyer,
     retry: false,
   });
+  // The pre-selection is used once: `memberId` leaves the URL so a later "next customer" starts from an empty search.
   useEffect(() => {
-    if (preselect.data && !cart.buyer && preselect.data.role === 'MEMBER')
-      store.setBuyer(memberToBuyer(preselect.data));
-  }, [preselect.data, cart.buyer, store]);
+    if (!search.memberId) return;
+    if (!cart.buyer) {
+      if (!preselect.data) return;
+      if (preselect.data.role === 'MEMBER') store.setBuyer(memberToBuyer(preselect.data));
+    }
+    void navigate({ search: {}, replace: true });
+  }, [search.memberId, preselect.data, cart.buyer, store, navigate]);
 
   const buyer = buyerToApi(cart.buyer);
   const items = cart.lines.map((line) => line.selection);
@@ -203,15 +246,7 @@ export function CounterOrderPage() {
   const quote = cart.lines.length ? quoteQuery.data : undefined;
   const memberships = useMemberMemberships(cart.buyer?.kind === 'MEMBER' ? cart.buyer.accountId : undefined);
   const inCart = useMemo(() => new Set(cart.lines.map((line) => selectionKey(line.selection))), [cart.lines]);
-  const productsInCart = useMemo(
-    () =>
-      new Map(
-        cart.lines.flatMap(({ selection }) =>
-          selection.type === 'PRODUCT_SALE' ? [[selection.productId, selection.quantity] as const] : [],
-        ),
-      ),
-    [cart.lines],
-  );
+  const productsInCart = useMemo(() => productQuantities(cart.lines), [cart.lines]);
 
   // Cash handed over belongs to one total: once the total changes it no longer applies.
   const tendered = cash && cash.total === quote?.total ? cash.value : null;

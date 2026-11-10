@@ -45,8 +45,15 @@ export function ChangeEmailModal({ user, onClose }: ChangeEmailModalProps) {
       cancelText="Đóng"
       okButtonProps={{ danger: true }}
       confirmLoading={mutation.isPending}
+      cancelButtonProps={{ disabled: mutation.isPending }}
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: false }}
       onOk={submit}
-      onCancel={onClose}
+      onCancel={() => {
+        // Closing unmounts the modal and would drop the result message of a request still running.
+        if (!mutation.isPending) onClose();
+      }}
     >
       <div className="flex flex-col gap-3">
         <Alert type="info" showIcon title="Hệ thống gửi link kích hoạt tới email mới để họ đặt mật khẩu." />

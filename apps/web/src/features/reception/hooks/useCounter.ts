@@ -14,21 +14,19 @@ export function buyerToApi(buyer: DraftBuyer | null): CheckoutBuyer | undefined 
   return buyer.kind === 'MEMBER' ? { accountId: buyer.accountId } : { guest: { name: buyer.name, phone: buyer.phone } };
 }
 
-/** Memberships of a member (`GET /users/{id}/memberships`, #93); `null` while the API is not available. */
+/**
+ * Memberships of a member (`GET /users/{id}/memberships`). Shares its cache entry with `useMembershipsOf`, so a
+ * failed request stays an error instead of being stored as "no membership".
+ */
 export function useMemberMemberships(memberId: string | undefined) {
   return useQuery({
     queryKey: ['memberships', 'of', memberId],
     enabled: Boolean(memberId),
-    retry: false,
-    queryFn: async (): Promise<MyMemberships | null> => {
-      try {
-        const { data } = await privateApi.get<ApiResponse<MyMemberships>>(
-          `/users/${encodeURIComponent(memberId!)}/memberships`,
-        );
-        return data.result;
-      } catch {
-        return null;
-      }
+    queryFn: async (): Promise<MyMemberships> => {
+      const { data } = await privateApi.get<ApiResponse<MyMemberships>>(
+        `/users/${encodeURIComponent(memberId!)}/memberships`,
+      );
+      return data.result;
     },
   });
 }

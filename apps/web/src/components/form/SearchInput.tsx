@@ -36,7 +36,8 @@ export function SearchInput({
   // Sync state during render when controlled `value` prop changes
   if (value !== undefined && value !== prevValue) {
     setPrevValue(value);
-    setText(value);
+    // The parent holds the trimmed text: echoing it back must not eat a space the person just typed.
+    if (value !== text.trim()) setText(value);
   }
 
   const triggerChange = useCallback(

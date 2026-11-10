@@ -45,7 +45,7 @@ export function useInvoice(id: string | undefined) {
 /** Refreshes everything that shows a balance once an invoice has been paid. */
 export function useRefreshAfterPaid(invoice: Invoice | undefined, onPaid?: (invoice: Invoice) => void) {
   const queryClient = useQueryClient();
-  const previous = useRef<Invoice['status']>(undefined);
+  const previous = useRef<Pick<Invoice, 'id' | 'status'>>(undefined);
   const callback = useRef(onPaid);
   useEffect(() => {
     callback.current = onPaid;
@@ -53,14 +53,16 @@ export function useRefreshAfterPaid(invoice: Invoice | undefined, onPaid?: (invo
 
   useEffect(() => {
     if (!invoice) return;
-    if (previous.current === 'PENDING' && invoice.status === 'PAID') {
+    // Only a change seen on this very invoice counts: moving to another, already paid invoice is not a payment.
+    const before = previous.current;
+    if (before?.id === invoice.id && before.status === 'PENDING' && invoice.status === 'PAID') {
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });
       void queryClient.invalidateQueries({ queryKey: sessionQueryOptions.queryKey });
       callback.current?.(invoice);
     }
-    previous.current = invoice.status;
+    previous.current = { id: invoice.id, status: invoice.status };
   }, [invoice, queryClient]);
 }
 

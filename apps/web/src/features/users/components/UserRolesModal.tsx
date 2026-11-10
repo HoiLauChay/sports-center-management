@@ -21,6 +21,7 @@ export function UserRolesModal({ user, onClose }: UserRolesModalProps) {
   );
   const [error, setError] = useState<string | null>(null);
   const losesCoach = user.roles.includes('COACH') && !roles.includes('COACH');
+  const losesMember = user.roles.includes('MEMBER') && !roles.includes('MEMBER');
 
   const submit = () => {
     if (mutation.isPending) return;
@@ -49,8 +50,15 @@ export function UserRolesModal({ user, onClose }: UserRolesModalProps) {
       okText="Lưu"
       cancelText="Đóng"
       confirmLoading={mutation.isPending}
+      cancelButtonProps={{ disabled: mutation.isPending }}
+      closable={!mutation.isPending}
+      keyboard={!mutation.isPending}
+      mask={{ closable: false }}
       onOk={submit}
-      onCancel={onClose}
+      onCancel={() => {
+        // Closing unmounts the modal and would drop the result message of a request still running.
+        if (!mutation.isPending) onClose();
+      }}
     >
       <Form layout="vertical" requiredMark={false} onFinish={submit}>
         <Form.Item validateStatus={error ? 'error' : undefined} help={error ?? undefined} className="!mb-0">
@@ -65,6 +73,14 @@ export function UserRolesModal({ user, onClose }: UserRolesModalProps) {
           />
         </Form.Item>
       </Form>
+      {losesMember && (
+        <Alert
+          type="warning"
+          showIcon
+          className="!mt-4"
+          title="Bỏ vai trò Thành viên sẽ ẩn ví, gói thành viên, đơn hàng và lịch đặt của tài khoản này khỏi trang quản lý. Kiểm tra số dư ví và gói đang dùng trước khi lưu."
+        />
+      )}
       {losesCoach && (
         <Alert
           type="warning"

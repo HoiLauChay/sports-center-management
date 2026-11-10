@@ -121,7 +121,7 @@ export function UserDetailLoader({
   actions,
   editor,
 }: UserDetailLoaderProps) {
-  const { data: user, isPending, isError, error, notFound, refetch } = useUserDetail(id);
+  const { data: user, isPending, error, notFound, refetch } = useUserDetail(id);
 
   const back = (
     <button
@@ -151,7 +151,8 @@ export function UserDetailLoader({
     );
   }
   if (isPending) return <PageLoading />;
-  if (isError || !user) {
+  // A failed background refetch keeps the loaded page (and a form being edited); only a first load shows the error.
+  if (!user) {
     return (
       <>
         {back}

@@ -52,7 +52,15 @@ export function SaleStatusActions({ item }: { item: OrderItem }) {
               type="primary"
               icon={<PackageCheck size={14} />}
               loading={pickup.isPending}
-              onClick={() => pickup.mutate(sale.id)}
+              onClick={() =>
+                confirm({
+                  title: 'Xác nhận đã giao hàng?',
+                  content: 'Sau khi giao, sản phẩm này không hủy và hoàn tiền được nữa.',
+                  okText: 'Đã giao hàng',
+                  danger: false,
+                  onOk: () => pickup.mutateAsync(sale.id).catch(() => undefined),
+                })
+              }
             >
               Giao hàng
             </Button>

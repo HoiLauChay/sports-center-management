@@ -105,7 +105,7 @@ interface RefundDetailViewProps {
 /** Full-page refund receipt view matching `OrderDetailView` layout and inline PDF print preview. */
 export function RefundDetailView({ orderId, refundId, base }: RefundDetailViewProps) {
   const order = useOrder(orderId);
-  const pdf = useReceiptPdf(() => checkoutService.getRefundReceiptBlob(orderId, refundId));
+  const pdf = useReceiptPdf(() => checkoutService.getRefundReceiptBlob(orderId, refundId), `${orderId}:${refundId}`);
 
   if (order.isPending) return <PageLoading />;
   if (order.isError) {
