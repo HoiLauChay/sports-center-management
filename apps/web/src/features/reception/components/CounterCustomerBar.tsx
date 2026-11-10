@@ -11,8 +11,8 @@ import { useMemberMemberships } from '../hooks/useCounter';
 import { benefitsText, daysUntil } from '../utils';
 import { CustomerAvatar } from './CounterCustomerSearch';
 
-/** A membership this close to its end is offered for renewal at the counter. */
-const RENEW_WINDOW_DAYS = 7;
+/** A membership this close to its end is flagged at the counter; it renews itself from the wallet. */
+const ENDING_SOON_DAYS = 7;
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -25,12 +25,12 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
 
 function MembershipStat({
   accountId,
-  onRenew,
+  onRebuy,
   onBrowse,
   disabled,
 }: {
   accountId: string;
-  onRenew: (selection: CheckoutItemInput) => void;
+  onRebuy: (selection: CheckoutItemInput) => void;
   onBrowse: () => void;
   disabled?: boolean;
 }) {
@@ -43,17 +43,6 @@ function MembershipStat({
   const last = current ?? memberships.data.history[0];
   const sellable = (packages.data ?? []).find((plan) => plan.id === last?.package.id && plan.isActive);
   const daysLeft = current ? daysUntil(current.endDate) : null;
-  const renew = sellable ? (
-    <Button
-      size="small"
-      icon={<RefreshCw size={13} />}
-      disabled={disabled}
-      onClick={() => onRenew({ type: 'MEMBERSHIP', packageId: sellable.id })}
-    >
-      Gia hạn
-    </Button>
-  ) : null;
-
   if (!current) {
     return (
       <Stat label="Gói thành viên">
@@ -65,7 +54,16 @@ function MembershipStat({
           ) : (
             <span className="text-sc-muted">Chưa có gói</span>
           )}
-          {renew ?? (
+          {sellable ? (
+            <Button
+              size="small"
+              icon={<RefreshCw size={13} />}
+              disabled={disabled}
+              onClick={() => onRebuy({ type: 'MEMBERSHIP', packageId: sellable.id })}
+            >
+              Đăng ký lại
+            </Button>
+          ) : (
             <Button size="small" disabled={disabled} onClick={onBrowse}>
               Bán gói
             </Button>
@@ -81,14 +79,13 @@ function MembershipStat({
         <Tooltip title={current.currentBenefits ? benefitsText(current.currentBenefits) : undefined}>
           <b>{current.package.name}</b>
         </Tooltip>
-        {daysLeft !== null && daysLeft <= RENEW_WINDOW_DAYS ? (
+        {daysLeft !== null && daysLeft <= ENDING_SOON_DAYS ? (
           <Tag color="warning" className="!m-0">
             Còn {Math.max(daysLeft, 0)} ngày
           </Tag>
         ) : (
           <span className="text-[14.5px] text-sc-muted">đến {formatDate(current.endDate)}</span>
         )}
-        {daysLeft !== null && daysLeft <= RENEW_WINDOW_DAYS && renew}
       </span>
     </Stat>
   );
@@ -123,7 +120,7 @@ interface CounterCustomerBarProps {
   onBrowseMemberships: () => void;
 }
 
-/** The chosen customer at a glance: who, wallet, membership (with a renew shortcut), and a way to change. */
+/** The chosen customer at a glance: who, wallet, membership (with a shortcut to buy an expired one again), and a way to change. */
 export function CounterCustomerBar({
   buyer,
   hasLines,
@@ -160,7 +157,7 @@ export function CounterCustomerBar({
           <WalletStat accountId={buyer.accountId} />
           <MembershipStat
             accountId={buyer.accountId}
-            onRenew={onAdd}
+            onRebuy={onAdd}
             onBrowse={onBrowseMemberships}
             disabled={disabled}
           />

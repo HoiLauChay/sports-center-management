@@ -235,16 +235,9 @@ export function MyMembershipsPage() {
                       </h2>
                       {renewLine && <p className="m-0 text-[15px] text-sc-ink-2">{renewLine}</p>}
                     </div>
-                    <div className="flex w-full gap-2 sm:w-auto">
-                      <Link to={PATHS.memberships} className="flex-1 sm:flex-none">
-                        <Button type="primary" block>
-                          Gia hạn
-                        </Button>
-                      </Link>
-                      <Link to={PATHS.memberships} className="flex-1 sm:flex-none">
-                        <Button block>Đổi gói</Button>
-                      </Link>
-                    </div>
+                    <Link to={PATHS.memberships} className="w-full sm:w-auto">
+                      <Button block>Đổi gói</Button>
+                    </Link>
                   </div>
                   <div>
                     <div className="flex items-baseline justify-between gap-3 text-[14px]">
