@@ -227,9 +227,12 @@ class ScheduleService {
     const dates = [...new Set(sessions.map(({ sessionDate }) => formatDate(sessionDate)))];
     if (dates.length === 0) return new Set<string>();
     const [bookings, taughtOrAttended] = await scheduleRepository.findCommitments([coachId], dates, tx);
+    const own = new Set(classIds);
     const busy = [
       ...bookings.map((booking) => timed(booking.bookingDate, booking.startTime, booking.endTime)),
-      ...taughtOrAttended.map((session) => timed(session.sessionDate, session.startTime, session.endTime)),
+      ...taughtOrAttended
+        .filter((session) => !own.has(session.class.id))
+        .map((session) => timed(session.sessionDate, session.startTime, session.endTime)),
     ];
     return new Set(
       sessions

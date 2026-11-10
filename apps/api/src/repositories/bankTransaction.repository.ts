@@ -2,7 +2,7 @@ import type { ListBankTransactionsQuery } from '@sports-center/shared';
 
 import { prisma } from '~/configs/db';
 import type { BankTransactionStatus, Prisma } from '~/generated/prisma/client';
-import { pageOfGroups } from '~/utils/pagination';
+import { pageOfGroups, readSnapshot } from '~/utils/pagination';
 import { toCenterDateTime } from '~/utils/time';
 
 const person = { select: { id: true, fullName: true } } as const;
@@ -97,13 +97,15 @@ class BankTransactionRepository {
       }),
     };
     const groups = reconcileGroups(where);
-    const sizes = await Promise.all(groups.map((group) => prisma.bankTransaction.count({ where: group.where })));
-    const rows = await Promise.all(
-      pageOfGroups(groups, sizes, { page, limit }).map((args) =>
-        prisma.bankTransaction.findMany({ ...args, select: bankTransactionSelect }),
-      ),
-    );
-    return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
+    return readSnapshot(async (tx) => {
+      const sizes = await Promise.all(groups.map((group) => tx.bankTransaction.count({ where: group.where })));
+      const rows = await Promise.all(
+        pageOfGroups(groups, sizes, { page, limit }).map((args) =>
+          tx.bankTransaction.findMany({ ...args, select: bankTransactionSelect }),
+        ),
+      );
+      return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
+    });
   };
 
   /** The invoices that the payment codes of these transfers point to. */

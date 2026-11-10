@@ -7,10 +7,11 @@ import app from '~/app';
 import { prisma } from '~/configs/db';
 import { env } from '~/configs/env';
 import { addDays, todayInCenter } from '~/utils/time';
+import { seedOpenClass } from './helpers/class';
 import { resetDatabase } from './helpers/db';
 import { buildFetcher, createAccount, readCode, readResult } from './helpers/http';
 import { expectOrderConsistent } from './helpers/order';
-import { seedFacility } from './helpers/schedule';
+import { seedFacility, seedSession } from './helpers/schedule';
 import { expectWalletConsistent } from './helpers/wallet';
 
 const API_KEY = 'test-sepay-webhook-key';
@@ -166,5 +167,47 @@ describe('counter invoice', () => {
     expect(bank.map(({ status }) => status)).toEqual(['MATCHED', 'UNMATCHED']);
     expect(bank[1]!.note).toContain(closed.paymentCode);
     expect(await prisma.notification.count({ where: { accountId: receptionist.id } })).toBe(2);
+  });
+
+  test('money for a class the buyer came to teach, or for a slot a class took, goes to the member wallet', async () => {
+    const receptionist = await createAccount('RECEPTIONIST', 'receptionist@example.com');
+    const member = await createAccount('MEMBER', 'member@example.com');
+    const issue = async (item: unknown, expectedTotal: number) =>
+      readResult<Invoice>(
+        await checkout('POST', '/invoices', receptionist, {
+          buyer: { accountId: member.id },
+          items: [item],
+          expectedTotal,
+        }),
+      );
+    const enrollment = (classId: string) => ({ type: 'COURSE_ENROLLMENT', classId });
+
+    const classOn = (offset: number) =>
+      seedOpenClass({ startDate: addDays(todayInCenter(), offset), endDate: addDays(todayInCenter(), offset + 7) });
+    const [led, covered, untouched] = [await classOn(3), await classOn(4), await classOn(5)];
+    const court = await seedFacility(1);
+    const asLead = await issue(enrollment(led.id), 300_000);
+    const asCover = await issue(enrollment(covered.id), 300_000);
+    const slot = await issue(booking(court.id), 100_000);
+
+    await prisma.class.update({ where: { id: led.id }, data: { coachId: member.id } });
+    await prisma.classSession.updateMany({
+      where: { classId: covered.id, sessionNumber: 1 },
+      data: { coachId: member.id },
+    });
+    await seedSession(court.id, '18:00', '19:00', { date: day });
+
+    for (const invoice of [asLead, asCover, slot]) await transfer(invoice.paymentCode, invoice.amount);
+
+    expect(await prisma.order.count()).toBe(0);
+    expect(await prisma.classEnrollment.count()).toBe(0);
+    expect(await prisma.facilityBooking.count()).toBe(0);
+    const statuses = await prisma.invoice.findMany({ select: { status: true } });
+    expect(statuses.map(({ status }) => status)).toEqual(['FAILED', 'FAILED', 'FAILED']);
+    expect(await expectWalletConsistent(member.id)).toBe(700_000);
+
+    const paid = await issue(enrollment(untouched.id), 300_000);
+    await transfer(paid.paymentCode, paid.amount);
+    expect(await prisma.classEnrollment.count({ where: { classId: untouched.id, accountId: member.id } })).toBe(1);
   });
 });

@@ -25,8 +25,8 @@ export function ScheduleClashList({ conflicts }: { conflicts: ScheduleClash[] })
       title="Lịch học bị trùng"
       description={
         <ul className="m-0 list-disc pl-4 text-[13.5px]">
-          {conflicts.map((clash) => (
-            <li key={`${clash.date}-${clash.startTime}-${clash.reason}`}>
+          {conflicts.map((clash, index) => (
+            <li key={`${clash.date}-${clash.startTime}-${clash.reason}-${index}`}>
               <strong>{formatDate(clash.date)}</strong> {clash.startTime}–{clash.endTime}:{' '}
               {clash.classSession ? `trùng buổi của lớp "${clash.classSession.className}"` : CLASH_TEXT[clash.reason]}
             </li>

@@ -3,7 +3,7 @@ import type { ClassDerivedStatus, ListClassesQuery, Role } from '@sports-center/
 import { prisma } from '~/configs/db';
 import { Prisma } from '~/generated/prisma/client';
 import { courseSelect } from '~/repositories/course.repository';
-import { pageArgs, pageOfGroups } from '~/utils/pagination';
+import { pageArgs, pageOfGroups, readSnapshot } from '~/utils/pagination';
 import { unaccentContains } from '~/utils/search';
 import { todayInCenter } from '~/utils/time';
 
@@ -186,13 +186,15 @@ class ClassRepository {
     };
     if (viewer.role === 'MANAGER') {
       const groups = managerGroups(where, today);
-      const sizes = await Promise.all(groups.map((group) => prisma.class.count({ where: group.where })));
-      const rows = await Promise.all(
-        pageOfGroups(groups, sizes, { page, limit }).map((args) =>
-          prisma.class.findMany({ ...args, select: classSummarySelect }),
-        ),
-      );
-      return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
+      return readSnapshot(async (tx) => {
+        const sizes = await Promise.all(groups.map((group) => tx.class.count({ where: group.where })));
+        const rows = await Promise.all(
+          pageOfGroups(groups, sizes, { page, limit }).map((args) =>
+            tx.class.findMany({ ...args, select: classSummarySelect }),
+          ),
+        );
+        return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
+      });
     }
     return Promise.all([
       prisma.class.findMany({

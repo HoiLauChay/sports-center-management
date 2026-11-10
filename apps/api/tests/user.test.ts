@@ -105,6 +105,12 @@ describe('user list and detail permissions', () => {
     expect((await prisma.account.findUniqueOrThrow({ where: { id: other.id } })).email).toBe(
       'other-manager@example.com',
     );
+
+    await prisma.account.update({ where: { id: other.id }, data: { roles: ['MANAGER', 'MEMBER'] } });
+    await prisma.memberProfile.upsert({ where: { accountId: other.id }, create: { accountId: other.id }, update: {} });
+    expect((await getAs(`/${other.id}/wallet`, manager)).status).toBe(404);
+    expect((await getAs(`/${other.id}/memberships`, manager)).status).toBe(404);
+    expect((await getAs(`/${coach.id}/wallet`, manager)).status).toBe(404);
   });
 
   test('finds a member by name typed without marks or in another case', async () => {

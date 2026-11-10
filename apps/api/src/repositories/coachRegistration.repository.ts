@@ -20,10 +20,10 @@ class CoachRegistrationRepository {
     const rows = await tx.classCoachRegistration.findMany({
       where: { classId },
       select: registrationSelect,
-      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    const rejected = rows.filter(({ status }) => status === 'REJECTED');
-    return [...rows.filter(({ status }) => status !== 'REJECTED'), ...rejected.reverse()];
+    const of = (status: CoachRegistrationStatus) => rows.filter((row) => row.status === status);
+    return [...of('PENDING'), ...of('APPROVED'), ...of('REJECTED').reverse()];
   };
 
   findByCoach = (coachId: string, status?: CoachRegistrationStatus) =>

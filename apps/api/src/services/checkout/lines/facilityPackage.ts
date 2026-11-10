@@ -8,7 +8,6 @@ import {
 
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
-import scheduleRepository from '~/repositories/schedule.repository';
 import { priceBookings, type BookedSlots } from '~/services/checkout/lines/bookingPricing';
 import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { CheckoutContext, Db, LineHandler } from '~/services/checkout/types';
@@ -132,18 +131,14 @@ export const facilityPackageHandler: LineHandler<PackageInput, PackageData, Faci
     };
   },
 
-  verify: async (tx, _ctx, { data }) => {
-    const dates = data.bookings.map(({ date }) => date);
-    const [facility, , , maintenances] = await scheduleRepository.findFacilityUsage(data.facilityId, dates, tx);
-    if (!facility || facility.deletedAt || !facility.isActive) {
-      return { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.CLOSED };
-    }
-    const blocked = dates.some((date) => {
-      const startAt = toCenterDateTime(date, data.start);
-      const endAt = toCenterDateTime(date, data.end);
-      return maintenances.some((item) => item.startAt < endAt && startAt < item.endAt);
+  verify: async (tx, ctx, { data }) => {
+    const [clash] = await scheduleService.findConflicts(tx, {
+      ranges: data.bookings.map(({ date }) => ({ date, start: data.start, end: data.end })),
+      facility: { id: data.facilityId, exclusive: true },
+      accountId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
+      now: new Date(0),
     });
-    return blocked ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.MAINTENANCE } : null;
+    return clash ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE[clash.reason] } : null;
   },
 
   fulfill: async (tx, ctx, { data }, orderItemId) => {

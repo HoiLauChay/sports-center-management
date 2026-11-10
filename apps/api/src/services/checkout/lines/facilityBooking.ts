@@ -7,7 +7,6 @@ import {
 
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
-import scheduleRepository from '~/repositories/schedule.repository';
 import { priceBookings } from '~/services/checkout/lines/bookingPricing';
 import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { LineHandler } from '~/services/checkout/types';
@@ -88,16 +87,14 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
     };
   },
 
-  verify: async (tx, _ctx, { data }) => {
-    const [facility, , , maintenances] = await scheduleRepository.findFacilityUsage(data.facilityId, [data.date], tx);
-    if (!facility || facility.deletedAt || !facility.isActive) {
-      return { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.CLOSED };
-    }
-    const startAt = toCenterDateTime(data.date, data.start);
-    const endAt = toCenterDateTime(data.date, data.end);
-    return maintenances.some((item) => item.startAt < endAt && startAt < item.endAt)
-      ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.MAINTENANCE }
-      : null;
+  verify: async (tx, ctx, { data }) => {
+    const [clash] = await scheduleService.findConflicts(tx, {
+      ranges: [{ date: data.date, start: data.start, end: data.end }],
+      facility: { id: data.facilityId, exclusive: false },
+      accountId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
+      now: new Date(0),
+    });
+    return clash ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE[clash.reason] } : null;
   },
 
   fulfill: async (tx, ctx, { data }, orderItemId) => {
