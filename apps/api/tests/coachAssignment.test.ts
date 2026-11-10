@@ -188,4 +188,21 @@ describe('coach assignment', () => {
     const flags = Object.fromEntries(page.items.map(({ id, scheduleConflict }) => [id, scheduleConflict]));
     expect(flags).toEqual({ [draft.id]: true, [free.id]: false });
   });
+
+  test('a session the coach covers in one open class flags another open class at that time, never its own', async () => {
+    const covered = await seedDraftClass();
+    const other = await seedDraftClass();
+    const coach = await qualifiedCoach('cover@example.com', covered.sportId);
+    await prisma.coachSpecialization.create({
+      data: { coachId: coach.id, sportId: other.sportId, status: 'APPROVED' },
+    });
+    await prisma.classSession.updateMany({
+      where: { classId: covered.id, sessionNumber: 1 },
+      data: { coachId: coach.id },
+    });
+
+    const page = await readResult<Paginated<ClassSummary>>(await request('GET', '/?needsCoach=true', coach));
+    const flags = Object.fromEntries(page.items.map(({ id, scheduleConflict }) => [id, scheduleConflict]));
+    expect(flags).toEqual({ [covered.id]: false, [other.id]: true });
+  });
 });

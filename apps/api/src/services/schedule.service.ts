@@ -227,17 +227,25 @@ class ScheduleService {
     const dates = [...new Set(sessions.map(({ sessionDate }) => formatDate(sessionDate)))];
     if (dates.length === 0) return new Set<string>();
     const [bookings, taughtOrAttended] = await scheduleRepository.findCommitments([coachId], dates, tx);
-    const own = new Set(classIds);
     const busy = [
-      ...bookings.map((booking) => timed(booking.bookingDate, booking.startTime, booking.endTime)),
-      ...taughtOrAttended
-        .filter((session) => !own.has(session.class.id))
-        .map((session) => timed(session.sessionDate, session.startTime, session.endTime)),
+      ...bookings.map((booking) => ({
+        classId: undefined,
+        ...timed(booking.bookingDate, booking.startTime, booking.endTime),
+      })),
+      ...taughtOrAttended.map((session) => ({
+        classId: session.class.id,
+        ...timed(session.sessionDate, session.startTime, session.endTime),
+      })),
     ];
+    // A class never clashes with its own sessions, but it does with those of another class of the list.
     return new Set(
       sessions
         .filter((session) =>
-          busy.some((use) => sameDayOverlap(timed(session.sessionDate, session.startTime, session.endTime), use)),
+          busy.some(
+            (use) =>
+              use.classId !== session.classId &&
+              sameDayOverlap(timed(session.sessionDate, session.startTime, session.endTime), use),
+          ),
         )
         .map(({ classId }) => classId),
     );
