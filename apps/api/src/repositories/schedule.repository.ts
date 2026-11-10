@@ -1,6 +1,5 @@
 import { prisma } from '~/configs/db';
 import type { Prisma } from '~/generated/prisma/client';
-import { taughtBy } from '~/repositories/class.repository';
 import { minutesInCenter, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
 
 const facilityRef = { select: { id: true, name: true } } as const;
@@ -96,7 +95,8 @@ class ScheduleRepository {
           sessionDate: { in: toDays(dates) },
           OR: [
             { class: { enrollments: { some: { accountId: { in: accountIds }, status: 'ENROLLED' } } } },
-            ...accountIds.map(taughtBy),
+            { coachId: { in: accountIds } },
+            { coachId: null, class: { coachId: { in: accountIds } } },
           ],
         },
         select: sessionUsageSelect,

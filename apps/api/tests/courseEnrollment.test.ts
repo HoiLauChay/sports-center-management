@@ -144,4 +144,17 @@ describe('course enrollment line', () => {
     expect(paid.status).toBe(409);
     expect(await prisma.classEnrollment.count()).toBe(0);
   });
+
+  test('a coach covering a session of a class cannot enroll in it', async () => {
+    const cls = await seedOpenClass();
+    const cover = await createAccount('COACH', 'cover@example.com');
+    await prisma.classSession.updateMany({ where: { classId: cls.id, sessionNumber: 2 }, data: { coachId: cover.id } });
+    const coverAsMember = await switchToMember(cover.id);
+
+    const quote = await readResult<Quote>(
+      await request('POST', '/quote', coverAsMember, { items: [enrollment(cls.id)] }),
+    );
+    expect(quote.items[0]).toMatchObject({ valid: false, error: { code: 'INVALID_STATE' } });
+    expect(quote.items[0]!.error?.message).toContain('dạy thay');
+  });
 });
