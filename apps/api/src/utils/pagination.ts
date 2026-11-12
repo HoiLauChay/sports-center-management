@@ -1,8 +1,5 @@
 import type { CursorPaginated, CursorQuery, PageQuery, Paginated } from '@sports-center/shared';
 
-import { prisma } from '~/configs/db';
-import type { Prisma } from '~/generated/prisma/client';
-
 export const pageArgs = ({ page, limit }: PageQuery) => ({ skip: (page - 1) * limit, take: limit });
 
 export const toPage = <T>(items: T[], total: number, { page, limit }: PageQuery): Paginated<T> => ({
@@ -11,9 +8,6 @@ export const toPage = <T>(items: T[], total: number, { page, limit }: PageQuery)
   limit,
   total,
 });
-
-export const readSnapshot = <T>(fn: (tx: Prisma.TransactionClient) => Promise<T>) =>
-  prisma.$transaction(fn, { isolationLevel: 'RepeatableRead' });
 
 /** The `findMany` args of one page when rows are listed group after group; `sizes` holds each group's row count. */
 export const pageOfGroups = <Group>(groups: Group[], sizes: number[], { page, limit }: PageQuery) => {
