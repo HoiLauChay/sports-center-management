@@ -5,6 +5,7 @@ import { Plus, ShoppingBag } from 'lucide-react';
 import { useMemo } from 'react';
 import { useAddToMemberCart } from '~/features/checkout/hooks/useAddToCart';
 import { useMemberCart } from '~/features/checkout/hooks/useCart';
+import { productQuantities } from '~/features/checkout/utils';
 import { formatVND } from '~/lib/format';
 import { useProducts } from '../hooks/useShop';
 import { CartStepper } from './ProductCard';
@@ -50,15 +51,7 @@ export function ProductSuggestions({
   const add = useAddToMemberCart();
   const inline = variant === 'inline';
 
-  const inCart = useMemo(
-    () =>
-      new Map(
-        cart.lines.flatMap(({ selection }) =>
-          selection.type === 'PRODUCT_SALE' ? [[selection.productId, selection.quantity] as const] : [],
-        ),
-      ),
-    [cart.lines],
-  );
+  const inCart = useMemo(() => productQuantities(cart.lines), [cart.lines]);
   const items = useMemo(
     () => pick(products.data?.items ?? [], sportIds, hideInCart ? new Set(inCart.keys()) : new Set(), limit),
     [products.data, sportIds, hideInCart, inCart, limit],

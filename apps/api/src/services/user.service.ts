@@ -331,6 +331,10 @@ class UserService {
       return { account: next, activationUrl: await authService.createActivationLink(email, tx) };
     });
 
+  assertManaged = async (viewer: Viewer, id: string) => {
+    await this.findManaged(viewer, id);
+  };
+
   private findManaged = async (viewer: Viewer, id: string, tx?: Prisma.TransactionClient) => {
     const account = await accountRepository.findById(id, visibleRole(viewer), tx);
     const hidden = hiddenRole(viewer);

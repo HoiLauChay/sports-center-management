@@ -25,17 +25,29 @@ const SPECIALIZATION_PAGE: Partial<Record<Role, NavigateOptions>> = {
   MANAGER: { to: '/admin/specializations' },
 };
 
+const ORDER_PAGE: Partial<Record<Role, (orderId: string) => NavigateOptions>> = {
+  MEMBER: (orderId) => ({ to: '/orders/$orderId', params: { orderId } }),
+  RECEPTIONIST: (orderId) => ({ to: '/reception/orders/$orderId', params: { orderId } }),
+  MANAGER: (orderId) => ({ to: '/admin/orders/$orderId', params: { orderId } }),
+};
+
+/** Pages only a member has: an account acting in another role stays where it is. */
+const memberOnly =
+  (target: NavigateOptions): Target =>
+  (_, role) =>
+    role === 'MEMBER' ? target : undefined;
+
 const TARGETS: Partial<Record<string, Target>> = {
   INVOICE: (invoiceId) => ({ to: '/invoices/$invoiceId', params: { invoiceId } }),
-  ORDER: (orderId) => ({ to: '/orders/$orderId', params: { orderId } }),
+  ORDER: (orderId, role) => ORDER_PAGE[role]?.(orderId),
   BOOKING: (_, role) => BOOKING_PAGE[role],
   CLASS: (classId, role) => CLASS_PAGE[role]?.(classId),
   OPEN_CLASS: () => ({ to: '/coach/open-classes' }),
   SUPPORT_REQUEST: (_, role) => SUPPORT_PAGE[role],
   COACH_SPECIALIZATION: (_, role) => SPECIALIZATION_PAGE[role],
   BANK_TRANSACTION: () => ({ to: '/admin/bank-transactions' }),
-  MEMBERSHIP: () => ({ to: '/memberships/mine' }),
-  WALLET_TRANSACTION: () => ({ to: '/wallet' }),
+  MEMBERSHIP: memberOnly({ to: '/memberships/mine' }),
+  WALLET_TRANSACTION: memberOnly({ to: '/wallet' }),
 };
 
 export function notificationTarget({ referenceType, referenceId }: AppNotification, role: Role) {

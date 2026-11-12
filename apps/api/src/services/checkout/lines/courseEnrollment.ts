@@ -20,6 +20,23 @@ const notOpen = (row: ClassDetailRow, ctx: CheckoutContext) => {
   return null;
 };
 
+const teachingReason = (row: ClassDetailRow, accountId: string) => {
+  if (row.coachId === accountId) return 'Bạn đang phụ trách lớp này nên không đăng ký học được';
+  if (row.sessions.some((session) => session.status !== 'CANCELLED' && session.coachId === accountId)) {
+    return 'Bạn đang dạy thay buổi của lớp này nên không đăng ký học được';
+  }
+  return null;
+};
+
+const scheduledRanges = (row: ClassDetailRow) =>
+  row.sessions
+    .filter(({ status }) => status === 'SCHEDULED')
+    .map((session) => ({
+      date: formatDate(session.sessionDate),
+      start: fromDbTime(session.startTime),
+      end: fromDbTime(session.endTime),
+    }));
+
 export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentData, CourseEnrollmentSnapshot> = {
   type: 'COURSE_ENROLLMENT',
   guestAllowed: false,
@@ -32,9 +49,8 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
     const accountId = ctx.buyer.accountId;
     const row = await classRepository.findDetail(input.classId, db);
     if (!row) return lineError(ERROR_CODE.NOT_FOUND, 'Lớp không tồn tại');
-    if (row.coachId === accountId) {
-      return lineError(ERROR_CODE.INVALID_STATE, 'Bạn đang phụ trách lớp này nên không đăng ký học được');
-    }
+    const teaching = teachingReason(row, accountId);
+    if (teaching) return lineError(ERROR_CODE.INVALID_STATE, teaching);
     const closed = notOpen(row, ctx);
     if (closed) return lineError(ERROR_CODE.INVALID_STATE, closed);
 
@@ -52,11 +68,7 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
       return lineError(ERROR_CODE.CONFLICT, 'Lớp đã đủ học viên');
     }
 
-    const ranges = sessions.map((session) => ({
-      date: formatDate(session.sessionDate),
-      start: fromDbTime(session.startTime),
-      end: fromDbTime(session.endTime),
-    }));
+    const ranges = scheduledRanges(row);
     if (busyInOrder(ctx, ranges)) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE.MEMBER_BUSY);
     const [clash] = await scheduleService.findConflicts(db, { ranges, accountId, now: ctx.now });
     if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[clash.reason]);
@@ -96,8 +108,13 @@ export const courseEnrollmentHandler: LineHandler<EnrollmentInput, EnrollmentDat
 
   verify: async (tx, ctx, { data }) => {
     const row = await classRepository.findDetail(data.classId, tx);
-    const reason = row ? notOpen(row, ctx) : 'Lớp không tồn tại';
-    return reason ? { code: ERROR_CODE.INVALID_STATE, message: reason } : null;
+    const accountId = ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined;
+    const reason = row
+      ? (notOpen(row, ctx) ?? (accountId ? teachingReason(row, accountId) : null))
+      : 'Lớp không tồn tại';
+    if (reason) return { code: ERROR_CODE.INVALID_STATE, message: reason };
+    const [clash] = await scheduleService.findConflicts(tx, { ranges: scheduledRanges(row!), accountId, now: ctx.now });
+    return clash ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE[clash.reason] } : null;
   },
 
   fulfill: async (tx, ctx, { data }, orderItemId) => {

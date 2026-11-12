@@ -21,6 +21,8 @@ function useSyncUser() {
       queryKey: ['users'],
       predicate: (query) => query.queryKey[1] !== 'detail',
     });
+    // Locking a coach or taking the coach role away releases their classes on the server.
+    void queryClient.invalidateQueries({ queryKey: ['classes'] });
   };
 }
 

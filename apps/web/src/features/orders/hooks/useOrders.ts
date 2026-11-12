@@ -18,6 +18,7 @@ export function useOrder(id: string) {
   return useQuery({
     queryKey: ['orders', 'detail', user.id, id],
     queryFn: () => checkoutService.getOrder(id),
+    enabled: Boolean(id),
     retry: false,
   });
 }

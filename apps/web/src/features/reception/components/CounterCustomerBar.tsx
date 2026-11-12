@@ -37,7 +37,7 @@ function MembershipStat({
   const memberships = useMemberMemberships(accountId);
   const packages = useQuery(membershipsQueryOptions);
   if (memberships.isPending) return <Stat label="Gói thành viên">…</Stat>;
-  if (!memberships.data) return <Stat label="Gói thành viên">Chưa có dữ liệu</Stat>;
+  if (!memberships.data) return <Stat label="Gói thành viên">Không tải được</Stat>;
 
   const current = memberships.data.current;
   const last = current ?? memberships.data.history[0];

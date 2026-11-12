@@ -1,8 +1,10 @@
 import type { CheckoutItemInput } from '@sports-center/shared';
 import { Segmented, Skeleton } from 'antd';
 import { useState } from 'react';
-import { EmptyState } from '~/components/feedback/States';
+import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
+import { toApiError } from '~/lib/http-errors';
+import { MAX_PAGE_SIZE } from '~/lib/search';
 import { useProductCategories, useProducts } from '../hooks/useShop';
 import { ProductCard } from './ProductCard';
 
@@ -23,7 +25,7 @@ export function CounterProductPicker({ onAdd, inCart, onQuantity }: CounterProdu
     q: q || undefined,
     categoryId: categoryId === 'ALL' ? undefined : categoryId,
     page: 1,
-    limit: 60,
+    limit: MAX_PAGE_SIZE,
   });
   const items = products.data?.items ?? [];
 
@@ -42,7 +44,9 @@ export function CounterProductPicker({ onAdd, inCart, onQuantity }: CounterProdu
           />
         </div>
       </div>
-      {products.isPending ? (
+      {products.error && !products.data ? (
+        <ErrorState message={toApiError(products.error).message} onRetry={() => void products.refetch()} />
+      ) : products.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
           {[0, 1, 2].map((index) => (
             <div key={index} className="rounded-xl border border-sc-border-soft p-4">
@@ -65,6 +69,11 @@ export function CounterProductPicker({ onAdd, inCart, onQuantity }: CounterProdu
             />
           ))}
         </div>
+      )}
+      {(products.data?.total ?? 0) > items.length && items.length > 0 && (
+        <p className="m-0 text-center text-[14px] text-sc-muted">
+          Đang hiện {items.length}/{products.data?.total} sản phẩm. Tìm theo tên hoặc mã SKU để thấy sản phẩm còn lại.
+        </p>
       )}
     </div>
   );

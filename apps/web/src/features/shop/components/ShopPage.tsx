@@ -9,8 +9,10 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useAddToMemberCart } from '~/features/checkout/hooks/useAddToCart';
 import { useMemberCart } from '~/features/checkout/hooks/useCart';
+import { productQuantities } from '~/features/checkout/utils';
 import { toApiError } from '~/lib/http-errors';
 import { useProductCategories, useProducts } from '../hooks/useShop';
+import { lastPageOf } from '../utils';
 import { ProductCard } from './ProductCard';
 
 const PAGE_SIZE = 12;
@@ -34,15 +36,10 @@ export function ShopPage() {
     limit: PAGE_SIZE,
   });
 
-  const inCart = useMemo(
-    () =>
-      new Map(
-        cart.lines.flatMap(({ selection }) =>
-          selection.type === 'PRODUCT_SALE' ? [[selection.productId, selection.quantity] as const] : [],
-        ),
-      ),
-    [cart.lines],
-  );
+  const lastPage = lastPageOf(products.data, page, PAGE_SIZE);
+  if (lastPage !== null) setPage(lastPage);
+
+  const inCart = useMemo(() => productQuantities(cart.lines), [cart.lines]);
   const items = products.data?.items ?? [];
   const filtered = Boolean(q || sportId || categoryId !== 'ALL');
 

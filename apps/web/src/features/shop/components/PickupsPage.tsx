@@ -12,7 +12,7 @@ import { formatDateTime, formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { nowVN } from '~/lib/time';
 import { useProductSales, useSaleActions } from '../hooks/useShop';
-import { FULFILLMENT_LABEL, timeLeftText } from '../utils';
+import { FULFILLMENT_LABEL, lastPageOf, timeLeftText } from '../utils';
 import { ProductThumb } from './ProductThumb';
 
 type StatusFilter = FulfillmentStatus | 'ALL';
@@ -58,6 +58,8 @@ export function PickupsPage() {
     limit: 20,
   });
   const { pickup, cancel } = useSaleActions();
+  const lastPage = lastPageOf(sales.data, page, 20);
+  if (lastPage !== null) setPage(lastPage);
 
   const columns: TableColumnsType<ProductSale> = [
     {

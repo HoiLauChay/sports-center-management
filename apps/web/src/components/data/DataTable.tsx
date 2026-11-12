@@ -1,5 +1,6 @@
 import type { Paginated } from '@sports-center/shared';
 import { type TableProps } from 'antd';
+import { useEffect, useRef } from 'react';
 import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { toApiError } from '~/lib/http-errors';
@@ -29,6 +30,17 @@ export function DataTable<T extends object>({
   emptyDescription,
   ...tableProps
 }: DataTableProps<T>) {
+  // The viewed page emptied out (its last rows left the filter or were deleted) while earlier pages still hold rows.
+  const lastPage = data && data.total > 0 ? Math.ceil(data.total / limit) : null;
+  const overshoot = Boolean(data && page > 1 && data.items.length === 0 && lastPage !== null && lastPage < page);
+  const pageChangeRef = useRef(onPageChange);
+  useEffect(() => {
+    pageChangeRef.current = onPageChange;
+  });
+  useEffect(() => {
+    if (overshoot && lastPage !== null) pageChangeRef.current(lastPage, limit);
+  }, [overshoot, lastPage, limit]);
+
   if (error && !data) return <ErrorState message={toApiError(error).message} onRetry={onRetry} />;
 
   return (

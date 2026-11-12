@@ -100,7 +100,22 @@ function TopUpDone({
 function TransferPhase({ invoiceId, onPaid, onBack }: { invoiceId: string; onPaid: () => void; onBack: () => void }) {
   const invoice = useInvoice(invoiceId);
   useRefreshAfterPaid(invoice.data, onPaid);
-  if (!invoice.data) return <PageLoading />;
+  if (!invoice.data) {
+    if (!invoice.isError) return <PageLoading />;
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+        <Alert type="error" showIcon title={toApiError(invoice.error).message} />
+        <div className="flex justify-center gap-2">
+          <Button type="primary" size="large" onClick={() => void invoice.refetch()}>
+            Thử lại
+          </Button>
+          <Button size="large" onClick={onBack}>
+            Quay lại
+          </Button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="mx-auto w-full max-w-2xl rounded-2xl border border-sc-border bg-white px-6 py-6 shadow-xs">
       <CounterInvoicePanel

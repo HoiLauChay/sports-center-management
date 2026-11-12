@@ -69,11 +69,15 @@ class CouponService {
     const coupons = rows.map((row) => toCouponResponse(row, used.get(row.id) ?? 0));
     const isUsable = ({ isActive, validTo, maxUses, usedCount }: (typeof coupons)[number]) =>
       isActive && now < validTo && (maxUses === null || usedCount < maxUses);
+    const by =
+      (date: (coupon: (typeof coupons)[number]) => string) =>
+      (a: (typeof coupons)[number], b: (typeof coupons)[number]) =>
+        date(a).localeCompare(date(b)) || a.id.localeCompare(b.id);
     const usable = coupons.filter(isUsable);
     return [
-      ...usable.filter(({ validFrom }) => validFrom <= now).sort((a, b) => a.validTo.localeCompare(b.validTo)),
-      ...usable.filter(({ validFrom }) => now < validFrom).sort((a, b) => a.validFrom.localeCompare(b.validFrom)),
-      ...coupons.filter((coupon) => !isUsable(coupon)).sort((a, b) => b.validTo.localeCompare(a.validTo)),
+      ...usable.filter(({ validFrom }) => validFrom <= now).sort(by((coupon) => coupon.validTo)),
+      ...usable.filter(({ validFrom }) => now < validFrom).sort(by((coupon) => coupon.validFrom)),
+      ...coupons.filter((coupon) => !isUsable(coupon)).sort((a, b) => by((coupon) => coupon.validTo)(b, a)),
     ];
   };
 

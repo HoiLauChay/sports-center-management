@@ -114,7 +114,10 @@ interface OrderDetailViewProps {
 
 export function OrderDetailView({ orderId, back }: OrderDetailViewProps) {
   const order = useOrder(orderId);
-  const pdf = useReceiptPdf(() => checkoutService.getReceiptBlob(orderId));
+  const pdf = useReceiptPdf(
+    () => checkoutService.getReceiptBlob(orderId),
+    `${orderId}:${order.data?.status ?? ''}:${order.data?.refunds.length ?? 0}`,
+  );
 
   if (order.isPending) return <PageLoading />;
   if (order.isError) {

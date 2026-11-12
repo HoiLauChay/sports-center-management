@@ -7,12 +7,13 @@ import {
   type UpdateUserBody,
   type UpdateUserInput,
 } from '@sports-center/shared';
-import { App, Button, Col, DatePicker, Form, Input, Row, Select, Tooltip } from 'antd';
+import { Alert, App, Button, Col, DatePicker, Form, Input, Row, Select, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { Lock } from 'lucide-react';
 import { useForm, type Control, type FieldPath } from 'react-hook-form';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { SectionTitle } from '~/components/ui/SectionTitle';
+import { ROLE_LABEL } from '~/constants/roles';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { GENDER_LABEL, getCoachProfile, getMemberProfile, getStaffProfile } from '~/lib/account';
 import { useUpdateUser } from '../hooks/useUserMutations';
@@ -130,7 +131,7 @@ export function AdminUserEditForm({ user, onDone }: AdminUserEditFormProps) {
               value={user.email}
               disabled
               suffix={
-                <Tooltip title="Email dùng để đăng nhập, không thể thay đổi">
+                <Tooltip title="Email dùng để đăng nhập. Đổi bằng nút “Đổi email” ở đầu trang sau khi lưu hoặc hủy form này.">
                   <Lock size={14} className="text-sc-muted-2" />
                 </Tooltip>
               }
@@ -205,6 +206,15 @@ export function AdminUserEditForm({ user, onDone }: AdminUserEditFormProps) {
         </Col>
       </Row>
 
+      {user.roles.length > 1 && (
+        <Alert
+          type="info"
+          showIcon
+          className="!mb-4"
+          title={`Tài khoản có nhiều vai trò. Form này sửa hồ sơ của vai trò đang dùng: ${ROLE_LABEL[user.role]}.`}
+        />
+      )}
+
       {user.role === 'MEMBER' && (
         <>
           <SectionTitle>Hồ sơ hội viên</SectionTitle>
@@ -235,7 +245,7 @@ export function AdminUserEditForm({ user, onDone }: AdminUserEditFormProps) {
         </>
       )}
 
-      {(user.role === 'RECEPTIONIST' || user.role === 'MANAGER') && (
+      {user.role === 'RECEPTIONIST' && (
         <>
           <SectionTitle>Hồ sơ nhân sự</SectionTitle>
           <TextAreaField control={control} name="profile.staffNotes" label="Ghi chú nhân sự" />

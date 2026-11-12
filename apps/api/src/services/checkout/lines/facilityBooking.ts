@@ -7,7 +7,6 @@ import {
 
 import bookingRepository from '~/repositories/booking.repository';
 import facilityRepository from '~/repositories/facility.repository';
-import scheduleRepository from '~/repositories/schedule.repository';
 import { priceBookings } from '~/services/checkout/lines/bookingPricing';
 import { busyInOrder, CLASH_MESSAGE, lineError } from '~/services/checkout/lines/shared';
 import type { LineHandler } from '~/services/checkout/types';
@@ -15,6 +14,9 @@ import scheduleService, { type PlannedUse } from '~/services/schedule.service';
 import { addDays, parseTime, toCenterDateTime, todayInCenter, toDbTime } from '~/utils/time';
 
 type BookingInput = Extract<CheckoutItemInput, { type: 'FACILITY_BOOKING' }>;
+
+/** Same limit the slot grid of the web app applies; enforced here so a direct API call cannot take a whole day. */
+const MAX_SLOTS_PER_BOOKING = 3;
 
 interface BookingData {
   facilityId: string;
@@ -54,6 +56,9 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
     if (clash) return lineError(ERROR_CODE.SCHEDULE_CONFLICT, CLASH_MESSAGE[clash.reason]);
 
     const slots = (range.end - range.start) / ctx.settings.slotDurationMinutes;
+    if (slots > MAX_SLOTS_PER_BOOKING) {
+      return lineError(ERROR_CODE.VALIDATION, `Mỗi lượt đặt tối đa ${MAX_SLOTS_PER_BOOKING} slot liên tiếp`);
+    }
     const unitPrice = Number(facility.pricePerSlot);
     const [priced] = await priceBookings(db, ctx, facility, [{ date: input.date, slots }]);
     const { subtotal, discount, discountPct, benefit } = priced!;
@@ -82,16 +87,14 @@ export const facilityBookingHandler: LineHandler<BookingInput, BookingData, Faci
     };
   },
 
-  verify: async (tx, _ctx, { data }) => {
-    const [facility, , , maintenances] = await scheduleRepository.findFacilityUsage(data.facilityId, [data.date], tx);
-    if (!facility || facility.deletedAt || !facility.isActive) {
-      return { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.CLOSED };
-    }
-    const startAt = toCenterDateTime(data.date, data.start);
-    const endAt = toCenterDateTime(data.date, data.end);
-    return maintenances.some((item) => item.startAt < endAt && startAt < item.endAt)
-      ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE.MAINTENANCE }
-      : null;
+  verify: async (tx, ctx, { data }) => {
+    const [clash] = await scheduleService.findConflicts(tx, {
+      ranges: [{ date: data.date, start: data.start, end: data.end }],
+      facility: { id: data.facilityId, exclusive: false },
+      accountId: ctx.buyer.kind === 'MEMBER' ? ctx.buyer.accountId : undefined,
+      now: new Date(0),
+    });
+    return clash ? { code: ERROR_CODE.SCHEDULE_CONFLICT, message: CLASH_MESSAGE[clash.reason] } : null;
   },
 
   fulfill: async (tx, ctx, { data }, orderItemId) => {

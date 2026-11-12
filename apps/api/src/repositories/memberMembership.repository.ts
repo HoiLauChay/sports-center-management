@@ -64,9 +64,9 @@ class MemberMembershipRepository {
   findById = (id: string, accountId: string, tx: Prisma.TransactionClient = prisma) =>
     tx.memberMembership.findUnique({ where: { id, accountId }, select: memberMembershipSelect });
 
-  findDueIds = (today: string, take: number) =>
+  findDueIds = (today: string, take: number, excludeIds: string[] = []) =>
     prisma.memberMembership.findMany({
-      where: { status: 'ACTIVE', endDate: { lte: new Date(today) } },
+      where: { status: 'ACTIVE', endDate: { lte: new Date(today) }, id: { notIn: excludeIds } },
       select: { id: true, accountId: true },
       orderBy: { endDate: 'asc' },
       take,

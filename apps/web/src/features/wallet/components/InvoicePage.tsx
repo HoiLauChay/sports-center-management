@@ -18,7 +18,10 @@ export function InvoicePage() {
   const { invoiceId } = routeApi.useParams();
   const { message } = App.useApp();
   const invoice = useInvoice(invoiceId);
-  const pdf = useReceiptPdf(() => walletService.getReceiptBlob(invoiceId));
+  const pdf = useReceiptPdf(
+    () => walletService.getReceiptBlob(invoiceId),
+    `${invoiceId}:${invoice.data?.status ?? ''}`,
+  );
 
   useRefreshAfterPaid(invoice.data, (paid) =>
     message.success(`Đã nhận ${formatVND(paid.amount)}, ví của bạn đã được cộng.`),

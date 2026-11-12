@@ -48,6 +48,8 @@ export function useProductSales(params: ListProductSalesInput) {
     queryKey: shopKeys.sales(params),
     queryFn: () => shopService.sales(params),
     placeholderData: keepPreviousData,
+    // The counter waits on orders paid elsewhere, so the list keeps itself fresh like the other counter screens.
+    refetchInterval: 30_000,
   });
 }
 

@@ -13,6 +13,16 @@ export const STOCK_REASON_LABEL: Record<StockReason, string> = {
   SALE_CANCEL: 'Hủy đơn, trả kho',
 };
 
+/**
+ * The page to fall back to when the viewed page emptied out (its last rows were handled or deleted) while earlier
+ * pages still hold rows; `null` when the viewed page is fine.
+ */
+export function lastPageOf(data: { items: unknown[]; total: number } | undefined, page: number, limit: number) {
+  if (!data || page <= 1 || data.items.length > 0 || data.total === 0) return null;
+  const last = Math.ceil(data.total / limit);
+  return last < page ? last : null;
+}
+
 export function stockText(product: Pick<Product, 'stock'>) {
   if (!product.stock) return 'Hết hàng';
   return `Còn ${product.stock}`;

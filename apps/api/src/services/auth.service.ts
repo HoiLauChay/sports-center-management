@@ -57,6 +57,8 @@ const GOOGLE_TIMEOUT_MS = 10_000;
 
 const fail = (status: number, code: ErrorCode, message: string) => new ErrorWithStatus({ status, code, message });
 
+const REFRESH_REUSE_GRACE_MS = 30_000;
+
 const invalidActivation = () =>
   fail(
     HTTP_STATUS.BAD_REQUEST,
@@ -233,8 +235,20 @@ class AuthService {
     if (!record) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
-    if (record.revokedAt) {
+    // A token rotated a moment ago is two tabs (or a retry after a lost response) refreshing at once, not a theft:
+    // only a reuse after the grace window ends every session of the account. A token revoked on purpose (logout,
+    // password change, locked account) was never rotated, so it gets no grace at all.
+    const justRotated = record.rotatedAt !== null && Date.now() - record.rotatedAt.getTime() <= REFRESH_REUSE_GRACE_MS;
+    if (record.revokedAt && !justRotated) {
       await refreshTokenRepository.revokeAllByAccountId(record.accountId);
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
+    }
+    // A logout, a password change or a lock after the rotation ends the grace: the replaced token must not bring
+    // back a session that was closed on purpose.
+    if (
+      justRotated &&
+      (await refreshTokenRepository.hasDeliberateRevocationSince(record.accountId, record.rotatedAt!))
+    ) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
     if (record.expiresAt < new Date()) {
@@ -246,7 +260,7 @@ class AuthService {
 
     const refreshToken = generateOpaqueToken();
     await prisma.$transaction(async (tx) => {
-      await refreshTokenRepository.revokeByHash(tokenHash, tx);
+      await refreshTokenRepository.rotateByHash(tokenHash, tx);
       await refreshTokenRepository.create(this.refreshTokenData(refreshToken, record.accountId, meta), tx);
     });
 
@@ -434,7 +448,13 @@ class AuthService {
       codeHash: hashToken(code),
       expiresAt: new Date(Date.now() + AUTH.OTP_TTL * 1000),
     });
-    await mailService.sendOtp(email, purpose, code);
+    try {
+      await mailService.sendOtp(email, purpose, code);
+    } catch (err) {
+      // A code nobody received must not start the resend cooldown.
+      await otpRepository.invalidateAll(email, purpose);
+      throw err;
+    }
   };
 
   getGoogleAuthUrl = (state: string, callbackUrl: string) => {
