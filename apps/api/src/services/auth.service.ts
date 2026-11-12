@@ -243,6 +243,14 @@ class AuthService {
       await refreshTokenRepository.revokeAllByAccountId(record.accountId);
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
     }
+    // A logout, a password change or a lock after the rotation ends the grace: the replaced token must not bring
+    // back a session that was closed on purpose.
+    if (
+      justRotated &&
+      (await refreshTokenRepository.hasDeliberateRevocationSince(record.accountId, record.rotatedAt!))
+    ) {
+      throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_INVALID, 'Refresh token không hợp lệ');
+    }
     if (record.expiresAt < new Date()) {
       throw fail(HTTP_STATUS.UNAUTHORIZED, ERROR_CODE.TOKEN_EXPIRED, 'Refresh token đã hết hạn');
     }

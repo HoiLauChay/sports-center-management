@@ -51,4 +51,20 @@ describe('refresh token reuse', () => {
     expect(await refusal('stolen')).toBe('TOKEN_INVALID');
     expect(await active(account.id)).toBe(0);
   });
+
+  test('a logout right after a rotation ends the grace of the replaced token', async () => {
+    const account = await seedToken('replaced');
+    const { refreshToken } = await authService.refresh('replaced', {});
+    await authService.logout(refreshToken);
+    expect(await refusal('replaced')).toBe('TOKEN_INVALID');
+    expect(await active(account.id)).toBe(0);
+  });
+
+  test('a password change right after a rotation ends the grace of the replaced token', async () => {
+    const account = await seedToken('before-reset');
+    await authService.refresh('before-reset', {});
+    await authService.logoutAll(account.id);
+    expect(await refusal('before-reset')).toBe('TOKEN_INVALID');
+    expect(await active(account.id)).toBe(0);
+  });
 });
