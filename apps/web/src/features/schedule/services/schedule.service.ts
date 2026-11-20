@@ -14,6 +14,14 @@ export const scheduleService = {
     return data.result;
   },
 
+  ofMember: async (accountId: string, range: PersonalScheduleQuery) => {
+    const { data } = await privateApi.get<ApiResponse<MemberScheduleItem[]>>(
+      `/users/${encodeURIComponent(accountId)}/schedule`,
+      { params: range },
+    );
+    return data.result;
+  },
+
   coach: async (range: PersonalScheduleQuery) => {
     const { data } = await privateApi.get<ApiResponse<CoachScheduleItem[]>>('/coach/schedule', { params: range });
     return data.result;

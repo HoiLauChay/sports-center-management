@@ -12,6 +12,15 @@ export function useMySchedule(range: PersonalScheduleQuery, enabled = true) {
   });
 }
 
+export function useMemberSchedule(accountId: string | undefined, range: PersonalScheduleQuery) {
+  return useQuery({
+    queryKey: ['schedule', 'member', accountId, range],
+    queryFn: () => scheduleService.ofMember(accountId!, range),
+    placeholderData: keepPreviousData,
+    enabled: Boolean(accountId),
+  });
+}
+
 export function useCoachSchedule(range: PersonalScheduleQuery) {
   return useQuery({
     queryKey: ['schedule', 'coach', range],

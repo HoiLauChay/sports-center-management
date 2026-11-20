@@ -1,4 +1,4 @@
-import type { Account, Facility, FacilitySlot, MemberScheduleItem } from '@sports-center/shared';
+import type { Account, Facility } from '@sports-center/shared';
 import { Alert, Button, DatePicker } from 'antd';
 import dayjs from 'dayjs';
 import { RefreshCw, X } from 'lucide-react';
@@ -6,13 +6,13 @@ import { useMemo, useState } from 'react';
 import { ErrorState } from '~/components/feedback/States';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
-import { useMySchedule } from '~/features/schedule/hooks/useSchedule';
 import { useSettings } from '~/features/settings';
 import { ProductSuggestions } from '~/features/shop/components/ProductSuggestions';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { DATE_FORMAT, DAY_SHORT, addDays, formatDayLabel, todayVN } from '~/lib/time';
 import { useFacilitySchedules } from '../hooks/useBookings';
+import { useScheduleConflicts } from '../hooks/useScheduleConflicts';
 import { useSlotSelection } from '../hooks/useSlotSelection';
 import { useSportFacilityChoice } from '../hooks/useSportFacilityChoice';
 import { SlotGrid } from './SlotGrid';
@@ -23,14 +23,6 @@ const BENEFIT_TEXT: Record<string, string> = {
   FREE_SLOT: 'Slot miễn phí theo gói',
   DISCOUNT: 'Ưu đãi giảm giá theo gói',
 };
-
-const isLive = (item: MemberScheduleItem) =>
-  item.kind === 'BOOKING' ? item.status === 'CONFIRMED' : item.status === 'SCHEDULED';
-
-const describeConflict = (item: MemberScheduleItem) =>
-  item.kind === 'BOOKING'
-    ? `Bạn đã đặt ${item.facility.name} lúc ${item.startTime}–${item.endTime}`
-    : `Bạn có buổi học lớp ${item.class.name} lúc ${item.startTime}–${item.endTime} tại ${item.facility.name}`;
 
 interface SlotBookingPickerProps {
   user: Account;
@@ -74,14 +66,7 @@ function SlotSchedulePanel({ facility, date, onDateChange, user, buyer, onAdd }:
   const sportIds = useMemo(() => facility.sports.map((sport) => sport.id), [facility]);
   const schedule = useFacilitySchedules([facility.id], date);
   const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
-  const mine = useMySchedule({ from: date, to: date }, user.role === 'MEMBER' && !buyer);
-  const conflictOf = useMemo(() => {
-    const items = (mine.data ?? []).filter((item) => item.date === date && isLive(item));
-    return (slot: FacilitySlot) => {
-      const hit = items.find((item) => item.startTime < slot.endTime && slot.startTime < item.endTime);
-      return hit ? describeConflict(hit) : null;
-    };
-  }, [mine.data, date]);
+  const conflictOf = useScheduleConflicts(user, buyer, date);
 
   const maxAdvance = settings.data?.maxAdvanceBookingDays ?? 14;
   const today = todayVN();
