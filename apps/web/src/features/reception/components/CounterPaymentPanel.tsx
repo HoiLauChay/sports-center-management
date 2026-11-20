@@ -137,7 +137,11 @@ export function CounterPaymentPanel<M extends CounterMethod>({
               placeholder={total.toLocaleString('vi-VN')}
               controls={false}
               formatter={(value) => (value ? Number(value).toLocaleString('vi-VN') : '')}
-              parser={(value) => Number((value ?? '').replace(/\D/g, '')) || 0}
+              parser={(value) => {
+                const digits = (value ?? '').replace(/[.\s]/g, '');
+                return /^\d+$/.test(digits) ? Number(digits) : NaN;
+              }}
+              invalidMessage="Số tiền không hợp lệ"
               suffix="đ"
               onChange={(value) => onTendered(value ?? null)}
             />

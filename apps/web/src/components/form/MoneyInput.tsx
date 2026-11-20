@@ -5,8 +5,8 @@ import { NumberInput } from '~/components/form/NumberInput';
 
 const formatter = (value: number | string | undefined) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const parser = (value: string | undefined) => {
-  const digits = (value ?? '').replace(/\D/g, '');
-  return digits ? Number(digits) : NaN;
+  const digits = (value ?? '').replace(/\./g, '').replace(/\s/g, '');
+  return /^-?\d+$/.test(digits) ? Number(digits) : NaN;
 };
 
 type MoneyInputProps = Omit<InputNumberProps<number>, 'formatter' | 'parser' | 'precision'> & {
@@ -26,6 +26,7 @@ export function MoneyInput({ min = 0, max = MAX_MONEY, step = 10000, className, 
       parser={parser}
       changeOnBlur={false}
       suffix="₫"
+      invalidMessage="Số tiền không hợp lệ"
       className={`!w-full ${className ?? ''}`}
     />
   );
