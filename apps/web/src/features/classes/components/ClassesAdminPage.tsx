@@ -22,10 +22,11 @@ import { ReviewClassModal } from './ClassAdminModals';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
 
-type Phase = 'ALL' | 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+type Phase = 'ALL' | 'DRAFT' | 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
 
 const PHASE_QUERY: Record<Phase, Pick<ManagerClassesQuery, 'status' | 'derivedStatus'>> = {
   ALL: {},
+  DRAFT: { status: 'DRAFT' },
   PENDING: { status: 'PENDING_APPROVAL' },
   OPEN: { status: 'OPEN', derivedStatus: 'UPCOMING' },
   ONGOING: { status: 'OPEN', derivedStatus: 'ONGOING' },
@@ -189,6 +190,7 @@ export function ClassesAdminPage() {
         }}
         options={[
           { value: 'ALL', label: 'Tất cả' },
+          { value: 'DRAFT', label: 'Nháp' },
           { value: 'PENDING', label: `Chờ duyệt (${pending.data?.total ?? 0})` },
           { value: 'OPEN', label: 'Đang mở' },
           { value: 'ONGOING', label: 'Đang học' },
