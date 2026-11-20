@@ -121,7 +121,7 @@ class ShopRepository {
       ...(includeInactive && staffView ? { deletedAt: null } : visibleProduct),
       ...(ids && { id: { in: ids } }),
       ...(categoryId && { categoryId }),
-      ...(sportId && { sportId }),
+      ...(sportId && (staffView ? { sportId } : { OR: [{ sportId }, { sportId: null }] })),
       ...(lowStock && { stock: { lte: prisma.product.fields.lowStockThreshold } }),
     };
     return Promise.all([
