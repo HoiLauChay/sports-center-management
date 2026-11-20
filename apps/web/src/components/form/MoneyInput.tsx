@@ -1,21 +1,22 @@
 import { MAX_MONEY } from '@sports-center/shared';
-import { InputNumber, type InputNumberProps } from 'antd';
+import type { InputNumberProps } from 'antd';
 import type { ComponentProps } from 'react';
+import { NumberInput } from '~/components/form/NumberInput';
 
 const formatter = (value: number | string | undefined) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const parser = (value: string | undefined) => {
-  const digits = (value ?? '').replace(/\./g, '').replace(/\s/g, '');
-  return /^-?\d+$/.test(digits) ? Number(digits) : NaN;
+  const digits = (value ?? '').replace(/\D/g, '');
+  return digits ? Number(digits) : NaN;
 };
 
 type MoneyInputProps = Omit<InputNumberProps<number>, 'formatter' | 'parser' | 'precision'> & {
-  ref?: ComponentProps<typeof InputNumber>['ref'];
+  ref?: ComponentProps<typeof NumberInput>['ref'];
 };
 
 /** VND amount input: whole dong only, thousands separated with dots, `₫` suffix. */
 export function MoneyInput({ min = 0, max = MAX_MONEY, step = 10000, className, ...props }: MoneyInputProps) {
   return (
-    <InputNumber<number>
+    <NumberInput<number>
       {...props}
       min={min}
       max={max}

@@ -1,13 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createClassBodySchema, type CreateClassBody, type ScheduleClash } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, DatePicker, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Button, DatePicker, Form, Input, Modal, Select } from 'antd';
 import dayjs from 'dayjs';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useFieldArray, useForm, useWatch, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { NumberInput } from '~/components/form/NumberInput';
 import { facilitiesQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCourses } from '~/features/courses';
 import { useSettings } from '~/features/settings';
@@ -162,7 +163,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
             name="minStudents"
             label="Sĩ số tối thiểu"
             render={(field, invalid) => (
-              <InputNumber
+              <NumberInput
                 {...field}
                 className="!w-full"
                 min={1}
@@ -178,7 +179,7 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
             name="maxStudents"
             label="Sĩ số tối đa"
             render={(field, invalid) => (
-              <InputNumber
+              <NumberInput
                 {...field}
                 className="!w-full"
                 min={1}

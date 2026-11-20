@@ -8,11 +8,12 @@ import {
   type MembershipPackage,
 } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { App, Col, Form, Input, InputNumber, Modal, Row, Switch } from 'antd';
+import { App, Col, Form, Input, Modal, Row, Switch } from 'antd';
 import { useEffect } from 'react';
 import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { NumberInput } from '~/components/form/NumberInput';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { cacheMembershipPackage, membershipsQueryOptions } from '../hooks/useMemberships';
 import { membershipsService } from '../services/memberships.service';
@@ -140,7 +141,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="price"
               label="Giá (₫)"
               render={(field, invalid) => (
-                <InputNumber<number>
+                <NumberInput<number>
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
@@ -165,7 +166,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="durationDays"
               label={<Required>Thời hạn (ngày)</Required>}
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
@@ -193,7 +194,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="bookingDiscountPct"
               label="Giảm đặt sân (%)"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
@@ -213,7 +214,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="classDiscountPct"
               label="Giảm học phí (%)"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
@@ -233,7 +234,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="freeBookingSlotsPerMonth"
               label="Slot miễn phí / tháng"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}
@@ -253,7 +254,7 @@ export function MembershipFormModal({ open, membership, onClose }: MembershipFor
               name="aiQuestionsPerMonth"
               label="Lượt hỏi trợ lý AI / tháng"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}

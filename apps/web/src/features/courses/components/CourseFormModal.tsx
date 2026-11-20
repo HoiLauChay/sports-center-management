@@ -1,12 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createCourseBodySchema, type Course, type CreateCourseBody } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Form, Input, Modal, Select } from 'antd';
 import { useEffect } from 'react';
 import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
+import { NumberInput } from '~/components/form/NumberInput';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { useCreateCourse, useUpdateCourse } from '../hooks/useCourses';
@@ -105,7 +106,7 @@ export function CourseFormModal({ open, editing, onClose }: CourseFormModalProps
             name="totalSessions"
             label="Số buổi"
             render={(field, invalid) => (
-              <InputNumber
+              <NumberInput
                 {...field}
                 status={invalid ? 'error' : undefined}
                 className="!w-full"

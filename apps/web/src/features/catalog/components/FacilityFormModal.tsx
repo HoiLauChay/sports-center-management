@@ -8,13 +8,14 @@ import {
   type Sport,
 } from '@sports-center/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { App, Col, Form, Input, InputNumber, Modal, Radio, Row, Select, Switch } from 'antd';
+import { App, Col, Form, Input, Modal, Radio, Row, Select, Switch } from 'antd';
 import { useEffect } from 'react';
 import { useForm, type DefaultValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
+import { NumberInput } from '~/components/form/NumberInput';
 import { FACILITY_TYPE_LABEL } from '~/constants/facility';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { scheduleConflictsOf, toApiError } from '~/lib/http-errors';
@@ -148,7 +149,7 @@ export function FacilityFormModal({ open, facility, sports, onClose }: FacilityF
               name="capacityPerSlot"
               label="Sức chứa / slot"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}

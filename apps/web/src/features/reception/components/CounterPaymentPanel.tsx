@@ -1,7 +1,8 @@
 import type { PaymentMethod } from '@sports-center/shared';
-import { Button, InputNumber } from 'antd';
+import { Button } from 'antd';
 import { Banknote, QrCode, Wallet, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { NumberInput } from '~/components/form/NumberInput';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { formatVND } from '~/lib/format';
 import '../counter.css';
@@ -127,7 +128,7 @@ export function CounterPaymentPanel<M extends CounterMethod>({
         <div className="flex flex-col gap-2 rounded-lg bg-sc-paper px-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[14.5px] font-semibold text-sc-ink-2">Khách đưa</span>
-            <InputNumber<number>
+            <NumberInput<number>
               className="!w-40"
               min={0}
               step={10_000}

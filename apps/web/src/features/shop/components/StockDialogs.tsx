@@ -1,8 +1,9 @@
 import type { ManualStockReason, Product, StockMovement } from '@sports-center/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Alert, App, Drawer, Form, Input, InputNumber, Modal, Segmented, Tag, type TableColumnsType } from 'antd';
+import { Alert, App, Drawer, Form, Input, Modal, Segmented, Tag, type TableColumnsType } from 'antd';
 import { useState } from 'react';
 import { Table } from '~/components/data/Table';
+import { NumberInput } from '~/components/form/NumberInput';
 import { formatDateTime } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useRefreshShop, useStockMovements } from '../hooks/useShop';
@@ -86,7 +87,7 @@ function StockModalBody({ product, onClose }: StockModalProps) {
                 ]}
               />
             )}
-            <InputNumber
+            <NumberInput
               autoFocus
               min={1}
               precision={0}
