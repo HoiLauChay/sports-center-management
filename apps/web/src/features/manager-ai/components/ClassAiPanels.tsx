@@ -1,9 +1,8 @@
 import { Alert, Button, Tag } from 'antd';
-import { CircleCheck, CircleX, Sparkles, UserRoundCheck } from 'lucide-react';
-import { useState } from 'react';
+import { CircleCheck, CircleX } from 'lucide-react';
 import { useAssignCoach } from '~/features/classes/hooks/useClassAdmin';
 import { describeApiError } from '~/lib/http-errors';
-import { useClassReview, useCoachSuggestions } from '../hooks/useManagerAi';
+import { useCoachSuggestions, type useClassReview } from '../hooks/useManagerAi';
 import { AiPanel } from './AiPanel';
 
 const RECOMMENDATION = {
@@ -13,19 +12,16 @@ const RECOMMENDATION = {
 } as const;
 
 /** Rule checks plus an AI summary for a class waiting for approval; deciding stays on the page's own buttons. */
-export function ClassReviewPanel({ classId, className = '' }: { classId: string; className?: string }) {
-  const review = useClassReview();
-  const run = () => review.mutate(classId);
-
-  if (review.isIdle) {
-    return (
-      <div className={`flex justify-end ${className}`}>
-        <Button icon={<Sparkles size={15} />} onClick={run}>
-          Kiểm tra lớp bằng AI
-        </Button>
-      </div>
-    );
-  }
+export function ClassReviewPanel({
+  review,
+  onRefresh,
+  className = '',
+}: {
+  review: ReturnType<typeof useClassReview>;
+  onRefresh: () => void;
+  className?: string;
+}) {
+  if (review.isIdle) return null;
   const data = review.data;
   return (
     <AiPanel
@@ -33,7 +29,7 @@ export function ClassReviewPanel({ classId, className = '' }: { classId: string;
       title="Kiểm tra trước khi duyệt"
       ai={data?.ai}
       loading={review.isPending}
-      onRefresh={run}
+      onRefresh={onRefresh}
       extra={
         data && <Tag color={RECOMMENDATION[data.recommendation].color}>{RECOMMENDATION[data.recommendation].label}</Tag>
       }
@@ -67,19 +63,8 @@ export function ClassReviewPanel({ classId, className = '' }: { classId: string;
 
 /** Ranked coaches for a class without one; picking still goes through the normal assign endpoint. */
 export function CoachSuggestionsPanel({ classId, className = '' }: { classId: string; className?: string }) {
-  const [open, setOpen] = useState(false);
-  const suggestions = useCoachSuggestions(classId, open);
+  const suggestions = useCoachSuggestions(classId, true);
   const assign = useAssignCoach(classId);
-
-  if (!open) {
-    return (
-      <div className={`flex justify-end ${className}`}>
-        <Button icon={<UserRoundCheck size={15} />} onClick={() => setOpen(true)}>
-          Gợi ý HLV phù hợp
-        </Button>
-      </div>
-    );
-  }
   const candidates = suggestions.data?.candidates ?? [];
   return (
     <AiPanel

@@ -81,6 +81,24 @@ describe('personal schedule', () => {
     expect((await readResult<MemberScheduleItem[]>(await memberRequest('GET', QUERY, other))).length).toBe(1);
   });
 
+  test('the receptionist reads a member schedule; other roles and non-members are refused', async () => {
+    const member = await createAccount('MEMBER', 'counter-view@example.com');
+    const receptionist = await createAccount('RECEPTIONIST', 'counter-desk@example.com');
+    const manager = await createAccount('MANAGER', 'counter-manager@example.com');
+    const coach = await createAccount('COACH', 'counter-coach@example.com');
+    const facility = await seedFacility(2);
+    const booking = await seedBooking(facility.id, '08:00', '09:00', { accountId: member.id });
+    const port = (server.address() as { port: number }).port;
+    const users = buildFetcher(`http://localhost:${port}/api/v1/users`);
+
+    const response = await users('GET', `/${member.id}/schedule${QUERY}`, receptionist);
+    expect(response.status).toBe(200);
+    expect(await readResult<MemberScheduleItem[]>(response)).toMatchObject([{ id: booking.id, kind: 'BOOKING' }]);
+    expect((await users('GET', `/${member.id}/schedule${QUERY}`, member)).status).toBe(403);
+    expect((await users('GET', `/${member.id}/schedule${QUERY}`, manager)).status).toBe(403);
+    expect((await users('GET', `/${coach.id}/schedule${QUERY}`, receptionist)).status).toBe(404);
+  });
+
   test('coach sees sessions of assigned classes including cancelled, but not other coaches', async () => {
     const coach = await createAccount('COACH', 'coachA166@example.com');
     const other = await createAccount('COACH', 'coachB166@example.com');

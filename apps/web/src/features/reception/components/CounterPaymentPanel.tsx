@@ -1,7 +1,8 @@
 import type { PaymentMethod } from '@sports-center/shared';
-import { Button, InputNumber } from 'antd';
+import { Button } from 'antd';
 import { Banknote, QrCode, Wallet, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { NumberInput } from '~/components/form/NumberInput';
 import { PAYMENT_METHOD_LABEL } from '~/constants/payment';
 import { formatVND } from '~/lib/format';
 import '../counter.css';
@@ -127,7 +128,7 @@ export function CounterPaymentPanel<M extends CounterMethod>({
         <div className="flex flex-col gap-2 rounded-lg bg-sc-paper px-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[14.5px] font-semibold text-sc-ink-2">Khách đưa</span>
-            <InputNumber<number>
+            <NumberInput<number>
               className="!w-40"
               min={0}
               step={10_000}
@@ -136,7 +137,11 @@ export function CounterPaymentPanel<M extends CounterMethod>({
               placeholder={total.toLocaleString('vi-VN')}
               controls={false}
               formatter={(value) => (value ? Number(value).toLocaleString('vi-VN') : '')}
-              parser={(value) => Number((value ?? '').replace(/\D/g, '')) || 0}
+              parser={(value) => {
+                const digits = (value ?? '').replace(/[.\s]/g, '');
+                return /^\d+$/.test(digits) ? Number(digits) : NaN;
+              }}
+              invalidMessage="Số tiền không hợp lệ"
               suffix="đ"
               onChange={(value) => onTendered(value ?? null)}
             />

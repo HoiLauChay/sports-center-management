@@ -1,7 +1,19 @@
 import { ATTENDANCE_RULES } from '@sports-center/shared';
-import { getRouteApi, useRouter } from '@tanstack/react-router';
+import { getRouteApi } from '@tanstack/react-router';
 import { Alert, Button, Card, Segmented, Tabs, Tag, Tooltip, type TableColumnsType } from 'antd';
-import { Banknote, CalendarDays, Check, Pencil, ShieldAlert, TriangleAlert, UserCheck, Users, X } from 'lucide-react';
+import {
+  Banknote,
+  CalendarDays,
+  Check,
+  Pencil,
+  ShieldAlert,
+  Sparkles,
+  TriangleAlert,
+  UserCheck,
+  UserRoundCheck,
+  Users,
+  X,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RowActions } from '~/components/data/RowActions';
 import { Table } from '~/components/data/Table';
@@ -12,6 +24,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { SportTag } from '~/components/ui/SportTag';
 import { StatCard } from '~/components/ui/StatCard';
 import { ClassReviewPanel, CoachSuggestionsPanel } from '~/features/manager-ai/components/ClassAiPanels';
+import { useClassReview } from '~/features/manager-ai/hooks/useManagerAi';
 import { AnnouncementsTab } from '~/features/training/components/class/AnnouncementsTab';
 import { RosterTab } from '~/features/training/components/class/RosterTab';
 import { useRoster } from '~/features/training/hooks/useClassTraining';
@@ -63,7 +76,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
  */
 export function ClassAdminDetailPage() {
   const { classId } = routeApi.useParams();
-  const router = useRouter();
   const detail = useClassAdmin(classId);
   const roster = useRoster(classId);
   const confirm = useConfirm();
@@ -75,6 +87,8 @@ export function ClassAdminDetailPage() {
   const [sessionFilter, setSessionFilter] = useState<SessionFilter>('ALL');
   const [editing, setEditing] = useState<ClassSession | null>(null);
   const [inspecting, setInspecting] = useState<ClassSession | null>(null);
+  const review = useClassReview();
+  const [coachHelp, setCoachHelp] = useState(false);
 
   const attendanceSummary = useMemo(() => {
     const entries = roster.data ?? [];
@@ -97,6 +111,13 @@ export function ClassAdminDetailPage() {
   const item: ClassAdminDetail = detail.data;
   const can = classAdminActions(item);
   const status = classStatusTag(item);
+  const reviewBlocked = item.status === 'PENDING_APPROVAL' ? null : 'Chỉ dùng khi lớp đang chờ duyệt';
+  const coachHelpBlocked = item.coach
+    ? 'Lớp đã có HLV'
+    : can.assignCoach
+      ? null
+      : 'Lớp đã hủy hoặc đã bắt đầu, không gán HLV được nữa';
+  const runReview = () => review.mutate(item.id);
   const liveSessions = item.sessions.filter((session) => session.status === 'SCHEDULED');
   const taught = liveSessions.filter((session) => isPast(session.date, session.startTime)).length;
   const upcomingCount = liveSessions.length - taught;
@@ -262,38 +283,66 @@ export function ClassAdminDetailPage() {
         description={`${item.course.name} · ${item.facility.name}${
           item.startDate && item.endDate ? ` · ${formatDate(item.startDate)} → ${formatDate(item.endDate)}` : ''
         } · ${liveSessions.length}/${item.course.totalSessions} buổi`}
-        extra={
-          <div className="flex flex-wrap items-center gap-2">
-            <Tag color={status.color}>{status.label}</Tag>
-            {can.approve && (
-              <Button
-                type="primary"
-                loading={approve.isPending}
-                icon={<Check size={16} />}
-                onClick={() => setModal('approve')}
-              >
-                Duyệt mở lớp
-              </Button>
-            )}
-            {can.reject && (
-              <Button loading={reject.isPending} icon={<X size={16} />} onClick={() => setModal('reject')}>
-                Từ chối
-              </Button>
-            )}
-            {can.edit && (
-              <Button icon={<Pencil size={16} />} onClick={() => setModal('edit')}>
-                Sửa thông tin
-              </Button>
-            )}
-            {can.cancel && (
-              <Button danger onClick={() => setModal('cancel')}>
-                Hủy lớp
-              </Button>
-            )}
-            <Button onClick={() => router.history.back()}>Quay lại</Button>
-          </div>
-        }
       />
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Tag
+            color={status.color}
+            className={`!m-0 !inline-flex !h-10 items-center !px-4 !text-[15px] !font-semibold ${
+              status.color ? '' : '!border-sc-border !bg-white'
+            }`}
+          >
+            {status.label}
+          </Tag>
+          {can.approve && (
+            <Button
+              type="primary"
+              loading={approve.isPending}
+              icon={<Check size={16} />}
+              onClick={() => setModal('approve')}
+            >
+              Duyệt mở lớp
+            </Button>
+          )}
+          {can.reject && (
+            <Button loading={reject.isPending} icon={<X size={16} />} onClick={() => setModal('reject')}>
+              Từ chối
+            </Button>
+          )}
+          {can.edit && (
+            <Button icon={<Pencil size={16} />} onClick={() => setModal('edit')}>
+              Sửa thông tin
+            </Button>
+          )}
+          {can.cancel && (
+            <Button danger onClick={() => setModal('cancel')}>
+              Hủy lớp
+            </Button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Tooltip title={reviewBlocked}>
+            <Button
+              icon={<Sparkles size={15} />}
+              loading={review.isPending}
+              disabled={Boolean(reviewBlocked)}
+              onClick={runReview}
+            >
+              Gợi ý duyệt lớp
+            </Button>
+          </Tooltip>
+          <Tooltip title={coachHelpBlocked}>
+            <Button
+              icon={<UserRoundCheck size={15} />}
+              disabled={Boolean(coachHelpBlocked)}
+              onClick={() => setCoachHelp(true)}
+            >
+              Gợi ý HLV phù hợp
+            </Button>
+          </Tooltip>
+        </div>
+      </div>
 
       {item.status === 'CANCELLED' && (
         <Alert
@@ -305,8 +354,8 @@ export function ClassAdminDetailPage() {
         />
       )}
 
-      {item.status === 'PENDING_APPROVAL' && <ClassReviewPanel classId={item.id} className="mb-4" />}
-      {!item.coach && item.status !== 'CANCELLED' && <CoachSuggestionsPanel classId={item.id} className="mb-4" />}
+      {!reviewBlocked && <ClassReviewPanel review={review} onRefresh={runReview} className="mb-4" />}
+      {!coachHelpBlocked && coachHelp && <CoachSuggestionsPanel classId={item.id} className="mb-4" />}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Users} label="Sĩ số" value={`${item.enrolledCount}/${item.maxStudents}`} />

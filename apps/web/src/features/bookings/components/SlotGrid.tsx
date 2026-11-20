@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<SlotTone, string> = {
   MAINTENANCE: 'Bảo trì',
   CLOSED: 'Sân đóng',
   PAST: 'Đã qua',
-  BUSY: 'Trùng lịch của bạn',
+  BUSY: 'Trùng lịch',
 };
 
 const CELL_STYLE: Record<SlotTone, string> = {

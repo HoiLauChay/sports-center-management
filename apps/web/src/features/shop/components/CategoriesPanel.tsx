@@ -6,7 +6,7 @@ import {
   type ProductCategory,
 } from '@sports-center/shared';
 import { useMutation } from '@tanstack/react-query';
-import { App, Button, Form, Input, InputNumber, Modal, Switch, type TableColumnsType } from 'antd';
+import { App, Button, Form, Input, Modal, Switch, type TableColumnsType } from 'antd';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { RowActions } from '~/components/data/RowActions';
 import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { FormField, FormRootError } from '~/components/form/FormField';
+import { NumberInput } from '~/components/form/NumberInput';
 import { useConfirm } from '~/hooks/useConfirm';
 import { useFormApiError, type ErrorFieldMap } from '~/hooks/useFormApiError';
 import { toApiError } from '~/lib/http-errors';
@@ -94,7 +95,7 @@ function CategoryFormModal({
             label="Thứ tự hiển thị"
             extra="Số nhỏ hiện trước"
             render={(field, invalid) => (
-              <InputNumber
+              <NumberInput
                 value={field.value}
                 onChange={(value) => field.onChange(value ?? 0)}
                 onBlur={field.onBlur}

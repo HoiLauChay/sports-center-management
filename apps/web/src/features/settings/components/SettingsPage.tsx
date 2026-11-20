@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateSettingsBodySchema, type SystemSettings, type UpdateSettingsBody } from '@sports-center/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, App, Button, Card, Col, Form, InputNumber, Row, TimePicker } from 'antd';
+import { Alert, App, Button, Card, Col, Form, Row, TimePicker } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useForm, useWatch, type Control, type FieldPath } from 'react-hook-form';
@@ -10,6 +10,7 @@ import { ScheduleConflictList } from '~/components/data/ScheduleConflictList';
 import { ErrorState, PageLoading } from '~/components/feedback/States';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
+import { NumberInput } from '~/components/form/NumberInput';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { AutomationSettingsCard } from '~/features/manager-ai/components/AutomationSettingsCard';
@@ -98,7 +99,7 @@ function NumberInputField({ control, name, label, unit, step = 1, money }: Numbe
         return money ? (
           <MoneyInput {...props} />
         ) : (
-          <InputNumber<number> {...props} min={0} precision={0} suffix={unit} className="!w-full" />
+          <NumberInput<number> {...props} min={0} precision={0} suffix={unit} className="!w-full" />
         );
       }}
     />

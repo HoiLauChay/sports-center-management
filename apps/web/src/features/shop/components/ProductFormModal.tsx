@@ -7,12 +7,13 @@ import {
   type Product,
 } from '@sports-center/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { App, Button, Form, Input, InputNumber, Modal, Select, Spin, Switch } from 'antd';
+import { App, Button, Form, Input, Modal, Select, Spin, Switch } from 'antd';
 import { ImagePlus, ImageUp, Trash2 } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
+import { NumberInput } from '~/components/form/NumberInput';
 import { CROP_PRESETS } from '~/constants/crop';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { useCroppedUpload } from '~/hooks/useCroppedUpload';
@@ -298,7 +299,7 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
                 name="initialStock"
                 label="Tồn kho ban đầu"
                 render={(field, invalid) => (
-                  <InputNumber
+                  <NumberInput
                     value={field.value}
                     onChange={(value) => field.onChange(value ?? 0)}
                     onBlur={field.onBlur}
@@ -316,7 +317,7 @@ export function ProductFormModal({ open, product, onClose }: ProductFormModalPro
               name="lowStockThreshold"
               label="Báo sắp hết khi còn"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? 0)}
                   onBlur={field.onBlur}

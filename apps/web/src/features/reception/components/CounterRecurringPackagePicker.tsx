@@ -1,9 +1,10 @@
 import type { Account } from '@sports-center/shared';
-import { Alert, Button, DatePicker, InputNumber, Select, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, DatePicker, Select, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { Info } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Table } from '~/components/data/Table';
+import { NumberInput } from '~/components/form/NumberInput';
 import { SportFacilitySteps } from '~/features/bookings/components/SportFacilitySteps';
 import { usePackagePreview } from '~/features/bookings/hooks/useBookings';
 import { useSportFacilityChoice } from '~/features/bookings/hooks/useSportFacilityChoice';
@@ -174,7 +175,7 @@ export function CounterRecurringPackagePicker({ user, buyer, onAdd }: CounterRec
               <div className="col-span-2 @lg:col-span-1">
                 <FieldLabel>Số tuần</FieldLabel>
                 <div className="flex items-center gap-1.5">
-                  <InputNumber
+                  <NumberInput
                     className="!w-[72px]"
                     size="large"
                     min={1}

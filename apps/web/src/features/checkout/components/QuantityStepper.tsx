@@ -1,5 +1,5 @@
 import { MAX_PRODUCT_QUANTITY } from '@sports-center/shared';
-import { InputNumber } from 'antd';
+import { NumberInput } from '~/components/form/NumberInput';
 
 interface QuantityStepperProps {
   value: number;
@@ -18,7 +18,7 @@ export function QuantityStepper({
   label = 'Số lượng',
 }: QuantityStepperProps) {
   return (
-    <InputNumber
+    <NumberInput
       size="small"
       mode="spinner"
       min={1}

@@ -17,7 +17,7 @@ import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
 import { useApproveClassFromList, useManagerClasses, useRejectClassFromList } from '../hooks/useClassAdmin';
 import type { ManagerClassesQuery } from '../services/classes.service';
-import { classDateRange, weeklyLines } from '../utils';
+import { classAdminActions, classDateRange, weeklyLines } from '../utils';
 import { ReviewClassModal } from './ClassAdminModals';
 import { ClassCreateModal } from './ClassCreateModal';
 import { ClassStatusTag } from './ClassTableParts';
@@ -149,8 +149,10 @@ export function ClassesAdminPage() {
                     key: 'approve',
                     label: 'Duyệt',
                     primary: true,
-                    disabled: !record.coach,
-                    hint: 'Lớp chưa có HLV, phân công trong chi tiết lớp trước',
+                    disabled: !classAdminActions(record).approve,
+                    hint: record.coach
+                      ? 'Lớp đã đến ngày bắt đầu, không duyệt được nữa'
+                      : 'Lớp chưa có HLV, phân công trong chi tiết lớp trước',
                     onClick: () => setReviewing({ mode: 'approve', item: record }),
                   },
                   {

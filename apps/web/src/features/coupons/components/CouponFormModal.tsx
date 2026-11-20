@@ -1,24 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  App,
-  Button,
-  Checkbox,
-  Col,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Radio,
-  Row,
-  Space,
-  Switch,
-} from 'antd';
+import { App, Button, Checkbox, Col, DatePicker, Form, Input, Modal, Radio, Row, Space, Switch } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
 import { useForm, useWatch, type DefaultValues } from 'react-hook-form';
 import { FormField, FormRootError } from '~/components/form/FormField';
 import { MoneyInput } from '~/components/form/MoneyInput';
+import { NumberInput } from '~/components/form/NumberInput';
 import { ORDER_ITEM_TYPES, ORDER_ITEM_TYPE_LABEL } from '~/features/checkout/types';
 import { useFormApiError } from '~/hooks/useFormApiError';
 import { useCouponMutations } from '../hooks/useCoupons';
@@ -219,7 +206,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               label={<Required>{discountType === 'PERCENT' ? 'Giảm (%)' : 'Giảm (₫)'}</Required>}
               render={(field, invalid) =>
                 discountType === 'PERCENT' ? (
-                  <InputNumber
+                  <NumberInput
                     ref={field.ref}
                     value={field.value}
                     onChange={(value) => field.onChange(value ?? undefined)}
@@ -292,7 +279,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               name="maxUses"
               label="Tổng lượt dùng"
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? null)}
@@ -312,7 +299,7 @@ export function CouponFormModal({ open, coupon, onClose }: CouponFormModalProps)
               name="maxUsesPerUser"
               label={<Required>Lượt / người</Required>}
               render={(field, invalid) => (
-                <InputNumber
+                <NumberInput
                   ref={field.ref}
                   value={field.value}
                   onChange={(value) => field.onChange(value ?? undefined)}

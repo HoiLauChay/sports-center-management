@@ -1,9 +1,10 @@
 import { SPECIALIZATION_MAX_CERTIFICATES, type CreateSpecializationInput } from '@sports-center/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, App, Button, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Alert, App, Button, Form, Input, Modal, Select } from 'antd';
 import { Paperclip } from 'lucide-react';
 import { useState } from 'react';
 import { FileDropModal } from '~/components/form/FileDropModal';
+import { NumberInput } from '~/components/form/NumberInput';
 import { sportsQueryOptions } from '~/features/catalog/hooks/useCatalog';
 import { describeApiError } from '~/lib/http-errors';
 import { uploadFile } from '~/lib/upload';
@@ -90,7 +91,7 @@ export function RegisterModal({ open, taken, resend, onClose }: RegisterModalPro
           />
         </Form.Item>
         <Form.Item name="experienceYears" label="Số năm kinh nghiệm">
-          <InputNumber min={0} max={60} precision={0} className="!w-40" />
+          <NumberInput min={0} max={60} precision={0} className="!w-40" />
         </Form.Item>
         <Form.Item name="experienceNote" label="Mô tả kinh nghiệm">
           <Input.TextArea rows={4} maxLength={1000} showCount />

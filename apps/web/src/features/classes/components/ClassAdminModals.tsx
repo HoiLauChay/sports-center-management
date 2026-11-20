@@ -1,6 +1,7 @@
-import { Alert, Button, Form, Input, InputNumber, Modal, Select } from 'antd';
+import { Alert, Button, Form, Input, Modal, Select } from 'antd';
 import { CalendarDays, MapPin, UserCheck, Users } from 'lucide-react';
 import { useEffect } from 'react';
+import { NumberInput } from '~/components/form/NumberInput';
 import { SportTag } from '~/components/ui/SportTag';
 import { useAssignCoach, useCancelClass, useCoachPool, useUpdateClass } from '../hooks/useClassAdmin';
 import type { ClassAdminDetail, ClassSummary } from '../types';
@@ -47,7 +48,7 @@ export function EditClassModal({ open, item, onClose }: ModalProps) {
         </Form.Item>
         <div className="grid grid-cols-2 gap-4">
           <Form.Item name="minStudents" label="Sĩ số tối thiểu" rules={[{ required: true, message: 'Bắt buộc' }]}>
-            <InputNumber min={1} max={1000} precision={0} className="!w-full" />
+            <NumberInput min={1} max={1000} precision={0} className="!w-full" />
           </Form.Item>
           <Form.Item
             name="maxStudents"
@@ -69,7 +70,7 @@ export function EditClassModal({ open, item, onClose }: ModalProps) {
               }),
             ]}
           >
-            <InputNumber min={1} max={1000} precision={0} className="!w-full" />
+            <NumberInput min={1} max={1000} precision={0} className="!w-full" />
           </Form.Item>
         </div>
       </Form>

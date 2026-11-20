@@ -73,8 +73,8 @@ export interface ClassAdminActions {
 
 /**
  * Which management actions a class allows in its current state (BR_2.10): editing only before the first session,
- * coach assignment before the first session (an open class may also change coach later), approval only with a coach,
- * and cancelling any class that is neither cancelled nor over.
+ * coach assignment before the first session (an open class may also change coach later), approval only with a coach
+ * and before the first session, and cancelling any class that is neither cancelled nor over.
  */
 export function classAdminActions(item: ClassSummary): ClassAdminActions {
   const started = item.startDate !== null && todayVN() >= item.startDate;
@@ -83,7 +83,7 @@ export function classAdminActions(item: ClassSummary): ClassAdminActions {
   return {
     edit: live && !started,
     assignCoach: live && (item.status === 'OPEN' || !started),
-    approve: pending && item.coach !== null,
+    approve: pending && item.coach !== null && !started,
     reject: pending,
     cancel: live,
   };

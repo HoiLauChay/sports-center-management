@@ -7,6 +7,7 @@ import { ErrorState } from '~/components/feedback/States';
 import { SlotGrid } from '~/features/bookings/components/SlotGrid';
 import { SportFacilitySteps } from '~/features/bookings/components/SportFacilitySteps';
 import { useFacilitySchedules } from '~/features/bookings/hooks/useBookings';
+import { useScheduleConflicts } from '~/features/bookings/hooks/useScheduleConflicts';
 import { useSlotSelection } from '~/features/bookings/hooks/useSlotSelection';
 import { useSportFacilityChoice } from '~/features/bookings/hooks/useSportFacilityChoice';
 import { useQuote } from '~/features/checkout/hooks/useCart';
@@ -67,6 +68,7 @@ function CounterSlotSchedule({ facility, date, onDateChange, user, buyer, onAdd 
   const rows = useMemo(() => [facility], [facility]);
   const schedule = useFacilitySchedules([facility.id], date);
   const { selection, onSelect: setSelection, invalidated } = useSlotSelection(schedule.schedules);
+  const conflictOf = useScheduleConflicts(user, buyer, date);
 
   const maxAdvance = settings.data?.maxAdvanceBookingDays ?? 14;
   const today = todayVN();
@@ -182,6 +184,7 @@ function CounterSlotSchedule({ facility, date, onDateChange, user, buyer, onAdd 
                 loading={schedule.isLoading}
                 selection={selection}
                 onSelect={setSelection}
+                conflictOf={conflictOf}
               />
             </div>
           )}

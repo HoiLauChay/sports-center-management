@@ -1,8 +1,9 @@
 import { AUTOMATIONS, type AutomationSetting } from '@sports-center/shared';
-import { Button, Card, InputNumber, Skeleton, Switch, Tag } from 'antd';
+import { Button, Card, Skeleton, Switch, Tag } from 'antd';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorState } from '~/components/feedback/States';
+import { NumberInput } from '~/components/form/NumberInput';
 import { SectionTitle } from '~/components/ui/SectionTitle';
 import { formatDateTime } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -35,7 +36,7 @@ function AutomationRow({ setting }: { setting: AutomationSetting }) {
         {definition.threshold && (
           <>
             <span className="text-[13.5px] text-sc-muted">{definition.threshold.label}</span>
-            <InputNumber
+            <NumberInput
               size="small"
               min={definition.threshold.min}
               max={definition.threshold.max}

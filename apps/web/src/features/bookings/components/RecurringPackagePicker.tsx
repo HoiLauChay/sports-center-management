@@ -1,8 +1,9 @@
 import type { Account } from '@sports-center/shared';
-import { Alert, Button, DatePicker, InputNumber, Select, Tag, type TableColumnsType } from 'antd';
+import { Alert, Button, DatePicker, Select, Tag, type TableColumnsType } from 'antd';
 import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 import { Table } from '~/components/data/Table';
+import { NumberInput } from '~/components/form/NumberInput';
 import { useQuote } from '~/features/checkout/hooks/useCart';
 import type { CheckoutBuyer, CheckoutItemInput } from '~/features/checkout/types';
 import { useSettings } from '~/features/settings';
@@ -118,7 +119,7 @@ export function RecurringPackagePicker({ user, buyer, onAdd }: RecurringPackageP
             </div>
             <div>
               <div className="mb-1 font-semibold">Số tuần</div>
-              <InputNumber className="!w-full" min={1} max={12} precision={0} value={weeks} onChange={setWeeks} />
+              <NumberInput className="!w-full" min={1} max={12} precision={0} value={weeks} onChange={setWeeks} />
             </div>
           </div>
           <div>
