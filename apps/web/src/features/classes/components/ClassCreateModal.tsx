@@ -28,10 +28,11 @@ const blankClass = (): DefaultValues<ClassInput> => ({ name: '', startDate: '', 
 interface ClassCreateModalProps {
   open: boolean;
   onClose: () => void;
+  onCreated: (classId: string) => void;
 }
 
 /** Creates a class as a draft of a course (UC_2.12); every session holds its slot, so a clash lists each one (BR_2.3). */
-export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
+export function ClassCreateModal({ open, onClose, onCreated }: ClassCreateModalProps) {
   const queryClient = useQueryClient();
   const courses = useCourses();
   const facilities = useQuery(facilitiesQueryOptions);
@@ -62,9 +63,10 @@ export function ClassCreateModal({ open, onClose }: ClassCreateModalProps) {
 
   const create = useMutation({
     mutationFn: classesService.create,
-    onSuccess: () => {
+    onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       close();
+      onCreated(created.id);
     },
     onError: (err) => {
       const clashes = errorPayload<ScheduleClash[]>(err, 'conflicts');

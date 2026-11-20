@@ -274,7 +274,11 @@ export function ClassesAdminPage() {
         )}
       </Card>
 
-      <ClassCreateModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <ClassCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(classId) => void navigate({ to: '/admin/classes/$classId', params: { classId } })}
+      />
       <ReviewClassModal
         open={reviewing !== null}
         mode={reviewing?.mode ?? 'approve'}
