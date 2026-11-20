@@ -96,6 +96,22 @@ describe('shop catalog', () => {
     expect(await readCode(await shop('DELETE', `/categories/${category.id}`, manager))).toBe('HAS_DEPENDENCIES');
   });
 
+  test('filtering by sport keeps products for every sport for members, only that sport for managers', async () => {
+    const { manager, member, water, shuttles } = await setup();
+    const badminton = await prisma.sport.create({ data: { name: 'Cầu lông' } });
+    const yoga = await prisma.sport.create({ data: { name: 'Yoga' } });
+    await shop('PATCH', `/products/${shuttles.id}`, manager, { sportId: badminton.id });
+
+    const ids = async (viewer: typeof member, sportId: string) =>
+      (await readResult<Paginated<Product>>(await shop('GET', `/products?sportId=${sportId}`, viewer))).items
+        .map(({ id }) => id)
+        .sort();
+
+    expect(await ids(member, badminton.id)).toEqual([shuttles.id, water.id].sort());
+    expect(await ids(member, yoga.id)).toEqual([water.id]);
+    expect(await ids(manager, badminton.id)).toEqual([shuttles.id]);
+  });
+
   test('stock adjustments write the ledger and never go below zero', async () => {
     const { manager, water } = await setup();
 
