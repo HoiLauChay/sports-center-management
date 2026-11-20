@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import { Alert, Button, Card, Pagination, Segmented, Select, Skeleton } from 'antd';
 import { ShoppingCart } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -17,6 +17,8 @@ import { ProductCard } from './ProductCard';
 
 const PAGE_SIZE = 12;
 
+const routeApi = getRouteApi('/_authenticated/_member/shop');
+
 /** Member: browse the shop, put products in the cart and collect them at the counter after paying. */
 export function ShopPage() {
   const categories = useProductCategories();
@@ -26,7 +28,8 @@ export function ShopPage() {
 
   const [q, setQ] = useState('');
   const [categoryId, setCategoryId] = useState('ALL');
-  const [sportId, setSportId] = useState<string>();
+  const { sportId } = routeApi.useSearch();
+  const navigate = routeApi.useNavigate();
   const [page, setPage] = useState(1);
   const products = useProducts({
     q: q || undefined,
@@ -76,7 +79,7 @@ export function ShopPage() {
             placeholder="Mọi bộ môn"
             value={sportId}
             onChange={(value: string | undefined) => {
-              setSportId(value);
+              void navigate({ search: { sportId: value }, replace: true });
               setPage(1);
             }}
             options={(sports.data ?? [])

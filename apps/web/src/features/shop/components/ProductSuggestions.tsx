@@ -110,7 +110,7 @@ export function ProductSuggestions({
           <span className="font-display text-[13.5px] font-bold tracking-[0.12em] text-sc-muted uppercase">
             {title}
           </span>
-          <Link to="/shop" className="text-[13.5px] font-semibold">
+          <Link to="/shop" search={{ sportId: sportIds[0] }} className="text-[13.5px] font-semibold">
             Xem thêm
           </Link>
         </div>
