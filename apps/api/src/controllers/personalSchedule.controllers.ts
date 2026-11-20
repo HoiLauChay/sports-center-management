@@ -11,6 +11,14 @@ class PersonalScheduleController {
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
   };
 
+  ofMember = async (req: Request, res: Response) => {
+    const result = await personalScheduleService.member(
+      req.params.id as string,
+      req.query as unknown as PersonalScheduleQuery,
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
   coach = async (req: Request, res: Response) => {
     const result = await personalScheduleService.coach(req.user!.id, req.query as unknown as PersonalScheduleQuery);
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));

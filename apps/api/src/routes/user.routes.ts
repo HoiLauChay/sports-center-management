@@ -4,6 +4,7 @@ import {
   createUserBodySchema,
   listUsersQuerySchema,
   memberMembershipParamsSchema,
+  personalScheduleQuerySchema,
   subscribeMemberBodySchema,
   terminateMembershipBodySchema,
   updateUserBodySchema,
@@ -15,6 +16,7 @@ import {
 import { Router, type NextFunction, type Request, type Response } from 'express';
 
 import memberMembershipController from '~/controllers/memberMembership.controllers';
+import personalScheduleController from '~/controllers/personalSchedule.controllers';
 import userController from '~/controllers/user.controllers';
 import walletController from '~/controllers/wallet.controllers';
 import { auth, isRole } from '~/middlewares/auth.middlewares';
@@ -42,6 +44,13 @@ userRouter.get(
   validate({ params: userIdParamsSchema, query: walletQuerySchema }),
   managed,
   walletController.getForMember,
+);
+userRouter.get(
+  '/:id/schedule',
+  isRole('RECEPTIONIST'),
+  validate({ params: userIdParamsSchema, query: personalScheduleQuerySchema }),
+  managed,
+  personalScheduleController.ofMember,
 );
 userRouter.get(
   '/:id/memberships',
