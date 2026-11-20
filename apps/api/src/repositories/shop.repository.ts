@@ -2,7 +2,7 @@ import type { FulfillmentStatus, ListProductSalesQuery, ListProductsQuery } from
 
 import { prisma } from '~/configs/db';
 import { Prisma } from '~/generated/prisma/client';
-import { pageArgs } from '~/utils/pagination';
+import { pageArgs, pageOfGroups } from '~/utils/pagination';
 import { unaccentContains } from '~/utils/search';
 
 type Db = Prisma.TransactionClient;
@@ -81,6 +81,21 @@ export type ProductSaleRow = Prisma.ProductSaleGetPayload<{ select: typeof saleS
 
 const visibleProduct = { deletedAt: null, isActive: true, category: { deletedAt: null, isActive: true } };
 
+const productOrder: Prisma.ProductOrderByWithRelationInput[] = [
+  { category: { sortOrder: 'asc' } },
+  { name: 'asc' },
+  { id: 'asc' },
+];
+
+const memberGroups = (where: Prisma.ProductWhereInput, sportId: string | undefined) => {
+  const forEverySport = { sportId: null };
+  const forOneSport = { sportId: { not: null } };
+  return (sportId ? [forOneSport, forEverySport] : [forEverySport, forOneSport]).map((part) => ({
+    where: { AND: [where, part] },
+    orderBy: productOrder,
+  }));
+};
+
 class ShopRepository {
   // ---- categories ----
   findCategories = (includeInactive: boolean) =>
@@ -124,15 +139,18 @@ class ShopRepository {
       ...(sportId && (staffView ? { sportId } : { OR: [{ sportId }, { sportId: null }] })),
       ...(lowStock && { stock: { lte: prisma.product.fields.lowStockThreshold } }),
     };
-    return Promise.all([
-      prisma.product.findMany({
-        where,
-        select: productSelect,
-        orderBy: [{ category: { sortOrder: 'asc' } }, { name: 'asc' }, { id: 'asc' }],
-        ...pageArgs(page),
-      }),
-      prisma.product.count({ where }),
-    ]);
+    if (staffView) {
+      return Promise.all([
+        prisma.product.findMany({ where, select: productSelect, orderBy: productOrder, ...pageArgs(page) }),
+        prisma.product.count({ where }),
+      ]);
+    }
+    const groups = memberGroups(where, sportId);
+    const sizes = await Promise.all(groups.map((group) => prisma.product.count({ where: group.where })));
+    const rows = await Promise.all(
+      pageOfGroups(groups, sizes, page).map((args) => prisma.product.findMany({ ...args, select: productSelect })),
+    );
+    return [rows.flat(), sizes.reduce((total, size) => total + size, 0)] as const;
   };
 
   findProduct = (id: string, db: Db = prisma) =>
