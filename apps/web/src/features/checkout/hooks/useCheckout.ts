@@ -69,6 +69,7 @@ export function useCheckout({ onPaid, onQuote }: UseCheckoutOptions) {
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
       void queryClient.invalidateQueries({ queryKey: ['facility-schedule'] });
+      void queryClient.invalidateQueries({ queryKey: ['schedule'] });
       void queryClient.invalidateQueries({ queryKey: ['classes'] });
       onPaid(order);
     },

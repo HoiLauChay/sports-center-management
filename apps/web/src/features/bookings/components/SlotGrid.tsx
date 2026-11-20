@@ -6,7 +6,7 @@ import { isPast } from '~/lib/time';
 import type { SlotSelection } from '../types';
 import { isSelectableSlot, isValidSelection, selectSlot } from '../utils/slot-selection';
 
-type SlotTone = FacilitySlotStatus | 'PARTIAL' | 'LOW' | 'PAST';
+type SlotTone = FacilitySlotStatus | 'PARTIAL' | 'LOW' | 'PAST' | 'BUSY';
 
 const LOW_SHARE = 0.2;
 
@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<SlotTone, string> = {
   MAINTENANCE: 'Bảo trì',
   CLOSED: 'Sân đóng',
   PAST: 'Đã qua',
+  BUSY: 'Trùng lịch của bạn',
 };
 
 const CELL_STYLE: Record<SlotTone, string> = {
@@ -38,6 +39,7 @@ const CELL_STYLE: Record<SlotTone, string> = {
   MAINTENANCE: 'bg-rose-50/90 border-rose-200 text-rose-800 cursor-not-allowed',
   CLOSED: 'bg-slate-50/80 border-slate-100 text-slate-300 cursor-not-allowed',
   PAST: 'bg-slate-50/80 border-slate-100 text-slate-300 cursor-not-allowed',
+  BUSY: 'bg-slate-100/90 border-slate-200 text-slate-500 cursor-not-allowed',
 };
 
 const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
@@ -49,6 +51,7 @@ const LEGEND_BADGE: Record<SlotTone, { bg: string; border: string }> = {
   MAINTENANCE: { bg: 'bg-rose-100', border: 'border-rose-300' },
   CLOSED: { bg: 'bg-slate-100', border: 'border-slate-200' },
   PAST: { bg: 'bg-slate-50', border: 'border-slate-100' },
+  BUSY: { bg: 'bg-slate-100', border: 'border-slate-200' },
 };
 
 function tooltipOf(slot: FacilitySlot, date: string) {
@@ -70,6 +73,7 @@ interface SlotGridProps {
   maxSlots?: number;
   /** `table` still turns into cards on phones, where a wide grid would need sideways scrolling. */
   layout?: 'table' | 'cards';
+  conflictOf?: (slot: FacilitySlot) => string | null;
 }
 
 /** Facility × slot grid for one day (UC_2.10). Click a free slot, then neighbours to extend the range. */
@@ -81,6 +85,7 @@ export function SlotGrid({
   onSelect,
   maxSlots = 3,
   layout = 'table',
+  conflictOf,
 }: SlotGridProps) {
   const isMobile = Grid.useBreakpoint().md === false;
   const reference = facilities.map((facility) => schedules[facility.id]).find(Boolean);
@@ -90,6 +95,8 @@ export function SlotGrid({
   const [showPast, setShowPast] = useState(false);
   const pastCount = (facilityId: string) =>
     (schedules[facilityId]?.slots ?? []).filter((slot) => toneOf(slot, date) === 'PAST').length;
+
+  const conflictAt = (slot: FacilitySlot) => (isSelectableSlot(slot) ? (conflictOf?.(slot) ?? null) : null);
 
   const currentSelection = isValidSelection(selection, schedules, maxSlots) ? selection : null;
   const click = (facilityId: string, index: number) => {
@@ -136,22 +143,24 @@ export function SlotGrid({
                   currentSelection?.facilityId === facility.id &&
                   index >= currentSelection.startIndex &&
                   index < currentSelection.startIndex + currentSelection.count;
-                const available = isSelectableSlot(slot);
+                const conflict = conflictAt(slot);
+                const tone: SlotTone = conflict ? 'BUSY' : toneOf(slot, date);
+                const available = isSelectableSlot(slot) && !conflict;
                 return (
-                  <Tooltip key={slot.startTime} title={tooltipOf(slot, date)}>
+                  <Tooltip key={slot.startTime} title={conflict ?? tooltipOf(slot, date)}>
                     <button
                       type="button"
                       disabled={loading || !onSelect || !available}
                       aria-pressed={selected}
-                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${STATUS_LABEL[toneOf(slot, date)]}${selected ? ', đang chọn' : ''}`}
+                      aria-label={`${facility.name} ${slot.startTime} đến ${slot.endTime}: ${conflict ?? STATUS_LABEL[tone]}${selected ? ', đang chọn' : ''}`}
                       onClick={() => click(facility.id, index)}
-                      className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border border-sc-border-soft px-2 py-2.5 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-20 ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[toneOf(slot, date)]}`}
+                      className={`flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-xl border border-sc-border-soft px-2 py-2.5 text-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sc-primary md:min-h-20 ${selected ? '!border-sc-primary !bg-sc-primary !text-white' : CELL_STYLE[tone]}`}
                     >
                       <span className="block text-[14px] font-bold tabular-nums">
                         {slot.startTime}–{slot.endTime}
                       </span>
                       <span className="flex flex-col items-center gap-0.5 text-[13px]">
-                        <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[toneOf(slot, date)]}</span>
+                        <span>{selected ? '✓ Đang chọn' : STATUS_LABEL[tone]}</span>
                         {available && (
                           <span className="whitespace-nowrap">
                             Còn {Math.max(0, slot.capacity - slot.booked)}/{slot.capacity} chỗ
@@ -230,11 +239,12 @@ export function SlotGrid({
                     currentSelection?.facilityId === facility.id &&
                     index >= currentSelection.startIndex &&
                     index < currentSelection.startIndex + currentSelection.count;
-                  const selectable = isSelectableSlot(slot);
-                  const tone = toneOf(slot, date);
+                  const conflict = conflictAt(slot);
+                  const selectable = isSelectableSlot(slot) && !conflict;
+                  const tone: SlotTone = conflict ? 'BUSY' : toneOf(slot, date);
 
                   return (
-                    <Tooltip key={slot.startTime} title={tooltipOf(slot, date)} mouseEnterDelay={0.25}>
+                    <Tooltip key={slot.startTime} title={conflict ?? tooltipOf(slot, date)} mouseEnterDelay={0.25}>
                       <button
                         type="button"
                         role="gridcell"
@@ -250,6 +260,8 @@ export function SlotGrid({
                       >
                         {selected ? (
                           <span className="font-bold text-[13.5px] text-white">✓ Chọn</span>
+                        ) : conflict ? (
+                          <span className="font-medium text-[13.5px] text-slate-500">Trùng lịch</span>
                         ) : slot.status === 'CLASS' ? (
                           <span className="font-semibold text-[13.5px] text-emerald-800">Có lớp</span>
                         ) : slot.status === 'MAINTENANCE' ? (

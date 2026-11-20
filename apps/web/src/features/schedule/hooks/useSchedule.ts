@@ -3,11 +3,12 @@ import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
 import { addDays } from '~/lib/time';
 import { scheduleService } from '../services/schedule.service';
 
-export function useMySchedule(range: PersonalScheduleQuery) {
+export function useMySchedule(range: PersonalScheduleQuery, enabled = true) {
   return useQuery({
     queryKey: ['schedule', 'mine', range],
     queryFn: () => scheduleService.mine(range),
     placeholderData: keepPreviousData,
+    enabled,
   });
 }
 
