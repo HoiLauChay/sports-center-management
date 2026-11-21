@@ -47,6 +47,7 @@ export const AUDIT_ENTITY_LABEL: Record<AuditEntityType, string> = {
   PRODUCT_CATEGORY: 'Danh mục sản phẩm',
   PRODUCT: 'Sản phẩm',
   PRODUCT_SALE: 'Đơn sản phẩm',
+  ASSISTANT_QUOTA: 'Lượt hỏi trợ lý AI',
 };
 
 const FIELD_LABEL: Record<string, string> = {
@@ -122,6 +123,9 @@ const FIELD_LABEL: Record<string, string> = {
   handledAt: 'Thời điểm xử lý',
   paymentCode: 'Mã thanh toán',
   referenceCode: 'Mã tham chiếu',
+  period: 'Tháng',
+  members: 'Số hội viên được reset',
+  questions: 'Số lượt hỏi được trả lại',
 };
 
 export const auditFieldLabel = (field: string) => FIELD_LABEL[field] ?? field;

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { pageQuerySchema } from './pagination';
+
 export const ASSISTANT_MAX_MESSAGES = 20;
 export const ASSISTANT_MAX_TEXT = 1000;
 export const ASSISTANT_FREE_QUESTIONS = 10;
@@ -96,3 +98,11 @@ export const assistantChatBodySchema = z.strictObject({
 
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type AssistantChatBody = z.infer<typeof assistantChatBodySchema>;
+
+/** Manager: members who asked the assistant this month, searched by name or email. */
+export const listAssistantQuotasQuerySchema = pageQuerySchema.extend({
+  q: z.string().trim().max(100).optional(),
+});
+export const assistantQuotaParamsSchema = z.object({ accountId: z.uuid('Hội viên không hợp lệ') });
+
+export type ListAssistantQuotasQuery = z.infer<typeof listAssistantQuotasQuerySchema>;

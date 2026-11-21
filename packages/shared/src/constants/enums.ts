@@ -53,6 +53,7 @@ export const AUDIT_ENTITY_TYPES = [
   'PRODUCT_CATEGORY',
   'PRODUCT',
   'PRODUCT_SALE',
+  'ASSISTANT_QUOTA',
 ] as const;
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
 

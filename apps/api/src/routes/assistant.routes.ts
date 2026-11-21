@@ -1,4 +1,10 @@
-import { ASSISTANT_ROLES, assistantChatBodySchema, assistantContextParamsSchema } from '@sports-center/shared';
+import {
+  ASSISTANT_ROLES,
+  assistantChatBodySchema,
+  assistantContextParamsSchema,
+  assistantQuotaParamsSchema,
+  listAssistantQuotasQuerySchema,
+} from '@sports-center/shared';
 import { Router } from 'express';
 
 import assistantController from '~/controllers/assistant.controllers';
@@ -22,5 +28,24 @@ assistantRouter.delete(
 );
 assistantRouter.get('/overview', assistantController.overview);
 assistantRouter.get('/quota', assistantController.quota);
+assistantRouter.get(
+  '/quotas',
+  isRole('MANAGER'),
+  validate({ query: listAssistantQuotasQuerySchema }),
+  assistantController.listQuotas,
+);
+assistantRouter.get(
+  '/quotas/:accountId',
+  isRole('MANAGER'),
+  validate({ params: assistantQuotaParamsSchema }),
+  assistantController.memberQuota,
+);
+assistantRouter.post('/quota/reset', isRole('MANAGER'), assistantController.resetQuotas);
+assistantRouter.post(
+  '/quotas/:accountId/reset',
+  isRole('MANAGER'),
+  validate({ params: assistantQuotaParamsSchema }),
+  assistantController.resetQuotas,
+);
 
 export default assistantRouter;

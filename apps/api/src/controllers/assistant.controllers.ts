@@ -1,10 +1,16 @@
-import { ERROR_CODE, type AssistantRole, type AssistantStreamEvent } from '@sports-center/shared';
+import {
+  ERROR_CODE,
+  type AssistantRole,
+  type AssistantStreamEvent,
+  type ListAssistantQuotasQuery,
+} from '@sports-center/shared';
 import type { Request, Response } from 'express';
 
 import { HTTP_STATUS } from '~/constants/httpStatus';
 import { ErrorWithStatus } from '~/rules/error';
 import { ResponseClient } from '~/rules/response';
 import assistantService from '~/services/ai/assistant.service';
+import { getClientIp } from '~/utils/request';
 
 const actorOf = (req: Request) => ({ id: req.user!.id, role: req.user!.role as AssistantRole });
 
@@ -53,6 +59,25 @@ class AssistantController {
   quota = async (req: Request, res: Response) => {
     const result = await assistantService.quota(actorOf(req));
     res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
+  listQuotas = async (req: Request, res: Response) => {
+    const result = await assistantService.listQuotas(req.query as unknown as ListAssistantQuotasQuery);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
+  memberQuota = async (req: Request, res: Response) => {
+    const result = await assistantService.memberQuota(req.params.accountId as string);
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Thành công', result }));
+  };
+
+  resetQuotas = async (req: Request, res: Response) => {
+    const result = await assistantService.resetQuotas(
+      req.user!.id,
+      req.params.accountId as string | undefined,
+      getClientIp(req),
+    );
+    res.status(HTTP_STATUS.OK).json(new ResponseClient({ message: 'Đã reset lượt hỏi AI của hội viên', result }));
   };
 
   overview = async (req: Request, res: Response) => {

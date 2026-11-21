@@ -4,6 +4,7 @@ import { Button, Dropdown } from 'antd';
 import { ChevronDown, Mail, PencilLine, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { PATHS } from '~/constants/paths';
+import { MemberAssistantBlock } from '~/features/assistant/components/MemberAssistantBlock';
 import { StaffMembershipBlock } from '~/features/memberships';
 import { MemberBookingsBlock, MemberHistoryBlock, MemberSupportBlock, MemberWalletBlock } from '~/features/reception';
 import { STATUS_ACTION } from '../utils/statusActions';
@@ -98,6 +99,7 @@ export function AdminUserDetailPage() {
           <>
             <MemberWalletBlock memberId={user.id} manager />
             <StaffMembershipBlock memberId={user.id} />
+            <MemberAssistantBlock memberId={user.id} />
             <MemberSupportBlock memberId={user.id} manager />
           </>
         ) : null
