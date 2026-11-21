@@ -67,12 +67,7 @@ export function CoachSuggestionsPanel({ classId, className = '' }: { classId: st
   const assign = useAssignCoach(classId);
   const candidates = suggestions.data?.candidates ?? [];
   return (
-    <AiPanel
-      className={className}
-      title="HLV phù hợp"
-      ai={suggestions.data ? true : undefined}
-      loading={suggestions.isPending}
-    >
+    <AiPanel className={className} title="HLV phù hợp" loading={suggestions.isPending}>
       {suggestions.isError ? (
         <Alert type="warning" showIcon message={describeApiError(suggestions.error)} />
       ) : candidates.length === 0 ? (
@@ -87,10 +82,7 @@ export function CoachSuggestionsPanel({ classId, className = '' }: { classId: st
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/70 px-3 py-2"
             >
               <span className="min-w-0">
-                <span className="flex items-center gap-2 font-semibold">
-                  {candidate.coach.fullName}
-                  <Tag color={candidate.available ? 'green' : 'default'}>{candidate.score} điểm</Tag>
-                </span>
+                <span className="block font-semibold">{candidate.coach.fullName}</span>
                 <span className="block text-[13px] text-sc-muted">{candidate.reasons.join(' · ')}</span>
               </span>
               <Button
