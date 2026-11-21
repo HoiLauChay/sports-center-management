@@ -8,6 +8,7 @@ import { Table } from '~/components/data/Table';
 import { EmptyState, ErrorState } from '~/components/feedback/States';
 import { SearchInput } from '~/components/form/SearchInput';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { AssistantQuotaCard } from '~/features/assistant/components/AssistantQuotaCard';
 import { useConfirm } from '~/hooks/useConfirm';
 import { formatVND } from '~/lib/format';
 import { toApiError } from '~/lib/http-errors';
@@ -297,6 +298,7 @@ export function ManageMembershipsPage() {
           />
         )}
       </Card>
+      <AssistantQuotaCard />
       <MembershipFormModal open={formOpen} membership={editing} onClose={() => setFormOpen(false)} />
     </>
   );
