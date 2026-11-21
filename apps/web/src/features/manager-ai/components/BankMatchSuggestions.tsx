@@ -1,5 +1,5 @@
 import type { BankMatchCandidate } from '@sports-center/shared';
-import { Button, Tag } from 'antd';
+import { Button } from 'antd';
 import { useBankSuggestions } from '../hooks/useManagerAi';
 import { AiPanel } from './AiPanel';
 
@@ -28,9 +28,6 @@ export function BankMatchSuggestions({ transactionId, selectedId, onPick }: Bank
                 {candidate.account.phone && (
                   <span className="font-normal text-sc-muted">{candidate.account.phone}</span>
                 )}
-                <Tag color={candidate.score >= 60 ? 'green' : candidate.score >= 35 ? 'gold' : 'default'}>
-                  {candidate.score}%
-                </Tag>
               </span>
               <span className="block text-[13px] text-sc-muted">{candidate.reasons.join(' · ')}</span>
             </span>
