@@ -7,9 +7,12 @@ import {
   type AssistantMessage,
   type AssistantOverview,
   type AssistantQuota,
+  type AssistantQuotaPage,
+  type AssistantQuotaReset,
   type AssistantReply,
   type AssistantRole,
   type CoachAssistantOverview,
+  type ListAssistantQuotasQuery,
   type ManagerAssistantOverview,
   type MemberAssistantOverview,
   type ReceptionAssistantOverview,
@@ -24,6 +27,7 @@ import geminiClient, { type GeminiContent, type GeminiPart } from '~/services/ai
 import assistantMemory, { itemsFrom, type MemoryItem } from '~/services/ai/memory';
 import { actionOf, coachPendingWork, toolsFor, weekdayOf, type ToolContext } from '~/services/ai/tools';
 import { TOOL_LABELS } from '~/services/ai/tools/labels';
+import auditService from '~/services/audit.service';
 import bookingService from '~/services/booking.service';
 import checkinService from '~/services/checkin.service';
 import classService from '~/services/class.service';
@@ -33,7 +37,9 @@ import personalScheduleService from '~/services/personalSchedule.service';
 import reportService from '~/services/report.service';
 import sessionService from '~/services/session.service';
 import supportService from '~/services/support.service';
+import { toPage } from '~/utils/pagination';
 import { addDays, formatDate, minutesInCenter, parseTime, todayInCenter } from '~/utils/time';
+import { runTransaction } from '~/utils/transaction';
 
 interface ChatOptions {
   conversationId?: string;
@@ -377,6 +383,58 @@ class AssistantService {
       sources: result.sources,
       quota: { used: result.reply === null ? used - 1 : used, limit, resetsOn: firstOfNextMonth(today) },
     };
+  };
+
+  /** Manager: one member's AI questions this month, used or not. */
+  memberQuota = async (accountId: string): Promise<AssistantQuota> => {
+    if (!(await assistantRepository.isMember(accountId))) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.NOT_FOUND,
+        code: ERROR_CODE.NOT_FOUND,
+        message: 'Không tìm thấy hội viên',
+      });
+    }
+    return (await this.quota({ id: accountId, role: 'MEMBER' }))!;
+  };
+
+  /** Manager: members who asked this month, with how many questions they used out of their package's limit. */
+  listQuotas = async (query: ListAssistantQuotasQuery): Promise<AssistantQuotaPage> => {
+    const today = todayInCenter();
+    const { rows, total } = await assistantRepository.findUsagePage(monthOf(today), query);
+    const items = await Promise.all(
+      rows.map(async ({ count, account }) => ({
+        ...account,
+        used: count,
+        limit: await monthlyLimit(account.id, today),
+      })),
+    );
+    return { ...toPage(items, total, query), period: monthOf(today), resetsOn: firstOfNextMonth(today) };
+  };
+
+  /**
+   * Manager: one member, or every member when `accountId` is left out, starts this month's AI questions over.
+   * Logged under the member's id, or `ALL`; a reset that gave nothing back leaves no log.
+   */
+  resetQuotas = async (managerId: string, accountId?: string, ip?: string): Promise<AssistantQuotaReset> => {
+    const period = monthOf(todayInCenter());
+    const { members } = await runTransaction(async (tx) => {
+      const reset = await assistantRepository.resetUsage(period, accountId, tx);
+      if (reset.members > 0) {
+        await auditService.record(
+          {
+            accountId: managerId,
+            action: 'UPDATE',
+            entityType: 'ASSISTANT_QUOTA',
+            entityId: accountId ?? 'ALL',
+            newValues: { period, ...reset },
+            ipAddress: ip,
+          },
+          tx,
+        );
+      }
+      return reset;
+    });
+    return { members, period };
   };
 
   forget = (accountId: string, conversationId: string) => assistantMemory.forget(accountId, conversationId);

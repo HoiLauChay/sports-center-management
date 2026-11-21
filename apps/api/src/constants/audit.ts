@@ -29,6 +29,13 @@ import type {
   WalletTransaction,
 } from '~/generated/prisma/client';
 
+/** One manager reset of AI questions: `members` reset (one, or everyone), `questions` given back in `period`. */
+interface AssistantQuotaReset {
+  period: string;
+  members: number;
+  questions: number;
+}
+
 const fields =
   <T>() =>
   <K extends keyof T & string>(...keys: K[]): readonly string[] =>
@@ -190,4 +197,5 @@ export const AUDIT_FIELDS: Record<AuditEntityType, readonly string[]> = {
     'deletedAt',
   ),
   PRODUCT_SALE: fields<ProductSale>()('status', 'quantity', 'pickedUpAt', 'pickedUpById', 'cancelledAt'),
+  ASSISTANT_QUOTA: fields<AssistantQuotaReset>()('period', 'members', 'questions'),
 };

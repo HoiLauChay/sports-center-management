@@ -1,7 +1,7 @@
 import type { AttendanceStatus, SupportCategory } from '../constants/enums';
 import type { CheckoutItemInput } from '../schemas/checkout';
 import type { CreateCouponInput } from '../schemas/coupon';
-import type { Ref } from './api';
+import type { Paginated, Ref } from './api';
 import type { Person } from './audit';
 
 export interface SupportDraft {
@@ -49,6 +49,28 @@ export interface AssistantQuota {
   used: number;
   limit: number;
   resetsOn: string;
+}
+
+/** One member's AI questions this month, as the manager sees them. */
+export interface MemberAssistantQuota {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+  used: number;
+  limit: number;
+}
+
+export interface AssistantQuotaPage extends Paginated<MemberAssistantQuota> {
+  /** YYYY-MM */
+  period: string;
+  resetsOn: string;
+}
+
+/** How many members got their AI questions for the current month back. */
+export interface AssistantQuotaReset {
+  members: number;
+  period: string;
 }
 
 export interface AssistantReply {

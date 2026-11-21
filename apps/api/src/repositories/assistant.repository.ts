@@ -1,5 +1,8 @@
+import type { ListAssistantQuotasQuery } from '@sports-center/shared';
+
 import { prisma } from '~/configs/db';
 import { Prisma } from '~/generated/prisma/client';
+import { pageArgs } from '~/utils/pagination';
 
 /** What the AI assistant reads, and the questions it counts. Every query is scoped to the asking account. */
 class AssistantRepository {
@@ -27,6 +30,52 @@ class AssistantRepository {
       where: { accountId, period, count: { gt: 0 } },
       data: { count: { decrement: 1 } },
     });
+
+  isMember = async (accountId: string) =>
+    (await prisma.account.count({ where: { id: accountId, roles: { has: 'MEMBER' } } })) > 0;
+
+  /** Members who asked at least one question in `period`, most questions first. */
+  findUsagePage = async (period: string, { q, ...page }: ListAssistantQuotasQuery) => {
+    const where: Prisma.AssistantUsageWhereInput = {
+      period,
+      count: { gt: 0 },
+      ...(q && {
+        account: {
+          OR: [{ fullName: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }],
+        },
+      }),
+    };
+    const [rows, total] = await Promise.all([
+      prisma.assistantUsage.findMany({
+        where,
+        select: { count: true, account: { select: { id: true, fullName: true, email: true, avatarUrl: true } } },
+        orderBy: [{ count: 'desc' }, { updatedAt: 'desc' }],
+        ...pageArgs(page),
+      }),
+      prisma.assistantUsage.count({ where }),
+    ]);
+    return { rows, total };
+  };
+
+  /**
+   * Gives members all their questions in `period` back: one member when `accountId` is given, otherwise everyone.
+   * Returns how many members had used any, and how many questions they got back in total.
+   */
+  resetUsage = async (period: string, accountId: string | undefined, tx: Prisma.TransactionClient = prisma) => {
+    const rows = await tx.$queryRaw<{ count: number }[]>(Prisma.sql`
+      WITH used AS (
+        SELECT account_id, count FROM assistant_usages
+        WHERE period = ${period} AND count > 0
+          ${accountId ? Prisma.sql`AND account_id = ${accountId}::uuid` : Prisma.empty}
+        FOR UPDATE
+      )
+      UPDATE assistant_usages u SET count = 0, updated_at = now()
+      FROM used
+      WHERE u.account_id = used.account_id AND u.period = ${period}
+      RETURNING used.count
+    `);
+    return { members: rows.length, questions: rows.reduce((sum, row) => sum + row.count, 0) };
+  };
 
   /** Court, room and gym slots the member booked in [from, to), for comparing memberships. */
   findBookingUsage = (accountId: string, from: Date, to: Date) =>

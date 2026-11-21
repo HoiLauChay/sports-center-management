@@ -2,6 +2,8 @@ import type {
   AssistantAction,
   AssistantOverview,
   AssistantQuota,
+  AssistantQuotaPage,
+  AssistantQuotaReset,
   AssistantReply,
   AssistantStreamEvent,
   CoachAssistantOverview,
@@ -467,6 +469,95 @@ describe('AI assistant quota', () => {
     expect(reply.quota).toBeNull();
     expect(await readResult<AssistantQuota | null>(await request('GET', '/quota', f.receptionist))).toBeNull();
     expect(await prisma.assistantUsage.count()).toBe(0);
+  });
+});
+
+describe('AI assistant quota reset', () => {
+  const period = () => todayInCenter().slice(0, 7);
+  const used = async (accountId: string, at = period()) =>
+    (await prisma.assistantUsage.findUnique({ where: { accountId_period: { accountId, period: at } } }))?.count;
+
+  const seedUsage = async () => {
+    const f = await setupAttendance();
+    await prisma.assistantUsage.createMany({
+      data: [
+        { accountId: f.member.id, period: period(), count: 7 },
+        { accountId: f.second.id, period: period(), count: 3 },
+        { accountId: f.member.id, period: '2000-01', count: 5 },
+      ],
+    });
+    return f;
+  };
+
+  test('the manager lists members who asked this month, most questions first, with their limit', async () => {
+    const f = await seedUsage();
+    const page = await readResult<AssistantQuotaPage>(await request('GET', '/quotas', f.manager));
+    expect(page.period).toBe(period());
+    expect(page.total).toBe(2);
+    expect(page.items.map(({ id, used, limit }) => ({ id, used, limit }))).toEqual([
+      { id: f.member.id, used: 7, limit: 10 },
+      { id: f.second.id, used: 3, limit: 10 },
+    ]);
+  });
+
+  test('the manager reads one member’s quota, used or not, and only for members', async () => {
+    const f = await seedUsage();
+    expect(await readResult<AssistantQuota>(await request('GET', `/quotas/${f.member.id}`, f.manager))).toMatchObject({
+      used: 7,
+      limit: 10,
+    });
+    expect(await readResult<AssistantQuota>(await request('GET', `/quotas/${f.outsider.id}`, f.manager))).toMatchObject(
+      {
+        used: 0,
+        limit: 10,
+      },
+    );
+    expect((await request('GET', `/quotas/${f.coach.id}`, f.manager)).status).toBe(404);
+    expect((await request('GET', `/quotas/${f.member.id}`, f.receptionist)).status).toBe(403);
+  });
+
+  test('resetting one member leaves the others and last month alone, and is logged', async () => {
+    const f = await seedUsage();
+    const result = await readResult<AssistantQuotaReset>(
+      await request('POST', `/quotas/${f.member.id}/reset`, f.manager),
+    );
+    expect(result).toEqual({ members: 1, period: period() });
+    expect(await used(f.member.id)).toBe(0);
+    expect(await used(f.second.id)).toBe(3);
+    expect(await used(f.member.id, '2000-01')).toBe(5);
+
+    const log = await prisma.auditLog.findFirstOrThrow({ where: { entityType: 'ASSISTANT_QUOTA' } });
+    expect(log).toMatchObject({
+      accountId: f.manager.id,
+      action: 'UPDATE',
+      entityId: f.member.id,
+      newValues: { period: period(), members: 1, questions: 7 },
+    });
+  });
+
+  test('resetting everyone is logged once under ALL; a reset with nothing to give back is not logged', async () => {
+    const f = await seedUsage();
+    expect(await readResult<AssistantQuotaReset>(await request('POST', '/quota/reset', f.manager))).toEqual({
+      members: 2,
+      period: period(),
+    });
+    expect(await used(f.second.id)).toBe(0);
+    await request('POST', '/quota/reset', f.manager);
+
+    const logs = await prisma.auditLog.findMany({ where: { entityType: 'ASSISTANT_QUOTA' } });
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({ entityId: 'ALL', newValues: { period: period(), members: 2, questions: 10 } });
+  });
+
+  test('only the manager can list or reset quotas', async () => {
+    const f = await seedUsage();
+    for (const viewer of [f.member, f.receptionist, f.coach]) {
+      expect((await request('GET', '/quotas', viewer)).status).toBe(403);
+      expect((await request('POST', '/quota/reset', viewer)).status).toBe(403);
+      expect((await request('POST', `/quotas/${f.second.id}/reset`, viewer)).status).toBe(403);
+    }
+    expect(await used(f.second.id)).toBe(3);
+    expect(await prisma.auditLog.count({ where: { entityType: 'ASSISTANT_QUOTA' } })).toBe(0);
   });
 });
 
